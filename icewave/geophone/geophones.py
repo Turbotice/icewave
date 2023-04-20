@@ -10,9 +10,9 @@ import stephane.display.graphes as graphes
 
 
 def get_channels(a):
-	"""
-	Correspondance between columns and channels
-	"""
+    """
+    Correspondance between columns and channels
+    """
     d={}
     d['Z1'] = a[:,0]
     d['L1'] = a[:,1]
