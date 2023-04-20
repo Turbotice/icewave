@@ -18,3 +18,7 @@ def add_padding (data, padding) :
     if len(padding)  == 3 :
         data_pad[:datasize[0], :datasize[1], :datasize[2]] = data
     return data_pad
+
+
+def test():
+    pass
