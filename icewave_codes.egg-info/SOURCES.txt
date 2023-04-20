@@ -1,0 +1,7 @@
+README.md
+setup.py
+icewave_codes.egg-info/PKG-INFO
+icewave_codes.egg-info/SOURCES.txt
+icewave_codes.egg-info/dependency_links.txt
+icewave_codes.egg-info/not-zip-safe
+icewave_codes.egg-info/top_level.txt
