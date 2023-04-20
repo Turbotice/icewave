@@ -1,13 +1,13 @@
 from setuptools import setup,find_packages
 
 setup(
-    name='stephane_codes',
-    version='0.1',
-    description='Misc utilities (Stephane Perrard)',
+    name='icewave_codes',
+    version='1.0',
+    description='Measureing waves in sea ice',
 #      url='needs a URL',
-    author='Stephane Perrard',
+    author='Baptiste Auvity & Stéphane Perrard',
     author_email='stephane.perrard@espci.fr',
-    license='MIT',
+    license='GNU',
     packages=find_packages(),
     zip_safe=False,
 #      package_data={'tangle': ['cl_src/*.cl']})
