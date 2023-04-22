@@ -25,8 +25,7 @@ def get_channels(a):
     d['T3'] = a[:,8]
     return d
 
-def compute_all(a):
-    d = get_channels(a)
+def compute_all(d):
     Corr = {}
     
     for k in ['Z','L','T']:
