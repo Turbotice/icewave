@@ -131,7 +131,7 @@ def error(X,t,C,fun=env):
 
 
 def fit(t,C):
-    x0 = [0.2,np.pi,1,2]
+    x0 = [0.5,np.pi,1,15]
     xf = scipy.optimize.fmin(error,x0,args=(t,C))
     Cth = env(xf,t)
     return xf,Cth
