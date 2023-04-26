@@ -17,6 +17,8 @@ def get_channels(a):
     T : composante 'E', normalement transversale (si geophone en ligne) 
     1,2,3 : géophones, normalement numéroté G4,G6,G12. Voir cahier de manip pour détail
     """
+    print(a.shape)
+    
     d={}
     d['Z1'] = a[:,0]
     d['L1'] = a[:,1]
@@ -28,6 +30,8 @@ def get_channels(a):
     d['L3'] = a[:,7]
     d['T3'] = a[:,8]
     return d
+    
+    
 
 def compute_all(d):
     Corr = {}
