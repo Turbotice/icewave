@@ -12,6 +12,10 @@ import stephane.display.graphes as graphes
 def get_channels(a):
     """
     Correspondance between columns and channels
+    Z : composante verticale 
+    L : composante 'N', normalement longitudinal (si geophone en ligne)
+    T : composante 'E', normalement transversale (si geophone en ligne) 
+    1,2,3 : géophones, normalement numéroté G4,G6,G12. Voir cahier de manip pour détail
     """
     d={}
     d['Z1'] = a[:,0]
@@ -118,7 +122,7 @@ def env(X,t):
     A = X[0]
     phi = X[1]
     w = X[2]
-    t0 = 16#X[3]
+    t0 = X[3]
 
     n = len(t)
     modul = A*np.max([np.zeros(n),(t0-np.abs(t))/t0],axis=0)
