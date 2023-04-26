@@ -18,17 +18,20 @@ def get_channels(a):
     1,2,3 : géophones, normalement numéroté G4,G6,G12. Voir cahier de manip pour détail
     """
     print(a.shape)
-    
+    nt,nc = a.shape
     d={}
-    d['Z1'] = a[:,0]
-    d['L1'] = a[:,1]
-    d['T1'] = a[:,2]
-    d['Z2'] = a[:,3]
-    d['L2'] = a[:,4]
-    d['T2'] = a[:,5]
-    d['Z3'] = a[:,6]
-    d['L3'] = a[:,7]
-    d['T3'] = a[:,8]
+    if nc >=3 :
+		d['Z1'] = a[:,0]
+    	d['L1'] = a[:,1]
+    	d['T1'] = a[:,2]
+    if nc >=6:
+    	d['Z2'] = a[:,3]
+    	d['L2'] = a[:,4]
+    	d['T2'] = a[:,5]
+    if nc >=9:
+    	d['Z3'] = a[:,6]
+    	d['L3'] = a[:,7]
+    	d['T3'] = a[:,8]    
     return d
     
     
