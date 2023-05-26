@@ -5,10 +5,11 @@ Created on Mon May 22 14:51:57 2023
 @author: Banquise
 """
 
+#%% Import modules
+
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.fft as fft
-import scipy.io as io
 import os
 import glob
 from scipy.signal import correlate
@@ -63,6 +64,10 @@ params['index'] = 0
 
 
 #%% MAIN
+
+
+# for www in range (0,len(params['index_geophone'])) :
+#     params['index'] = www
 
 method = 1
 
@@ -135,7 +140,7 @@ while phase_shift[phase_shift> np.pi] != np.array([]) or phase_shift[phase_shift
     phase_shift[phase_shift> np.pi] += - 2 * np.pi
 
 f = np.linspace(1, params['n_f'], params['n_f']) / params['lm'] * params['facq']
-for u in range (0, 180):
+for u in range (0, params['n_morc']):
     plt.plot(f, phase_shift[u,:], '+')
 
 if save :
@@ -159,7 +164,7 @@ histogram = np.zeros(( params['n_bins'], params['n_f']))
 params = disp.figurejolie(params = params, nom_fig = 'histogram')
 
 for k in range (0,params['n_f']) :
-    if np.mod(k, 50) == 0:
+    if np.mod(k, 100) == 0:
         print(k)
     
     h = plt.hist(phase_shift[:,k], params['n_bins'])
@@ -179,9 +184,9 @@ if save :
     sv.save_graph(savefolder, 'phase_shift_histogram', params = params)
 
 #%% Detect points
-save = False
+save = True
 
-params['nb_blocks'] = 4
+params['nb_blocks'] = 6
 
 test_detect = np.flip(histogram, 0)
 for i in range (0, params['nb_blocks'] - 1) :
@@ -192,7 +197,7 @@ params = disp.figurejolie(params = params, nom_fig = 'phase_shift_histogrammé_f
 len_phase = np.linspace(-np.pi, 2 * np.pi * params['nb_blocks'] - np.pi, params['nb_blocks'] * params['n_bins'])
 plt.pcolormesh(f,len_phase, test_detect)
 cbar = plt.colorbar()
-plt.clim(0,30)
+plt.clim(0,10)
 
 Y = fft.fft(test_detect, axis = 0)
 
@@ -212,16 +217,20 @@ if save :
     sv.save_graph(savefolder, 'phase_en_fonction_de_f_branche_detectée', params = params)
    
 #%% Unité physique
-save = False
-# phase[110:230] = phase[110:230] + 2 * np.pi
+save = True
 
-params['L'] = 20
-params['theta'] = 0
-params['f_coup'] = 135
+params['L'] = 20            #distance géophones en metres
+params['theta'] = (11 + 60 + 90) / 180 * np.pi
+params['f_max'] = 12       #frequence ou on coupe le signal en Hz
+params['f_min'] = 0.4       #frequence ou on coupe le signal en Hz
 
-omega = f[:params['f_coup']] * 2 * np.pi
+params['f_max'] = int(params['f_max'] * params['lm'] / params['facq'])
+params['f_min'] = int(params['f_min'] * params['lm'] / params['facq'])
+omega = f[params['f_min']:params['f_max']] * 2 * np.pi
 
-k = phase[:params['f_coup']] / params['L'] /np.cos(params['theta'])
+if np.cos(params['theta']) <= 0 :
+    params['theta'] = params['theta'] + np.pi
+k = phase[params['f_min']:params['f_max']] / params['L'] /np.cos(params['theta'])
 
 params = disp.figurejolie(params = params, nom_fig = 'k_de_omega')
 params[str(params['num_fig'][-1])]['data'] = disp.joliplot( r'k ($m^{-1}$)',r'$\omega$ (Hz)', k, omega, color = 4, exp = False)
@@ -241,7 +250,7 @@ type_fit = 'pesante_flexion'
 
 if type_fit == 'pesante_flexion':
     params = disp.figurejolie(params = params, nom_fig = type_fit)
-    popt, pcov = fit.fit(rdd.RDD_pesante_flexion, k, omega, display = True, err = False, nb_param = 2, p0 = [0.4, 0], bounds = [[0,1],[0,50e10]], zero = True, th_params = False, xlabel = r'k (m$^{-1}$)', ylabel = r'$\omega$')
+    popt, pcov = fit.fit(rdd.RDD_pesante_flexion, k, omega, display = True, err = False, nb_param = 2, p0 = [0.3, 1e4], bounds = [0,[1,50e10]], zero = True, th_params = False, xlabel = r'k (m$^{-1}$)', ylabel = r'$\omega$')
     params[str(params['num_fig'][-1])]['hxrho'] = popt[0]
     params[str(params['num_fig'][-1])]['Dsurrho'] = popt[1]
     params[str(params['num_fig'][-1])]['erreurfit'] = pcov
@@ -252,29 +261,43 @@ if type_fit == 'pesante_flexion':
 type_fit = 'power_law'
 if type_fit == 'power_law':
     params = disp.figurejolie(params = params, nom_fig = 'k_de_omega')
-    popt = fit.fit_powerlaw(k[30:],omega[30:], display = True, xlabel = '', ylabel = '', legend = '')
+    popt = fit.fit_powerlaw(k[:],omega[:], display = True, xlabel = '', ylabel = '', legend = '')
     params[str(params['num_fig'][-1])]['power'] = popt
     params[str(params['num_fig'][-1])]['data'] = sv.data_to_dict(['k','omega'], [k,omega], data = [k,omega])
     if save :
         sv.save_graph(savefolder, type_fit, params = params)
+
+save = True
+type_fit = 'pesante_flexion_depth_2m'
+if True :#type_fit == 'pesante_flexion_depth':
+    params = disp.figurejolie(params = params, nom_fig = type_fit)
+    popt, pcov = fit.fit(rdd.RDD_pesante_flexion_depth, k, omega, display = True, err = False, nb_param = 2, p0 = [0.3, 1e4], bounds = [0,[1,50e10]], zero = True, th_params = False, xlabel = r'k (m$^{-1}$)', ylabel = r'$\omega$')
+    params[str(params['num_fig'][-1])]['hxrho'] = popt[0]
+    params[str(params['num_fig'][-1])]['Dsurrho'] = popt[1]
+    params[str(params['num_fig'][-1])]['erreurfit'] = pcov
+    params[str(params['num_fig'][-1])]['data'] = sv.data_to_dict(['k','omega'], [k,omega], data = [k,omega])
+    if save :
+        sv.save_graph(savefolder, type_fit, params = params)
+    
       
 if save_matlab :
-    sv.save_mat(k, savefolder, title = 'k')
-    sv.save_mat(k, savefolder, title = 'omega')
+    sv.save_mat(k, savefolder, title = 'k_' + str(params['index']))
+    sv.save_mat(k, savefolder, title = 'omega_' + str(params['index']))
     full_params = {}
     for i in params.keys() :
         if not i.isdigit() :
             full_params[i] = params[i]
-    sv.save_mat(full_params, savefolder, title = 'parametres')
+    sv.save_mat(full_params, savefolder, title = 'parametres_' + str(params['index']))
 
 
 
 
 #%% SAVE ALL
 
-
-sv.save_all_figs(savefolder, params)
-
+save = False
+if save :
+    sv.save_all_figs(savefolder, params)
+    
 
 
 
