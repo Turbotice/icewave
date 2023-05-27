@@ -112,7 +112,7 @@ def compute_corr(Xfilt,Zfilt,facq=26.5,f0=1,A0=1):
     ax.plot(T,Cth,'ro--')
     ax.plot(T[ind],vmax,'bs')
     figs={}
-    figs.update(graphes.legende('$\tau$ (frames)','C',r'$\langle X(t) Z(t+\tau) \rangle$'))
+    figs.update(graphes.legende(r'$\tau$ (frames)','C',r'$\langle X(t) Z(t+\tau) \rangle$'))
 
     return T,Cmoy,param,figs,ax
 
@@ -149,15 +149,19 @@ def display_signal(data):
     return figs,axs
     
 #plt.plot(Zfilt)
+def error(Y,Yth):
+    return np.sum((Y-Yth)**2)/np.sum(Y**2)
+    
+
 def process(filename,savefolder):
     basename = os.path.basename(filename).split('.')[0]
 
     data = load(filename)
     #figs,axs = display_signal(data)
 
-    Fmin = np.linspace(0.5,13,10)
-    Fmax = np.linspace(1,13.5,10)
-    
+    Fmin = np.linspace(0.5,3,10)
+    Fmax = np.linspace(1,3.5,10)
+    res = {}
     for (fmin,fmax) in zip(Fmin,Fmax):
         X,Z = filtered(data,fc=[fmin,fmax],facq=26.5)#1.5
     #axs[2].plot(data['t'],X,'o-')
@@ -167,11 +171,22 @@ def process(filename,savefolder):
 
         fmoy = fmin#(fmin+fmax)/2
         
-        compute_corr(X,Z,facq=26.5,f0=fmoy,A0=0.5)
-#        compute_dephasage(X,Z)
-        plt.show()
+        T,Cmoy,param,figs,ax = compute_corr(X,Z,facq=26.5,f0=fmoy,A0=0.5)
+
+        res[(fmin,fmax)] = {}
+        for key in param.keys():
+            res[(fmin,fmax)][key] = param [key]        
+        #        compute_dephasage(X,Z)
+        #plt.show()
+
+    print(param.keys())
+    fig,ax = plt.subplots(nrows=1,ncols=1,figsize=(12,8))
+    for (fmin,fmax) in res.keys():
+        data = res[(fmin,fmax)]
+        ax.plot(data['f'],data['phi'],'ko')
+    plt.show()    
 #    graphes.save_figs(figs,savedir=savefolder,overwrite=True,suffix=basename)
-    param = {}
+    #param = {}
     return param
     #graphes.save_figs(figs,savedir=savefolder)
 
