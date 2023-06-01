@@ -275,19 +275,31 @@ def main2():
         os.makedirs(global_save)
     filelist = glob.glob(folders+'data*.pkl')
     print(len(filelist))
-    fig,ax = plt.subplots(nrows=1,ncols=1,figsize=(10,10))
-
     figs = {}
     current = ''
     fig,ax = plt.subplots(nrows=1,ncols=1,figsize=(10,10))
     Spec = []
+
+    res = {}
     
     for i,filename in enumerate(filelist):
         folder = os.path.dirname(filename)
         if (not folder == current) and (not current==''):
 #            plt.show()
+            Spec = np.asarray(Spec)
+            TF_moy = np.mean(Spec,axis=0)
+            
+            res[title] = {}
+            for key in ['TF_moy','Spec','frange']:
+                res[title][key] = locals()[key]
+            
+            ax.loglog(frange,TF_moy,'k--')
+            #plt.show()
             graphes.save_figs(figs,savedir=global_save,prefix=title+'_',overwrite=True)
             fig,ax = plt.subplots(nrows=1,ncols=1,figsize=(10,10))
+
+            Spec = []
+
         current=folder
         
         dataname = os.path.basename(filename).split('.')[0]
@@ -296,24 +308,34 @@ def main2():
         if not os.path.isdir(savefolder):
             os.makedirs(savefolder)
 
+        print(savefolder)
         title = "_".join(savefolder.split('/')[6].split('_')[2:5])
         frange,C = process(filename,savefolder,title=title)
         A = np.abs(C)
         A = A/np.sqrt(np.sum(A**2))
 
         Y = A*frange
+        Spec.append(Y)
         ax.loglog(frange,Y)
         indices,valeurs = math.max_local(Y,50,w_len=1)
         indsort = np.asarray(np.argsort(valeurs))[-3:]
         print(indsort)
         indices = np.asarray(indices)[indsort]
         valeurs = np.asarray(valeurs)[indsort]
-        
-        ax.loglog(frange[indices],valeurs,'bo')        
-        figs.update(graphes.legende('$f$ (Hz)','TF (u.a.)',title))
+
+        if len(indices)>0:
+            ax.loglog(frange[indices],valeurs,'bo')        
+            figs.update(graphes.legende('$f$ (Hz)','TF (u.a.)',title))
         print(title)
     graphes.save_figs(figs,savedir=global_save,prefix=title+'_',overwrite=True)    
 #    plt.show()
+
+    fig,ax = plt.subplots(nrows=1,ncols=1,figsize=(10,10))
+    for title in res.keys():
+        ax.loglog(res[title]['frange'],res[title]['TF_moy'],'-o')
+    figs.update(graphes.legende('$f$ (Hz)','TF_moy (u.a.)',''))
+    plt.show()
+    graphes.save_figs(figs,savedir=global_save,prefix=title+'_',overwrite=True)    
 
 def main():
     base = 'Banquise/Sebastien/Experiences/Test_frequency_h10mm_16_05_2023/white_polypropylene_10mm_d4cm_fps26p5Hz_Tchang120ms_v70/'
