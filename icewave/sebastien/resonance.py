@@ -274,7 +274,6 @@ def main2():
             os.makedirs(savefolder)
 
         title = "_".join(savefolder.split('/')[6].split('_')[2:5])
-        toto
         figs,axs = process(filename,savefolder,title=title)
         #plt.show()
         graphes.save_figs(figs,savedir=savefolder,prefix=title+'_')
