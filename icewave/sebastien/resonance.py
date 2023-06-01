@@ -67,10 +67,10 @@ def compute_dephasage(Xfilt,Zfilt,facq=26.5):
             
     [R,Theta] = cart2pol(np.real(C),np.imag(C))
 
-    Theta = np.unwrap(Theta,axis=1)
-    axs[0].pcolormesh(frange,range(n),np.log10(R))
-    axs[1].pcolormesh(frange,range(n),np.log10(Cx))
-    axs[2].pcolormesh(frange,range(n),np.log10(Cz))
+    #Theta = np.unwrap(Theta,axis=1)
+    #axs[0].pcolormesh(frange,range(n),np.log10(R))
+    #axs[1].pcolormesh(frange,range(n),np.log10(Cx))
+    #axs[2].pcolormesh(frange,range(n),np.log10(Cz))
 
     #plt.colorbar()
     #for j,f0 in enumerate(frange):
@@ -201,27 +201,34 @@ def error(Y,Yth):
     return np.sum((Y-Yth)**2)/np.sum(Y**2)
     
 
+def compute_A(Z):
+    frange = np.arange(0,10,0.05)
+    n = len(frange)
+    C = np.zeros(n,dtype='complex64')
+    for i,f0 in enumerate(frange):
+        C[i] = demod(Z,f0)
+    return frange,C
+    
 def process(filename,savefolder,title=''):
     basename = os.path.basename(filename).split('.')[0]
 
-    
     data = load(filename)
 
-    X,Z = filtered(data,fc=[0.05],facq=26.5)#1.5#high-pass filter
+    X,Z = filtered(data,fc=[0.2],facq=26.5)#1.5#high-pass filter
     data['x'] = X
     data['z'] = Z
     
-    figs,axs = display_signal(data,title=title)
+#    figs,axs = display_signal(data,title=title)
+    frange,C=compute_A(Z)
     #Fmin = np.linspace(0.2,5,10)
     #Fmax = np.linspace(0.5,6,10)
     #res = {}
 
-    
     #for (fmin,fmax) in zip(Fmin,Fmax):
     #    X,Z = filtered(data,fc=[fmin,fmax],facq=26.5)#1.5
     #figs,axs = display_signal(data)
     #compute_dephasage(X,Z)
-    return figs,axs
+    return frange,C#figs,axs
 
 def process_fuck(filename,savefolder):
     basename = os.path.basename(filename).split('.')[0]
@@ -264,7 +271,9 @@ def main2():
 
     filelist = glob.glob(folders+'data*.pkl')
     print(len(filelist))
+    fig,ax = plt.subplots(nrows=1,ncols=1,figsize=(10,10))
 
+    figs = {}
     for filename in filelist:
         folder = os.path.dirname(filename)
         dataname = os.path.basename(filename).split('.')[0]
@@ -274,10 +283,13 @@ def main2():
             os.makedirs(savefolder)
 
         title = "_".join(savefolder.split('/')[6].split('_')[2:5])
-        figs,axs = process(filename,savefolder,title=title)
-        #plt.show()
+        frange,C = process(filename,savefolder,title=title)
+        A = np.abs(C)
+        ax.loglog(frange,A*frange)
+        figs.update(graphes.legende('$f$ (Hz)','TF (u.a.)',title))
         print(title)
-        graphes.save_figs(figs,savedir=savefolder,prefix=title+'_',suffix=dataname,overwrite=True)
+#        graphes.save_figs(figs,savedir=savefolder,prefix=title+'_',suffix=dataname,overwrite=True)
+    plt.show()
 
 
 def main():
