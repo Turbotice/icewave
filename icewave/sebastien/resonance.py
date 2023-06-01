@@ -288,9 +288,8 @@ def main2():
         ax.loglog(frange,A*frange)
         figs.update(graphes.legende('$f$ (Hz)','TF (u.a.)',title))
         print(title)
-#        graphes.save_figs(figs,savedir=savefolder,prefix=title+'_',suffix=dataname,overwrite=True)
     plt.show()
-
+    graphes.save_figs(figs,savedir=base,prefix=title+'_',overwrite=True)
 
 def main():
     base = 'Banquise/Sebastien/Experiences/Test_frequency_h10mm_16_05_2023/white_polypropylene_10mm_d4cm_fps26p5Hz_Tchang120ms_v70/'
