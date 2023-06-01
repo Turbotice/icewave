@@ -268,15 +268,16 @@ def main2():
 
     for filename in filelist:
         folder = os.path.dirname(filename)
-        savefolder = folder+'/Figures'
+        savefolder = folder+'/Figures/'
+        
         if not os.path.isdir(savefolder):
             os.makedirs(savefolder)
 
         title = "_".join(savefolder.split('/')[6].split('_')[2:5])
-        print(title)
+        toto
         figs,axs = process(filename,savefolder,title=title)
         #plt.show()
-        graphes.save_figs(figs,savedir=savefolder)
+        graphes.save_figs(figs,savedir=savefolder,prefix=title+'_')
 
 
 def main():
