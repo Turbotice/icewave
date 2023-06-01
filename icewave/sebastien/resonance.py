@@ -24,9 +24,10 @@ def demod(y,f0,facq=26.5):
     n = len(y)
     dt = 1/facq
     t = np.arange(0,n*dt,dt)
-    
-    return np.mean(y*np.exp(1j * 2 * np.pi * t * f0),axis=0,dtype='complex64')
-
+    if len(t)==len(y):
+        return np.mean(y*np.exp(1j * 2 * np.pi * t * f0),axis=0,dtype='complex64')
+    else:
+        return np.asarray([0])
 def cart2pol(x, y):
     rho = np.sqrt(x**2 + y**2)
     phi = np.arctan2(y, x)
