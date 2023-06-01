@@ -193,8 +193,7 @@ def display_signal(data,facq=26.5,title=''):
     axs[1].plot(data['t'],data['z'])
     figs = graphes.legende(r'$t$ (s)',r'$Z$ (mm)','',ax=axs[1])
     axs[2].plot(data['x'],data['z'])
-    graphes.legende(r'$X$ (mm)',r'$Z$ (mm)','',ax=axs[2])
-    
+    figs.update(graphes.legende(r'$X$ (mm)',r'$Z$ (mm)','',ax=axs[2]))
     return figs,axs
     
 #plt.plot(Zfilt)
@@ -269,14 +268,15 @@ def main2():
     for filename in filelist:
         folder = os.path.dirname(filename)
         savefolder = folder+'/Figures/'
-        
+        print(savefolder)
         if not os.path.isdir(savefolder):
             os.makedirs(savefolder)
 
         title = "_".join(savefolder.split('/')[6].split('_')[2:5])
         figs,axs = process(filename,savefolder,title=title)
         #plt.show()
-        graphes.save_figs(figs,savedir=savefolder,prefix=title+'_')
+        print(title)
+        graphes.save_figs(figs,savedir=savefolder,prefix=title+'_',overwrite=True)
 
 
 def main():
