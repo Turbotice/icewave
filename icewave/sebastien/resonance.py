@@ -267,6 +267,7 @@ def main2():
 
     for filename in filelist:
         folder = os.path.dirname(filename)
+        basename = os.path.basename.split('.')[0]
         savefolder = folder+'/Figures/'
         print(savefolder)
         if not os.path.isdir(savefolder):
@@ -276,7 +277,7 @@ def main2():
         figs,axs = process(filename,savefolder,title=title)
         #plt.show()
         print(title)
-        graphes.save_figs(figs,savedir=savefolder,prefix=title+'_',overwrite=True)
+        graphes.save_figs(figs,savedir=savefolder,prefix=title+'_',suffix=basename,overwrite=True)
 
 
 def main():
