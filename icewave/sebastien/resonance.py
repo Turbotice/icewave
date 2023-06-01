@@ -6,6 +6,7 @@ import scipy.signal as sig
 import pickle
 
 import stephane.display.graphes as graphes
+import stephane.tools.Smath as math
 import icewave.geophone.geophones as geo
 import icewave.tools.browse as browse
 
@@ -203,7 +204,7 @@ def error(Y,Yth):
     
 
 def compute_A(Z):
-    frange = np.arange(0,10,0.05)
+    frange = np.arange(0,10,0.01)
     n = len(frange)
     C = np.zeros(n,dtype='complex64')
     for i,f0 in enumerate(frange):
@@ -269,14 +270,26 @@ def main2():
     #exemple
     base = browse.find_path(base,disk='labshared2')
     folders = base+'Test_frequency*/Datas/'
-
+    global_save = base+'Processing_SP/Figures/'
+    if not os.path.isdir(global_save):
+        os.makedirs(global_save)
     filelist = glob.glob(folders+'data*.pkl')
     print(len(filelist))
     fig,ax = plt.subplots(nrows=1,ncols=1,figsize=(10,10))
 
     figs = {}
-    for filename in filelist:
+    current = ''
+    fig,ax = plt.subplots(nrows=1,ncols=1,figsize=(10,10))
+    Spec = []
+    
+    for i,filename in enumerate(filelist):
         folder = os.path.dirname(filename)
+        if (not folder == current) and (not current==''):
+#            plt.show()
+            graphes.save_figs(figs,savedir=global_save,prefix=title+'_',overwrite=True)
+            fig,ax = plt.subplots(nrows=1,ncols=1,figsize=(10,10))
+        current=folder
+        
         dataname = os.path.basename(filename).split('.')[0]
         savefolder = folder+'/Figures/'
         print(savefolder)
@@ -286,11 +299,21 @@ def main2():
         title = "_".join(savefolder.split('/')[6].split('_')[2:5])
         frange,C = process(filename,savefolder,title=title)
         A = np.abs(C)
-        ax.loglog(frange,A*frange)
+        A = A/np.sqrt(np.sum(A**2))
+
+        Y = A*frange
+        ax.loglog(frange,Y)
+        indices,valeurs = math.max_local(Y,50,w_len=1)
+        indsort = np.asarray(np.argsort(valeurs))[-3:]
+        print(indsort)
+        indices = np.asarray(indices)[indsort]
+        valeurs = np.asarray(valeurs)[indsort]
+        
+        ax.loglog(frange[indices],valeurs,'bo')        
         figs.update(graphes.legende('$f$ (Hz)','TF (u.a.)',title))
         print(title)
-    plt.show()
-    graphes.save_figs(figs,savedir=base,prefix=title+'_',overwrite=True)
+    graphes.save_figs(figs,savedir=global_save,prefix=title+'_',overwrite=True)    
+#    plt.show()
 
 def main():
     base = 'Banquise/Sebastien/Experiences/Test_frequency_h10mm_16_05_2023/white_polypropylene_10mm_d4cm_fps26p5Hz_Tchang120ms_v70/'
