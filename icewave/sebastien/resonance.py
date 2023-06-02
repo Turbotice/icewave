@@ -37,9 +37,9 @@ def cart2pol(x, y):
 def compute_simple():
     frange = np.arange(0,10,0.1)
 
-def compute_dephasage(Xfilt,Zfilt,facq=26.5):
-    fig,axs = plt.subplots(nrows=1,ncols=3,figsize=(12,6))
+def compute_dephasage(Xfilt,Zfilt,facq=26.5,title=''):
     #fig,ax = plt.subplots(nrows=1,ncols=1,figsize=(12,6))
+    fig,axs = plt.subplots(nrows=2,ncols=1,figsize=(10,8))
     N = len(Xfilt)
     print(N)
     Np = int(2**np.floor(np.log2(N)))
@@ -49,7 +49,8 @@ def compute_dephasage(Xfilt,Zfilt,facq=26.5):
     print(n)
     dt = 1/facq
     
-    frange = np.arange(0,10,0.05)
+    frange = np.arange(0,10,0.01)
+    Zf = np.zeros(len(frange),dtype='complex64')
     C = np.zeros((n,len(frange)),dtype='complex64')
     Cx = np.zeros((n,len(frange)))#,dtype='complex64')
     Cz = np.zeros((n,len(frange)))#,dtype='complex64')
@@ -58,18 +59,39 @@ def compute_dephasage(Xfilt,Zfilt,facq=26.5):
         for i in range(n):
             X = Xfilt[i*int(Np/n):(i+1)*int(Np/n)]
             cX = demod(X,f0)
-            
-        
             Z = Zfilt[i*int(Np/n):(i+1)*int(Np/n)]
             cZ = demod(Z,f0)
             #print(cX)
-            C[i,j]=cX*np.conj(cZ)#sig.correlate(X,Z)/(sigX*sigZ)
             Cx[i,j] = np.abs(cX)
             Cz[i,j] = np.abs(cZ)
-            
-    [R,Theta] = cart2pol(np.real(C),np.imag(C))
+            C[i,j]=cX*np.conj(cZ)/(Cx[i,j]*Cz[i,j])#sig.correlate(X,Z)/(sigX*sigZ)
 
-    #Theta = np.unwrap(Theta,axis=1)
+    [R,Theta] = cart2pol(np.real(C),np.imag(C))
+    Zf = np.mean(C,axis=0)#np.mean(np.exp(1j*Theta),axis=0)#on moyenne sur les angles
+    [Rf,Thetaf] = cart2pol(np.real(Zf),np.imag(Zf))
+    Sig = np.abs(np.mean(C,axis=0)/(np.mean(Cx,axis=0)*np.mean(Cz,axis=0)))
+
+    for i in range(n):
+        axs[0].plot(frange,Theta[i,:],'o')
+        #axs[1].plot(frange,R[i,:],'o')
+        
+    err = np.std(Theta,axis=0)
+    axs[0].plot(frange,Thetaf,'r-')
+    axs[0].plot(frange,Thetaf+err,'r--')
+    axs[0].plot(frange,Thetaf-err,'r--')
+
+    figs = graphes.legende('$f$ (Hz)',r'$\theta$ (rad)',title,ax=axs[0])
+    axs[1].plot(frange,Rf,'r-')
+    figs.update(graphes.legende('$f$ (Hz)',r'$C_{xz}$','',ax=axs[1]))
+     
+    
+    return frange,Thetaf,Rf,axs,figs
+#        Ntheta,xbins = np.histogram(Theta,50,range=(O,2*np.pi))
+#        bins = (xbins[1:]+xbins[:-1])/2
+        
+#        Zf = np.mean(Ntheta*np.exp(1j*xbins))
+        
+#    Theta = np.unwrap(Theta,axis=1)
     #axs[0].pcolormesh(frange,range(n),np.log10(R))
     #axs[1].pcolormesh(frange,range(n),np.log10(Cx))
     #axs[2].pcolormesh(frange,range(n),np.log10(Cz))
@@ -77,17 +99,13 @@ def compute_dephasage(Xfilt,Zfilt,facq=26.5):
     #plt.colorbar()
     #for j,f0 in enumerate(frange):
     #    ax.plot(np.real(C[:,j]),np.imag(C[:,j]),'ko')
+#    A_moy = np.mean(R,axis=0)
+#    Phi_moy = np.unwrap(np.mean(Theta,axis=0))   
+#    ind = np.argmax(A_moy)
 
-
-    A_moy = np.mean(R,axis=0)
-    Phi_moy = np.unwrap(np.mean(Theta,axis=0))
-    
-    ind = np.argmax(A_moy)
-
-    fig,ax = plt.subplots(nrows=1,ncols=1,figsize=(6,6))
-    ax.plot(frange,A_moy,'ko')
-
-    plt.show()
+#    fig,ax = plt.subplots(nrows=1,ncols=1,figsize=(6,6))
+#    ax.plot(frange,A_moy,'ko')
+#    plt.show()
 
     #axs[0].plot(R[:,ind],'ko')
     #graphes.legende('#',r'|$c_x$ $c_z$*|','',ax=axs[0])
@@ -95,7 +113,6 @@ def compute_dephasage(Xfilt,Zfilt,facq=26.5):
     #graphes.legende('#',r'arg($c_x$ $c_z$*)','',ax=axs[1])
     
     #ax.plot(frange,Phi_moy,'+')
-    return A_moy
     #return T,Cmoy,param,figs,ax
     
 def compute_corr(Xfilt,Zfilt,facq=26.5,f0=1,A0=1,display=True):
@@ -202,7 +219,6 @@ def display_signal(data,facq=26.5,title=''):
 def error(Y,Yth):
     return np.sum((Y-Yth)**2)/np.sum(Y**2)
     
-
 def compute_A(Z):
     frange = np.arange(0,10,0.01)
     n = len(frange)
@@ -219,9 +235,12 @@ def process(filename,savefolder,title=''):
     X,Z = filtered(data,fc=[0.2],facq=26.5)#1.5#high-pass filter
     data['x'] = X
     data['z'] = Z
-    
+    frange,Thetaf,Rf,axs,figs = compute_dephasage(X,Z,facq=26.5,title=title)
+
+    #C = np.unwrap(C)
 #    figs,axs = display_signal(data,title=title)
-    frange,C=compute_A(X)
+    frange,Y=compute_A(X)
+
     #Fmin = np.linspace(0.2,5,10)
     #Fmax = np.linspace(0.5,6,10)
     #res = {}
@@ -230,7 +249,7 @@ def process(filename,savefolder,title=''):
     #    X,Z = filtered(data,fc=[fmin,fmax],facq=26.5)#1.5
     #figs,axs = display_signal(data)
     #compute_dephasage(X,Z)
-    return frange,C#figs,axs
+    return frange,Thetaf,Rf,axs,figs
 
 def process_fuck(filename,savefolder):
     basename = os.path.basename(filename).split('.')[0]
@@ -264,7 +283,9 @@ def process_fuck(filename,savefolder):
     return res
     #graphes.save_figs(figs,savedir=savefolder)
 
-
+def spectra():
+    pass
+    
 def main2():
     base = 'Banquise/Sebastien/Experiences/'
     #exemple
@@ -277,7 +298,7 @@ def main2():
     print(len(filelist))
     figs = {}
     current = ''
-    fig,ax = plt.subplots(nrows=1,ncols=1,figsize=(10,10))
+    #fig,ax = plt.subplots(nrows=1,ncols=1,figsize=(10,10))
     Spec = []
 
     res = {}
@@ -293,10 +314,10 @@ def main2():
             for key in ['TF_moy','Spec','frange']:
                 res[title][key] = locals()[key]
             
-            ax.loglog(frange,TF_moy,'k--')
+            #ax.loglog(frange,TF_moy,'k--')
             #plt.show()
-            graphes.save_figs(figs,savedir=global_save,prefix=title+'_',overwrite=True)
-            fig,ax = plt.subplots(nrows=1,ncols=1,figsize=(10,10))
+#            graphes.save_figs(figs,savedir=global_save,prefix=title+'_',overwrite=True)
+            #fig,ax = plt.subplots(nrows=1,ncols=1,figsize=(10,10))
 
             Spec = []
 
@@ -310,24 +331,39 @@ def main2():
 
         print(savefolder)
         title = "_".join(savefolder.split('/')[6].split('_')[2:5])
-        frange,C = process(filename,savefolder,title=title)
-        A = np.abs(C)
-        A = A/np.sqrt(np.sum(A**2))
+        frange,Thetaf,Cxz,axs,figs = process(filename,savefolder,title=title)
 
-        Y = A*frange
-        Spec.append(Y)
-        ax.loglog(frange,Y)
-        indices,valeurs = math.max_local(Y,50,w_len=1)
-        indsort = np.asarray(np.argsort(valeurs))[-3:]
+#        A = np.abs(Cxz)
+#        A = A/np.sqrt(np.sum(A**2))
+#        Y = A*frange
+#        Spec.append(Y)
+        #ax.plot(frange,Y)
+        #max locaux
+        indices,valeurs = math.max_local(Cxz,20,w_len=1)
+        indsort = np.asarray(np.argsort(valeurs))#[-3:]
         print(indsort)
         indices = np.asarray(indices)[indsort]
         valeurs = np.asarray(valeurs)[indsort]
 
         if len(indices)>0:
-            ax.loglog(frange[indices],valeurs,'bo')        
-            figs.update(graphes.legende(r'$f$ (Hz)',r'$TF_x$ (u.a.)',title))
+            axs[0].plot(frange[indices],Thetaf[indices],'bs')
+            axs[1].plot(frange[indices],valeurs,'bs')        
+
+                #Max global
+        #Cxz=np.mean(Rf,axis=0)
+        ind = np.argmax(Cxz)
+        val = Cxz[ind]
+        fmax = frange[ind]
+        axs[1].plot(fmax,val,'ks')
+        axs[0].plot(fmax,Thetaf[ind],'ks')
+        
+        #    figs.update(graphes.legende(r'$f$ (Hz)',r'$TF_x$ (u.a.)',title))
+        graphes.save_figs(figs,savedir=savefolder,prefix=title+'_',overwrite=True)    
+
         print(title)
-    graphes.save_figs(figs,savedir=global_save,prefix=title+'_',overwrite=True)    
+        #plt.show()
+
+#    graphes.save_figs(figs,savedir=global_save,prefix=title+'_',overwrite=True)    
 #    plt.show()
 
     fig,ax = plt.subplots(nrows=1,ncols=1,figsize=(10,10))
