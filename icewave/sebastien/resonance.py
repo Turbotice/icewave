@@ -221,7 +221,7 @@ def process(filename,savefolder,title=''):
     data['z'] = Z
     
 #    figs,axs = display_signal(data,title=title)
-    frange,C=compute_A(Z)
+    frange,C=compute_A(X)
     #Fmin = np.linspace(0.2,5,10)
     #Fmax = np.linspace(0.5,6,10)
     #res = {}
@@ -325,7 +325,7 @@ def main2():
 
         if len(indices)>0:
             ax.loglog(frange[indices],valeurs,'bo')        
-            figs.update(graphes.legende('$f$ (Hz)','TF (u.a.)',title))
+            figs.update(graphes.legende(r'$f$ (Hz)',r'$TF_x$ (u.a.)',title))
         print(title)
     graphes.save_figs(figs,savedir=global_save,prefix=title+'_',overwrite=True)    
 #    plt.show()
@@ -333,7 +333,7 @@ def main2():
     fig,ax = plt.subplots(nrows=1,ncols=1,figsize=(10,10))
     for title in res.keys():
         ax.loglog(res[title]['frange'],res[title]['TF_moy'],'-o')
-    figs.update(graphes.legende('$f$ (Hz)','TF_moy (u.a.)',''))
+    figs.update(graphes.legende('$f$ (Hz)','TF_moy_x (u.a.)',''))
     plt.show()
     graphes.save_figs(figs,savedir=global_save,prefix=title+'_',overwrite=True)    
 
