@@ -329,7 +329,7 @@ def main2():
             os.makedirs(savefolder)
 
         print(savefolder)
-        title = "_".join(savefolder.split('/')[6].split('_')[2:5])
+        title = "_".join(savefolder.split('/')[-4].split('_')[2:5])
         frange,Thetaf,Cxz,axs,figs = process(filename,savefolder,title=title)
 
 #        A = np.abs(Cxz)
