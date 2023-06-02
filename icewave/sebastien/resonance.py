@@ -358,7 +358,7 @@ def main2():
         axs[0].plot(fmax,Thetaf[ind],'ks')
         
         #    figs.update(graphes.legende(r'$f$ (Hz)',r'$TF_x$ (u.a.)',title))
-        graphes.save_figs(figs,savedir=savefolder,prefix=title+'_',overwrite=True)    
+        graphes.save_figs(figs,savedir=global_save,prefix=title+'_'+str(i),overwrite=True)    
 
         print(title)
         #plt.show()
