@@ -41,11 +41,9 @@ def compute_dephasage(Xfilt,Zfilt,facq=26.5,title=''):
     #fig,ax = plt.subplots(nrows=1,ncols=1,figsize=(12,6))
     fig,axs = plt.subplots(nrows=2,ncols=1,figsize=(10,8))
     N = len(Xfilt)
-    print(N)
     Np = int(2**np.floor(np.log2(N)))
     n=int(Np/2**5)
     nb=int(Np/n*2-1)
-
     print(n)
     dt = 1/facq
     
@@ -305,6 +303,7 @@ def main2():
     
     for i,filename in enumerate(filelist):
         folder = os.path.dirname(filename)
+        print(folder)
         if (not folder == current) and (not current==''):
 #            plt.show()
             Spec = np.asarray(Spec)
