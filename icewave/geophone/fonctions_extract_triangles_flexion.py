@@ -180,7 +180,10 @@ def detect(params,f,histogram, add_nom_fig = ''):
     
     test_detect = np.flip(histogram, 0)
     for i in range (0, params['nb_blocks'] - 1) :
-        test_detect = np.concatenate((test_detect, np.flip(histogram, 0)), axis = 0)
+        if np.mean(params['phase_shift']) > 0 :
+            test_detect = np.concatenate((test_detect, np.flip(histogram, 0)), axis = 0)
+        else :
+            test_detect = np.concatenate(( np.flip(histogram, 0), test_detect), axis = 0)
     
     params = disp.figurejolie(params = params, nom_fig = 'phase_shift_histogrammé_fois4_'+ add_nom_fig)
     
