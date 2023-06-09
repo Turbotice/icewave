@@ -37,7 +37,7 @@ params['L'] = 20
 params['theta_f'] = 0
 
 params['n_bins'] = 24
-params['nb_blocks'] = 4
+params['nb_blocks'] = 8
 
 params['voie']='Z'
 params['num_geo'] = '4-6'
@@ -49,9 +49,9 @@ size = data.shape[0]
 params['voie']='Z'
 params['num_geo'] = '4-6'
 
-params['liste_f_garde'] = [[0,22.3],[30.3,32]] #17-14 Z
-params['liste_f_2pi'] = [[23,29.5]] #17-14 Z
-params['liste_f_moins2pi'] = []#[[33.5,36]] #17-14 Z
+params['liste_f_garde'] = [[0,26.5]] #17-14 Z
+params['liste_f_2pi'] = [[26.5,33]] #17-14 Z
+params['liste_f_moins2pi'] = [[33,40]]#[[33.5,36]] #17-14 Z
 params['f_min'] = 0
 params['f_max'] = 12
 params['select_data'] = True
@@ -69,19 +69,19 @@ if save :
 params['voie']='Z'
 params['num_geo'] = '6-12'
 
-params['liste_f_garde'] = [[0,22.3],[30.3,32]]
-params['liste_f_2pi'] = [[23,29.5]]
-params['liste_f_moins2pi'] = [[33.5,36]]
+params['liste_f_garde'] = [[4.7,17]]
+params['liste_f_2pi'] = [[0,4.7]]
+params['liste_f_moins2pi'] = [[17,36]]
 params['f_min'] = 0
 params['f_max'] = 15
-params['select_data'] = False
-params['cut_data'] = True
+params['select_data'] = True
+params['cut_data'] = False
 
 params,f2,histogram2=fct.histo(params,data, add_nom_fig = params['num_geo'])
 f2, phase2 = fct.detect(params, f2, histogram2, add_nom_fig = params['num_geo'])
 omega2, k2 = fct.omega_k(params, f2, phase2 )
 
-phase2_new = phase2 - 4 * np.pi
+phase2_new = phase2 - 2 * np.pi
 f2_new = f2
 
 save = False
@@ -166,7 +166,6 @@ plt.plot(f3_new,phase3_new)
 f1_new = f1[:len(f2_new)]
 phase1_new = phase1[:len(f2_new)]
 
-phase2_new = phase2_new
 
 plt.figure()
 plt.plot(f1_new, phase1_new,label='G4-G6')
@@ -188,9 +187,12 @@ plt.ylabel(r'$\theta$')
 
 params['theta_f'] = theta_f
 
-#%%
 
 omega, k = fct.omega_k(params, f1_new, phase1_new)
+
+#%%
+
+
 # params = disp.figurejolie(params = params, nom_fig = 'omega_k_thetaf_corrige_g4g6')
 # params[str(params['num_fig'][-1])]['data'] = disp.joliplot(r'k (m$^{-1}$)', r'$\omega(Hz)$', k, omega, color = 2, exp = False)
 # sv.save_graph(savefolder,nom_fig= 'omega_k_thetaf_corrige_g4g6', params = params)
@@ -226,7 +228,7 @@ if type_fit == 'power_law_theta_corrige':
     if save :
         sv.save_graph(savefolder, type_fit, params = params)
 #%%
-save = True
+save = False
 type_fit = 'pesante_flexion_depth_2m'
 if True :#type_fit == 'pesante_flexion_depth':
     params = disp.figurejolie(params = params, nom_fig = type_fit)
@@ -249,7 +251,8 @@ if type_fit == 'flexion':
     if save :
         sv.save_graph(savefolder, type_fit, params = params)
     
-      
+
+save_matlab = False      
 if save_matlab :
     sv.save_mat(k, savefolder, title = 'k_' + str(params['index']))
     sv.save_mat(k, savefolder, title = 'omega_' + str(params['index']))
@@ -328,6 +331,8 @@ disp.joliplot(r'k ($m^{-1}$)', r'$\omega (Hz)$', k2, omega2, color = 4, params =
 #%% k avec formule antonin
 f1_new = f1[:len(f2_new)]
 phase1_new = phase1[:len(f2_new)]
+
+params['theta_f'] = 0 
 
 
 omega1, k1 = fct.omega_k(params, f1_new, phase1_new)
