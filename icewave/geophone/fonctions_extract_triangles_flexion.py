@@ -5,6 +5,7 @@ Created on Fri Jun  2 14:06:28 2023
 @author: Banquise
 """
 
+
 import os
 import glob
 import numpy as np
@@ -93,7 +94,8 @@ def main(params,data, method=1):
 
     params = direction(params)
     size = np.shape(data)[0]
-    params["phi"] = np.zeros((int(size/params['lm']), int((params['fmax_analyse']*params['lm']/params['facq'])+1)))
+    params["phi"] = np.zeros((int(size/params['lm']), int((params['fmax_analyse']*params['lm']/params['facq']))))
+    params["hist_weight"] = np.zeros((int(size/params['lm']), int((params['fmax_analyse']*params['lm']/params['facq']))))
     
     for i in range (0, int(size/params['lm'])) :
         if np.mod(i, 10) == 0 :
@@ -103,7 +105,7 @@ def main(params,data, method=1):
         
         Y = fft.fft(data_cut, axis = 0)
         
-        for j in range (1, int((params['fmax_analyse']*params['lm']/params['facq'])+1)) :
+        for j in range (1, int((params['fmax_analyse']*params['lm']/params['facq']))+1) :
     
             if method == 1 :
             
@@ -126,7 +128,8 @@ def main(params,data, method=1):
                 lag = lag + maxmax - a - len(corr)/2
                 period = params['lm'] / j    
                 phi = lag / period * 2 * np.pi 
-                params['phi'][i,j] = phi
+                params['phi'][i,j-1] = phi
+                params['hist_weight'][i,j-1] = np.max(corr)
         
         
     return params
@@ -145,7 +148,7 @@ def histo(params, data, add_nom_fig = ''):
     histogram = np.zeros(( params['n_bins'], params['n_f']))
 
     
-    while phase_shift[phase_shift> np.pi] != np.array([]) or phase_shift[phase_shift< -np.pi] != np.array([]) :
+    while True in (phase_shift> np.pi) or True in (phase_shift < -np.pi) :
         phase_shift[phase_shift< -np.pi] += 2 * np.pi
         phase_shift[phase_shift> np.pi] += - 2 * np.pi
     
@@ -159,7 +162,7 @@ def histo(params, data, add_nom_fig = ''):
     
     params = disp.figurejolie(params = params, nom_fig = 'histogram_'+ add_nom_fig)
     for k in range (0,params['n_f']) :
-        h = plt.hist(phase_shift[:,k], params['n_bins'])
+        h = plt.hist(phase_shift[:,k], params['n_bins'], weights = params['hist_weight'][:,k], density = True)
         h = np.asarray(h)
         h[1] = (h[1][1:]+h[1][:-1]) / 2
         histogram[:,k] = h[0]
@@ -168,8 +171,9 @@ def histo(params, data, add_nom_fig = ''):
     params = disp.figurejolie(params = params, nom_fig = 'phase_shift_histogrammé_'+ add_nom_fig)
     boites = np.linspace(0,params['n_bins'],params['n_bins'])
     params[str(params['num_fig'][-1])]['data'] = disp.joliplot( 'f','n_phase', f, boites, table = np.flip(np.rot90(histogram), 0))
-    plt.clim(0,np.median(histogram) * 2)
-    return params, f,histogram
+    plt.clim(0,np.quantile(histogram,0.9))
+    params['phase_shift'] = phase_shift
+    return params, f, histogram
 
 
 def detect(params,f,histogram, add_nom_fig = ''):
@@ -183,7 +187,7 @@ def detect(params,f,histogram, add_nom_fig = ''):
     len_phase = np.linspace(-np.pi, 2 * np.pi * params['nb_blocks'] - np.pi, params['nb_blocks'] * params['n_bins'])
     plt.pcolormesh(f,len_phase, test_detect)
     plt.colorbar()
-    plt.clim(0,np.median(test_detect) * 2)
+    plt.clim(0,np.quantile(test_detect, 0.9))
     
     Y = fft.fft(test_detect, axis = 0)
     
@@ -201,7 +205,7 @@ def detect(params,f,histogram, add_nom_fig = ''):
         params = disp.figurejolie(params = params, nom_fig = 'phase_shift_histogrammé_fois4_select_data_'+ add_nom_fig)
         plt.pcolormesh(f,len_phase, test_detect)
         plt.colorbar()
-        plt.clim(0,np.median(test_detect) * 2)
+        plt.clim(0,np.quantile(test_detect, 0.9))
         
         f_new, phase_new = select_data(params, f, phase)
         
