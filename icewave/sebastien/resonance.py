@@ -381,10 +381,10 @@ def main2():
     fig,ax = plt.subplots(nrows=1,ncols=1,figsize=(10,10))
     for res in results:
         ax.loglog(res['fmax'],res['phi'],'ks')
-
+    figs={}
     figs.update(graphes.legende('$f$ (Hz)','TF_moy_x (u.a.)',''))
     plt.show()
-    graphes.save_figs(figs,savedir=global_save,prefix='Summary_dephasage'+'_',overwrite=True)    
+    graphes.save_figs(figs,savedir=global_save,prefix='Summary_dephasage'+'_'+title+'_',overwrite=True)    
 
 def main():
     base = 'Banquise/Sebastien/Experiences/Test_frequency_h10mm_16_05_2023/white_polypropylene_10mm_d4cm_fps26p5Hz_Tchang120ms_v70/'
