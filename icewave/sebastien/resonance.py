@@ -37,9 +37,12 @@ def cart2pol(x, y):
 def compute_simple():
     frange = np.arange(0,10,0.1)
 
-def compute_dephasage(Xfilt,Zfilt,facq=26.5,title=''):
+def compute_dephasage(Xfilt,Zfilt,facq=26.5,title='',display=False):
     #fig,ax = plt.subplots(nrows=1,ncols=1,figsize=(12,6))
-    fig,axs = plt.subplots(nrows=2,ncols=1,figsize=(10,8))
+    if display:
+        fig,axs = plt.subplots(nrows=2,ncols=1,figsize=(10,8))
+    else:
+        figs,axs = None,None
     N = len(Xfilt)
     Np = int(2**np.floor(np.log2(N)))
     n=int(Np/2**5)
@@ -69,18 +72,19 @@ def compute_dephasage(Xfilt,Zfilt,facq=26.5,title=''):
     [Rf,Thetaf] = cart2pol(np.real(Zf),np.imag(Zf))
     Sig = np.abs(np.mean(C,axis=0)/(np.mean(Cx,axis=0)*np.mean(Cz,axis=0)))
 
-    for i in range(n):
-        axs[0].plot(frange,Theta[i,:],'o')
+    err = np.std(Theta,axis=0)
+    if display:
+        for i in range(n):
+            axs[0].plot(frange,Theta[i,:],'o')
         #axs[1].plot(frange,R[i,:],'o')
         
-    err = np.std(Theta,axis=0)
-    axs[0].plot(frange,Thetaf,'r-')
-    axs[0].plot(frange,Thetaf+err,'r--')
-    axs[0].plot(frange,Thetaf-err,'r--')
+        axs[0].plot(frange,Thetaf,'r-')
+        axs[0].plot(frange,Thetaf+err,'r--')
+        axs[0].plot(frange,Thetaf-err,'r--')
 
-    figs = graphes.legende('$f$ (Hz)',r'$\theta$ (rad)',title,ax=axs[0])
-    axs[1].plot(frange,Rf,'r-')
-    figs.update(graphes.legende('$f$ (Hz)',r'$C_{xz}$','',ax=axs[1]))
+        figs = graphes.legende('$f$ (Hz)',r'$\theta$ (rad)',title,ax=axs[0])
+        axs[1].plot(frange,Rf,'r-')
+        figs.update(graphes.legende('$f$ (Hz)',r'$C_{xz}$','',ax=axs[1]))
      
     
     return frange,Thetaf,Rf,axs,figs
@@ -116,7 +120,7 @@ def compute_dephasage(Xfilt,Zfilt,facq=26.5,title=''):
 def compute_corr(Xfilt,Zfilt,facq=26.5,f0=1,A0=1,display=True):
     if display:
         fig,ax = plt.subplots(nrows=1,ncols=1,figsize=(6,6))
-
+        
     N = len(Xfilt)
     Np = int(2**np.floor(np.log2(N)))
     n=int(Np/2**5)
@@ -300,7 +304,7 @@ def main2():
     Spec = []
 
     res = {}
-    
+    results = []
     for i,filename in enumerate(filelist):
         folder = os.path.dirname(filename)
         print(folder)
@@ -330,7 +334,8 @@ def main2():
 
         print(savefolder)
         title = "_".join(savefolder.split('/')[-4].split('_')[2:5])
-        frange,Thetaf,Cxz,axs,figs = process(filename,savefolder,title=title)
+        display = False
+        frange,Thetaf,Cxz,axs,figs = process(filename,savefolder,title=title)#,display=display)
 
 #        A = np.abs(Cxz)
 #        A = A/np.sqrt(np.sum(A**2))
@@ -344,33 +349,42 @@ def main2():
         indices = np.asarray(indices)[indsort]
         valeurs = np.asarray(valeurs)[indsort]
 
-        if len(indices)>0:
+        if display and len(indices)>0:
             axs[0].plot(frange[indices],Thetaf[indices],'bs')
             axs[1].plot(frange[indices],valeurs,'bs')        
 
                 #Max global
         #Cxz=np.mean(Rf,axis=0)
         ind = np.argmax(Cxz)
-        val = Cxz[ind]
+        Cmax = Cxz[ind]
         fmax = frange[ind]
-        axs[1].plot(fmax,val,'ks')
-        axs[0].plot(fmax,Thetaf[ind],'ks')
+        phi = Thetaf[ind]
+        d = {}
+        for key in ['fmax','Cmax','title','phi']:
+            d[key] = locals()[key]
+        results.append(d)
+        
+        if display:
+            axs[0].plot(fmax,phimax,'ks')
+            axs[1].plot(fmax,Cmax,'ks')
         
         #    figs.update(graphes.legende(r'$f$ (Hz)',r'$TF_x$ (u.a.)',title))
-        graphes.save_figs(figs,savedir=global_save,prefix=title+'_'+str(i),overwrite=True)    
+            graphes.save_figs(figs,savedir=global_save,prefix=title+'_'+str(i),overwrite=True)    
 
-        print(title)
+            print(title)
         #plt.show()
+#        print('resultats : ',res.keys())
 
 #    graphes.save_figs(figs,savedir=global_save,prefix=title+'_',overwrite=True)    
 #    plt.show()
 
     fig,ax = plt.subplots(nrows=1,ncols=1,figsize=(10,10))
-    for title in res.keys():
-        ax.loglog(res[title]['frange'],res[title]['TF_moy'],'-o')
+    for res in results:
+        ax.loglog(results['fmax'],results['phi'],'o')
+
     figs.update(graphes.legende('$f$ (Hz)','TF_moy_x (u.a.)',''))
     plt.show()
-    graphes.save_figs(figs,savedir=global_save,prefix=title+'_',overwrite=True)    
+    graphes.save_figs(figs,savedir=global_save,prefix='Summary_dephasage'+'_',overwrite=True)    
 
 def main():
     base = 'Banquise/Sebastien/Experiences/Test_frequency_h10mm_16_05_2023/white_polypropylene_10mm_d4cm_fps26p5Hz_Tchang120ms_v70/'
