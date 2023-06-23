@@ -12,6 +12,7 @@ import numpy as np
 
 import baptiste.display.display_lib as disp
 import baptiste.tools.tools as tools
+import baptiste.files.save as sv
 
 import scipy.fft as fft
 from scipy.signal import correlate
@@ -130,14 +131,16 @@ def main(params,data, method=1):
                 phi = lag / period * 2 * np.pi 
                 params['phi'][i,j-1] = phi
                 params['hist_weight'][i,j-1] = np.max(corr)
-        
+            
+            
         
     return params
 
-def histo(params, data, add_nom_fig = ''):
+def histo(params, data, add_nom_fig = '', full_display = False):
     params = main(params, data)
-     
-    params = disp.figurejolie(params = params, nom_fig = 'phase_shift_f_ttmorceaux_' + add_nom_fig)
+    
+    if full_display :
+        params = disp.figurejolie(params = params, nom_fig = 'phase_shift_f_ttmorceaux_' + add_nom_fig)
     phase_shift = params['phi']
     
     params['n_morc'] = np.shape(phase_shift)[0]
@@ -152,23 +155,27 @@ def histo(params, data, add_nom_fig = ''):
         phase_shift[phase_shift< -np.pi] += 2 * np.pi
         phase_shift[phase_shift> np.pi] += - 2 * np.pi
     
-    for u in range (0, params['n_morc']):
-        plt.plot(f, phase_shift[u,:], '+')
+    if full_display :
+        for u in range (0, params['n_morc']):
+            plt.plot(f, phase_shift[u,:], '+')
         
-    
-    params = disp.figurejolie(params, nom_fig = 'phase_shift_f_morceaux_'+ add_nom_fig)
-    params[str(params['num_fig'][-1])]['data'] = disp.joliplot( 'f','n_phase', f, n_phase ,color = 5, table = np.flip(np.rot90(phase_shift), 0))
+    if full_display :
+        params = disp.figurejolie(params, nom_fig = 'phase_shift_f_morceaux_'+ add_nom_fig)
+        params[str(params['num_fig'][-1])]['data'] = disp.joliplot( 'f','n_phase', f, n_phase ,color = 5, table = np.flip(np.rot90(phase_shift), 0))
     
     
     params = disp.figurejolie(params = params, nom_fig = 'histogram_'+ add_nom_fig)
     for k in range (0,params['n_f']) :
-        h = plt.hist(phase_shift[:,k], params['n_bins'], weights = params['hist_weight'][:,k], density = True)
+        if params['weight'] :
+            h = plt.hist(phase_shift[:,k], params['n_bins'], weights = params['hist_weight'][:,k], density = True)
+        else :
+            h = plt.hist(phase_shift[:,k], params['n_bins'])
         h = np.asarray(h)
         h[1] = (h[1][1:]+h[1][:-1]) / 2
         histogram[:,k] = h[0]
     
     
-    params = disp.figurejolie(params = params, nom_fig = 'phase_shift_histogrammé_'+ add_nom_fig)
+    params = disp.figurejolie(params = params, nom_fig = 'phase_shift_histogrammed_'+ add_nom_fig)
     boites = np.linspace(0,params['n_bins'],params['n_bins'])
     params[str(params['num_fig'][-1])]['data'] = disp.joliplot( 'f','n_phase', f, boites, table = np.flip(np.rot90(histogram), 0))
     plt.clim(0,np.quantile(histogram,0.9))
@@ -176,7 +183,7 @@ def histo(params, data, add_nom_fig = ''):
     return params, f, histogram
 
 
-def detect(params,f,histogram, add_nom_fig = ''):
+def detect(params,f,histogram, add_nom_fig = '', save = False):
     
     test_detect = np.flip(histogram, 0)
     for i in range (0, params['nb_blocks'] - 1) :
@@ -185,7 +192,7 @@ def detect(params,f,histogram, add_nom_fig = ''):
         else :
             test_detect = np.concatenate(( np.flip(histogram, 0), test_detect), axis = 0)
     
-    params = disp.figurejolie(params = params, nom_fig = 'phase_shift_histogrammé_fois4_'+ add_nom_fig)
+    params = disp.figurejolie(params = params, nom_fig = 'phase_shift_histogrammed_fois_'+ add_nom_fig)
     
     len_phase = np.linspace(-np.pi, 2 * np.pi * params['nb_blocks'] - np.pi, params['nb_blocks'] * params['n_bins'])
     plt.pcolormesh(f,len_phase, test_detect)
@@ -200,12 +207,17 @@ def detect(params,f,histogram, add_nom_fig = ''):
     params[str(params['num_fig'][-1])]['data'] = disp.joliplot( 'f','phase', f, phase, color = 2, exp = False)
     
     
+    
     params = disp.figurejolie(params = params, nom_fig = 'phase_en_fonction_de_f_'+ add_nom_fig)
     params[str(params['num_fig'][-1])]['data'] = disp.joliplot( 'f','phase', f, phase, color = 2, exp = False)
     
+    if params['select_data'] == False and params['cut_data'] == False and save :
+
+        sv.save_graph (params["savefolder"], nom_fig = 'phase_shift_histogrammed_fois_'+ add_nom_fig, params = params)
+    
     if params['select_data'] or params['cut_data'] :
         
-        params = disp.figurejolie(params = params, nom_fig = 'phase_shift_histogrammé_fois4_select_data_'+ add_nom_fig)
+        params = disp.figurejolie(params = params, nom_fig = 'phase_shift_histogrammed_fois_select_data_'+ add_nom_fig)
         plt.pcolormesh(f,len_phase, test_detect)
         plt.colorbar()
         plt.clim(0,np.quantile(test_detect, 0.9))
@@ -213,6 +225,9 @@ def detect(params,f,histogram, add_nom_fig = ''):
         f_new, phase_new = select_data(params, f, phase)
         
         params[str(params['num_fig'][-1])]['data'] = disp.joliplot( 'f','phase', f_new, phase_new, color = 2, exp = False)
+        
+        if save :
+            sv.save_graph (params["savefolder"], nom_fig = 'phase_shift_histogrammed_fois_select_data_'+ add_nom_fig, params = params)
         
         return f_new, phase_new
     
@@ -254,13 +269,53 @@ def select_data(params,f, phase) :
         f_new = f[f_min:f_max]
         phase_new = phase[f_min:f_max]
         
-   
-    
     else :
         f_new = f
         phase_new = phase
     
     return f_new, phase_new
+
+# def select_data(params,f, phase) :
+
+#     f_new = []
+#     phase_new = []
+    
+#     if params['select_data'] :
+#         for i in range (0, len(params['liste_f_garde'])):
+#             i_f1 = np.where(f == params['liste_f_garde'][i][0] )
+#             i_f2 = np.where(f == params['liste_f_garde'][i][1] )
+#             f_new.extend(f[i_f1:i_f2])
+#             phase_new.extend(phase[i_f1:i_f2])
+        
+#         for i in range (0, len(params['liste_f_2pi'])):
+#             i_f1 = np.where(f == params['liste_f_2pi'][i][0] )
+#             i_f2 = np.where(f == params['liste_f_2pi'][i][1] )
+#             f_new.extend(f[i_f1:i_f2])
+#             phase_new.extend(phase[i_f1:i_f2]+ 2 * np.pi)
+            
+#         for i in range (0, len(params['liste_f_moins2pi'])):
+#             i_f1 = np.where(f == params['liste_f_moins2pi'][i][0] )
+#             i_f2 = np.where(f == params['liste_f_moins2pi'][i][1] )
+#             f_new.extend(f[i_f1:i_f2])
+#             phase_new.extend(phase[i_f1:i_f2] - 2 * np.pi)
+#         f_new,phase_new = tools.sort_listes(f_new,phase_new, reverse=False)
+    
+   
+
+#     elif params['cut_data'] :
+        
+#         f_max = int(params['f_max'] * params['lm'] / params['facq'])
+#         f_min = int(params['f_min'] * params['lm'] / params['facq'])
+        
+#         f_new = f[f_min:f_max]
+#         phase_new = phase[f_min:f_max]
+   
+    
+#     else :
+#         f_new = f
+#         phase_new = phase
+    
+#     return f_new, phase_new
 
 def omega_k(params, f, phase):
     omega = f * 2 * np.pi
