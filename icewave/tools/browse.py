@@ -17,7 +17,13 @@ def find_path(base,disk='labshared2'):
     if 'Windows' in ostype:    
         if disk=='labshared2':
             serveurfolder = 'W:/'+base #fucking windows OS : beware of the mounting disk you used
-    
+        if disk=='labshared1':
+            serveurfolder = 'Y:/'+base #fucking windows OS : beware of the mounting disk you used
+        if disk=='storageshared':
+            serveurfolder = 'X:/'+base #fucking windows OS : beware of the mounting disk you used
+        if disk=='homes':
+            serveurfolder = 'Z:/'+base #fucking windows OS : beware of the mounting disk you used
+
     if 'Linux' in ostype:
         if 'adour' in osname:
             serveurfolder = '/media/turbots/DATA/thiou/'+disk+'/'+base
@@ -25,6 +31,9 @@ def find_path(base,disk='labshared2'):
             serveurfolder = '/run/user/1000/gvfs/smb-share:server=adour.local,share=data/thiou/'+disk+'/'+base
         elif 'thiou' in osname:
             serveurfolder = '/volume3/'+disk+'/'+base #praise UNIX system    		
+        elif 'oural' in osname:
+            serveurfolder = '/media/turbots/'+disk+'/'+base
+
         else:
             serveurfolder = '/media/turbots/DATA/thiou/'+disk+'/'+base #praise UNIX system
 			
@@ -56,3 +65,4 @@ def folders(date,folder='Banquise/Rimouski_2023/Data/Geophones/'):
     return base,folder,savefolder
     
     
+
