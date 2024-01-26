@@ -5,7 +5,7 @@ import time
 
 
 def ipbase():
-    return '192.168.112.'
+    return '192.168.1.'
 
 def basefolder():
     return 'Data_test/'
