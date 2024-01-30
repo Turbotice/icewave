@@ -16,6 +16,7 @@ import mplcursors
 from datetime import datetime
 import numpy as np
 
+print('coucou')
 
 path2data = '/Users/moreaul/Desktop/Geophones/Grenoble_20240118_dehors'
 acqu_numb = '0001'
