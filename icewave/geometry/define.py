@@ -1,12 +1,12 @@
 import numpy as np
 
-instruments = {'G':'geophones',\\
-               'T':'telephones',\\
-               'B':'buoys',\\
-               'D':'drone',\\
-               'C':'camera',\\
-               'S':'source',\\
-               'CTD':'Conductivity, temperature, Depth',\\
+instruments = {'G':'Geophones',\\
+               'T':'Telephones',\\
+               'B':'Buoys',\\
+               'D':'Drone',\\
+               'C':'Camera',\\
+               'S':'Source',\\
+               'CTD':'Conductivity, Temperature, Depth',\\
                'H':'Ice Thickness'}
                 
 
