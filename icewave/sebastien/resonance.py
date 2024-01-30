@@ -360,6 +360,7 @@ def main2():
         fmax = frange[ind]
         phi = Thetaf[ind]
         d = {}
+        if Cmax>
         for key in ['fmax','Cmax','title','phi']:
             d[key] = locals()[key]
         results.append(d)
