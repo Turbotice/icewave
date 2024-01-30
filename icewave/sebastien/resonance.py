@@ -19,6 +19,8 @@ global osname,ostype
 ostype = platform.platform().split('-')[0]
 osname = socket.gethostname()
 
+# HELLO !!!
+
 print(ostype,osname)
 
 def demod(y,f0,facq=26.5):
