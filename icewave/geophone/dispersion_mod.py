@@ -38,7 +38,7 @@ params = {}
 params['special_folder'] = ''
 params['facq'] = 1000
 params['lm'] = 7200
-params['fmax_analyse'] = 16
+params['fmax_analyse'] = 50
 
 
 params['L'] = 20
@@ -293,7 +293,7 @@ save = False
 type_fit = 'flexion+h+H26dm'
 if type_fit == 'flexion+h+H26dm':
     params = disp.figurejolie(params = params, nom_fig = type_fit)
-    popt,pcov = fit.fit(rdd.RDD_hfit_depth, k, omega, display = True, err = False, nb_param = 1, p0 = [0.4], bounds = [0,10], zero = True, xlabel = r'k (m$^{-1}$)', ylabel = r'$\omega$')
+    popt,pcov = fit.fit(rdd.RDD_hfit_depth, k, omega, display = True, err = False, nb_param = 1, p0 = [0.1], bounds = [0,10], zero = True, xlabel = r'k (m$^{-1}$)', ylabel = r'$\omega$')
     params[str(params['num_fig'][-1])]['h'] = popt
     params[str(params['num_fig'][-1])]['err_h'] = pcov
     params[str(params['num_fig'][-1])]['data'] = sv.data_to_dict(['k','omega'], [k,omega], data = [k,omega])
