@@ -19,7 +19,42 @@ def get_adresslist(phonelist):
         adresslist.append(get_adress(phone))
     return adresslist
 
+def get_connected():
+    idlist = connected()
+    d = {}
+    for id in idlist:
+        phone = identify(id)
+        if phone>=0:
+            d[phone]={}
+            d[phone]['id']=id
+            print(phone,id)
+    return d
 
+def connected():
+    c = subprocess.run(['adb','devices'],text=True,capture_output = True,shell=False)
+    s = c.stdout.split('\n')
+
+    idlist = []
+    for line in s[1:]:
+        if len(line)>0:
+            id = line.split('\t')[0]
+            idlist.append(id)
+    return idlist
+
+def identify(id):
+    path = '/home/turbots/Documents/Bicwin2024/git/icewave/icewave/pyphone_v2/adb_usb_liste.txt'
+    with open(path) as f:
+        while True:
+            line = f.readline()
+            if len(line)<2:
+                break
+            num,pid = line.split('\n')[0].split('\t')
+            #print(num,id)
+            if pid==id:
+                return int(num)
+    print('id unknown, add it manually to adb_usb_list')
+    return -1
+    
 def connect():
     #first test
     #c = subprocess.run(['ping',ip],text=True)
