@@ -17,10 +17,10 @@ labels = {  'G':'g>',\
             'CTD':'b>',\
             'H':'bv'}
 
-def show(table,dim=2,eps=1):
+def show(table,dim=2,eps=1,sx=6,sy=6):
     n = len(table)
 
-    fig,ax = plt.subplots(figsize=(6,6))
+    fig,ax = plt.subplots(figsize=(sx,sy))
 
     for i in range(1,n):
         tag = table[i][0]
@@ -29,7 +29,8 @@ def show(table,dim=2,eps=1):
         y = table[i][2]
 
         ax.plot(x,y,labels[label])
-        ax.annotate(tag,(x,y+eps))
+        tagd = tag.replace('_','')
+        ax.annotate(tagd,(x,y+eps))
 
     title = ''
     graphes.legende('$X$ (m)','$Y$ (m)',title)
