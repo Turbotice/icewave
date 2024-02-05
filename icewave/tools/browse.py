@@ -11,6 +11,12 @@ ostype = platform.platform().split('-')[0]
 osname = socket.gethostname()
 
 
+def create_folder(folder):
+    #also adjust automatically the rights on the created folder ?
+    if not os.path.exists(folder):
+        print('Warning, '+folder+' does not exist. Do you want to create it ?')
+        os.makedirs(folder)
+
 def find_path(base,disk='labshared2'):
     print('OS type : '+str(osname))
 
