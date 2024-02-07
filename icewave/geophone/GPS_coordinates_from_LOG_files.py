@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-path2logfile = '/Geophones/Toit_ISTerre_17012024'
+path2logfile = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/2024_BICWIN/0206/Geophones'
 
 
 def find_coordinates(log_content):
@@ -31,7 +31,7 @@ def find_coordinates(log_content):
     return GPS_coordinates_matrices
 
 def main():
-    log_files = [file for file in os.listdir(path2logfile) if file.startswith("DigiSolo") and file.endswith(".LOG")]
+    log_files = [file for file in os.listdir(path2logfile) if file.startswith("DigiSolo") and file.endswith(".txt")]
 
     # Sort the log files based on DigiSolo number
     log_files.sort(key=lambda x: int(re.search(r'\d+', x).group()))
@@ -95,7 +95,7 @@ def plot_average_coordinates(all_matrices, acquisition_number):
     plt.legend()
     plt.show()
 
-acquisition_number = 1
+acquisition_number = 2
 plot_average_coordinates(all_matrices, acquisition_number)
 
 
