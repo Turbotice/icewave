@@ -7,9 +7,11 @@ from pprint import pprint
 #save locally all data of the day, store it directly in the tree of folders
 #
 
+
+
 def download():
-    gar.download()
-    phone.download()
+    gar.download('')
+#    phone.download()
 
 if __name__=='__main__':
     download()

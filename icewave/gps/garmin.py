@@ -5,11 +5,11 @@ import os
 import shutil
 from pprint import pprint
 
+import fitdecode
 try:
     import garmin
-    import fitdecode
 except:
-    print('Please install garmin and fitdecode package')
+    print('Please install garmin package')
 
 import icewave.tools.datafolders as df
 
