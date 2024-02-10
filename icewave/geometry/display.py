@@ -33,7 +33,8 @@ def show(table,dim=2,eps=1,sx=6,sy=6):
         ax.annotate(tagd,(x,y+eps))
 
     title = ''
-    graphes.legende('$X$ (m)','$Y$ (m)',title)
+    figs = graphes.legende('$X$ (m)','$Y$ (m)',title)
     plt.axis('equal')
-    plt.show()
+#    plt.show()
     
+    return figs

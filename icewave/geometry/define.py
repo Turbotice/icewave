@@ -26,14 +26,14 @@ def gen_sources(D,L,n,n0=1,x0=0,y0=0,z0=0,axis=0):
         lines.append(gen_point(n0+1,x0,y0+(n-1)*L+D,z0,instrument='S'))
     return lines
 
-def gen_line(n,L,x0=0,y0=0,z0=0,instrument='G'):
+def gen_line(n,L,n0=1,dn=1,x0=0,y0=0,z0=0,instrument='G'):
     #create a line with n elements, spaced by L
     #by default, the line is oriented along x
     table = []
     header = ['#','X','Y','Z']
     table.append(header)
-    for i in range(n):
-        line = [instrument+'_'+ndigit(i),i*L+x0,y0,z0]
+    for i,num in enumerate(range(n0,n*dn+n0,dn)):
+        line = [instrument+'_'+ndigit(num),i*L+x0,y0,z0]
         table.append(line)
     return table
 
@@ -71,7 +71,7 @@ def exemple1():
     lines = gen_sources(D,L,n)
     table = add_lines(table,lines)
     return table
-    
+
 def exemple2():
     n=4
     ni = n-1
@@ -84,6 +84,30 @@ def exemple2():
     table = add_lines(table,gen_sources(D,L,n,n0=5,axis=1))
     table = add_lines(table,gen_sources(D,L,n,n0=7,axis=1,x0=ni*L))
     return table
+
+def sag24_0206_Geophone1():
+    n=16
+    L=3
+    D = 1
+    table = gen_line(n,L,n0=1,instrument='G')
+    table.append(gen_point(1,-1,0,0,instrument='S'))
+    table.append(gen_point(2,15,0,0,instrument='S'))
+    table.append(gen_point(3,33,0,0,instrument='S'))
+    table.append(gen_point(4,46,0,0,instrument='S'))
+    return table
+
+def sag24_0206_Geophone2():
+    n=8
+    L=6
+    D = 1
+    table = gen_line(n,L,n0=1,dn=2,instrument='G')
+    table = add_lines(table,gen_line(n,L,n0=2,dn=2,x0=3,y0=-5.2,instrument='G')[1:])
+
+#    table.append(gen_point(1,-1,0,0,instrument='S'))
+#    table.append(gen_point(2,15,0,0,instrument='S'))
+#    table.append(gen_point(3,33,0,0,instrument='S'))
+#    table.append(gen_point(4,46,0,0,instrument='S'))
+    return table    
 
 
 if __name__ == '__main__':

@@ -159,21 +159,18 @@ class PhyphoxWindow(SecondaryWindow):
 
 
     def act_phyphox_start(self):
-        self.act_phyphox_check(self)
+        self.act_phyphox_check()
 
         self.pt('starting phyphox on '+str(self.phone_toconnect))
         for phone in self.phone_toconnect:
             connect.launch_phyphox(phone)            
-        self.act_phyphox_check(self)
+        self.act_phyphox_check()
         
-    def act_phyphox_clear(self):
-        adrlist,self.phonelist = connect.connect()   
-        self.pt('clear phyphox',keep=False)
+
     
     def act_phyphox_check(self):
         adrlist,self.phonelist = connect.connect()   
         self.pt("Checking Phyphox phone connexions, please wait ...",keep=False)
-
         self.phyphox_check()       
 #        t1 = Process(target=self.phyphox_check)
 #        t1.start()
@@ -205,8 +202,9 @@ class PhyphoxWindow(SecondaryWindow):
             if not phone in self.phoneboxes.keys():
                 self.add_box(phone)  
         self.show()
-        
-    def act_phyphox_run(self):
+
+    def phyphox_phones(self):
+        adrlist,self.phonelist = connect.connect()
         phone_to_run=[]
         for i,phone in enumerate(self.phonelist):
             checked = (self.phoneboxes[phone].checkState() == Qt.CheckState.Checked)
@@ -214,13 +212,15 @@ class PhyphoxWindow(SecondaryWindow):
                 print(phone)
                 phone_to_run.append(phone)
         #self.pt(phone_to_run)
+        return phone_to_run
         
-        base = connect.ipbase()
-        iplist = [base + str(100+phone) for phone in phone_to_run]
-    
+    def act_phyphox_run(self):
+        phone_to_run = self.phyphox_phones()
+        iplist = connect.get_adresslist(phone_to_run)    
         self.pt('Run Phyphox on '+str(phone_to_run))
+
         tstamp = int(time.time())
-        keywords = {'T': self.param_Tacq,'folder':'PhyPhox_'+str(tstamp)}
+        keywords = {'T': self.param_Tacq,'folder':'Px_'+str(tstamp)}
         
         t1 = Process(target=run_phyphox.run_serie, args=(iplist,),kwargs=keywords)
         t1.start()
@@ -229,10 +229,24 @@ class PhyphoxWindow(SecondaryWindow):
             #print(phone,checked)
 
     def act_phyphox_stop(self):
-        adrlist,self.phonelist = connect.connect()
-        self.pt('save phyphox stop')
+        self.pt('Stop phyphox')
+        phone_to_run = self.phyphox_phones()
+        iplist = connect.get_adresslist(phone_to_run)    
+        run_phyphox.run_fun(run_phyphox.stop,iplist)
     
+    def act_phyphox_clear(self):
+        self.pt('Clear phyphox')
+        phone_to_run = self.phyphox_phones()
+        iplist = connect.get_adresslist(phone_to_run)    
+        run_phyphox.run_fun(run_phyphox.clear,iplist)
     
     def act_phyphox_save(self):
-        adrlist,self.phonelist = connect.connect()   
         self.pt('save phyphox data')
+        adrlist,self.phonelist = connect.connect()   
+        iplist = connect.get_adresslist(self.phonelist)
+
+
+        tstamp = int(time.time())
+        #keywords = {'T': self.param_Tacq,'folder':'PhyPhox_'+str(tstamp)}
+        folder = 'PhyPhox_'+str(tstamp)
+        run_phyphox.run_save(run_phyphox.save,iplist,folder)#,kwargs=keywords)
