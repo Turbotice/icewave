@@ -59,16 +59,21 @@ def gen_line(n,L,n0=1,dn=1,x0=0,y0=0,z0=0,instrument='G',axis=0,direction=1):
         table.append(line)
     return table
 
-def gen_rectangle(nx,ny,Lx,Ly,x0=0,y0=0,z0=0,instrument='G'):
+def gen_arccircle(n,R,dtheta,xc,yc,x0,y0):
+    theta = np.arange(
+
+    X,Y = Smath.pol2cart(R,theta
+
+def gen_rectangle(nx,ny,Lx,Ly,x0=0,y0=0,z0=0,n0=1,directionx=1,directiony=1,instrument='G'):
     table = []
     header = ['#','X','Y','Z']
     table.append(header)
 
-    num=0
+    num = n0
     for j in range(ny):
         for i in range(nx):
+            line = [instrument+'_'+ndigit(num),x0+Lx*i*directionx,y0+Ly*j*directiony,z0]
             num=num+1
-            line = [instrument+'_'+ndigit(num),x0+Lx*i,y0+Ly*j,z0]
             table.append(line)
     return table   
 
