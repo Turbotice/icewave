@@ -4,6 +4,7 @@ from pprint import pprint
 import icewave.geometry.display as display
 from icewave.geometry.define import *
 
+import stephane.display.graphes as graphes
 
 def exemple1():
     n=16
@@ -51,21 +52,90 @@ def sag24_0206_Geophone2():
 #    table.append(gen_point(4,46,0,0,instrument='S'))
     return table    
     
-    
-def sag24_0210_G_Line1():
+
+def sag24_0210_Geophone_line1():
+    n=16
+    L=3
+    D = 1
+    table = gen_line(n,L,n0=1,instrument='G')
+    table = add_lines(table,gen_S123(101,x0=0,y0=0,z0=0,axis=0))
+    print(table)
+    return table
+
+def sag24_0210_Geophone_line2():
     n=16
     L=3
     D=1
-    table = gen_line(n,L,n0=1,instrument='G')
-
-
-    table.append(gen_point(1,-1,0,0,instrument='S'))
-    table.append(gen_point(2,15,0,0,instrument='S'))
-    table.append(gen_point(3,33,0,0,instrument='S'))
-    table.append(gen_point(4,46,0,0,instrument='S'))
+    table = gen_line(n,L,n0=1,instrument='G',axis=1,direction=-1)
+    table = add_lines(table,gen_S123(201,x0=0,y0=0,z0=0,axis=1,direction=-1))
+    print(table)
     return table
 
+def sag24_0210_Geophone_line3():
+    n=16
+    L=3
+    D = 1
+    table = gen_line(n,L,n0=1,y0=-45,instrument='G')
+    table = add_lines(table,gen_S123(301,x0=0,y0=-45,z0=0,axis=0))
+    print(table)
+    return table
 
+def sag24_0210_Telephones():
+    table = []
+    header = ['#','X','Y','Z']
+    table.append(header)
+    
+    phonelist = [1,6,7,13,16,17,18]
+    for phone in phonelist:
+        table.append(gen_point(phone,0,0,0,instrument='T'))
+    table.append(gen_point(12,0,-22.5,0,instrument='T'))
+    table.append(gen_point(4,22.5,-22.5,0,instrument='T'))
+    table.append(gen_point(8,0,-45,0,instrument='T'))
+    table.append(gen_point(9,22.5,-45,0,instrument='T'))
+    table.append(gen_point(11,45,-45,0,instrument='T'))
+    return table    
+
+def sag24_0210_Buoys():
+    table = []
+    header = ['#','X','Y','Z']
+    table.append(header)
+
+    table.append(gen_point(2,0,-22.5,0,instrument='B'))
+    table.append(gen_point(5,22.5,-22.5,0,instrument='B'))
+    return table
+
+def sag24_0210():
+    table1 = sag24_0210_Geophone_line1()
+    figs={}
+    #ax,figs = display.show(table1,sx=10,sy=2,display=False)
+ #   figs.update(fig)
+    
+    table2 = sag24_0210_Geophone_line2()
+    #ax,figs = display.show(table2,sx=2,sy=10,display=False)
+  #  figs.update(fig)
+    
+    table3 = sag24_0210_Geophone_line3()
+    #ax,figs = display.show(table3,sx=10,sy=2,display=False)
+   # figs.update(fig)
+
+    table4 = sag24_0210_Telephones()
+
+    table5 = sag24_0210_Buoys()
+    
+    tables = table1
+#    tables = add_lines(tables,table1,n0=1)
+    tables = add_lines(tables,table2,n0=1)
+    tables = add_lines(tables,table3,n0=1)
+    tables = add_lines(tables,table4,n0=1)
+    tables = add_lines(tables,table5,n0=1)
+    
+    ax,figs = display.show(tables,sx=10,sy=10,display=False)
+    #figs.update(fig)
+
+    return figs,tables
+    
 if __name__ == '__main__':
-    table = exemple2()
-    display.show(table)
+    sag24_0210()    
+
+
+    
