@@ -1,0 +1,15 @@
+Ligne	16 geophones entre plot_01 et plot_02
+G1 en plot_01
+Sources ZENx3, parfois x4, D=3, L=5,8,11
+
+Ligne	16 geophones entre plot_01 et plot_03
+G1 en plot_01
+Sources ZENx3, parfois x4, D=3, L=5,8,11
+
+Ligne	16 geophones entre plot_03 et plot_04
+Sources ZENx3, parfois x4, D=3, L=5,8,11
+G1 en plot_03
+
+Tomo	16 geophones entre plot_03 et plot_04
+Sources ZENx3, parfois x4, D=3, L=5,8,11
+G1 en plot_03
