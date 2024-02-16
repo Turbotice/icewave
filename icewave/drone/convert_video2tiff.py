@@ -15,11 +15,11 @@ import os
 #%%
 
 def main():
-    datafolder = 'G:/Rimouski_2024/Data/2024/0211/Fulmar/ICE106_test_non_instruments/'
+    datafolder = '/media/turbots/BicWin2024/Share/Data/0211/Drones/bernache/stereo_001/relevant/'
 
     # datafolder = browse.find_path(datafolder)
     print(datafolder)
-    file_mp4 = glob.glob(datafolder+'*26UTC.MP4')
+    file_mp4 = glob.glob(datafolder+'*.MP4')
     
     filelist = file_mp4
     print(len(filelist))
@@ -67,5 +67,5 @@ def later(filelist,datafolder):
 
 if __name__=='__main__':
     filelist = main()
-    datafolder = 'G:/Rimouski_2024/Data/2024/0211/Fulmar/ICE106_test_non_instruments'
+    datafolder = '/media/turbots/BicWin2024/Share/Data/0211/Drones/bernache/stereo_001/relevant/'
     vid = later(filelist,datafolder)
