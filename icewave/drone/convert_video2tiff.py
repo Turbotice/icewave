@@ -15,11 +15,11 @@ import os
 #%%
 
 def main():
-    datafolder = '/media/turbots/DATA/thiou/labshared2/SagWin2024/Data/Drone/2023/0927/0001/'
-    
+    datafolder = 'G:/Rimouski_2024/Data/2024/0211/Fulmar/ICE106_test_non_instruments/'
+
     # datafolder = browse.find_path(datafolder)
     print(datafolder)
-    file_mp4 = glob.glob(datafolder+'*.MP4')
+    file_mp4 = glob.glob(datafolder+'*26UTC.MP4')
     
     filelist = file_mp4
     print(len(filelist))
@@ -33,7 +33,9 @@ def later(filelist,datafolder):
     filename = filelist[0]
     print(filename)
     vid = imageio.get_reader(filename,  'ffmpeg')
+    
     nb_frames = vid.count_frames() # number of frames
+    #nb_frames = 8500
     nums = [p for p in range(0,nb_frames)]
     #directory = os.path.dirname(filename)
     directory = datafolder
@@ -56,8 +58,7 @@ def later(filelist,datafolder):
             string_index = '0' + string_index
         string_index = string_index + str(num)
         fname = savefolder + '/im_'+ string_index +'.tiff'
-        cv2.imwrite(fname,image)
-        
+        cv2.imwrite(fname, cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
         #     fig = pylab.figure()
         #     fig.suptitle('image #{}'.format(num), fontsize=20)
         #     pylab.imshow(image)
@@ -66,5 +67,5 @@ def later(filelist,datafolder):
 
 if __name__=='__main__':
     filelist = main()
-    datafolder = '/media/turbots/DATA/thiou/labshared2/SagWin2024/Data/Drone/2023/0927/0001/'
+    datafolder = 'G:/Rimouski_2024/Data/2024/0211/Fulmar/ICE106_test_non_instruments'
     vid = later(filelist,datafolder)
