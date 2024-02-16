@@ -1,4 +1,4 @@
-function [dist,freq] = get_wave_vectors(TF,f,fx,selected_freq,x_bound,padding_bool,add_pow2,black_mask,caxis_amp,fig_folder)
+function [dist,freq] = get_wave_vectors(TF,f,fx,selected_freq,x_bound,padding_bool,add_pow2,black_mask,caxis_amp,fig_folder,fig_name)
 % This function computes the wave vector associated to a given frequency 
 % It also stores a movie of the detected wave vectors 
 
@@ -36,7 +36,7 @@ xmax = x_bound(2);
 dist = zeros(1,start_freq_idx-end_freq_idx);
 
 % parameters for saving 
-save_image = 1;
+save_image = 0;
 save_video = 1;
 
 % Folders where we save images 
@@ -48,7 +48,7 @@ end
 % STARTS
 
 if save_video
-    video_filename = [fig_folder 'Spatial_Fourier_space_video.avi']; % folder where the video is saved
+    video_filename = [fig_folder fig_name '.avi']; % folder where the video is saved
     vid = VideoWriter(video_filename);
     vid.FrameRate = 3;
     open(vid)

@@ -4,19 +4,19 @@ close all;
 
 %% Loading structure obtained after PIV processing and post-processing
 
-base = '/media/turbots/DATA/thiou/labshared1/Banquise/Sebastien/Traitement_drone_20230310/matData/test/';
+base = '//192.168.1.70/Share/Data/0211/Drones/Fulmar/matData/';
 %base = 'E:/PIVlab_drone/matdata/DJI_0308_Dt4_W64_full/';
 
-filename = 'PIV_processed_Dt4_b1_W64_full_test_images_total_processed.mat';
+filename = 'PIV_processed_i04500_Dt4_b1_W32_full_total_processed.mat';
 matname = [base filename];
 %%
 disp('Loading Data..');
 load(matname);
 disp('Data loaded');
 %% Creates a folder where to save the generated plots
-base_fig = '/media/turbots/DATA/thiou/labshared2/Banquise/Rimouski_2023/Traitements_donnees/PIV_Sebastien/';
+base_fig = '//192.168.1.70/Share/Data/0211/Drones/Fulmar/matData/';
 %base_fig = 'E:/PIVlab_drone/';
-fig_folder = [base_fig 'DJI_0308_figures_Dt4_W64_full/'];
+fig_folder = [base_fig 'SWO_FUL_20240211T203233UTC/Plots/'];
 if ~exist(fig_folder)
     mkdir(fig_folder)
 end
@@ -24,12 +24,12 @@ end
 %% Scaling 
 fe = 29.97; % Frame rate in Hz
 nb_pass = m.s_param{6,2};
-W = 2^(9-nb_pass); % size of the window for DIC algorithm
+W = 36; % size of the window for DIC algorithm
 font_size = 13;
 
 % ##########################################
 L_x = 3840; % size of the image in pixel, along x-axis
-h_drone = 78.03; % height of the drone in meter
+h_drone = 140; % height of the drone in meter
 theta_x = 32.75; % semi AFOV of the drone, along x-axis, in °
 
 fx_pix = L_x/(2*h_drone*tan(theta_x*pi/180)); % scale in pixels / meter
@@ -75,7 +75,7 @@ m.Vy = supress_quadratic_noise(m.Vy,x,y);
 
 %% Get Velocity scaled
 disp('Get scaled velocity')
-idx_frame = 1;
+idx_frame = 20;
 caxis_amp = 1.0; % Amplitude of the colorbar scale (in meter / second)
 [Vx_s,Vy_s] = get_scaled_velocity_field(m.Vx,m.Vy,fx,scale_V,idx_frame,caxis_amp,fig_folder);
 
@@ -107,25 +107,28 @@ saveas(fig_spectrum,file,'fig')
 
 %% Get demodulated field
 disp('Getting demodulated fields')
-selected_freq = [0.1 0.8];
-x_bound = [1 size(m.Vx(10:end,:,:),1)];
+selected_freq = [0.05 0.7];
+x_bound = [1 50*fx];
 caxis_amp = -1; % amplitude of the colorbar in meter/second
+fig_name = 'Demodulated_field_continuous';
 plot_demodulated_field(FFT_t,f,fx,selected_freq,x_bound,caxis_amp,fig_folder)
 
 %% Get wave vectors 
 disp('Getting wave vectors')
-selected_freq = [0.1 0.8]; % selected frequencies between which we proceed to the analysis
-x_bound = [1 size(m.Vx(10:end,:,:),1)]; % selected boundaries at which we perform 2D FFT
+selected_freq = [0.05 0.7]; % selected frequencies between which we proceed to the analysis
+x_bound = [1 50*fx]; % selected boundaries at which we perform 2D FFT
 padding_bool = 1;
 add_pow2 = 2; % additional power of 2 for padding 
 black_mask = 10;
 caxis_amp = -1;
+fig_name = 'Spatial_Fourier_space_continuous_video';
 
-[k,freq] = get_wave_vectors(FFT_t,f,m.fx,selected_freq,x_bound,padding_bool,add_pow2,black_mask,caxis_amp,fig_folder);
+[k,freq] = get_wave_vectors(FFT_t,f,m.fx,selected_freq,x_bound,padding_bool,add_pow2,black_mask,caxis_amp,fig_folder,fig_name);
 
 % save data to plot dispersion relation
-dispersion_file = [base_fig 'dispersion_relation_data_fmin' num2str(selected_freq(1)) '_fmax' num2str(selected_freq(2)) '_add_pow' num2str(add_pow2)];
-dispersion_file = replace(dispersion_file,'.','p');
+filename = ['dispersion_relation_data_continuous_fmin' num2str(selected_freq(1)) '_fmax' num2str(selected_freq(2)) '_add_pow' num2str(add_pow2)];
+filename = replace(filename,'.','p');
+dispersion_file = [base_fig filename];
 save(dispersion_file,'k','freq','selected_freq','x_bound','add_pow2','black_mask')
 
 %% Get attenuation coefficient 

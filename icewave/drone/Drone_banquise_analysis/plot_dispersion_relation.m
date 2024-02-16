@@ -3,8 +3,8 @@ clear all
 close all
 
 %% Load data
-base = 'W:/Banquise/Rimouski_2023/Traitements_donnees/PIV_Sebastien/DJI_0308_figures_Dt4_W64_full/';
-filename = '_dispersion_relation_data_fmin0p1_fmax0p8_add_pow2.mat';
+base = '//192.168.1.70/Share/Data/0211/Drones/Fulmar/matData/';
+filename = 'dispersion_relation_data_continuous_fmin0p05_fmax0p7_add_pow2.mat';
 
 fullname = [base filename];
 
@@ -32,9 +32,9 @@ ylabel('$\omega$ $(s^{-1})$','Interpreter','latex');
 %% Computing filtered datas
 % masking some datas
 %mask = (wave_vector > 0.12) & (omega < 2.78);
-opposite_mask = (omega > 3.0) & (wave_vector < 1.0);
+opposite_mask = (omega < 0.85);
 mask = ~opposite_mask;
-fitted_omega = new_omega(mask);
+fitted_omega = omega(mask);
 fitted_k = wave_vector(mask);
 
 figure,
@@ -43,7 +43,7 @@ grid on
 xlabel('$k$ $(m^{-1})$','Interpreter','latex');
 ylabel('$\omega$ $(s^{-1})$','Interpreter','latex');
 %%
-opposite2 = (fitted_omega > 0.9) & (fitted_k < 0.2) ;
+opposite2 = (fitted_omega > 4.0) | (fitted_k < 0.01) ;
 mask2 = ~opposite2;
 %mask2 = (fitted_omega > 0.59) ;
 
@@ -77,7 +77,7 @@ ylabel('$\omega$ $(s^{-1})$','Interpreter','latex');
 save_boolean = 1;
 
 if save_boolean
-    save_file_name = [fig_folder 'Disp_relation_plot_ice_2024_02_01_addpad2.mat'];
+    save_file_name = [fig_folder 'Disp_relation_plot_continuous_addpad2.mat'];
     clear save
     disp('Loading plot data');
     save(save_file_name,'fitted_omega','fitted_k','x_bound','selected_freq','black_mask'); 
@@ -85,8 +85,8 @@ if save_boolean
 end
 %% Final Plot !
 
-data_plot = [fig_folder 'Disp_relation_plot_ice_2024_02_01_addpad2.mat'];
-load_bool = 1;
+data_plot = [fig_folder 'Disp_relation_continuous_addpad2.mat'];
+load_bool = 0;
 if load_bool
     load(data_plot)
     disp('Data to plot loaded');
@@ -101,8 +101,8 @@ D = 3.2*10^7; % Flexion modulus
 rho = 1000; % water density
 
 % minimal values of the plot on x and y axis
-xlim_min = 0.1;
-xlim_max = 8;
+xlim_min = 0.05;
+xlim_max = 2;
 ylim_min = 0.5;
 ylim_max = 10;
 

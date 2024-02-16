@@ -1,4 +1,4 @@
-function plot_demodulated_field(TF,f,fx,selected_freq,x_bound,caxis_amp,fig_folder)
+function plot_demodulated_field(TF,f,fx,selected_freq,x_bound,caxis_amp,fig_folder,fig_name)
 % This function plots the real demodulated field of a velocity / height
 % field. It also creates a video of the successive demodulated field
 
@@ -41,7 +41,7 @@ max_selected_freq = selected_freq(2); % maximal selected frequency on FFT spectr
 fig_FFT_map = figure;
 fig_FFT_map.Color = [1, 1, 1,];
 if save_video
-    video_filename = [fig_folder 'Reconstruction_FFT_temporal.avi']; % folder where the video is saved
+    video_filename = [fig_folder fig_name '.avi']; % folder where the video is saved
     vid = VideoWriter(video_filename);
     vid.FrameRate = 3;
     open(vid)
@@ -53,7 +53,8 @@ for i=1:numel(relevant_indices)
     disp(idx)
     R = real(TF(imin:imax,:,idx)); % get real intensity map of FFT_temporal at a given frequency
 
-    imagesc(x/fx,y/fx,R')
+    pcolor(x/fx,y/fx,R')
+    shading interp
     xlabel('$x$ (m)','Interpreter','latex');
     ylabel('$y$ (m)','Interpreter','latex');
     shading interp
