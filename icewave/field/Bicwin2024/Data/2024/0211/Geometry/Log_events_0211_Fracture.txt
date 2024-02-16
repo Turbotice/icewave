@@ -1,0 +1,34 @@
+Ligne	16 geophones entre plot_01 et plot_03
+G1 en plot_01
+Sources ZENx3, parfois x4, D=3, L=5,8,11
+
+Ligne	16 geophones entre plot_01 et plot_02
+G1 en plot_01
+Sources ZENx3, parfois x4, D=3, L=5,8,11
+
+Ligne	16 geophones entre plot_02 et plot_04
+Sources ZENx3, parfois x4, D=3, L=5,8,11
+G1 en plot_03
+
+Déploiements bouées et téléphones.
+
+Tomo	12 geophones dans le carré plot_ 01, 02, 03, 04
+G1 en plot_01
+G4 en plot_03
+G5 en T_11
+G8 en B_03
+G9 en plot_02
+G12 en plot_04
+Sources = arc de cercle R = 80+-0.5m
+Bouées et téléphones allumées pendant la tomo
+Centre du cercle : caisse wifi
+durée : ~1h30
+
+Déploiement T quinconce 
+On déplace la bouée 01 par sécurité (point GPS 147 nouvelle position)
+Déploiement bouée 7
+Manque un point GPS pour Quin_13, aligné avec Quin_11 et Quin_12
+Le Quin_204
+Durée 1h45
+
+Passage navire

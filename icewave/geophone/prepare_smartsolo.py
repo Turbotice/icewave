@@ -9,7 +9,7 @@ import os
 import shutil
 
 
-path2data = '/Geophones/Toit_ISTerre_17012024'
+path2data = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/2024_BICWIN/0206/Geophones'
 geophones_table_path = '/Geophones/Deployment/geophones_table'
 
 
