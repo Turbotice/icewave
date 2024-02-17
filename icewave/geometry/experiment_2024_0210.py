@@ -2,6 +2,7 @@ import numpy as np
 from pprint import pprint
 
 import icewave.geometry.display as display
+import icewave.geometry.save as save
 from icewave.geometry.define import *
 
 import stephane.display.graphes as graphes
@@ -144,7 +145,9 @@ def sag24_0210():
     return figs,tables
     
 if __name__ == '__main__':
-    sag24_0210()    
+    figs,tables = sag24_0210()
 
+    filename= 
+    save.save(table,filename)
 
     

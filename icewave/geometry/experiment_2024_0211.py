@@ -19,8 +19,8 @@ def Geophones_line2():
     n=16
     L=3
     D=1
-    table = gen_line(n,L,n0=201,instrument='G',axis=1,direction=-1)
-    table = add_lines(table,gen_S123(201,x0=0,y0=0,z0=0,axis=1,direction=-1))
+#    table = gen_line(n,L,n0=201,instrument='G',axis=1,direction=-1)
+#    table = add_lines(table,gen_S123(201,x0=0,y0=0,z0=0,axis=1,direction=-1))
     print(table)
     return table
 
@@ -42,7 +42,9 @@ def Geophones_Tomo1():
 def Geophones_Quinconce1():
     n=6
     L=30
-    table = gen_line(n,L,n0=501,y0=-45,instrument='G')
+    table = gen_line(6,L,n0=501,x0=110,y0=-100,instrument='G')
+    table = add_lines(gen_line(7,L,n0=507,x0=110+26,y0=-100,instrument='G')
+
 #    table = add_lines(table,gen_S123(301,x0=0,y0=-45,z0=0,axis=0))
     return table
 
