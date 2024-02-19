@@ -107,13 +107,13 @@ def get_timeline_row(data,idx,ref,objet,comments,facq):
     date = data['CUSTOM.date [local]'][idx[0]]
     date = convert_date(date) # convert date in stuitable format
     
-    UTC_t = np.array(['a','a'])
+    UTC_t = []
     for i in range(len(idx)):
         t = data['CUSTOM.updateTime [local]'][idx[i]]
         t = convert_time(t) # Convert time in suitable format
     
         # Convert date and time in UTC format
-        UTC_t[i] = convert_UTC(date,t)
+        UTC_t.append(convert_UTC(date,t))
     
     # Get other variables
     Z = float(data['OSD.height [ft]'][idx[0]])*0.308
@@ -131,17 +131,21 @@ def get_timeline_row(data,idx,ref,objet,comments,facq):
 #%%%%% MAIN %%%%%
 #########################################
 
-path = 'G:/Rimouski_2024/Data/2024/0211/Drones/bernache/flightrecords/'
-
-filename = glob.glob(path + '*[15-26-43].csv')
+path = '//192.168.1.70/Share/Data/0211/Drones/mesange/'
+folder = path + 'flightrecords/'
+filename = folder + 'DJIFlightRecord_2024-02-11_[21-28-11].csv'
 
 print(filename)
-data = pd.read_csv(filename[0],header = 1, low_memory = False)
+test = os.path.isfile(filename)
+print(test)
+
+#%%
+data = pd.read_csv(filename,header = 1, low_memory = False)
 
 # detect beginning of the movie
 mask = np.where(data['CAMERA.isVideo'] == 1)[0]
 idx_start = np.min(mask)
-
+#%%
 # detect end of the movie 
 
 idx_end = idx_start
@@ -150,13 +154,16 @@ cam_bool = data['CAMERA.isVideo'][idx_end]
 while cam_bool :
     idx_end += 1
     cam_bool = data['CAMERA.isVideo'][idx_end]
-    
+
+#%%
+idx_start = 950
+idx_end = 5801
 indices = np.array([idx_start,idx_end])
 
 # Collect data associated to the movie 
-ref = 'D001'
-objet = 'Stereo 001'
-comments = ''
+ref = 'D002'
+objet = 'Stereo_001'
+comments = 'FR_[21-28-11]'
 facq = 30
 line_csv = get_timeline_row(data,indices,ref,objet,comments,facq)
 
@@ -165,7 +172,7 @@ header_0 = ['Instrument','','Temps','','Geometrie','','','Position','','','Texte
 header_1 = ['Index','Objet','T_0','T_F','X','Y','Z','Latitude','Longitude','Elevation','Commentaire','Facq','Theta']
 
 # Create the csv file and fill it 
-csvname = 'Timeline_Drone_stereo001_bernache.csv'
+csvname = 'Timeline_Drone_mesange_stereo001.csv'
 fullname = path + csvname
 
 with open(fullname, 'w', newline="") as file:
