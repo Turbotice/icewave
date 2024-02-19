@@ -11,7 +11,7 @@ def save(table,filename):
     with open(filename,'w') as f:
         for line in table:
             line_s = map(str,line)
-            print(line_s)
+            #print(line_s)
             s = '\t'.join(line_s)
             s = s+'\n'
             f.write(s)
