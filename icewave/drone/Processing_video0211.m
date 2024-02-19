@@ -207,11 +207,8 @@ plot(x_line,y_line,'-r')
 
 %% Interpolate pixels that are closest to this line
 
-y1 = y(y_line>y_scaled(end));
-b = abs(y1 - y_line);
-b(:,2) = 1;
-
-
+% y1 = y(y_line>y_scaled(end));
+y1 = round(y_line);
 %% Spatial FFT on continuous domain 
 
 
