@@ -84,7 +84,7 @@ end
 %image1=imread(fullfile(directory, filename1)); % read images
 %image2=imread(fullfile(directory, filename2));
 
-nr_of_cores = 40;
+nr_of_cores = 20;
 
 [x0, y0, u0, v0, typevector,correlation_map] = ...
 			piv_analysis(directory, filename1, filename2,p,s,nr_of_cores,false);
@@ -93,7 +93,7 @@ if N==0
     N = amount;
 end
 
-Nmax = floor((N-Dt-1)/b+1);
+Nmax = floor((N-Dt-1-i0)/b+1);
 
 U = zeros([Nmax size(u0)]);
 V = zeros([Nmax size(v0)]);
@@ -120,7 +120,7 @@ parfor (i=1:Nmax,nr_of_cores)
     U(i,:,:) = u0;
     V(i,:,:) = v0;
     
-    disp([int2str(i/Nmax*100) ' %']);
+    disp([int2str((i-i0)/Nmax*100) ' %']);
     
     % Graphical output (disable to improve speed)
     %%{

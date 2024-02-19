@@ -52,17 +52,41 @@
 % base = 'W:/Banquise/Rimouski_2023/Data/drone/';
 
 clear all;
-% main directory 
-base = '/media/turbots/DATA/thiou/labshared1/Banquise/Sebastien/Traitement_drone_20230310/matData/';
+date = '20240215';
+base = ['/media/turbots/BicWin2024/Share/Data/' date(5:end) '/Drones/mesange/'];
+
 % base = 'E:/PIVlab_drone/matdata/raw_datas/';
-folder = [base 'raw_datas_DJI_0308/'];% folder of raw datas
-filename = 'PIV_processed_Dt4_b1_W64_full_test_images.mat';
-fullname = [folder filename];% filename of raw datas
-fx = 1; % spacial sampling frequency (leave it to 1)
-ft = 1; % temporal sampling frequency (leave it to 1)
+folder = [base 'matData/waves_003/'];% folder of raw datas
+filename = 'PIV_processed_i01_Dt2_b1_W32_full.mat';
+fullname = [folder filename];%[folder filename];% filename of raw datas
+
 a = 1; % number of boxes to crop on the side
-% w = 32; % size of the last window used during PIV process
-N = 0;
+w = 32; % size of the last window used during PIV process
+Dt = 4; % step between two frames that were compared during the PIV algorithm 
+N = 0; % total number of frames processed
+i0 = 0; % first index of the frame processed
+b = 1; % step between frame A and A' at which velocity is computed
+
+%% Scaling 
+facq_t = 29.97; % Frame rate in Hz
+ft = 1/facq_t ; % factor scaling for time in sec / frame
+
+% ##########################################
+L_x = 3840; % size of the image in pixel, along larger axis (x-axis)
+h_drone = 140; % height of the drone in meter
+theta_x = 32.75; % semi AFOV of the drone, along x-axis, in °
+
+facq_pix = L_x/(2*h_drone*tan(theta_x*pi/180)); % scale in pixels / meter
+facq_x = fx_pix*2/w; % scale in box / meter
+fx = 1/facq_x; % factor scaling in meter / box
+% ##########################################
+
+scale_V = (facq_t/Dt) / facq_x; % scale of the velocity in m/s
+
+% store scales in structure m
+% m.scale_V = scale_V;
+% m.ft = fe;
+% m.fx = fx;
 
 % directory where we can save the post-processed datas
 % save_post_directory = [base 'post_processed/Post_processed_11_02_2023/'];
@@ -70,15 +94,14 @@ N = 0;
 %     mkdir(save_post_directory)
 % end
 
-% load raw_datas
+%% load raw_datas
+
 % raw_data_path = [directory filename];
 disp(fullname);
 disp('Loading Raw Data..');
 load(fullname,'u','v','s','p');
 disp('Raw Data Loaded');
 
-nb_pass = s{6,2}; % number of pass during the PIV analysis
-w = 2^(9-nb_pass); % size of the window during last pass
 disp(['Window size = ' num2str(w) ''])
 % post-processing
 [u_filt,v_filt] = PIV_banquise_postprocessing(u,v,w,N);
@@ -86,7 +109,12 @@ disp(['Window size = ' num2str(w) ''])
 %post_pro_fullname = [ base ]
 
 % create a matlab structure from the post-processed data file 
-m = genere_structure_banquise(u,v,u_filt,v_filt,fx,ft,a,p,s,w);
+m = genere_structure_banquise(u,v,u_filt,v_filt,fx,ft,scale_V,a,p,s,w);
+
+% Store parameters used for PIV processing
+m.Dt = Dt;
+m.i0 = i0;
+m.b = b;
 
 % save the structure under a new file name
 save_name = filename;
@@ -96,7 +124,7 @@ if ~exist(savemat_dir)
     mkdir(savemat_dir)
 end
 savemat = [savemat_dir save_name];
-save(savemat, "m");
+save(filename,'m','-v7.3');
 disp('DONE.');
 
 %%

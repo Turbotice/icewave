@@ -1,4 +1,4 @@
-function m = genere_structure_banquise(u,v,u_filt,v_filt,fx,ft,a,p,s,w)
+function m = genere_structure_banquise(u,v,u_filt,v_filt,fx,ft,scale_V,a,p,s,w)
 
 %%%% Change these parameters according to experiment
 % fx = 0.1018; %0.0504; % in mm/pixel
@@ -51,9 +51,9 @@ for i=1:c
     end
 end
 
-[dimx, dimy]= size(squeeze(u_original{1}));
-m.Vx = zeros(dimy,dimx,n); % Remove 2b data points from both x and y
-m.Vy = zeros(dimy,dimx,n); % Remove 2b data points from both x and y
+[dimy, dimx]= size(squeeze(u_original{1}));
+m.Vx = zeros(dimx,dimy,n); % Remove 2b data points from both x and y
+m.Vy = zeros(dimx,dimy,n); % Remove 2b data points from both x and y
 
 for i=1:n
    %if mod(i-2,1000)==0
@@ -62,13 +62,16 @@ for i=1:n
     u_original{i} = squeeze(u_original{i});
     v_original{i} = squeeze(v_original{i});
     
-    m.Vx(:,:,i) = squeeze(u_original{i})'*fx/ft; % Convert to mm/s
-    m.Vy(:,:,i) = squeeze(v_original{i})'*fx/ft; % Convert to mm/s
+    m.Vx(:,:,i) = squeeze(u_original{i})'*scale_V; % Convert to m/s
+    m.Vy(:,:,i) = squeeze(v_original{i})'*scale_V; % Convert to m/s
 end
 
 %m.filename = filename;
-m.y = [1:1:dimx]*fx*w/2; % Convert to mm
-m.x = [1:1:dimy]*fx*w/2; % Convert to mm
+m.y = (1:1:dimy)*fx; % Convert to meter
+m.x = (1:1:dimx)*fx; % Convert to meter
+
+dimt = size(m.Vx,3);
+m.t = (1:1:dimt)*ft;
 
 m.p_param = p;
 m.s_param = s;
@@ -78,8 +81,8 @@ m.unity = 1;
     
 m.unitvx = 1;
 m.unitvy = 1;
-m.namevx = 'vx';
-m.namevy = 'vy';
+m.namevx = 'Vx';
+m.namevy = 'Vy';
     
 m.namex = 'x';
 m.namey = 'y';
@@ -91,6 +94,7 @@ m.ysign = -1;
     
 m.fx = fx;
 m.ft = ft;
+m.scale_V = scale_V;
 m.w = w;
 
 %% Remove 2b data points from both x and y 2D plane

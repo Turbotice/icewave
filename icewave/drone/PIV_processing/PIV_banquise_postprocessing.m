@@ -49,7 +49,7 @@ function [u_filt,v_filt] = PIV_banquise_postprocessing(u,v,W,N)
         v_filtered(v_filtered<minvalv)=NaN;
         v_filtered(v_filtered>maxvalv)=NaN;
         % normalized median check
-        %Westerweel & Scarano (2005): Universal Outlier detection for PIV data
+        % Westerweel & Scarano (2005): Universal Outlier detection for PIV data
         [J,I]=size(u_filtered);
         medianres=zeros(J,I);
         normfluct=zeros(J,I,2);

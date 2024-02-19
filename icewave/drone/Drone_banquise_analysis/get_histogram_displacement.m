@@ -1,4 +1,4 @@
-function get_histogram_displacement(Vx,W,fig_folder,font_size)
+function get_histogram_displacement(Vx,W,font_size,filename)
 
 % This functions plots the Histogram of the pixel displacements after a PIV
 % process
@@ -33,7 +33,7 @@ pos = get(hist_figure,'Position');
 set(hist_figure,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
 print(hist_figure,'filename','-dpdf','-r0')
 
-fig_file = [fig_folder 'histogramm_displacements'];
+fig_file = filename;
 
 saveas(hist_figure, fig_file, 'fig');
 

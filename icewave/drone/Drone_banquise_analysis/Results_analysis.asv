@@ -48,9 +48,7 @@ end
 %% Get Histogram displacement 
 
 % Vx = m.Vx(10:end,:,:) - mean(mean(m.Vx(10:end,:,:),2),1);
-filename = [fig_folder 'histogramm_displacements'];
-
-get_histogram_displacement(m.Vx/m.scale_V,W,font_size,filename);
+get_histogram_displacement(m.Vx,W,fig_folder,font_size);
 
 %% Get profile of velocity
 i_x = 20;
