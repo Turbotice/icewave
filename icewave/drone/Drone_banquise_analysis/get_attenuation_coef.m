@@ -1,4 +1,4 @@
-function [lambda,d,freq] = get_attenuation_coef(TF,f,fx,selected_freq,x_bound,freq_thresh,x_bound_thresh,fig_folder)
+function [lambda,d,freq] = get_attenuation_coef(TF,f,fx,selected_freq,x_bound,freq_thresh,x_bound_thresh,fig_folder,fig_name,save_image,save_video)
 
 % This function computes attenuation coefficient of the wave amplitude along x, for all frequencies
 % It returns an array of attenuation coefficient : lambda, and for each
@@ -7,6 +7,7 @@ function [lambda,d,freq] = get_attenuation_coef(TF,f,fx,selected_freq,x_bound,fr
 
 % - TF : time Fourier Transform [nx,ny,nt]
 % - f : frequency array [nt]
+% - fx : scaling for saptial dimension in box/meter
 % - selected_freq : 2 x 1 array, with minimum and maximum frequencies we
 % study
 % - x_bound : min and max indices along x-axis, within which we proceed to
@@ -16,9 +17,6 @@ function [lambda,d,freq] = get_attenuation_coef(TF,f,fx,selected_freq,x_bound,fr
 % - x_bound_thresh :new min and max boundaries used to fit curves
 % associated to frequencies higher than freq_thresh
 % - fig_folder : folder where we save plots
-
-save_video = 1;
-save_image = 1;
 
 min_selected_freq = selected_freq(1);
 max_selected_freq = selected_freq(2);
@@ -31,7 +29,7 @@ TF_xf = squeeze(mean(TF(:,:,start_freq_idx:end_freq_idx),2)); % average the TF o
 
 % create arrays for plotting
 freq = f(start_freq_idx:end_freq_idx);
-x_xf = (1:1:size(TF_xf,1))/fx;
+x_xf = (1:1:size(TF_xf,1))/fx; % in meter
 
 A_xf = abs(TF_xf); % amplitude along x-axis for each frequency
 [nx,nf] = size(A_xf);
@@ -52,7 +50,7 @@ decay_fig = figure;
 decay_fig.Color = [1,1,1];
 
 if save_video
-    video_filename = [fig_folder 'Decay_law_video.avi']; % folder where the video is saved
+    video_filename = [fig_folder fig_name '.avi']; % folder where the video is saved
     vid = VideoWriter(video_filename);
     vid.FrameRate = 3;
     open(vid)

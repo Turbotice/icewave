@@ -1,4 +1,4 @@
-function [dist,freq] = get_wave_vectors(TF,f,fx,selected_freq,x_bound,padding_bool,add_pow2,black_mask,caxis_amp,fig_folder,fig_name)
+function [dist,freq] = get_wave_vectors(TF,f,fx,selected_freq,x_bound,padding_bool,add_pow2,black_mask,caxis_amp,fig_folder,vid_name,save_image,save_video)
 % This function computes the wave vector associated to a given frequency 
 % It also stores a movie of the detected wave vectors 
 
@@ -9,7 +9,7 @@ function [dist,freq] = get_wave_vectors(TF,f,fx,selected_freq,x_bound,padding_bo
 % Function takes as arguments : 
 % - TF : time Fourier transform [ny,nx,nt] 
 % - f : frequency array 
-% - fx : spatial scaling 
+% - fx : spatial scaling (box / meter)
 % - selected_freq : 2 x 1 array, selected frequencies between which we
 % compute the wave vectors
 % - x_bound : 2 x 1 array, boundaries along the x-axis 
@@ -35,10 +35,6 @@ xmax = x_bound(2);
 % Initialize distance array in 2D-Fourier space
 dist = zeros(1,start_freq_idx-end_freq_idx);
 
-% parameters for saving 
-save_image = 0;
-save_video = 1;
-
 % Folders where we save images 
 new_folder_fig = [fig_folder 'FFT_space/'];
 if exist(new_folder_fig,'dir') ~= 7
@@ -48,7 +44,7 @@ end
 % STARTS
 
 if save_video
-    video_filename = [fig_folder fig_name '.avi']; % folder where the video is saved
+    video_filename = [fig_folder vid_name '.avi']; % folder where the video is saved
     vid = VideoWriter(video_filename);
     vid.FrameRate = 3;
     open(vid)

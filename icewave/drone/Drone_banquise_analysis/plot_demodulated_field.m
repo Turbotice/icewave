@@ -1,4 +1,4 @@
-function plot_demodulated_field(TF,f,fx,selected_freq,x_bound,caxis_amp,fig_folder,fig_name)
+function plot_demodulated_field(TF,f,fx,selected_freq,x_bound,caxis_amp,fig_folder,fig_name,save_image,save_video)
 % This function plots the real demodulated field of a velocity / height
 % field. It also creates a video of the successive demodulated field
 
@@ -27,10 +27,6 @@ new_folder = [fig_folder 'FFT_map/'];
 if ~exist(new_folder)
     mkdir(new_folder)
 end
-
-% parameters for saving 
-save_image = 0;
-save_video = 1;
 
 min_selected_freq = selected_freq(1); % minimal selected frequency on FFT spectrum
 max_selected_freq = selected_freq(2); % maximal selected frequency on FFT spectrum

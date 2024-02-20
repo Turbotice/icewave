@@ -21,6 +21,12 @@ if ~exist(fig_folder)
     mkdir(fig_folder)
 end
 
+%% Scales
+
+facq_x = 1/m.fx; % scale in box / meter
+facq_t = 1/m.ft; % scale in frame / sec
+scale_V = m.scale_V; % factor scaling for velocity in meter / s
+
 % %% Scaling 
 % fe = 29.97; % Frame rate in Hz
 % nb_pass = m.s_param{6,2};
@@ -50,12 +56,12 @@ end
 % Vx = m.Vx(10:end,:,:) - mean(mean(m.Vx(10:end,:,:),2),1);
 filename = [fig_folder 'histogramm_displacements'];
 
-get_histogram_displacement(m.Vx/m.scale_V,W,font_size,filename);
+get_histogram_displacement(m.Vx/scale_V,W,font_size,filename);
 
 %% Get profile of velocity
 i_x = 20;
 i_y = 20;
-plot_located_profile(m.Vx,i_x,i_y,fx,fe,fig_folder);
+plot_located_profile(m.Vx,i_x,i_y,facq_x,facq_t,fig_folder);
 
 disp(mean(abs(m.Vx(i_x,i_y,:))))
 
@@ -69,31 +75,32 @@ y = (ny:-1:1);
 Vxmoy = mean(mean(m.Vx,2),1);
 Vymoy = mean(mean(m.Vy,2),1);
 % reduce the velocity field from its mean value
-m.Vx = m.Vx - Vxmoy;
-m.Vy = m.Vy - Vymoy;
+% m.Vx = m.Vx - Vxmoy;
+% m.Vy = m.Vy - Vymoy;
 
-m.Vx = supress_quadratic_noise(m.Vx,x,y);
-m.Vy = supress_quadratic_noise(m.Vy,x,y);
+m_corrected = m;
+Vx = supress_quadratic_noise(m.Vx,x,y);
+Vy = supress_quadratic_noise(m.Vy,x,y);
 
-%% Get Velocity scaled
+m_corrected.Vx = Vx;
+m_corrected.Vy = Vy;
+
+% save structure with corrected velocity
+scale_file_name = replace(matname,'.mat','_corrected.mat');
+save(scale_file_name,'m_corrected','-v7.3');
+
+%% Plot main features of the velocity field
 disp('Get scaled velocity')
 idx_frame = 20;
 caxis_amp = 1.0; % Amplitude of the colorbar scale (in meter / second)
-[Vx_s,Vy_s] = get_scaled_velocity_field(m.Vx,m.Vy,fx,scale_V,idx_frame,caxis_amp,fig_folder);
 
-m_scaled = m;
-m_scaled.Vx = Vx_s;
-m_scaled.vy = Vy_s;
-
-% save structure with scaled velocity
-scale_file_name = replace(matname,'.mat','_scaled.mat');
-save(scale_file_name,"m_scaled");
+plot_velocity_features(Vx,Vy,facq_x,scale_V,idx_frame,caxis_amp,fig_folder);
 
 %% Get time Fourier transform
 disp('Getting Time Fourier transform')
 padding_bool = 1;
 add_pow2 = 0;
-[FFT_t,TF_spectrum,f] = temporal_FFT(m_scaled.Vx(10:end,:,:),padding_bool,add_pow2,fe);
+[FFT_t,TF_spectrum,f] = temporal_FFT(Vx(:,:,:),padding_bool,add_pow2,facq_t);
 
 %%
 fig_spectrum = figure; 
@@ -110,22 +117,29 @@ saveas(fig_spectrum,file,'fig')
 %% Get demodulated field
 disp('Getting demodulated fields')
 selected_freq = [0.05 0.7];
-x_bound = [1 50*fx];
+x_bound = [1 50*facq_x];
 caxis_amp = -1; % amplitude of the colorbar in meter/second
 fig_name = 'Demodulated_field_continuous';
-plot_demodulated_field(FFT_t,f,fx,selected_freq,x_bound,caxis_amp,fig_folder)
+
+save_image = 0;
+save_video = 1;
+plot_demodulated_field(FFT_t,f,facq_x,selected_freq,x_bound,caxis_amp,fig_folder,fig_name,save_image,save_video)
 
 %% Get wave vectors 
 disp('Getting wave vectors')
 selected_freq = [0.05 0.7]; % selected frequencies between which we proceed to the analysis
-x_bound = [1 50*fx]; % selected boundaries at which we perform 2D FFT
+x_bound = [1 50*facq_x]; % selected boundaries at which we perform 2D FFT
 padding_bool = 1;
 add_pow2 = 2; % additional power of 2 for padding 
 black_mask = 10;
 caxis_amp = -1;
 fig_name = 'Spatial_Fourier_space_continuous_video';
 
-[k,freq] = get_wave_vectors(FFT_t,f,m.fx,selected_freq,x_bound,padding_bool,add_pow2,black_mask,caxis_amp,fig_folder,fig_name);
+save_image = 0;
+save_video = 1;
+
+
+[k,freq] = get_wave_vectors(FFT_t,f,facq_x,selected_freq,x_bound,padding_bool,add_pow2,black_mask,caxis_amp,fig_folder,fig_name,save_image,save_video);
 
 % save data to plot dispersion relation
 filename = ['dispersion_relation_data_continuous_fmin' num2str(selected_freq(1)) '_fmax' num2str(selected_freq(2)) '_add_pow' num2str(add_pow2)];
@@ -136,7 +150,7 @@ save(dispersion_file,'k','freq','selected_freq','x_bound','add_pow2','black_mask
 %% Get attenuation coefficient 
 disp('Getting attenuation coefficient')
 selected_freq = [0.1 0.7]; % selected frequencies between which we proceed to the analysis
-x_bound = [1 size(m.Vx(10:end,:,:),1)]; % selected boundaries at which we perform 2D FFT
+x_bound = [1 size(Vx(:,:,:),1)]; % selected boundaries at which we perform 2D FFT
 freq_thresh = 0.35;
 x_bound_thresh = [1 40];
 
@@ -145,7 +159,11 @@ if exist(new_folder_fig,'dir') ~= 7
     mkdir(new_folder_fig)
 end
 
-[lambda,dist_fit,freq] = get_attenuation_coef(FFT_t,f,fx,selected_freq,x_bound,freq_thresh,x_bound_thresh,new_folder_fig);
+fig_name = 'Decay_law_video';
+save_image = 1;
+save_video = 1;
+
+[lambda,dist_fit,freq] = get_attenuation_coef(FFT_t,f,facq_x,selected_freq,x_bound,freq_thresh,x_bound_thresh,new_folder_fig,fig_name,save_image,save_video);
 
 % save data to plot attenuation coefficient
 
