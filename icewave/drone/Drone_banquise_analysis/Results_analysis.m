@@ -30,16 +30,16 @@ scale_V = m.scale_V; % factor scaling for velocity in meter / s
 % %% Scaling 
 % fe = 29.97; % Frame rate in Hz
 % nb_pass = m.s_param{6,2};
-% W = 36; % size of the window for DIC algorithm
+% W = 32; % size of the window for DIC algorithm
 % font_size = 13;
 % 
 % % ##########################################
-% L_x = 3840; % size of the image in pixel, along x-axis
-% h_drone = 140; % height of the drone in meter
-% theta_x = 32.75; % semi AFOV of the drone, along x-axis, in °
-% 
-% fx_pix = L_x/(2*h_drone*tan(theta_x*pi/180)); % scale in pixels / meter
-% fx = fx_pix*2/W;
+L_x = 3840; % size of the image in pixel, along x-axis
+h_drone = 140; % height of the drone in meter
+theta_x = 32.75; % semi AFOV of the drone, along x-axis, in °
+
+fx_pix = L_x/(2*h_drone*tan(theta_x*pi/180)); % scale in pixels / meter
+fx = fx_pix*2/W;
 % % ##########################################
 % 
 % % fx = 0.8857; % for W = 64; 
@@ -95,6 +95,12 @@ idx_frame = 20;
 caxis_amp = 1.0; % Amplitude of the colorbar scale (in meter / second)
 
 plot_velocity_features(Vx,Vy,facq_x,scale_V,idx_frame,caxis_amp,fig_folder);
+
+%% Get a movie of the velocity field 
+caxis_amp = [-2 2];
+fig_name = [fig_folder 'Velocity_field_Vx_movie'];
+fps = facq_t ;
+movie_velocity_field(Vx,facq_x,facq_t,caxis_amp,fps,fig_name)
 
 %% Get time Fourier transform
 disp('Getting Time Fourier transform')

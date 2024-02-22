@@ -10,12 +10,13 @@ function get_histogram_displacement(Vx,W,font_size,filename)
 % - W : the last window size used
 % - fig_folder : folder where the histogram is saved
 
+% average over time, of the absolute velocity
 Vxmoy = nanmean(abs(Vx),3);
 
-% first criteria : Vy > 0.1 pixels
+% first criteria : V > 0.1 pixels
 low_bound = log10(0.1);
 
-% second criteria : Vy < W/4
+% second criteria : V < W/4
 up_bound = log10(W/4);
 
 hist_figure = figure;

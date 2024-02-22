@@ -7,7 +7,7 @@ function [lambda,d,freq] = get_attenuation_coef(TF,f,fx,selected_freq,x_bound,fr
 
 % - TF : time Fourier Transform [nx,ny,nt]
 % - f : frequency array [nt]
-% - fx : scaling for saptial dimension in box/meter
+% - fx : scaling for spatial dimension in box/meter
 % - selected_freq : 2 x 1 array, with minimum and maximum frequencies we
 % study
 % - x_bound : min and max indices along x-axis, within which we proceed to
