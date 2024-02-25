@@ -61,7 +61,7 @@ def load():
             geom[i]+=[' ' for i in range(ncol-len(g))]
     pprint(geom)
 
-    filename = path_GPS+'geom_table_sync.txt'
+    filename = path_GPS+f'Geom_table_{date}_sync.txt'
     save.save(geom,filename)
     
 if __name__ == '__main__':
