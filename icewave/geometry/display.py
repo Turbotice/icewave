@@ -26,7 +26,10 @@ def show(table,dim=2,eps=1,sx=6,sy=6,display=True):
     n = len(table)
 
     fig,ax = plt.subplots(figsize=(sx,sy))
-
+    notes = {}
+    notes['pos']=[]
+    notes['label']=[]
+    c=1
     for i in range(1,n):
         tag = table[i][0]
         typ,num = tag.split('_')
@@ -34,10 +37,30 @@ def show(table,dim=2,eps=1,sx=6,sy=6,display=True):
         x = table[i][1]
         y = table[i][2]
 
-        ax.plot(x,y,label,markersize=norme[typ]['size'])
-        tagd = '$'+typ+'_{'+num+'}$'#.replace('_','')
-        ax.annotate(tagd,(x,y+eps))
+        b=0
+        #print(norme[typ]['size'])
+#        notes.append([x,y+eps])
+        if i>2:
+            d = np.linalg.norm(np.asarray(notes['pos'][:-1])-np.asarray([x,y+eps]),axis=1)
+            if np.min(d)==0:
+                j = np.argmin(d)
+                c=4
+                print(label,notes['label'][j])
+                if label==notes['label'][j]:
+                    b=0
+                else:
+                    b=1
+            else:
+                c=1
+                b=0
+                #print(np.min(d),c,label)
 
+        ax.plot(x,y+b*eps,label,markersize=norme[typ]['size'])
+        tagd = '$'+typ+'^{'+num[0]+'}_{'+str(int(num[1:]))+'}$'#.replace('_','')
+        ax.annotate(tagd,(x,y+c*eps),fontsize=20)
+        notes['pos'].append([x,y+c*eps])
+        notes['label'].append(label)
+        
     title = ''
     figs = graphes.legende('$X$ (m)','$Y$ (m)',title)
     plt.axis('equal')

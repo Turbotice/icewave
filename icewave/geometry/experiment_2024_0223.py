@@ -11,21 +11,33 @@ def Geophones_line1():
     n=16
     L=3
     D = 1
-    table = gen_line(n,L,n0=201,instrument='G')
-    table = add_lines(table,gen_S123(201,x0=0,y0=0,z0=0,axis=0),n0=0)
+    table = gen_line(n,L,n0=101,instrument='G')
+    table = add_lines(table,gen_S123(101,x0=0,y0=0,z0=0,axis=0),n0=0)
+    table = add_lines(table,gen_S123(107,x0=0,y0=0,z0=0,axis=0),n0=0)
     return table
 
 def Geophones_pyramide1():
     L = 15
-    table = gen_line(4,L,n0=201,instrument='G')
-    table = add_lines(table,gen_line(3,L,x0=7.5,y0=-13,n0=205,instrument='G'))
-    table = add_lines(table,gen_line(2,L,x0=15,y0=-13*2,n0=208,instrument='G'))
-    table.append(gen_point(210,22.5,-13*3,0,instrument='G'))
 
-    table = add_lines(table,gen_line(3,L,x0=7.5,y0=13,n0=205,instrument='G'))
-    table = add_lines(table,gen_line(2,L,x0=15,y0=13*2,n0=208,instrument='G'))
-    table.append(gen_point(210,22.5,13*3,0,instrument='G'))
-    
+    table = gen_line(1,0,n0=201,instrument='G')
+    for i,num in enumerate([5,8,10]):
+        table.append(gen_point(200+num,(i+1)*L,0,0,instrument='G'))
+
+    for i,num in enumerate([2,6,9]):
+        table.append(gen_point(200+num,7.5+i*L,-13,0,instrument='G'))
+
+    for i,num in enumerate([11,13,16]):
+        table.append(gen_point(200+num,7.5+i*L,13,0,instrument='G'))
+
+    for i,num in enumerate([3,7]):
+        table.append(gen_point(200+num,15+i*L,-13*2,0,instrument='G'))
+
+    for i,num in enumerate([12,15]):
+        table.append(gen_point(200+num,15+i*L,13*2,0,instrument='G'))
+
+    table.append(gen_point(204,22.5,-13*3,0,instrument='G'))
+    table.append(gen_point(214,22.5,13*3,0,instrument='G'))
+
     print(table)
 
     return table
@@ -99,7 +111,7 @@ def Sag24():
     #tables = add_lines(tables,table7,n0=1)
     #tables = add_lines(tables,table8,n0=1)
 
-    ax,figs = display.show(tables,sx=20,sy=20,display=False)
+    ax,figs = display.show(tables,sx=20,sy=10,display=False)
     #figs.update(fig)
 
     return figs,tables

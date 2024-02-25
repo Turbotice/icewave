@@ -6,10 +6,13 @@ import shutil
 from pprint import pprint
 
 
-def represent_waypoints(gpx,imin,imax,table=None,ax=None):
+import icewave.gps.gps as gps
+import icewave.tools.datafolders as df
+
+def represent_waypoints(gpx,imin,imax,table=None,ax=None,date=''):
     if table is None:
         table = read_table()
-        
+
     indices = select(gpx,imin,imax)
     Long,Lat = [],[]
     waypoints = np.asarray(gpx.waypoints)[indices]
@@ -99,19 +102,23 @@ def display(x,y,ax=None,name='',table=None):
     name = '$'+name+'}$'
     plt.text(x,y-10**(-7),name)
     
+def get_day(waypoint):
+    return f"{waypoint.time.timetuple().tm_mon:02d}{waypoint.time.timetuple().tm_mday:02d}"
 
 def select(gpx,imin,imax):
     indices = []
     for i,waypoint in enumerate(gpx.waypoints):
         number = int(waypoint.name[-3:])
         #print(number)
+        print(waypoint)
         if number>=imin and number<=imax:#True:#int(waypoint.name)>155 and int(waypoint.name)<250:
             indices.append(i)
     return indices
 
 def read_table(folder):
-    print(glob.glob(folder+'*.txt'))
-    filename = glob.glob(folder+'*.txt')[0]
+    filename = glob.glob(folder+'map_table.txt')[0]
+
+    print(filename)
     with open(filename,'r') as f:
         out = f.read()
     
@@ -120,9 +127,9 @@ def read_table(folder):
     dtable = [[int(tab[0]),tab[1]] for tab in table]
     return dtable
 
-def read_norme(folder):
-    print(glob.glob(folder+'*.txt'))
-    filename = glob.glob(folder+'*.txt')[0]
+def read_norme(path):
+    #print(glob.glob(path+'Nomenclature_GPS.txt'))
+    filename = glob.glob(path+'Nomenclature_GPS.txt')[0]
     
     with open(filename,'r') as f:
         out = f.read()
@@ -131,7 +138,10 @@ def read_norme(folder):
     table = np.asarray([line.split('\t') for line in lines])
 
     dtable = {tab[0]:tab[1] for tab in table[1:]}
-    pprint(dtable)
+    #pprint(dtable)
     return dtable
 
+global norme
+path = '/Users/stephane/Documents/git/Data_local/Nomenclature/'
+norme = read_norme(path)
 
