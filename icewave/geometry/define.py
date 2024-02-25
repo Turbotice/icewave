@@ -83,7 +83,7 @@ def ndigit(i,n=2):
     else:
         return str(i)
     
-def add_lines(table,lines,n0=0):
+def add_lines(table,lines,n0=1):
     #sort the lines by x position ??
     for line in lines[n0:]:
         table.append(line)

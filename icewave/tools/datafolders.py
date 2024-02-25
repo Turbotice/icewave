@@ -18,8 +18,8 @@ base = '/media/'
 folderactivity = '/Volumes/GARMIN/Garmin/Activities/' # on macOS X
 folderwpts = '/Volumes/GARMIN/Garmin/GPX/' # on macOS X
 
-destfolder = '/Users/stephane/Documents/git/icewave/icewave/field/Data/'
-serveurfolder = '/Volumes/labshared2/Banquise/Rimouski 2023/Data/GPS/'
+#destfolder = '/Users/stephane/Documents/git/icewave/icewave/field/Data/'
+#serveurfolder = '/Volumes/labshared2/Banquise/Rimouski 2023/Data/GPS/'
 
 
 import glob
