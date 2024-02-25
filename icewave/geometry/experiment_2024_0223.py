@@ -1,7 +1,9 @@
 import numpy as np
 from pprint import pprint
 
-import icewave.geometry.display as display
+
+import icewave.geometry.save as save
+import icewave.geometry.display as disp
 from icewave.geometry.define import *
 
 import pylab as plt
@@ -38,7 +40,7 @@ def Geophones_pyramide1():
     table.append(gen_point(204,22.5,-13*3,0,instrument='G'))
     table.append(gen_point(214,22.5,13*3,0,instrument='G'))
 
-    print(table)
+#    print(table)
 
     return table
 
@@ -46,7 +48,7 @@ def Geophones_pyramide1():
 def Telephones_1():
     table = []
     x0 = 45+20
-    table = gen_line(1,0,x0=x0,instrument='T',axis=0,direction=1)
+    table = gen_line(1,0,x0=x0,n0=119,instrument='T',axis=0,direction=1)
     table.append(gen_point(100+18,10+x0,0,0,instrument='T'))
     table.append(gen_point(100+17,20+x0,0,0,instrument='T'))
     table.append(gen_point(100+16,30+x0,0,0,instrument='T'))
@@ -88,7 +90,7 @@ def Buoys_2():
     return table
 
 
-def Sag24():
+def Sag24(display=True):
     table1 = Geophones_line1()
     figs={}
     #ax,figs = display.show(table1,sx=10,sy=2,display=False)
@@ -111,9 +113,15 @@ def Sag24():
     #tables = add_lines(tables,table7,n0=1)
     #tables = add_lines(tables,table8,n0=1)
 
-    ax,figs = display.show(tables,sx=20,sy=10,display=False)
+    tables = save.form(tables)
+
+    if display:
+        ax,figs = disp.show(tables,sx=20,sy=10,display=False)
+    else:
+        figs=None
     #figs.update(fig)
 
+    
     return figs,tables
     
 if __name__ == '__main__':
