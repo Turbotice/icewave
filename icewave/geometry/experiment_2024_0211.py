@@ -61,7 +61,7 @@ def Telephones_1():
     table.append(gen_point(100+13,45,-22.5,0,instrument='T'))
     table.append(gen_point(100+16,22.5,-45,0,instrument='T'))
     table.append(gen_point(100+21,22.5,0,0,instrument='T'))
-    return table
+    return tableac
 
 def Buoys_1():
     table = []

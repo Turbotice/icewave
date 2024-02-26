@@ -84,8 +84,8 @@ add_pow2 = 0;
 %% Try to get wave vector orientation for each frequency
 
 disp('Getting wave vectors')
-selected_freq = 0.3; % selected frequencies between which we proceed to the analysis
-x_bound = [1 size(m.Vx(10:end,:,:),1)]; % selected boundaries at which we perform 2D FFT
+selected_freq = 0.2; % selected frequencies between which we proceed to the analysis
+x_bound = [1 size(m.Vx(:,:,:),1)]; % selected boundaries at which we perform 2D FFT
 padding_bool = 1;
 add_pow2 = 2; % additional power of 2 for padding 
 black_mask = 10;
@@ -160,7 +160,7 @@ disp(['k = ' num2str(dist_k)])
 
 %% Show the demodulated field 
 xmin = 1;
-xmax = 50*fx;
+xmax = nx;%50*fx;
 
 x = (xmin:1:xmax);
 y = (ny:-1:1);
@@ -189,31 +189,105 @@ ax.FontSize = 13;
 %% plot line in the direction of kx and ky
 
 % The line should pass throug this point
-x0 = 0;
-y0 = 80;
-
 x_scaled = x/fx;
 y_scaled = y/fx;
-y_line = x_scaled*(ky_peak/kx_peak) + y0 - x0*(ky_peak/kx_peak);
 
-y_line = y_line(y_line>y_scaled(end));
-x_line = x_scaled(y_line>y_scaled(end));
-figure,
+[theta,k] = cart2pol(kx_peak,ky_peak);
+
+disp(theta)
+x0 = 170;
+y0 = 1;
+s = (0:-1:-170);
+
+x_line = x0+s*cos(theta);
+y_line = y0-s*sin(theta);
+
+figure(11)
+hold off
 pcolor(x/fx,y/fx,R')
 shading interp
 hold on 
-plot(x_line,y_line,'-r')
+plot(x_line,y_line,'r--','LineWidth', 3)
+axis image
+graphe_legende('$x$ (m)','$y$ (m)','$f$ = 0.3 Hz',true)
+
+saveas(gcf,[fig_folder 'champ_demodule_f30cHz_line'],'fig')
+saveas(gcf,[fig_folder 'champ_demodule_f30cHz_line'],'png')
+saveas(gcf,[fig_folder 'champ_demodule_f30cHz_line'],'eps')
 
 
+%%
+%show velocity field
+
+
+
+for i=490:510
+    figure(14)
+    subplot(1,2,1)
+    pcolor(x,y,m.Vx(:,:,i)')
+    shading interp
+    caxis([-1 1])
+    colorbar()
+    subplot(1,2,2)
+    pcolor(x,y,m.Vy(:,:,i)')
+    caxis([-1 1])
+    shading interp
+    colorbar()
+    getframe();
+    pause(0.2)
+end
 %% Interpolate pixels that are closest to this line
 
 % y1 = y(y_line>y_scaled(end));
 y1 = round(y_line);
 %% Spatial FFT on continuous domain 
+x = x_scaled;
+y = y_scaled;
+
+[X,Y,T] = ndgrid(x,y,t);
+
+Fx = griddedInterpolant({x,yi,t},m.Vx);
+Fy = griddedInterpolant({x,yi,t},m.Vy);
 
 
+%test 
+figure(12);
+
+x0 = 120;
+y0 = 36;
+
+[val,i0]= min(abs(x-x0));
+[val,j0]= min(abs(yi-y0));
+hold off
+%plot(Fx(x0*ones(1,nt),y0*ones(1,nt),t))
+%hold on
+%plot(Fy(x0*ones(1,nt),y0*ones(1,nt),t))
+
+Vx = Fx(x0*ones(1,nt),y0*ones(1,nt),t);
+Vy = Fy(x0*ones(1,nt),y0*ones(1,nt),t);
+
+plot(t,-Vx*cos(theta)-Vy*sin(theta))
+hold on
+plot(t,Vx*sin(theta)-Vy*cos(theta))
+hold on
+%plot(t,Vx*cos(theta)-Vy*sin(theta))
 
 
+%%
+for k=1:length(s)
+    x0 = x_line(k);
+    y0 = y_line(k);
+    Lx(k,:)=Fx(x0*ones(1,nt),y0*ones(1,nt),t);
+    Ly(k,:)=Fy(x0*ones(1,nt),y0*ones(1,nt),t);
+    L_ll(k,:)=-Fx(x0*ones(1,nt),y0*ones(1,nt),t)*cos(theta);
+end
+
+
+%plot(Fx(100*ones(1,nt),40*ones(1,nt),t))
+
+figure(13)
+pcolor(t,-s,L1);shading interp
+graphe_legende('$t$ s)','$L$ (m)','$f$ = 0.3 Hz',true);
 
 
 %% Do a movie of the velocity field 
