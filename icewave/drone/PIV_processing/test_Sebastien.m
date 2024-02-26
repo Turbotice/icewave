@@ -52,17 +52,18 @@
 % base = 'W:/Banquise/Rimouski_2023/Data/drone/';
 
 clear all;
-date = '20240215';
-base = ['/media/turbots/BicWin2024/Share/Data/' date(5:end) '/Drones/mesange/'];
+% date = '20240215';
+% base = ['/media/turbots/BicWin2024/Share/Data/' date(5:end) '/Drones/mesange/'];
 
+base = 'G:/Rimouski_2024/Data/2024/0215/Drones/mesange/waves_003/';
 % base = 'E:/PIVlab_drone/matdata/raw_datas/';
-folder = [base 'matData/waves_003/'];% folder of raw datas
-filename = 'PIV_processed_i01_Dt2_b1_W32_full.mat';
+folder = base; %'matData/waves_003/'];% folder of raw datas
+filename = 'PIV_processed_i01_Dt2_b1_W32_full_total_processed.mat';
 fullname = [folder filename];%[folder filename];% filename of raw datas
 
 a = 1; % number of boxes to crop on the side
 w = 32; % size of the last window used during PIV process
-Dt = 4; % step between two frames that were compared during the PIV algorithm 
+Dt = 2; % step between two frames that were compared during the PIV algorithm 
 N = 0; % total number of frames processed
 i0 = 0; % first index of the frame processed
 b = 1; % step between frame A and A' at which velocity is computed
@@ -74,7 +75,7 @@ ft = 1/facq_t ; % factor scaling for time in sec / frame
 % ##########################################
 L_x = 3840; % size of the image in pixel, along larger axis (x-axis)
 h_drone = 140; % height of the drone in meter
-theta_x = 32.75; % semi AFOV of the drone, along x-axis, in °
+theta_x = 34.2; % semi AFOV of the drone, along x-axis, in °
 
 facq_pix = L_x/(2*h_drone*tan(theta_x*pi/180)); % scale in pixels / meter
 facq_x = fx_pix*2/w; % scale in box / meter

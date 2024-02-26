@@ -7,7 +7,8 @@ base = '//192.168.1.70/Share/Data/0215/Drones/mesange/matData/waves_003/';
 filename = 'dispersion_relation_data_continuous_fmin0p07_fmax1p1_add_pow2.mat';
 
 fullname = [base filename];
-fig_folder = [base 'Plots/'];
+
+fig_folder = base;
 
 
 %%
@@ -100,10 +101,10 @@ D = 3.2*10^7; % Flexion modulus
 rho = 1000; % water density
 
 % minimal values of the plot on x and y axis
-xlim_min = 0.1;
-xlim_max = 10;
-ylim_min = 0.1;
-ylim_max = 20;
+xlim_min = 0.05;
+xlim_max = 2;
+ylim_min = 0.5;
+ylim_max = 10;
 
 % Computation of the different models 
 k_list = linspace(xlim_min,xlim_max,100); % array of k for plots
@@ -147,7 +148,7 @@ grid on
 
 % Saving the plot
 %fig_folder = 'C:/Users/sebas/Stage_MIZ/Traitement_PIV_Rimouski_20230310/';
-file_relation_disp_scaled = [fig_folder 'Relation_disp_2024_02_15_waves_003'];
+file_relation_disp_scaled = [fig_folder 'Relation_disp_2024_02_01'];
 if save_boolean 
     saveas(relation_disp_scaled,file_relation_disp_scaled,'pdf');
     saveas(relation_disp_scaled,file_relation_disp_scaled,'fig');

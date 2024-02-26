@@ -15,7 +15,7 @@ import os
 #%%
 
 def main():
-    datafolder = '//192.168.1.70/Share/Data/0211/Drones/bernache/stereo_001/relevant/'
+    datafolder = '//192.168.1.70/Share/Data/0221/Drones/bernache/21-calib_004/'
 
     # datafolder = browse.find_path(datafolder)
     print(datafolder)
@@ -84,6 +84,6 @@ def later(filelist,directory_save,savename):
 
 if __name__=='__main__':
     filelist = main()
-    directory_save = '//192.168.1.70/Share/Data/0211/Drones/bernache/stereo_001/relevant/'
-    savename = 'full_movie'
+    directory_save = 'G:/Rimouski_2024/Data/2024/0221/Drones/bernache/21-calib_004/'
+    savename = 'calib_004'
     vid = later(filelist,directory_save,savename)

@@ -4,10 +4,17 @@ function plot_demodulated_field(TF,f,fx,selected_freq,x_bound,caxis_amp,fig_fold
 
 % - TF : time-fourier transform [nx,ny,nf] scaled !
 % - f : frequency array [nf]
-% - selected_freq : 2 x 1 array, frequencies between which we plot the
+% - fx : scale in pix/m (or pix/cm depending on which scale you want to
+% have along the axis)
+% - selected_freq : 2 x 1 array, frequency range for which we plot the
 % demodulated field
 % - x_bound : 2 x 1 array, boundaries along x-axis to consider the field to
-% be plot
+% be plot 
+% - caxis_amp : amplitude on the colorbar axis
+% - fig_folder : folder where plots and video will be waved
+% - fig_name : name under which the video will be saved
+% - save_image : boolean to save images or not
+% - save_video : boolean to save a video or not
 
 
 %% Plot a map of the real part of the FFT for each frequency 
@@ -60,7 +67,7 @@ for i=1:numel(relevant_indices)
     cbar.Label.String = '$ \rm{Re} \left( \overline {V_x}(x,y,f) \right) \: \rm (m.s^{-1})$';
     cbar.Label.Interpreter = 'latex';
 %     cbar.Label.FontSize = font_size;
-    if caxis > 0 
+    if caxis_amp > 0 
         caxis([-caxis_amp caxis_amp])
     end 
     ax = gca;

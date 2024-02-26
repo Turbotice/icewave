@@ -4,10 +4,10 @@ close all;
 
 %% Loading structure obtained after PIV processing and post-processing
 
-base = '//192.168.1.70/Share/Data/0211/Drones/Fulmar/matData/';
+base = '//192.168.1.70/Share/Data/0215/Drones/mesange/matData/waves_003/';
 %base = 'E:/PIVlab_drone/matdata/DJI_0308_Dt4_W64_full/';
 
-filename = 'PIV_processed_i04500_Dt4_b1_W32_full_total_processed_scaled.mat';
+filename = 'PIV_processed_i01_Dt2_b1_W32_full_total_processed.mat';
 matname = [base filename];
 %%
 disp('Loading Data..');
@@ -16,7 +16,7 @@ disp('Data loaded');
 %% Creates a folder where to save the generated plots
 base_fig = base;
 %base_fig = 'E:/PIVlab_drone/';
-fig_folder = [base_fig 'SWO_FUL_20240211T203233UTC/Plots/'];
+fig_folder = [base_fig 'Plots/'];
 if ~exist(fig_folder)
     mkdir(fig_folder)
 end
@@ -154,15 +154,15 @@ save_video = 1;
 % save data to plot dispersion relation
 filename = ['dispersion_relation_data_continuous_fmin' num2str(selected_freq(1)) '_fmax' num2str(selected_freq(2)) '_add_pow' num2str(add_pow2)];
 filename = replace(filename,'.','p');
-dispersion_file = [fig_folder filename];
+dispersion_file = [base_fig filename];
 save(dispersion_file,'k','freq','selected_freq','x_bound','add_pow2','black_mask')
 
 %% Get attenuation coefficient 
 disp('Getting attenuation coefficient')
 selected_freq = [0.07 1.1]; % selected frequencies between which we proceed to the analysis
-x_bound = [round(3*facq_x) size(Vx,1)]; % selected boundaries at which we perform 2D FFT
-freq_thresh = 0.8;
-x_bound_thresh = [round(3*facq_x) round(40*facq_x)];
+x_bound = [int(3*facq_x size(Vx,1)]; % selected boundaries at which we perform 2D FFT
+freq_thresh = 0.6;
+x_bound_thresh = [3*facq_x size(Vx,1)];
 
 new_folder_fig = [fig_folder 'Attenuation_fit/'];
 if exist(new_folder_fig,'dir') ~= 7
@@ -179,8 +179,8 @@ save_video = 1;
 freq_min_txt = replace(num2str(selected_freq(1)),'.','p');
 freq_max_txt = replace(num2str(selected_freq(2)),'.','p');
 f_thresh_txt = replace(num2str(freq_thresh),'.','p');
-attenuation_file = [base_fig 'attenuation_coef_data_fmin' freq_min_txt '_fmax' freq_max_txt '_fthresh' f_thresh_txt];
-%attenuation_file = replace(attenuation_file,'.','p');
+attenuation_file = [base_fig 'attenuation_coef_data_fmin' freq_min_txt '_fmax' freq_max_txt '_f_thresh' f_thresh_txt];
+attenuation_file = replace(attenuation_file,'.','p');
 save(attenuation_file,'lambda','dist_fit','freq','selected_freq','x_bound','freq_thresh','x_bound_thresh')
 
 disp('DONE.')

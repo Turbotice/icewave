@@ -89,7 +89,7 @@ for i = 1:numel(relevant_indices)
         caxis([0 caxis_amp])
     end 
     %axis([-4 4 -4 4])
-    axis([-1.5 1.5 -1.5 1.5]);
+    %axis([-2.5 2.5 -2.5 2.5]);
     ax = gca;
     ax.FontSize = 13;
 
