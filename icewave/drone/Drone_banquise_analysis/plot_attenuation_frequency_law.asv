@@ -1,0 +1,21 @@
+
+close all;
+clear all;
+
+%% Load data
+base = '//192.168.1.70/Share/Data/0215/Drones/mesange/matData/waves_003/';
+filename = 'attenuation_coef_data_fmin0p07_fmax1p1_f_thresh0p8.mat';
+
+fullname = [base filename];
+
+fig_folder = [base 'Plots/'];
+
+%%
+disp('Loading data...')
+load(fullname)
+disp('Data loaded')
+
+%%
+
+mask = dist_fit < 0.2 ;
+fitted_f = freq(mask

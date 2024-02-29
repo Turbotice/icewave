@@ -4,6 +4,7 @@ import glob
 import os
 import shutil
 import time
+from pprint import pprint
 
 #import garmin
 #import fitdecode
@@ -18,10 +19,8 @@ base = '/media/'
 folderactivity = '/Volumes/GARMIN/Garmin/Activities/' # on macOS X
 folderwpts = '/Volumes/GARMIN/Garmin/GPX/' # on macOS X
 
-
-
-destfolder = '/Users/stephane/Documents/Rimouski 2023/Data/GPS/'
-serveurfolder = '/Volumes/labshared2/Banquise/Rimouski 2023/Data/GPS/'
+#destfolder = '/Users/stephane/Documents/git/icewave/icewave/field/Data/'
+#serveurfolder = '/Volumes/labshared2/Banquise/Rimouski 2023/Data/GPS/'
 
 
 import glob
@@ -35,23 +34,81 @@ global osname,ostype
 ostype = platform.platform().split('-')[0]
 osname = socket.gethostname()
 
+def find_path(disk='BicWin2024'):
+    #print('OS type : '+str(ostype))
+    #print('Computer name : '+str(osname))
+
+    if disk=='BicWin2024':
+        base = 'BicWin2024/Share/Data/'
+    else:
+        print('please specify the folder path')
+    if 'Linux' in ostype:
+        if 'oural' or 'saguenay' in osname:
+            base = '/media/turbots/'+base#home/turbots/Documents/'+base
+        else:
+            print('computer unknown, define the path folder')
+            base = ''
+        #if 'saguenay' in osname:
+
+        #elif 'adour' in osname:
+        #    serveurfolder = '/media/turbots/DATA/thiou/'+disk+'/'+base
+        #elif 'spi201711-Latitude-5480' in osname:
+        #    serveurfolder = '/run/user/1000/gvfs/smb-share:server=adour.local,share=data/thiou/'+disk+'/'+base
+        #elif 'thiou' in osname:
+        #    serveurfolder = '/volume3/'+disk+'/'+base #praise UNIX system    		
+        #else:
+        #    base = '/home/turbots/Documents/'+base
+
+        #    serveurfolder = '/media/turbots/DATA/thiou/'+disk+'/'+base #praise UNIX system
+    if 'Windows' in ostype:    #fucking windows OS : beware of the mounting disk you used
+        if disk=='labshared2':
+            base = 'W:/'+base 
+        if disk=='labshared1':
+            base = 'Y:/'+base 
+        if disk=='storageshared':
+            base = 'X:/'+base 
+        if disk=='homes':
+            base = 'Z:/'+base
+        if disk=='BicWin2024':
+            base = '//192.168.1.70/Share/Data/'
+
+    if 'Darwin' in ostype:
+        if 'laita' in osname:
+            if disk =='BicWin2024':
+                base = '/Volumes/Share-3/Data/'
+            else:
+                base = '~/Documents/'+base #praise UNIX system    
+        else:
+            base = '/Volumes/Share-3/Data/'
+
+    browse.create_folder(base)
+    return base
+
 def date_folder(date=''):
     #date should be in format 2024_0205
     base = find_path()
-
+    #print(base)
     if date=='':
         date = get_current_date()
     year,day = date.split('_')
 
-    browse.create_folder(base+year)
-    browse.create_folder(base+year+'/'+day)
-    return base+year+'/'+day+'/'
+    #browse.create_folder(base+year)
+    browse.create_folder(base+day)
+    return base+day+'/'
+
+def find_instruments(date=''):
+    folder = date_folder(date=date)
+
+    folderlist = glob.glob(folder+'*')
+    instruments = [os.path.basename(f) for f in folderlist]
+    #pprint(instruments)
+    return instruments
 
 def get_current_date():
     t = time.localtime()
     date = str(t[0])+'_'+ndigit(t[1])+ndigit(t[2])
 
-    print(t)
+    #print(t)
     return date    
 
 def date_GPS(date):
@@ -92,38 +149,5 @@ def path_GPSdata():
         base = '/Volumes/'
     return base
 
-
-def find_path(disk='labshared2'):
-    print('OS type : '+str(ostype))
-    print('Computer name : '+str(osname))
-    
-    base = 'Bicwin2024/Data/'
-    if 'Linux' in ostype:
-        if 'oural' in osname:
-            base = '/home/turbots/Documents/'+base
-        #elif 'adour' in osname:
-        #    serveurfolder = '/media/turbots/DATA/thiou/'+disk+'/'+base
-        #elif 'spi201711-Latitude-5480' in osname:
-        #    serveurfolder = '/run/user/1000/gvfs/smb-share:server=adour.local,share=data/thiou/'+disk+'/'+base
-        #elif 'thiou' in osname:
-        #    serveurfolder = '/volume3/'+disk+'/'+base #praise UNIX system    		
-        else:
-            base = '/home/turbots/Documents/'+base
-
-        #    serveurfolder = '/media/turbots/DATA/thiou/'+disk+'/'+base #praise UNIX system
-    if 'Windows' in ostype:    #fucking windows OS : beware of the mounting disk you used
-        if disk=='labshared2':
-            base = 'W:/'+base 
-        if disk=='labshared1':
-            base = 'Y:/'+base 
-        if disk=='storageshared':
-            base = 'X:/'+base 
-        if disk=='homes':
-            base = 'Z:/'+base
-
-    if 'Darwin' in ostype:
-        if 'laita' in osname:    
-            base = '~/Documents/'+base #praise UNIX system    
-
-    browse.create_folder(base)
-    return base
+if __name__=='__main__':
+    print(date_folder())

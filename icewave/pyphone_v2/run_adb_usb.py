@@ -3,7 +3,7 @@ import subprocess
 
 
 def run():
-	filename = '/home/turbots/Documents/Codes/Python/pyphone_v2/adb_usb.sh'
+	filename = '/home/turbots/Documents/Bicwin2024/git/icewave/icewave/pyphone_v2/adb_usb.sh'
 	#filename = 'adb_usb.sh'
 	print('run adb connect')
 	c = subprocess.run(['bash',filename],text=True,capture_output = True,shell=False)

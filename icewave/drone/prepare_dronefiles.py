@@ -8,6 +8,7 @@ import glob
 import pylab
 import imageio
 import cv2
+import shutil
 
 import os
 
@@ -36,17 +37,17 @@ def sort_files_hour(path2data,base_storage,start_h,end_h,idx_experiment):
             year = file_date[0:4]
             day = file_date[4:8]
             hour = file_date[8:]
-            
+            print(hour)
             directory = base_storage + year + '/' + day + '/' + idx_experiment + '/'
             if not os.path.exists(directory):
                 os.makedirs(directory)
           
             x = float(hour)
 
-            if (start_h < x) & (x < end_h):
+            if (start_h <= x) & (x < end_h):
                 old_path = os.path.join(path2data,f)
                 new_path = os.path.join(directory,f)
-                os.replace(old_path,new_path)
+                shutil.move(old_path,new_path)
                 
                 print(f"Renamed {old_path} to {new_path}")
 
@@ -76,7 +77,7 @@ def sort_files_indices(path2data,base_storage):
 
             old_path = os.path.join(path2data,f)
             new_path = os.path.join(directory,f)
-            os.replace(old_path,new_path)
+            shutil.move(old_path,new_path)
                 
             print(f"Renamed {old_path} to {new_path}")
 
@@ -84,17 +85,19 @@ def sort_files_indices(path2data,base_storage):
     
 #%% Sort files by hour
 
-path2data = 'W:/SagWin2024/Data/Drone/Test 02_10_2023/DJI_001/'
-filelist = os.listdir(path2data)
-path_storage = 'W:/SagWin2024/Data/Drone/'
+path2data = 'E:/Data/2024/0211/bernache/'
 
-start_h = 180000
-end_h = 182000
-idx_experiment = 'DJI_007'
+filelist = os.listdir(path2data)
+path_storage = 'E:/Data/'
+
+start_h = 122600
+end_h = 122700
+idx_experiment = 'bernache/frac_001'
 
 sort_files_hour(path2data,path_storage,start_h,end_h,idx_experiment)
 
 #%% Sort files by index
+
 path2data = 'W:/SagWin2024/Data/Drone/Test 02_10_2023/DJI_001/'
 filelist = os.listdir(path2data)
 path_storage = 'W:/SagWin2024/Data/Drone/'

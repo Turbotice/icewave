@@ -5,21 +5,23 @@ import os
 import shutil
 from pprint import pprint
 
+import fitdecode
 try:
     import garmin
-    import fitdecode
 except:
-    print('Please install garmin and fitdecode package')
+    print('Please install garmin package')
 
 import icewave.tools.datafolders as df
 
 base = df.path_GPSdata()
+print('')
+print(base)
 
 folderactivity = base+'GARMIN/Garmin/Activities/' # on macOS X
 folderwpts = base+'GARMIN/Garmin/GPX/' # on macOS X
 
-destfolder = '/Users/stephane/Documents/Rimouski 2023/Data/GPS/'
-serveurfolder = '/Volumes/labshared2/Banquise/Rimouski 2023/Data/GPS/'
+#destfolder = '/Users/stephane/Documents/Rimouski 2023/Data/GPS/'
+#serveurfolder = '/Volumes/labshared2/Banquise/Rimouski 2023/Data/GPS/'
 
 def ls_date(date=''):
     if date=='':

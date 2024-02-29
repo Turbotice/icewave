@@ -19,12 +19,14 @@ import numpy as np
 import glob
 import os
 
-import connect
+import icewave.pyphone_v2.connect as connect
 
 import aiohttp
 import asyncio
 
 import json
+
+import urllib
 
 from pprint import pprint
 
@@ -73,6 +75,7 @@ def run_serie(iplist,T=10,folder=''):
     coroutine =  execute(stop,iplist)
     loop.run_until_complete(coroutine)
 
+#    time.sleep(10)
     coroutine = execute(lambda x,y:save(x,y,folder=folder),iplist)
     loop.run_until_complete(coroutine)
 #        print(fun.__name__,'Over')
@@ -85,7 +88,13 @@ def run_config(iplist):
 
 def run_fun(fun,iplist,**kwargs):
     loop = asyncio.get_event_loop()
-    coroutine =  execute(fun,iplist)
+    coroutine =  execute(fun,iplist,**kwargs)
+    R = loop.run_until_complete(coroutine)
+    return R
+
+def run_save(fun,iplist,folder,**kwargs):
+    loop = asyncio.get_event_loop()
+    coroutine =  execute_save(fun,iplist,folder,**kwargs)
     R = loop.run_until_complete(coroutine)
     return R
 
@@ -94,15 +103,15 @@ async def execute(fun,iplist,**kwargs):
         R={}
         for ip_s in iplist:
             address = get_base_url(ip_s)
-            try:
-                r = await fun(address,session)
-                R[get_phone(ip_s)] = r#["result"]
-                print(r)
-            #fun(address,folder=folder)
-            except:
+#            try:
+            r = await fun(address,session)
+            R[get_phone(ip_s)] = r#["result"]
+            print(r)
+        #fun(address,folder=folder)
+        #   except:
                 #raise
-                R[get_phone(ip_s)] = {'result':False}
-                print('Cannot connect to '+ip_s)
+         #       R[get_phone(ip_s)] = {'result':False}
+         #       print('Cannot connect to '+ip_s)
     #for r in R:
     #    print(r)
     return R
@@ -114,7 +123,7 @@ async def get_config(address,session):
 
 async def request_json(url,session):
     print(url)
-    async with session.get(url) as resp:
+    async with session.get(url,timeout=5) as resp:
         r = await resp.json()#.text()
     return r  
 
@@ -137,7 +146,7 @@ async def get(address,session,name=''):
         return await request_json(url,session)
     if name=='all':
         #rlist = await get_config(address,session)
-        s= "accX&&accY&&accZ&&locLat&&locLon"
+        s= "accX"#&&accY&&accZ&&locLat&&locLon"
         #for r in rlist['buffers'][1:4]:
         #s=s+r['name']+"&&"
         #s=s[:-2]
@@ -150,10 +159,9 @@ async def get(address,session,name=''):
         return None
 
 async def request(url,session):
-    print(url)
     async with session.get(url) as resp:
-        r = await resp.read()#.text()
-    return r
+        r = await resp.read()#read()#.text()
+    return 
 
 async def clear(address,session,folder=''):
     url = address + "/control?cmd=clear"
@@ -170,13 +178,39 @@ async def stop(address,session,folder=''):
 async def save(address,session,folder,name='test'):
     ip_s = address.split(':')[1][2:]
     print('Save data for '+ip_s)
-    url = address + '/export?format=1'
+    url = str(address) + '/export?format=1'
 
+    print(url)
+#    response = await request_save(url)
+#    out = response.content
     out = await request(url,session)#requests.get(url=url)    
-    print(ip_s)
+    print(out)
     if not os.path.isdir(folder):
         os.makedirs(folder)
     name = folder+'/'+name+'_'+ip_s.replace('.','_')
+    with open(name+".zip", "wb") as file:
+        file.write(out)
+    print('Done')
+
+async def request_save(url):
+    response = requests.get(url)
+    return await response
+
+def save_single(address,folder,name='test'):
+    ip_s = address.split(':')[1][2:]
+    print('Save data for '+ip_s)
+    url = str(address) + '/export?format=1'
+    
+    out = request_save(url) 
+
+    basefolder = connect.basefolder()
+    folder = basefolder+folder
+
+    if not os.path.isdir(folder):
+        os.makedirs(folder)
+
+    name = folder+'/'+name+'_'+ip_s.replace('.','_')
+    print(name)
     with open(name+".zip", "wb") as file:
         file.write(out)
     print('Done')
@@ -217,7 +251,6 @@ def showdata(data):
         #    if j==0:
         #        graphes.legende('','$a_'+coord+'$ (m/s$^2$)','',ax=ax)
         #graphes.legende('Times (s)','$a_'+coord+'$ (m/s$^2$)','',ax=ax)
-
     plt.show()
 
 

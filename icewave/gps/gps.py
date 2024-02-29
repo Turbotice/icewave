@@ -6,13 +6,15 @@ import os
 #import stephane.display.graphes as graphes
 import stephane.display.graphes as graphes
 
-import garmin
+import icewave.gps.garmin as garmin
 import fitdecode
 import gpxpy
 
 
 # Import the required library
 from geopy.geocoders import Nominatim
+import tilemapbase
+
 
 def tmp_connect():
     """
@@ -24,8 +26,6 @@ def tmp_connect():
     -----
     t : tilemapbase object
     """
-    import tilemapbase
-
     tilemapbase.start_logging()
     tilemapbase.init(create=True)
     # Use open street map
@@ -56,10 +56,11 @@ def extent(BBox):
     """
     #to be revised, weird projection system
     """
-    import tilemapbase
 
     ext = tilemapbase.Extent.from_lonlat(BBox[0],BBox[1],BBox[2],BBox[3])
     ext = ext.to_aspect(1.0)
+
+    print(ext)
     return ext
 
 def display_traj(filename,Long,Lat,save=True):
@@ -153,10 +154,12 @@ def display_dictwpts(filename,date,wpts,save=True):
 #graphes.save_figs(figs,savedir=savefolder,prefix='wpts_'+date+'_',suffix='summary',frmt='pdf')
 
 
-def map_traj(Long,Lat,save=False,scale=1.2,title=''):
+def map_traj(Long,Lat,save=False,scale=0.8,title=''):
     BBox = box_data(Long,Lat,scale=scale)
     print(BBox)
     X,Y = project(Long,Lat)
+
+    print('toto')
     ext = extent(BBox)
 
     t = tmp_connect()
@@ -235,6 +238,7 @@ def display_city(Long,Lat):
         return ''
     parse = location.address.split(',')
     s = parse[2][1:]+','+parse[-1] #fucking arbitrary
+
     print(s)
     return s
 
