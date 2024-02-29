@@ -45,7 +45,16 @@ def load(folder):
         key = os.path.basename(datafile).split('.')[0]
         if key in table:
             key = table[key]
-        data[key] = np.loadtxt(datafile, delimiter=',',skiprows=1)
+        try:
+            print(datafile)
+            data[key]={}
+            data[key]['d'] = np.loadtxt(datafile, delimiter=',',usecols=(0,1,2,3),skiprows=1)
+            #get times
+            data[key]['t'] = np.loadtxt(datafile, delimiter=',',dtype=str,usecols=(4),skiprows=1)
+
+            print(datafile[:100])
+        except:
+            print('data cannotbe converted to float')
     return data
 
 def read_meta(csvfile):

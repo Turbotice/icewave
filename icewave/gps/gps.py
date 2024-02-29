@@ -154,7 +154,7 @@ def display_dictwpts(filename,date,wpts,save=True):
 #graphes.save_figs(figs,savedir=savefolder,prefix='wpts_'+date+'_',suffix='summary',frmt='pdf')
 
 
-def map_traj(Long,Lat,save=False,scale=1.2,title=''):
+def map_traj(Long,Lat,save=False,scale=0.8,title=''):
     BBox = box_data(Long,Lat,scale=scale)
     print(BBox)
     X,Y = project(Long,Lat)
