@@ -45,7 +45,7 @@ def represent_table(table,gpx,imin,imax,ax=None):
         Long.append(waypoint.longitude)
         Lat.append(waypoint.latitude)
 
-    BBox = gps.box_data(Long,Lat,scale=0.7)
+    BBox = gps.box_data(Long,Lat,scale=0.9)
     ext = gps.extent(BBox)
     t = gps.tmp_connect()
     if ax is None:
@@ -72,7 +72,7 @@ def represent_table(table,gpx,imin,imax,ax=None):
             name = name.replace('_','_{')
             name = '$'+name+'}$'
             plt.text(x,y-10**(-7),name)
-    print(filename)
+    #print(filename)
     savefolder = os.path.dirname(filename)+'/'
     return ax,figs
     
@@ -110,7 +110,7 @@ def select(gpx,imin,imax):
     for i,waypoint in enumerate(gpx.waypoints):
         number = int(waypoint.name[-3:])
         #print(number)
-        print(waypoint)
+        #print(waypoint)
         if number>=imin and number<=imax:#True:#int(waypoint.name)>155 and int(waypoint.name)<250:
             indices.append(i)
     return indices
@@ -118,7 +118,7 @@ def select(gpx,imin,imax):
 def read_table(folder):
     filename = glob.glob(folder+'map_table.txt')[0]
 
-    print(filename)
+    #print(filename)
     with open(filename,'r') as f:
         out = f.read()
     

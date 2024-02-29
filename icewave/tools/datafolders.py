@@ -75,11 +75,11 @@ def find_path(disk='BicWin2024'):
     if 'Darwin' in ostype:
         if 'laita' in osname:
             if disk =='BicWin2024':
-                base = '/Volumes/Share/Data/'
+                base = '/Volumes/Share-3/Data/'
             else:
                 base = '~/Documents/'+base #praise UNIX system    
         else:
-            base = '/Volumes/Share/Data/'
+            base = '/Volumes/Share-3/Data/'
 
     browse.create_folder(base)
     return base
