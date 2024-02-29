@@ -51,11 +51,13 @@ for i=1:1%amount
     N = 0; %number of frames to analyze
     Dt = 4; %ratio between the fps and the scanning frequency (number of image between image A and image B)
     b = 1; %number of images between image A and image A' (from one step to an other)
+    W = 32;
+    
     xROI = 1 ;
     widthroi = 3840;
     yROI = 1;
     heightroi = 2160;
-    W = 64;
+
     %namesave = [namesave 'N_' num2str(N) '_i0_' num2str(i0)];
     prefix = ['PIV_processed_i0' num2str(i0) '_Dt' num2str(Dt) '_b' num2str(b) '_W' num2str(W) '_full_'];
     matname=string(strcat(dirsave,prefix, namesave,'.mat'));

@@ -67,7 +67,7 @@ for i=1:n
 end
 
 %m.filename = filename;
-m.y = (1:1:dimy)*fx; % Convert to meter
+m.y = (dimy:-1:1)*fx; % Convert to meter
 m.x = (1:1:dimx)*fx; % Convert to meter
 
 dimt = size(m.Vx,3);

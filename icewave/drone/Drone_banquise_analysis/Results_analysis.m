@@ -4,10 +4,10 @@ close all;
 
 %% Loading structure obtained after PIV processing and post-processing
 
-base = '//192.168.1.70/Share/Data/0211/Drones/Fulmar/matData/';
+base = '//192.168.1.70/Share/Data/0211/Drones/bernache/matData/stereo_001/';
 %base = 'E:/PIVlab_drone/matdata/DJI_0308_Dt4_W64_full/';
 
-filename = 'PIV_processed_i04500_Dt4_b1_W32_full_total_processed_scaled.mat';
+filename = 'PIV_processed_N15500_i011500_Dt2_b1_W32_full_post_processed.mat';
 matname = [base filename];
 %%
 disp('Loading Data..');
@@ -16,7 +16,7 @@ disp('Data loaded');
 %% Creates a folder where to save the generated plots
 base_fig = base;
 %base_fig = 'E:/PIVlab_drone/';
-fig_folder = [base_fig 'SWO_FUL_20240211T203233UTC/Plots/'];
+fig_folder = [base_fig 'Plots/'];
 if ~exist(fig_folder)
     mkdir(fig_folder)
 end
@@ -30,35 +30,39 @@ W = m.w ;
 font_size = 13;
 
 % %% Scaling 
-% fe = 29.97; % Frame rate in Hz
-% nb_pass = m.s_param{6,2};
-% W = 32; % size of the window for DIC algorithm
-% font_size = 13;
-% 
-% % ##########################################
-% L_x = 3840; % size of the image in pixel, along x-axis
-% h_drone = 140; % height of the drone in meter
-% theta_x = 32.75; % semi AFOV of the drone, along x-axis, in °
-% 
-% fx_pix = L_x/(2*h_drone*tan(theta_x*pi/180)); % scale in pixels / meter
-% fx = fx_pix*2/W;
-% % ##########################################
-% 
-% % fx = 0.8857; % for W = 64; 
-% %fx = 0.8857*2; % spatial scale in boxes/meter
-% Dt = 4; % step between two frames that were compared during the PIV algorithm 
-% 
-% scale_V = (fe/Dt) / fx_pix; % scale of the velocity in m/s
-% % store scales in structure m
-% m.scale_V = scale_V;
-% m.ft = fe;
-% m.fx = fx;
-%% Get Histogram displacement 
+fe = 29.97; % Frame rate in Hz
+nb_pass = m.s_param{6,2};
+W = 32; % size of the window for DIC algorithm
+font_size = 13;
 
+% ##########################################
+L_x = 3840; % size of the image in pixel, along x-axis
+h_drone = 140; % height of the drone in meter
+theta_x = 32.75; % semi AFOV of the drone, along x-axis, in °
+
+fx_pix = L_x/(2*h_drone*tan(theta_x*pi/180)); % scale in pixels / meter
+fx = fx_pix*2/W;
+fx = 1;
+% ##########################################
+
+% fx = 0.8857; % for W = 64; 
+%fx = 0.8857*2; % spatial scale in boxes/meter
+Dt = 2; % step between two frames that were compared during the PIV algorithm 
+
+scale_V = (fe/Dt) / fx_pix; % scale of the velocity in m/s
+scale_V = 1;
+% store scales in structure m
+m.scale_V = scale_V;
+m.ft = fe;
+m.fx = fx;
+%%
+m = m_scaled;
+%% Get Histogram displacement 
+W = 32;
 % Vx = m.Vx(10:end,:,:) - mean(mean(m.Vx(10:end,:,:),2),1);
 filename = [fig_folder 'histogramm_displacements'];
 
-get_histogram_displacement(m.Vx/scale_V,W,font_size,filename);
+get_histogram_displacement(m.Vx,W,font_size,filename);
 
 %% Get profile of velocity
 i_x = 20;
@@ -101,7 +105,7 @@ caxis_amp = 1.0; % Amplitude of the colorbar scale (in meter / second)
 plot_velocity_features(Vx,Vy,facq_x,idx_frame,caxis_amp,fig_folder);
 
 %% Get a movie of the velocity field 
-caxis_amp = [-2 2];
+caxis_amp = [-2 2]; %% modifier avec le quantile de 0.9
 fig_name = [fig_folder 'Velocity_field_Vx_movie'];
 fps = facq_t ;
 movie_velocity_field(Vx,facq_x,facq_t,caxis_amp,fps,fig_name)
@@ -126,22 +130,22 @@ saveas(fig_spectrum,file,'fig')
 
 %% Get demodulated field
 disp('Getting demodulated fields')
-selected_freq = [0.07 1.1];
+selected_freq = [0.1 1.0];
 x_bound = [1 size(FFT_t,1)];
-caxis_amp = 2; % amplitude of the colorbar in meter/second
+caxis_amp = -1; % amplitude of the colorbar in meter/second
 fig_name = 'Demodulated_field_continuous';
 
 save_image = 0;
-save_video = 1;
+save_video = 0;
 plot_demodulated_field(FFT_t,f,facq_x,selected_freq,x_bound,caxis_amp,fig_folder,fig_name,save_image,save_video)
 
 %% Get wave vectors 
 disp('Getting wave vectors')
-selected_freq = [0.07 1.1]; % selected frequencies between which we proceed to the analysis
-x_bound = [1 size(FFT_t,1)]; % selected boundaries at which we perform 2D FFT
+selected_freq = [0.1 1.0]; % selected frequencies between which we proceed to the analysis
+x_bound = [1 48*facq_x]; % selected boundaries at which we perform 2D FFT
 padding_bool = 1;
 add_pow2 = 2; % additional power of 2 for padding 
-black_mask = 10;
+black_mask = 10; % in pixels
 caxis_amp = -1;
 fig_name = 'Spatial_Fourier_space_video';
 

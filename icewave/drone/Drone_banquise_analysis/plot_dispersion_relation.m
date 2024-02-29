@@ -3,11 +3,11 @@ clear all
 close all
 
 %% Load data
-base = '//192.168.1.70/Share/Data/0215/Drones/mesange/matData/waves_003/';
-filename = 'dispersion_relation_data_continuous_fmin0p07_fmax1p1_add_pow2.mat';
+base = '//192.168.1.70/Share/Data/0211/Drones/Fulmar/matData/';
+filename = 'dispersion_relation_data_continuous_fmin0p05_fmax0p7_add_pow2.mat';
 
 fullname = [base filename];
-fig_folder = [base 'Plots/'];
+fig_folder = [base];
 
 
 %%
@@ -83,15 +83,18 @@ if save_boolean
     disp('Loading plot data, DONE.');
 end
 %% Final Plot !
-
-data_plot = [fig_folder 'Disp_relation_addpad2.mat'];
+fig_folder = '//192.168.1.70/Share/Data/0211/Drones/Fulmar/matData/SWO_FUL_20240211T203233UTC/Plots/continuous_ice/';
+data_plot = [fig_folder 'dispersion_relation_data_continuous_fmin0p15_fmax0p6_add_pow2.mat'];
 load_bool = 0;
 if load_bool
     load(data_plot)
     disp('Data to plot loaded');
 end 
 
-save_boolean = 1;
+fitted_k = k;
+fitted_omega = 2*pi*freq;
+
+save_boolean = 0;
 
 %Physical_parameters
 g = 9.81; % intensity of gravity
@@ -114,12 +117,12 @@ gravito_waves = sqrt(g*k_list .* tanh(k_list*h));
 
 % Power law fitting 
 % data to plot
-mask_powerlaw = (fitted_omega < 2.0) & (fitted_k > 0.53) ;
-k_powerlaw = fitted_k(mask_powerlaw);
-omega_powerlaw = fitted_omega(mask_powerlaw);
-l1 = fminsearch(@(s)powerfit(k_powerlaw,omega_powerlaw,s),[1,1]);
+% mask_powerlaw = (fitted_omega < 2.0) & (fitted_k > 0.53) ;
+% k_powerlaw = fitted_k(mask_powerlaw);
+% omega_powerlaw = fitted_omega(mask_powerlaw);
+% l1 = fminsearch(@(s)powerfit(k_powerlaw,omega_powerlaw,s),[1,1]);
 % l1 = fminsearch(@(s)powerfit(fitted_k,fitted_omega,s),[1,1]);
-yth = powerfun(k_list,l1); % fitted exponential function
+% yth = powerfun(k_list,l1); % fitted exponential function
 
 % Plot
 relation_disp_scaled = figure(34);
@@ -140,14 +143,14 @@ xlabel('Wave number $k$ $(m^{-1})$','Interpreter','latex');
 ylabel('Pulsation $\omega$ $(s^{-1})$','Interpreter','latex');
 axis([xlim_min xlim_max ylim_min ylim_max]);
 shallow_txt = ['Shallow, $h = ' sprintf('%0.1f',h) '\: \rm m$'];
-power_law_txt = ['$\omega = ' sprintf('%0.2f',l1(2)) 'k^{' sprintf('%0.2f',l1(1)) '}$'];
+% power_law_txt = ['$\omega = ' sprintf('%0.2f',l1(2)) 'k^{' sprintf('%0.2f',l1(1)) '}$'];
 gravito_txt = ['$\omega = \sqrt{(g  k  tanh(k h))}$'];
 legend('Data','Deep water', shallow_txt, gravito_txt, 'Interpreter','latex','Location','northwest');
 grid on
 
 % Saving the plot
 %fig_folder = 'C:/Users/sebas/Stage_MIZ/Traitement_PIV_Rimouski_20230310/';
-file_relation_disp_scaled = [fig_folder 'Relation_disp_2024_02_15_waves_003'];
+file_relation_disp_scaled = [fig_folder 'Relation_disp_2024_02_11_continuous_ice'];
 if save_boolean 
     saveas(relation_disp_scaled,file_relation_disp_scaled,'pdf');
     saveas(relation_disp_scaled,file_relation_disp_scaled,'fig');
