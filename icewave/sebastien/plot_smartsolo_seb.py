@@ -17,18 +17,18 @@ from datetime import datetime
 import numpy as np
 from scipy import interpolate
 
+#%%
 
 
-
-path2data = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/2024_BICWIN/0226/Geophones'
-geophones_table_path = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/geophones_table'
+path2data = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/Data/0210/geophones'
+geophones_table_path = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/Geophones/geophones_table'
 
 #----------------------- SELECTING ACQ NUMBER AND CHANNEL ------------------ 
 
 acqu_numb = '0001'
 channel = 2 #0 for E, 1 for N, 2 for Z. 
 
-
+#%%
 #----------------------- FUNCTIONS ------------------ 
 
 #warnings.filterwarnings("ignore", category=np.ComplexWarning)
@@ -207,7 +207,7 @@ def convert_to_utc_times(trace, time_vector):
 
 # Load geophones table into a dictionary
 geophones_dict = {}
-with open('/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/geophones_table', 'r') as table_file:
+with open(geophones_table_path, 'r') as table_file:
     for line in table_file:
         if line.startswith("Num"):
             continue  # Skip header line
@@ -281,6 +281,8 @@ fs = first_trace.stats.sampling_rate
  
 selected_indices = range(channel, len(seismic_data_streams),3)
 
+#%%
+
 #----------------------- PLOTTING SELECTED CHANNEL FOR WHOLE RECORDING ------------------ 
 fig, ax = plt.subplots()
 for k in selected_indices:
@@ -302,24 +304,25 @@ plt.show(block=True)  # Use block=True to make it work better in Spyder
 
 
 
+#%%
 #----------------------- SELECTING TIME RANGE FOR PROCESSING ------------------ 
 # Define time range for "zooming"
 
+# dir 1
+ 
+t1 = UTCDateTime("2024-02-10T12:49:44.9") # S101 Z1
+t1 = UTCDateTime("2024-02-10T12:50:52.0") # S102 Z1
+t1 = UTCDateTime("2024-02-10T12:52:03.2") # S103 Z3
 
+t1 = UTCDateTime("2024-02-10T12:50:07.6") # S101 E3
+t1 = UTCDateTime("2024-02-10T12:51:16.35") # S102 E4
+t1 = UTCDateTime("2024-02-10T12:52:18.2") # S103 E3
 
+t1 = UTCDateTime("2024-02-10T12:50:31.6") # S101 N4
+t1 = UTCDateTime("2024-02-10T12:51:31.3") # S102 N3
+t1 = UTCDateTime("2024-02-10T12:52:31.46") # S103 N3
 
-t1 = UTCDateTime("2024-02-26T18:18:52.7") # S104 Z3
-t1 = UTCDateTime("2024-02-26T18:19:54.8") # S105 Z3
-t1 = UTCDateTime("2024-02-26T18:20:37.75") # S106 Z3
-
-t1 = UTCDateTime("2024-02-26T18:19:09.24") # S104 E?
-t1 = UTCDateTime("2024-02-26T18:20:42.59") # S104 E?
-t1 = UTCDateTime("2024-02-26T18:20:53.44") # S104 E?
-
-t1 = UTCDateTime("2024-02-26T18:19:17.84") # S104 N2
-t1 = UTCDateTime("2024-02-26T18:20:15.42") # S104 N
-t1 = UTCDateTime("2024-02-26T18:21:01.86") # S104 N
-
+# dir 2
 
 t1 = UTCDateTime("2024-02-26T18:16:43.62") # S101 N2
 t1 = UTCDateTime("2024-02-26T18:17:16.70") # S102 N2
@@ -329,14 +332,20 @@ t1 = UTCDateTime("2024-02-26T18:17:58.1") # S103 N3
 t1 = UTCDateTime("2024-02-26T18:16:41.75") # S103 N3
 t1 = UTCDateTime("2024-02-26T18:16:36.15") # S103 N3
 
+
+
+########################
+#%% First FK-plot
+########################
+
 signal_length = 1.5 # duration in seconds
+
 t2 = t1 + signal_length
 num_samples = int((t2 - t1) * first_trace.stats.sampling_rate)
 time_vector = np.linspace(t1.timestamp, t2.timestamp, num_samples)
 
 # Create a matrix to store the seismic data
 num_traces = len(seismic_data_streams)
-
 
 
 seismic_matrix = np.zeros((len(selected_indices), num_samples))
@@ -388,7 +397,7 @@ plt.show()
 
 
 
-
+#%%
 
 
 #----------------------- CONSTRUCTING MATRIX FOR FK WITH SVD ------------------
@@ -396,18 +405,18 @@ plt.show()
 
 
 
-t1_values = [UTCDateTime("2024-02-26T18:18:52.7"), 
-              UTCDateTime("2024-02-26T18:19:54.8"), 
-              UTCDateTime("2024-02-26T18:20:37.75")]  #sources Z dir2
+t1_values = [UTCDateTime("2024-02-10T12:49:44.9"), 
+              UTCDateTime("2024-02-10T12:50:52.0"), 
+              UTCDateTime("2024-02-10T12:52:03.2")]  #sources Z dir1
 
-t1_values = [UTCDateTime("2024-02-26T18:19:09.24"), 
-              UTCDateTime("2024-02-26T18:20:42.59"), 
-              UTCDateTime("2024-02-26T18:20:53.44")]  #sources E dir2
+t1_values = [UTCDateTime("2024-02-10T12:50:07.6"), 
+              UTCDateTime("2024-02-10T12:51:16.35"), 
+              UTCDateTime("2024-02-10T12:52:18.2")]  #sources E dir1
 
+t1_values = [UTCDateTime("2024-02-10T12:50:31.6"), 
+              UTCDateTime("2024-02-10T12:51:31.3"), 
+              UTCDateTime("2024-02-10T12:52:31.46")]  #sources N dir1
 
-t1_values = [UTCDateTime("2024-02-26T18:19:17.84"), 
-              UTCDateTime("2024-02-26T18:20:15.42"), 
-              UTCDateTime("2024-02-26T18:21:01.86")]  #sources N dir2
 
 
 t1_values = [UTCDateTime("2024-02-26T18:16:43.62"), 
@@ -416,8 +425,7 @@ t1_values = [UTCDateTime("2024-02-26T18:16:43.62"),
 
 
 
-
-
+#%%
 # Create a 3D matrix to store the seismic data
 num_traces = len(seismic_data_streams)
 num_samples = int(signal_length * first_trace.stats.sampling_rate)  
@@ -449,7 +457,7 @@ ax.set_title('Seismic Data for Selected Streams at Different t1 Values')
 plt.show()
 
 
-
+#%%
 #----------------------- INTERPOLATING 3D MATRIX ------------------
 
 # Interpolate along the first dimension
@@ -492,16 +500,46 @@ ax.set_ylabel('Normalized Seismic Data')
 ax.set_title('Seismic Data for Selected Streams at Different t1 Values')
 plt.show()
 
+#%% Select points to determine shear velocity 
+
+points_shear = plt.ginput(10, timeout=-1)
+f_mode, k_mode = zip(*points_shear)
+
+#%%
+# fit by a 1D polynome
+deg = 1
+p = np.polyfit(f_mode,k_mode,deg)
+
+C_shear = 2*np.pi/p[0]
+print(C_shear)
 
 
-C_shear = np.mean([2*np.pi*48/0.417])
-C_longi = np.mean([2*np.pi*100/0.59])
+#%% Select points to determine longitudinal velocity 
 
+points_longi = plt.ginput(10, timeout=-1)
+f_mode, k_mode = zip(*points_longi)
 
+#%%
+# fit by a 1D polynome
+deg = 1
+p = np.polyfit(f_mode,k_mode,deg)
+
+C_longi = 2*np.pi/p[0]
+print(C_longi)
+
+#%%
+# C_shear = np.mean([2*np.pi*200/0.85])
+C_shear = np.mean([2*np.pi*220/0.5])
+# C_longi = np.mean([2*np.pi*100/0.59])
+C_longi = np.mean([2*np.pi*220/1.0])
+
+#%%
 rho_ice = 917
 nu = 1-2*(C_shear/C_longi)**2
 E = rho_ice*C_longi**2*(1-nu**2)
 
+print(E)
+print(nu)
 
 
 

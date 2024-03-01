@@ -14,7 +14,6 @@ import pickle
 
 def wavenumbers_stein( rho_ice, h, E, nu,freq,c_w,rho_w):
     
-    
     g = 9.81
     G = E/(2*(1+nu))
     cS0 = np.sqrt(E/(rho_ice*(1-nu**2)))
@@ -50,16 +49,17 @@ def wavenumbers_stein( rho_ice, h, E, nu,freq,c_w,rho_w):
     
     return k_QS, k_QS0, k_SH0, cphQS
 
+#%%
 rho_ice = 917
-E = 1.47e9# 2.43e9
-nu = 0.42
-c_w = 1450
-rho_w = 1027
+E = 5.06e9# 2.43e9
+nu = 0.245
+c_w = 1450 # waves celerity in water 
+rho_w = 1027 # density of water 
 h = np.arange(0.1,0.6,0.005)
-path2data = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/2024_BICWIN/0226/Geophones'
-acqu_numb = '0002'
+path2data = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/Data/0210/geophones'
+acqu_numb = '0001'
 
-file2load = path2data +'/' +acqu_numb+'/'+'dispersion_QS_dir2.pkl'
+file2load = path2data +'/' +acqu_numb+'/'+'dispersion_QS_dir1.pkl'
 with open(file2load, "rb") as f:
     data = pickle.load(f)
 f_mode1 = data[0] 
@@ -83,7 +83,6 @@ f_mode = f_mode1
 k_mode = k_mode1
 
 
-
 l2_norm = np.zeros(len(h))
 for i in range(len(h)):
     k_mode_synthetic, k_QS0, k_SH0, cphQS = wavenumbers_stein( rho_ice, h[i], E, nu,f_mode,c_w,rho_w)
@@ -99,8 +98,6 @@ plt.plot(f_mode, k_mode_synthetic, color='g', label='Line between points')
 plt.plot(f_mode, k_mode, linestyle='--', color='r', label='Line between points') 
 
  
-
-
 plt.plot(h,l2_norm)
 
 print(h_ice)

@@ -8,7 +8,11 @@ Created on Wed Jan 24 18:35:07 2024
 import os
 import shutil
 
-#%%
+#%% 
+#####################################################################
+## Change miniseed files name, using geophone correspondance table
+#####################################################################
+
 #path2data = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/2024_BICWIN/0206/Geophones'
 path2data = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/Data/0210/geophones/'
 geophones_table_path = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/Geophones/geophones_table'
@@ -42,8 +46,13 @@ for filename in os.listdir(miniseed_directory):
             print(f'Renamed: {filename} -> {new_filename}')
         else:
             print(f'Geophone serial number {geophone_serial_number} not found in geophones_table.')
-#%%
-path2data = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/2024_BICWIN/0210/Geophones'
+            
+#%% 
+####################################
+## Sort miniseed files into folders
+####################################
+
+#path2data = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/Data/0210/geophones/'
 
 for filename in os.listdir(path2data):
     if filename.endswith(".miniseed"):
@@ -95,7 +104,10 @@ for filename in os.listdir(path2data):
 
 
 
-
+#%% 
+###########################################################################
+## Rename miniseed files using .LOG files and geophone correspondance table
+###########################################################################
 
 def find_serial_number(file_path):
     with open(file_path, 'r') as file:

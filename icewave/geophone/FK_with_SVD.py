@@ -104,15 +104,12 @@ def fn_svd(signals, fs, xs, rang,name, issaving, *varargin):
 
 
 
+#%%
 
 
 
-
-
-
-
-rang = [0,1,2]
-geophones_spacing = 3
+rang = [0,1,2] # 
+geophones_spacing = 3 # spacing between two geophones in meter
 signals = np.transpose(seismic_matrix, (0, 2, 1))
 #signals = np.transpose(seismic_matrices_interp, (0, 2, 1))
 
@@ -120,9 +117,13 @@ signals = np.transpose(seismic_matrix, (0, 2, 1))
 
 f, k, FK = fn_svd(signals, fs, geophones_spacing,rang,'ExampleName', 0, 'threshold',-60)
 F, K = np.meshgrid(f, k)
+#%%
+######################################################
 # ! NEEDS FLIPUD DEPENDING ON DIRECTION OF PROPAGATION
+######################################################
+
 FK = FK/np.max(FK)
-FK = np.flipud(FK/np.max(FK))
+# FK = np.flipud(FK/np.max(FK))
 
 
 
@@ -142,7 +143,7 @@ plt.colorbar(c1, ax=ax1, label='Spectrum Magnitude')
 
 #points = plt.ginput(2, timeout=-1)
 
-
+#%%
 # #----------------------- UNWRAPPING SPECTRUM ------------------
 
 
@@ -160,6 +161,7 @@ ax1.set_ylabel('Wavenumber (k)')
 ax1.set_title('Spectrum with ,VD filter')
 plt.colorbar(c1, ax=ax1, label='Spectrum Magnitude')
 
+#%% Select points on the FK plot
 
 points = plt.ginput(10, timeout=-1)
 
@@ -169,7 +171,7 @@ f_mode, k_mode = zip(*points)
 # Plot a line between the two selected points
 plt.plot(f_mode, k_mode, linestyle='--', color='r', label='Line between points')
 
-file2save = path2data +'/' +acqu_numb+'/'+'dispersion_QS_dir2.pkl'
+file2save = path2data +'/' +acqu_numb+'/'+'dispersion_QS_dir1.pkl'
 with open(file2save,'wb') as f:
     pickle.dump([f_mode, k_mode], f)
 

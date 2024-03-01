@@ -5,7 +5,7 @@ Created on Mon Jan 22 10:38:04 2024
 
 @author: moreaul
 """
-%matplotlib qt
+#%matplotlib qt
 import os
 import shutil
 from obspy import read
