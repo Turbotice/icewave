@@ -1,12 +1,12 @@
 
 %% Definition of the folder to process and where to save the results
 
-date = '20240215';
-base = ['/media/turbots/BicWin2024/Share/Data/' date(5:end) '/Drones/mesange/'];
+date = '20240223';
+base = ['/media/turbots/Hublot24/Share_hublot/PIV_images/' date(5:end) '/Drones/mesange/'];
 % base = '/media/turbots/DATA/thiou/labshared2/Banquise/Rimouski_2023/Data/drone/20230310/contexte/video/';
 % base = 'W:/Banquise/Rimouski_2023/Data/drone/20230310/contexte/video/';
 % folder = [base date '/contexte/video/'];
-folder = [base 'waves_003/waves_003/']; 
+folder = [base 'frac+waves_002/']; 
 filelist = dir([folder 'im*.tiff']); dirnames={};
 [dirnames{1:length(filelist),1}] = deal(filelist.name);
 dirnames = sortrows(dirnames);
