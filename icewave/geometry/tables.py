@@ -9,11 +9,13 @@ from pprint import pprint
 import icewave.gps.gps as gps
 import icewave.tools.datafolders as df
 
-def represent_waypoints(gpx,imin,imax,table=None,ax=None,date=''):
+def represent_waypoints(gpx,imin,imax,iplus=[],table=None,ax=None,date=''):
     if table is None:
         table = read_table()
 
     indices = select(gpx,imin,imax)
+    if len(iplus)>0:
+        indices = list(indices)+iplus
     Long,Lat = [],[]
     waypoints = np.asarray(gpx.waypoints)[indices]
     for waypoint in waypoints:

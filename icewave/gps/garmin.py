@@ -154,6 +154,7 @@ def convert_traj(d,tmin=None,tmax=None):
         y = a.get_value('position_lat')
         if x is not None:
             if tmin is not None:
+                #print(a.get_value('timestamp').time())
                 b1 = a.get_value('timestamp').time()>tmin
                 b2 = a.get_value('timestamp').time()<tmax
                 if not (b1 and b2):
@@ -168,8 +169,14 @@ def convert_traj(d,tmin=None,tmax=None):
 def compare_times(t1,t2,comp = '>'):
     if comp == '>':
         t1.i
-        
+
+def get_time(waypoint):
+    import datetime
+    t1 = waypoint.time
+    t = datetime.time(t1.hour,t1.minute,t1.second)
+    return t
+
 def get_traj(filename,tmin=None,tmax=None):
     d = decode(filename)
     X,Y = convert_traj(d,tmin=tmin,tmax=tmax)
-    return X,Y
+    return X,Y,d
