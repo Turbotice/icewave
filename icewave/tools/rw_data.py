@@ -7,6 +7,7 @@ Created on Thu Mar 26 14:15:20 2015
 
 import os.path
 import numpy as np
+import csv
 #to use to read data files in ASCII formats (or others ?)
 #to use to write data files in ASCII formats (or others ?) with label on the top :
 # in particular to create a catalog of the parameters of all the existing data (!)
@@ -15,7 +16,47 @@ import numpy as np
 def read_xml():
     pass
 
-def read_csv():
-    pass
+def read_csv(filename):
+    rows = []
+    with open(filename,'r') as csvfile:
+        spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
+        for row in spamreader:
+            rows.append(row)
+    return rows
 
-    
+def write_csv(filename,data):
+    with open(filename, 'w', newline='') as csvfile:
+        spamwriter = csv.writer(csvfile, delimiter=',',quotechar='|')
+        
+        keys = list(data.keys())
+        spamwriter.writerow(keys)
+        n = len(data[keys[0]])
+
+        for i in range(n):
+            line = [data[key][i] for key in keys]
+            spamwriter.writerow(line)
+
+def writedict_csv(filename,data):
+    with open(filename, 'w') as csvfile:
+        spamwriter = csv.writer(csvfile, delimiter=',',quotechar='|')#, quoting=csv.QUOTE_MINIMAL)
+
+        keys = list(data.keys())
+        print(keys)
+        header = ['#']+list(data[keys[0]].keys())
+        spamwriter.writerow(header)
+        for key in data.keys():
+            row = [key]+[data[key][k] for k in data[key].keys()]
+            spamwriter.writerow(row)
+                
+
+def csv2dict(table):
+    data = {}
+    if table[0][0]=='#':
+        keys = table[0][1:]
+        print(keys)
+        for tab in table[1:]:
+            print(tab)
+            data[int(tab[0])]={}
+            for (t,key) in zip(tab[1:],keys):
+                data[int(tab[0])][key]=float(t)
+    return data

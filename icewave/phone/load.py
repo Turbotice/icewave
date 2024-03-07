@@ -61,7 +61,15 @@ def read_meta(csvfile):
     d={}
     with open(csvfile) as f:
         csv_reader = csv.reader(f, delimiter=',')
+        line=0
         for row in csv_reader:
-            d[row[0]]=row[1]
+            if line==0:
+                headers = row
+            else:
+                #print(headers,row)
+                for i,header in enumerate(headers):
+                    d[header[:6]+'_'+row[0]]=row[i]
+            line+=1
+
     return d
 

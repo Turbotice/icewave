@@ -70,7 +70,6 @@ Il ne décrit que les étapes permettant le traitement total des vidéos.
 	 La fonction appelle piv_FFTmulti (décrite ci-dessous) grâce à laquelle on récupère le champ de vitesse (u0,v0) entre les deux images comparées. 
 	 - piv_FFTmulti est une fonction implémentée dans PIVlab, elle permet de réaliser la PIV et d'obtenir le champ de vitesse associé après corrélation entre deux images.
 	 
-
 	 
   --> piv_analysis.m 
 	Permet de réaliser la PIV sur une paire d'images (filename1, filename2). Les actions réalisées par la fonction sont entièrement décrites dans la fonction Matlab. 

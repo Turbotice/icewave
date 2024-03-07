@@ -1,3 +1,8 @@
+
+
+clear all; 
+close all;
+
 %% Loading structure obtained after PIV processing and post-processing
 
 base = '//192.168.1.70/Share/Data/0211/Drones/Fulmar/matData/';
@@ -42,14 +47,15 @@ Vymoy = mean(mean(m.Vy,2),1);
 
 Vx = supress_quadratic_noise(m.Vx,x,y);
 Vy = supress_quadratic_noise(m.Vy,x,y);
-
+V = sqrt(Vx.^2 + Vy.^2);
 disp('Drone motion corrected')
 
 %% Get time Fourier transform
 disp('Getting Time Fourier transform')
 padding_bool = 1;
 add_pow2 = 0;
-[FFT_t,TF_spectrum,f] = temporal_FFT(Vy(:,:,:),padding_bool,add_pow2,facq_t);
+
+[FFT_t,TF_spectrum,f] = temporal_FFT(V(:,:,:),padding_bool,add_pow2,facq_t);
 
 %%
 fig_spectrum = figure; 
@@ -63,26 +69,66 @@ ax.FontSize = 13;
 file = [fig_folder 'FFT_spectrum'];
 saveas(fig_spectrum,file,'fig')
 
+%% Select a demodulated field for 2D-FFT
+
+selected_freq = 0.3;
+[val,idx] = min(abs(f - selected_freq));
+xmin = 1;
+xmax = 36*facq_x ;
+a = FFT_t(xmin:xmax,:,idx);
+
+padding_bool = 1;
+add_pow2 = 2;
+
+% 2D-FFT 
+[shifted_fft,fft_2D,kx,ky] = spatial_FFT(a,padding_bool,add_pow2,facq_x);
+shifted_fft = shifted_fft ./ max(shifted_fft,[],'all');
+
+% Detect peaks 
+min_height = 0.8;
+[pks,locs_x,locs_y] = peaks2(shifted_fft,'MinPeakHeight',min_height);
+
+%%
+% Plot detected peaks
+figure,
+imagesc(abs(shifted_fft)');
+hold on 
+plot(locs_x,locs_y,'ro')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 %% Get demodulated field
 disp('Getting demodulated fields')
-selected_freq = [0.15 0.6];
-x_bound = [1 36*facq_x];
+selected_freq = [0.07 0.7];
+x_bound = [1 38*facq_x];
 caxis_amp = -1; % amplitude of the colorbar in meter/second
 fig_name = 'Demodulated_field_continuous';
 
 save_image = 0;
-save_video = 1;
+save_video = 0;
 plot_demodulated_field(FFT_t,f,facq_x,selected_freq,x_bound,caxis_amp,fig_folder,fig_name,save_image,save_video)
 
 %% Get wave vectors 
 disp('Getting wave vectors')
-selected_freq = [0.15 0.6]; % selected frequencies between which we proceed to the analysis
+selected_freq = [0.07 0.8]; % selected frequencies between which we proceed to the analysis
 x_bound = [1 36*facq_x]; % selected boundaries at which we perform 2D FFT
 padding_bool = 1;
 add_pow2 = 2; % additional power of 2 for padding 
 black_mask = 10;
 caxis_amp = -1;
-fig_name = 'Spatial_Fourier_space_video';
+fig_name = 'Spatial_Fourier_space_video_V';
 
 save_image = 0;
 save_video = 1;

@@ -4,20 +4,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pickle
 
-path2logfile = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/2024_BICWIN/0206/Geophones'
+plt.close('all')
+path2logfile = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/2024_BICWIN/0226/Geophones'
 geophones_table_path = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/geophones_table'
 
-
-pickle_file_path = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/2024_BICWIN/0206/Geometry/0001_Y_m_vs_X_mgeophone_line_16.pkl'
+#pickle_file_path = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/2024_BICWIN/0206/Geometry/0001_Y_m_vs_X_mgeophone_line_16.pkl'
+#pickle_file_path = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/2024_BICWIN/0210/Geometry/geometry_2024_0210Y_m_vs_X_m_general.pkl'
 
 # Load the pickled data
-with open(pickle_file_path, 'rb') as file:
-    loaded_data = pickle.load(file)
+# with open(pickle_file_path, 'rb') as file:
+#     loaded_data = pickle.load(file)
 
-# Now, 'loaded_data' contains the data from the pickled file
-print(loaded_data)
-
-
+# # Now, 'loaded_data' contains the data from the pickled file
+# print(loaded_data)
 
 
 def find_coordinates(log_content):
@@ -72,16 +71,7 @@ if __name__ == "__main__":
             print(f"Acquisition {acquisition}:")
             print(f"   GPS Coordinates Matrix: {matrix}")
 
-#matrix_1_1 = all_matrices['DigiSolo_07.LOG'][1]
-#print(f"GPS Coordinates Matrix for File DigiSolo_08.LOG, Acquisition 1: {matrix_1_1}")
-
-
-
-# Assuming 'all_matrices' is the dictionary returned from your main function
-# (the one you printed in the original script)
-# It contains the GPS coordinates matrices for each file and acquisition
-
-def plot_average_coordinates(all_matrices, acquisition_number, geophones_table_path):
+def plot_average_coordinates(all_matrices, acquisition_numbers, geophones_table_path):
     # Load geophones table
     geophones_table = {}
     with open(geophones_table_path, 'r') as table_file:
@@ -92,49 +82,48 @@ def plot_average_coordinates(all_matrices, acquisition_number, geophones_table_p
             geophones_table[geo_sn] = num
 
     plt.figure(figsize=(10, 6))
-    plt.title(f'Average GPS Coordinates for Acquisition {acquisition_number}')
+    plt.title('Average GPS Coordinates for Acquisitions')
 
-    for file, matrices in all_matrices.items():
-        if acquisition_number in matrices:
-            coordinates = matrices[acquisition_number]
-            coordinates_np = np.array(coordinates, dtype=float)
+    for acquisition_number in acquisition_numbers:
+        for file, matrices in all_matrices.items():
+            if acquisition_number in matrices:
+                coordinates = matrices[acquisition_number]
+                coordinates_np = np.array(coordinates, dtype=float)
 
-            if coordinates_np.ndim == 1:
-                avg_latitude = coordinates_np[0]
-                avg_longitude = coordinates_np[1]
-            else:
-                avg_latitude = np.mean(coordinates_np[:, 0])
-                avg_longitude = np.mean(coordinates_np[:, 1])
-
-            # Extract the four-digit number from the filename using a correct regex pattern
-            file_number_match = re.search(r'DigiSolo_(\d{4})', file)
-            if file_number_match:
-                file_number = file_number_match.group(1)
-                geo_sn = "45302" + file_number.zfill(4)  # Add leading zeros and the prefix
-
-            
-                # Look up the corresponding two-digit number from the geophones table
-                if geo_sn in geophones_table:
-                    two_digit_number = geophones_table[geo_sn]
-                    label = f"GN_{two_digit_number}"
+                if coordinates_np.ndim == 1:
+                    avg_latitude = coordinates_np[0]
+                    avg_longitude = coordinates_np[1]
                 else:
-                    label = f"Unknown"
+                    avg_latitude = np.mean(coordinates_np[:, 0])
+                    avg_longitude = np.mean(coordinates_np[:, 1])
 
+                # Extract the four-digit number from the filename using a correct regex pattern
+                file_number_match = re.search(r'DigiSolo_(\d{4})', file)
+                if file_number_match:
+                    file_number = file_number_match.group(1)
+                    geo_sn = "45302" + file_number.zfill(4)  # Add leading zeros and the prefix
 
-                # Plot the average point for each file with the new label
-                plt.scatter(avg_latitude, avg_longitude, label=label)
+                    # Look up the corresponding two-digit number from the geophones table
+                    if geo_sn in geophones_table:
+                        two_digit_number = geophones_table[geo_sn]
+                        label = f"GN_{two_digit_number}"
+                    else:
+                        label = f"Unknown"
+
+                    # Plot the average point for each file with the new label
+                    plt.scatter(avg_latitude, avg_longitude, label=f'Acquisition {acquisition_number} - {label}')
 
     plt.xlabel('Latitude')
     plt.ylabel('Longitude')
-    plt.legend()
+    #plt.legend()
     
-    output_file_path = os.path.join(path2logfile, f'average_coordinates_acq{acquisition_number}.png')
+    output_file_path = os.path.join(path2logfile, f'average_coordinates_acqs_{acquisition_numbers}.png')
     plt.savefig(output_file_path)
     plt.show()
 
-acquisition_number = 2
-plot_average_coordinates(all_matrices, acquisition_number, geophones_table_path)
-
+# Specify the acquisition numbers you want to plot
+acquisition_numbers_to_plot =[3,4]
+plot_average_coordinates(all_matrices, acquisition_numbers_to_plot, geophones_table_path)
 
 def save_average_coordinates(all_matrices, acquisition_number, path2logfile):
     # Prepare the full path to the text file
@@ -167,11 +156,9 @@ def save_average_coordinates(all_matrices, acquisition_number, path2logfile):
                 # Write the row in the text file
                 output_file.write(f"{gn_identifier}\t{avg_latitude}\t{avg_longitude}\n")
 
+    # Save the figure for this acquisition
+    plot_average_coordinates(all_matrices, [acquisition_number], geophones_table_path)
 
-
-
-save_average_coordinates(all_matrices, acquisition_number+1, path2logfile)
-
-
-
-
+# Save average coordinates and corresponding figures
+for acquisition_number_to_save in acquisition_numbers_to_plot:
+    save_average_coordinates(all_matrices, acquisition_number_to_save, path2logfile)

@@ -1,19 +1,20 @@
 
 %% Definition of the folder to process and where to save the results
 
-date = '20240215';
-base = ['/media/turbots/BicWin2024/Share/Data/' date(5:end) '/Drones/mesange/'];
+date = '20240223';
+base_img = ['/media/turbots/Hublot24/Share_hublot/PIV_images/' date(5:end) '/Drones/mesange/'];
+base = ['/media/turbots/Hublot24/Share_hublot/Data/' date(5:end) '/Drones/mesange/'];
 % base = '/media/turbots/DATA/thiou/labshared2/Banquise/Rimouski_2023/Data/drone/20230310/contexte/video/';
 % base = 'W:/Banquise/Rimouski_2023/Data/drone/20230310/contexte/video/';
 % folder = [base date '/contexte/video/'];
-folder = [base 'waves_003/waves_003/']; 
-filelist = dir([folder 'im*.tiff']); dirnames={};
+folder_img = [base_img 'frac+waves_002/']; 
+filelist = dir([folder_img 'im*.tiff']); dirnames={};
 [dirnames{1:length(filelist),1}] = deal(filelist.name);
 dirnames = sortrows(dirnames);
 amount = length(dirnames);
 disp(amount)
 %save_folder = '/media/turbots/DATA/thiou/labshared2/Banquise/Rimouski_2023/Traitement_donnees/PIV_Sebastien';
-save_folder = [base 'matData/waves_003/'];
+save_folder = [base 'matData/frac+waves_002/'];
 %dirsave=[save_folder 'raw_datas/'];
 dirsave = save_folder;
 for i=1:length(filelist)
@@ -22,7 +23,7 @@ end
 
 %% Main script
 
-if ~exist(dirsave)
+if exist(dirsave,'dir') ~= 7
     mkdir(dirsave)
 end
 %
@@ -47,7 +48,7 @@ for i=1:1%amount
     %    matname=string(strcat(['D:\Surface waves\Wave jet interaction\' date '\matData\'],'jet_', jetstring,'_f_', freq,'Hz_down.mat'));
         %namesave=extractBetween(name, 'z740mm_', '_1');
         
-    i0 = 0; %process starting from image i0
+    i0 = 150; %process starting from image i0
     N = 0; %number of frames to analyze
     Dt = 4; %ratio between the fps and the scanning frequency (number of image between image A and image B)
     b = 1; %number of images between image A and image A' (from one step to an other)
@@ -55,11 +56,12 @@ for i=1:1%amount
     widthroi = 3840;
     yROI = 1;
     heightroi = 2160;
-    W = 64;
+    W = 32;
     %namesave = [namesave 'N_' num2str(N) '_i0_' num2str(i0)];
-    prefix = ['PIV_processed_i0' num2str(i0) '_Dt' num2str(Dt) '_b' num2str(b) '_W' num2str(W) '_full_'];
-    matname=string(strcat(dirsave,prefix, namesave,'.mat'));
+    prefix = ['PIV_processed_i0' num2str(i0) '_Dt' num2str(Dt) '_b' num2str(b) '_W' num2str(W) '_full'];
+    matname = string(strcat(dirsave,prefix,'.mat'));
     disp(matname)
+
     if ~isfile(matname)
         disp(name)
         fullname = [folderfile];% '/' name];

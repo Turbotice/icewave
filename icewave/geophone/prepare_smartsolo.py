@@ -8,9 +8,10 @@ Created on Wed Jan 24 18:35:07 2024
 import os
 import shutil
 
-
-path2data = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/2024_BICWIN/0206/Geophones'
-geophones_table_path = '/Geophones/Deployment/geophones_table'
+#%%
+#path2data = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/2024_BICWIN/0206/Geophones'
+path2data = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/Data/0210/geophones/'
+geophones_table_path = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/Geophones/geophones_table'
 
 
 # Read geophones_table into a dictionary
@@ -41,8 +42,34 @@ for filename in os.listdir(miniseed_directory):
             print(f'Renamed: {filename} -> {new_filename}')
         else:
             print(f'Geophone serial number {geophone_serial_number} not found in geophones_table.')
+#%%
+path2data = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/2024_BICWIN/0210/Geophones'
+
+for filename in os.listdir(path2data):
+    if filename.endswith(".miniseed"):
+        new_filename = filename.replace('..', '.', 2)
+        full_path_old = os.path.join(path2data, filename)
+        full_path_new = os.path.join(path2data, new_filename)
+        os.rename(full_path_old, full_path_new)
 
 
+files = os.listdir(path2data)
+
+# Iterate through each file
+for filename in files:
+    print(filename[:3 ])
+    # Check if the file has the specified pattern
+    if filename[:2].isdigit() and filename[2] == '.' and filename[3].isdigit() and filename[4] == '.':
+        # Replace the second dot with two zeros
+        new_filename = filename[:4 ] + '00' + filename[5:]
+        
+        # Construct the full paths
+        old_path = os.path.join(path2data, filename)
+        new_path = os.path.join(path2data, new_filename)
+        
+        # Rename the file
+        os.rename(old_path, new_path)
+        print(f'Renamed: {filename} to {new_filename}')
 
 
 # Create a dictionary to store files based on acq_number
