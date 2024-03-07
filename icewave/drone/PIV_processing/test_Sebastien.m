@@ -52,20 +52,19 @@
 % base = 'W:/Banquise/Rimouski_2023/Data/drone/';
 
 clear all;
-% date = '20240215';
-% base = ['/media/turbots/BicWin2024/Share/Data/' date(5:end) '/Drones/mesange/'];
+date = '20240223';
+base = ['/media/turbots/Hublot24/Share_hublot/Data/' date(5:end) '/Drones/mesange/'];
 
-base = 'G:/Rimouski_2024/Data/2024/0215/Drones/mesange/waves_003/';
 % base = 'E:/PIVlab_drone/matdata/raw_datas/';
-folder = base; %'matData/waves_003/'];% folder of raw datas
-filename = 'PIV_processed_i01_Dt2_b1_W32_full_total_processed.mat';
+folder = [base 'matData/frac+waves_002/'];% folder of raw datas
+filename = 'PIV_processed_i0150_Dt4_b1_W32_full.mat';
 fullname = [folder filename];%[folder filename];% filename of raw datas
 
 a = 1; % number of boxes to crop on the side
 w = 32; % size of the last window used during PIV process
-Dt = 2; % step between two frames that were compared during the PIV algorithm 
+Dt = 4; % step between two frames that were compared during the PIV algorithm 
 N = 0; % total number of frames processed
-i0 = 0; % first index of the frame processed
+i0 = 150; % first index of the frame processed
 b = 1; % step between frame A and A' at which velocity is computed
 
 %% Scaling 
@@ -74,16 +73,17 @@ ft = 1/facq_t ; % factor scaling for time in sec / frame
 
 % ##########################################
 L_x = 3840; % size of the image in pixel, along larger axis (x-axis)
-h_drone = 140; % height of the drone in meter
-theta_x = 34.2; % semi AFOV of the drone, along x-axis, in °
+h_drone = 8.53; % height of the drone in meter
+theta_x = 34.15; % semi AFOV of the drone, along x-axis, in °
 
 facq_pix = L_x/(2*h_drone*tan(theta_x*pi/180)); % scale in pixels / meter
-facq_x = fx_pix*2/w; % scale in box / meter
+facq_x = facq_pix*2/w; % scale in box / meter
 fx = 1/facq_x; % factor scaling in meter / box
+fx = 1;
 % ##########################################
 
 scale_V = (facq_t/Dt) / facq_x; % scale of the velocity in m/s
-
+scale_V = 1;
 % store scales in structure m
 % m.scale_V = scale_V;
 % m.ft = fe;
@@ -116,11 +116,14 @@ m = genere_structure_banquise(u,v,u_filt,v_filt,fx,ft,scale_V,a,p,s,w);
 m.Dt = Dt;
 m.i0 = i0;
 m.b = b;
+m.h_drone = h_drone;
+m.theta_x = theta_x;
 
+m.alpha = 22.9; % pitch angle of the camera in degrees
 % save the structure under a new file name
-save_name = filename;
+save_name = fullname;
 save_name = replace(save_name,'.mat','_total_processed.mat');
-savemat_dir = [base 'test/'];
+savemat_dir = [folder];
 if ~exist(savemat_dir)
     mkdir(savemat_dir)
 end

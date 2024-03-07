@@ -5,45 +5,54 @@ Created on Fri Feb 16 12:32:58 2024
 @author: sebas
 """
 import glob
-import pylab
+# import pylab
 import imageio
 import cv2
-
+import numpy as np
 import os
 #import icewave.tools.browse as browse
 
 #%%
 
 def main():
-    datafolder = '//192.168.1.70/Share/Data/0221/Drones/bernache/21-calib_004/'
+    datafolder = '/media/turbots/Hublot24/Share_hublot/Data/0223/Drones/mesange/20-frac+waves_002/'
 
     # datafolder = browse.find_path(datafolder)
     print(datafolder)
     file_mp4 = glob.glob(datafolder+'*.MP4')
     
     filelist = file_mp4
+    filelist = sorted(filelist)
     print(len(filelist))
     print(filelist)
     return filelist
 
 def find_number_frames(filelist):
     
-    
     N = 0
-    for filename in filelist :
+    frames_array = np.zeros(len(filelist))
+    
+    for i in range(len(filelist)) :
+        filename = filelist[i]
         print(filename)
         vid = imageio.get_reader(filename,  'ffmpeg')
         nb_frames = vid.count_frames() # number of frames in the video
-        N += nb_frames 
-        print(N)
-    return N
+        if i == 0 :
+            frames_array[i] = nb_frames
+        else:
+            frames_array[i] = int(frames_array[i-1] + nb_frames)              
+    N = int(frames_array[-1]) 
+    print(N)
+    frames_array = frames_array.astype(int)
+    print(frames_array)
+    return N, frames_array
     
-    
+
 # for filename in filelist[2]:
 #     print(os.path.basename(filename))
 def later(filelist,directory_save,savename):
     
-    N = find_number_frames(filelist) # total number of frames
+    [N,frames_array] = find_number_frames(filelist) # total number of frames
     nb_max_digit = len(str(N)) 
     
     savefolder = directory_save +'/'+os.path.basename(savename).split('.')[0] +'/'
@@ -51,21 +60,25 @@ def later(filelist,directory_save,savename):
         
     if not os.path.isdir(savefolder):
         os.makedirs(savefolder)
-    
+
     for i in range(len(filelist)):
 
         filename = filelist[i]
         print(filename)
         vid = imageio.get_reader(filename,  'ffmpeg')
-    
-        nb_frames = vid.count_frames() # number of frames in the video
-
-        nums = [p for p in range(i, i + nb_frames)]
+         
+        if i == 0 :
+            nums = [p for p in range(0, frames_array[0])]
+        else :
+            nums = [p for p in range(frames_array[i-1],frames_array[i])]
+            
+        print(nums[-1])
     #directory = os.path.dirname(filename)
        
         for num in nums:
             print(num)
-            image = vid.get_data(num)
+            idx = num - nums[0]
+            image = vid.get_data(idx)
             # print(image.shape)
             
             
@@ -81,9 +94,10 @@ def later(filelist,directory_save,savename):
             #     pylab.imshow(image)
             # pylab.show()
 
+    print('DONE.')    
 
 if __name__=='__main__':
     filelist = main()
-    directory_save = 'G:/Rimouski_2024/Data/2024/0221/Drones/bernache/21-calib_004/'
-    savename = 'calib_004'
+    directory_save = '/media/turbots/Hublot24/Share_hublot/PIV_images/0223/Drones/mesange/'
+    savename = 'frac+waves_002'
     vid = later(filelist,directory_save,savename)

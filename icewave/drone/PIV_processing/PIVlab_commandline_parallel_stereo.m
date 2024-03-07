@@ -20,9 +20,9 @@ disp(amount)
 % Standard PIV Settings
 s = cell(11,2); % To make it more readable, let's create a "settings table"
 %Parameter                          %Setting           %Options
-s{1,1}= 'Int. area 1';              s{1,2} = 128;         % window size of first pass
-s{2,1}= 'Step size 1';              s{2,2} = 64;         % step of first pass
-s{3,1}= 'Subpix. finder';           s{3,2} = 2;          % 1 = 3point Gauss, 2 = 2D Gauss
+s{1,1}= 'Int. area 1';              s{1,2}=128;         % window size of first pass
+s{2,1}= 'Step size 1';              s{2,2}=64;         % step of first pass
+s{3,1}= 'Subpix. finder';           s{3,2}=2;          % 1 = 3point Gauss, 2 = 2D Gauss
 s{4,1}= 'Mask';                     s{4,2}=[];         % If needed, generate via: imagesc(image); [temp,Mask{1,1},Mask{1,2}]=roipoly;
 %s{5,1}= 'ROI';                      s{5,2}=[1,1,3449,2159];         % Region of interest: [x,y,width,height] in pixels, may be left empty
 s{5,1}= 'ROI';                      s{5,2}=[];         % Region of interest: [x,y,width,height] in pixels, may be left empty
