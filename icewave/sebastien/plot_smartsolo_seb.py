@@ -13,21 +13,26 @@ from obspy.core import UTCDateTime
 import matplotlib.pyplot as plt
 from matplotlib.widgets import RectangleSelector
 import mplcursors
-from datetime import datetime
+from datetime import datetime, date, time 
 import numpy as np
 from scipy import interpolate
 
 #%%
 
 
-path2data = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/Data/0210/geophones'
+path2data = 'E:/Rimouski_2024/Data/2024/0211/Geophones/'
 geophones_table_path = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/Geophones/geophones_table'
 
 #----------------------- SELECTING ACQ NUMBER AND CHANNEL ------------------ 
 
 acqu_numb = '0001'
 channel = 2 #0 for E, 1 for N, 2 for Z. 
+channel_correspondance = ['E','N','Z']
 
+fig_folder = path2data + 'Results/' # folder where figures are saved 
+
+if not os.path.isdir(fig_folder):
+    os.mkdir(fig_folder)
 #%%
 #----------------------- FUNCTIONS ------------------ 
 
@@ -121,22 +126,22 @@ def fn_svd(signals, fs, xs, name, issaving, *varargin):
 
     return f, k, projections_sum
 
-def read_data(path2data):
-    miniseed_files = []
+# def read_data(path2data):
+#     miniseed_files = [] # contains path of all miniseed file
     
-    # Iterate over files in the specified directory
-    for filename in os.listdir(path2data):
-        if filename.endswith(".miniseed"):
-            file_path = os.path.join(path2data, filename)
-            miniseed_files.append(file_path)
+#     # Iterate over files in the specified directory
+#     for filename in os.listdir(path2data):
+#         if filename.endswith(".miniseed"):
+#             file_path = os.path.join(path2data, filename)
+#             miniseed_files.append(file_path)
     
-    # Read MiniSEED files
-    streams = []
-    for file_path in miniseed_files:
-        stream = read(file_path)
-        streams.append(stream)
+#     # Read MiniSEED files
+#     streams = []
+#     for file_path in miniseed_files:
+#         stream = read(file_path)
+#         streams.append(stream)
     
-    return streams, miniseed_files
+#     return streams, miniseed_files
 
 class ZoomHandler:
     def __init__(self, ax, time_vector, data_vector):
@@ -176,16 +181,13 @@ def convert_to_utc_times(trace, time_vector):
 
 
 
-
-
-
 # Read geophones table into a dictionary
-geophones_dict = {}
-with open(geophones_table_path, 'r') as table_file:
-    next(table_file)  # Skip the header line
-    for line in table_file:
-        num, geo_sn = line.strip().split('\t')
-        geophones_dict[geo_sn] = num
+# geophones_dict = {}
+# with open(geophones_table_path, 'r') as table_file:
+#     next(table_file)  # Skip the header line
+#     for line in table_file:
+#         num, geo_sn = line.strip().split('\t')
+#         geophones_dict[geo_sn] = num
 
 def read_data(path2data):
     miniseed_files = []
@@ -202,6 +204,7 @@ def read_data(path2data):
     return streams, miniseed_files
 
 def convert_to_utc_times(trace, time_vector):
+    """ Create a UTC-time time vector for a given trace """
     start_time_utc = UTCDateTime(trace.stats.starttime)
     return [start_time_utc + t for t in time_vector]
 
@@ -218,6 +221,7 @@ with open(geophones_table_path, 'r') as table_file:
 
 
 def rename_traces(stream, geophones_dict):
+    """ Rename geophone traces using geophone_table """
     for trace in stream:
         # Extract the last 5 digits after "SS."
         last_five_digits = trace.stats.station[-5:]
@@ -237,8 +241,6 @@ def rename_traces(stream, geophones_dict):
     sorted_stream = sorted(stream, key=lambda trace: trace.stats.station)
 
     return sorted_stream
-
-
 
 
 
@@ -281,6 +283,49 @@ fs = first_trace.stats.sampling_rate
  
 selected_indices = range(channel, len(seismic_data_streams),3)
 
+
+#%%
+# ---------------------- Plot all channels for a single device ---------------------------
+
+idx_geophone = 15 # index of the geophone to be plotted
+
+fig, ax = plt.subplots(3)
+for k in range (0,3):
+    current_stream = seismic_data_streams[(idx_geophone - 1)*3 + k]
+    print(current_stream[0])
+    ax[k].plot(datetime_values,current_stream[0].data / max(np.abs(current_stream[0].data) ),label = channel_correspondance[k])
+    ax[k].legend()
+    # ax[k].set_ylim([-1, 1])
+    # fig.suptitle(f"Seismic Data - {start_time_utc.strftime('%Y-%m-%d %H:%M:%S')}", fontsize=16)
+    # # # Create an instance of ZoomHandler
+    # # zoom_handler = ZoomHandler(ax, time_vector, data_vector)
+    # # fig.canvas.mpl_connect('button_press_event', zoom_handler.on_click)
+    # # # Enable interactive labels using mplcursors
+    # # mplcursors.cursor(hover=True)
+    # # Adjust the backend to make it work better in Spyder
+    # plt.ion()
+    # plt.show(block=True)  # Use block=True to make it work better in Spyder
+
+fig.tight_layout()
+#%% Set xlim for all subplots
+
+Mydate = date(2024,2,11)
+time_start = datetime.combine(Mydate,time(18,47,7))
+time_end = datetime.combine(Mydate,time(18,47,35))
+xlimits = [time_start, time_end]
+
+for k in range(0,3):
+    ax[k].set_xlim([time_start, time_end])
+    
+#%% Save current figure
+fig.tight_layout()
+
+figname = 'Stream_ENZ_geophone_' + str(idx_geophone) + '_zoomed'
+figname = fig_folder + figname
+
+plt.savefig(figname + '.pdf')
+plt.savefig(figname + '.png')
+
 #%%
 
 #----------------------- PLOTTING SELECTED CHANNEL FOR WHOLE RECORDING ------------------ 
@@ -290,7 +335,7 @@ for k in selected_indices:
     print(current_stream[0])
     # Plot the data for each stream using precalculated datetime values
     ax.plot(datetime_values, 
-            current_stream[0].data / max(np.abs(current_stream[0].data) )+ k, 
+            current_stream[0].data / max(np.abs(current_stream[0].data) ) + k, 
             label=f"Stream {k}")
 fig.suptitle(f"Seismic Data - {start_time_utc.strftime('%Y-%m-%d %H:%M:%S')}", fontsize=16)
 # Create an instance of ZoomHandler
@@ -303,26 +348,38 @@ plt.ion()
 plt.show(block=True)  # Use block=True to make it work better in Spyder
 
 
+#%% Select xlim of the plot 
+Mydate = date(2024,2,11)
+time_start = datetime.combine(Mydate,time(18,47,7))
+time_end = datetime.combine(Mydate,time(18,47,35))
+ax.set_xlim([time_start, time_end])
+
+#%% Once correclty zoomed, we can save the figure 
+figname = 'Streams_all_geophones_' + channel_correspondance[channel] + acqu_numb
+figname = fig_folder + figname
+
+plt.savefig(figname + '.pdf')
+plt.savefig(figname + '.png')
 
 #%%
 #----------------------- SELECTING TIME RANGE FOR PROCESSING ------------------ 
 # Define time range for "zooming"
 
-# dir 1
+# direction 1
  
-t1 = UTCDateTime("2024-02-10T12:49:44.9") # S101 Z1
-t1 = UTCDateTime("2024-02-10T12:50:52.0") # S102 Z1
-t1 = UTCDateTime("2024-02-10T12:52:03.2") # S103 Z3
+tZ = [UTCDateTime("2024-02-11T18:44:29.20"), # S101 Z3
+      UTCDateTime("2024-02-11T18:44:58.45"), # S102 Z3
+      UTCDateTime("2024-02-11T18:45:31.05")] # S103 Z2
 
-t1 = UTCDateTime("2024-02-10T12:50:07.6") # S101 E3
-t1 = UTCDateTime("2024-02-10T12:51:16.35") # S102 E4
-t1 = UTCDateTime("2024-02-10T12:52:18.2") # S103 E3
+tE = [UTCDateTime("2024-02-11T18:44:37.32"), # S101 E2
+      UTCDateTime("2024-02-11T18:45:08.30"), # S102 E3
+      UTCDateTime("2024-02-11T18:45:38.42")] # S103 E1
 
-t1 = UTCDateTime("2024-02-10T12:50:31.6") # S101 N4
-t1 = UTCDateTime("2024-02-10T12:51:31.3") # S102 N3
-t1 = UTCDateTime("2024-02-10T12:52:31.46") # S103 N3
+tN = [UTCDateTime("2024-02-11T18:44:48.14"), # S101 N2
+      UTCDateTime("2024-02-11T18:45:16.48"), # S102 N3
+      UTCDateTime("2024-02-11T18:45:48.15")] # S103 N2
 
-# dir 2
+# direction 2
 
 t1 = UTCDateTime("2024-02-26T18:16:43.62") # S101 N2
 t1 = UTCDateTime("2024-02-26T18:17:16.70") # S102 N2
@@ -340,10 +397,22 @@ t1 = UTCDateTime("2024-02-26T18:16:36.15") # S103 N3
 
 signal_length = 1.5 # duration in seconds
 
+### Select the channel on which we extract data
+channel = 2 # #0 = E, 1 = N, #2 = Z 
+### Select source index 0, 1 or 2 (S1, S2 or S3)
+source_index = 0
+
+if channel == 0:
+    t1 = tE[source_index]
+elif channel == 1:
+    t1 = tN[source_index]
+else :
+    t1 = tZ[source_index]
+    
 t2 = t1 + signal_length
 num_samples = int((t2 - t1) * first_trace.stats.sampling_rate)
 time_vector = np.linspace(t1.timestamp, t2.timestamp, num_samples)
-
+UTC_time_vector = [datetime.utcfromtimestamp(t) for t in time_vector]
 # Create a matrix to store the seismic data
 num_traces = len(seismic_data_streams)
 
@@ -357,22 +426,29 @@ for i, stream_index in enumerate(range(channel, len(seismic_data_streams), 3)):
         end_sample = start_sample + num_samples
         seismic_matrix[i, :] = trace.data[start_sample:end_sample]
 
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize = (16,10))
 for k in range(seismic_matrix.shape[0]):
-    ax.plot(time_vector, seismic_matrix[k, :] / max(np.abs(seismic_matrix[k, :])) + 3*k, label=f"Stream {k}")
+    ax.plot(UTC_time_vector, seismic_matrix[k, :] / max(np.abs(seismic_matrix[k, :])) + 3*k, label=f"Stream {k}")
 ax.set_xlabel('Time (UTC)')
-ax.set_ylabel('Normalized Seismic Data')
-ax.set_title('Seismic Data for Selected Streams')
+ax.set_ylabel('Distance to G1 $(\mathrm{m^{-1}})$')
+# ax.set_title('Seismic Data for Selected Streams, channel ' + channel_correspondance[channel])
 #ax.legend()
 plt.show()
 
-## PLOTTING WAVENUMBER VS FREQUENCY SPECTRUM
+#%% Save the current figure 
+figname = fig_folder + 'Signal_evolution_' + channel_correspondance[channel] + str(source_index)
+plt.savefig(figname + '.pdf',dpi = 1200)
+plt.savefig(figname + '.png',dpi = 1200)
+
+
+#%% PLOTTING WAVENUMBER VS FREQUENCY SPECTRUM for the selected signal
+
 Nfft_t= 1024
 Nfft_k = 1024
-geohpones_spacing = 3
+geophones_spacing = 3 # space between geophones, in meter 
 fs = 1000
-ks = 2*np.pi/geohpones_spacing
-space_vector = np.arange(0,seismic_matrix.shape[0],geohpones_spacing)
+ks = 2*np.pi/geophones_spacing
+space_vector = np.arange(0,seismic_matrix.shape[0],geophones_spacing)
 
 # Define the spatial and temporal frequencies
 wavenum = np.fft.fftfreq(Nfft_k, d=1/ks)
@@ -384,6 +460,7 @@ seismic_fft = np.fft.fft2(seismic_matrix, (Nfft_k, Nfft_t))
 # Shift zero frequency component to the center
 seismic_fft_shifted = np.fft.fftshift(seismic_fft)
 
+fig, ax = plt.subplots()
 # Plot the 2D Fourier transform
 plt.imshow((np.abs(seismic_fft_shifted)), extent=(freq.min(), freq.max(), wavenum.min(), wavenum.max()), aspect='auto', cmap='viridis')
 #plt.colorbar(label='Amplitude')
@@ -391,9 +468,7 @@ plt.xlabel('Temporal Frequency (Hz)')
 plt.ylabel('Spatial Frequency')
 plt.title('2D Fourier Transform of Seismic')
 plt.show()
-
-
-
+ax.set_xlim([0 , fs/4])
 
 
 
@@ -402,26 +477,33 @@ plt.show()
 
 #----------------------- CONSTRUCTING MATRIX FOR FK WITH SVD ------------------
 
+# choose channel from which we extract signals : #0 = E, #1 = N, #2 = Z
+channel = 2
+
+if channel == 0 :
+    t1_values = tE
+elif channel == 1:
+    t1_values = tN
+else:
+    t1_values = tZ
+    
+# t1_values = [UTCDateTime("2024-03-06T17:19:22.09"), 
+#               UTCDateTime("2024-03-06T17:20:15.26"), 
+#               UTCDateTime("2024-03-06T17:20:56.18")]  #sources Z dir1
+
+# t1_values = [UTCDateTime("2024-03-06T17:19:42.95"), 
+#               UTCDateTime("2024-03-06T17:20:29.86"), 
+#               UTCDateTime("2024-03-06T17:21:17.16")]  #sources E dir1
+
+# t1_values = [UTCDateTime("2024-03-06T17:20:08.05"), 
+#               UTCDateTime("2024-03-06T17:20:45.05"), 
+#               UTCDateTime("2024-03-06T17:21:26.94")]  #sources N dir1
 
 
 
-t1_values = [UTCDateTime("2024-02-10T12:49:44.9"), 
-              UTCDateTime("2024-02-10T12:50:52.0"), 
-              UTCDateTime("2024-02-10T12:52:03.2")]  #sources Z dir1
-
-t1_values = [UTCDateTime("2024-02-10T12:50:07.6"), 
-              UTCDateTime("2024-02-10T12:51:16.35"), 
-              UTCDateTime("2024-02-10T12:52:18.2")]  #sources E dir1
-
-t1_values = [UTCDateTime("2024-02-10T12:50:31.6"), 
-              UTCDateTime("2024-02-10T12:51:31.3"), 
-              UTCDateTime("2024-02-10T12:52:31.46")]  #sources N dir1
-
-
-
-t1_values = [UTCDateTime("2024-02-26T18:16:43.62"), 
-              UTCDateTime("2024-02-26T18:17:16.70"), 
-              UTCDateTime("2024-02-26T18:17:58.1")]  #sources N dir1
+# t1_values = [UTCDateTime("2024-02-26T18:16:43.62"), 
+#               UTCDateTime("2024-02-26T18:17:16.70"), 
+#               UTCDateTime("2024-02-26T18:17:58.1")]  #sources N dir1
 
 
 
@@ -432,7 +514,7 @@ num_samples = int(signal_length * first_trace.stats.sampling_rate)
 
 # Dynamically determine the length of the third dimension
 third_dim_len = len(t1_values) if len(t1_values) > 1 else 1
-seismic_matrix = np.zeros((len(selected_indices), third_dim_len, num_samples))
+seismic_matrix = np.zeros((len(selected_indices), third_dim_len, num_samples)) # matrix dim : geo_indices x signal_number x time
 
 # Extract the relevant data for each trace and populate the 3D matrix
 for i, stream_index in enumerate(range(channel, len(seismic_data_streams), 3)):
@@ -448,7 +530,7 @@ for i, stream_index in enumerate(range(channel, len(seismic_data_streams), 3)):
 fig, ax = plt.subplots()
 for k in range(seismic_matrix.shape[0]):
     for t1_index in range(seismic_matrix.shape[1]):
-        ax.plot(time_vector, seismic_matrix[k, t1_index, :] / max(np.abs(seismic_matrix[k, t1_index, :])) + 3*k,
+        ax.plot(UTC_time_vector, seismic_matrix[k, t1_index, :] / max(np.abs(seismic_matrix[k, t1_index, :])) + 3*k,
                 label=f"Stream {k}, t1={t1_values[t1_index]}")
 
 ax.set_xlabel('Time (UTC)')
@@ -468,7 +550,6 @@ xr = np.arange(0, 46, 3)
 xs = np.arange(5, 12, 3)
 xr_new = np.arange(0, 46, 1)
 t_new = time_vector
-
 
 
 xx, tt = np.meshgrid(xr, t_new, sparse=True)
@@ -538,7 +619,7 @@ rho_ice = 917
 nu = 1-2*(C_shear/C_longi)**2
 E = rho_ice*C_longi**2*(1-nu**2)
 
-print(E)
+print(E*1e-9)
 print(nu)
 
 

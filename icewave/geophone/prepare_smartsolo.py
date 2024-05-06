@@ -10,7 +10,7 @@ import shutil
 
 #%%
 #path2data = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/2024_BICWIN/0206/Geophones'
-path2data = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/Data/0210/geophones/'
+path2data = '//192.168.1.70/Share_hublot/Data/0302/Geophones/'
 geophones_table_path = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/Geophones/geophones_table'
 
 
@@ -43,7 +43,7 @@ for filename in os.listdir(miniseed_directory):
         else:
             print(f'Geophone serial number {geophone_serial_number} not found in geophones_table.')
 #%%
-path2data = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/2024_BICWIN/0210/Geophones'
+# path2data = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/2024_BICWIN/0210/Geophones'
 
 for filename in os.listdir(path2data):
     if filename.endswith(".miniseed"):

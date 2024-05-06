@@ -76,11 +76,11 @@ m.t = (1:1:dimt)*ft;
 m.p_param = p;
 m.s_param = s;
     
-m.unitx = 1;
-m.unity = 1;
+m.unitx = 'meter';
+m.unity = 'meter';
     
-m.unitvx = 1;
-m.unitvy = 1;
+m.unitvx = 'm/s';
+m.unitvy = 'm/s';
 m.namevx = 'Vx';
 m.namevy = 'Vy';
     

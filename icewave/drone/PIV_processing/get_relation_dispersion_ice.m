@@ -244,6 +244,7 @@ end
 
 
 %% Get rid off quadratic noise (drone movements)
+
 [nx,ny,n] = size(m.Vx);
 %imax = 105; % maximum index on the x-axis
 imax = nx; % maximum idx used for ice 

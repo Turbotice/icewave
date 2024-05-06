@@ -51,8 +51,8 @@ def wavenumbers_stein( rho_ice, h, E, nu,freq,c_w,rho_w):
 
 #%%
 rho_ice = 917
-E = 5.06e9# 2.43e9
-nu = 0.245
+E = 7.31e9# 2.43e9
+nu = 0.4
 c_w = 1450 # waves celerity in water 
 rho_w = 1027 # density of water 
 h = np.arange(0.1,0.6,0.005)

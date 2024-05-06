@@ -1,4 +1,4 @@
-function get_histogram_displacement(Vx,W,font_size,filename)
+function get_histogram_displacement(Vx,W,bool_average,font_size,filename)
 
 % This functions plots the Histogram of the pixel displacements after a PIV
 % process
@@ -6,8 +6,9 @@ function get_histogram_displacement(Vx,W,font_size,filename)
 % window size sufficiently large, time step sufficiently big)
 
 % It takes as arguments : 
-% - Vx : the wavefield fo interest [ny,nx,nt]
+% - Vx : the wavefield of interest [ny,nx,nt]
 % - W : the last window size used
+% - bool_average : boolean to choose to average over time 
 % - fig_folder : folder where the histogram is saved
 
 % average over time, of the absolute velocity
@@ -21,7 +22,12 @@ up_bound = log10(W/4);
 
 hist_figure = figure;
 hist_figure.Color = [1,1,1];
-h = histogram(log10(Vxmoy(:)));
+if bool_average
+    h = histogram(log10(Vxmoy(:)));
+else
+    h = histogram(log10(abs(Vx)));
+end
+
 xline(low_bound,'r--')
 xline(up_bound,'r--')
 xlabel('$\log_{10}( \vert V_x \vert )$','Interpreter','latex','FontSize',font_size);

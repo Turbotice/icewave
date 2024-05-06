@@ -75,7 +75,8 @@ for i = 1:numel(relevant_indices)
     % Try to mask bottom 
     %shifted_fft(size(shifted_fft,1)/2 + 30:end,:) = zeros;
     
-    imagesc(kx,ky,abs(shifted_fft)');
+    pcolor(kx,ky,abs(shifted_fft)');
+    shading interp
     %imagesc(abs(shifted_fft));
     if save_video
         title(['Frequency : ' num2str(f(i0)) ' Hz'],'Interpreter','latex')
@@ -83,13 +84,13 @@ for i = 1:numel(relevant_indices)
     xlabel('$k_x$','Interpreter','latex');
     ylabel('$k_y$','Interpreter','latex');
     cbar = colorbar();
-    cbar.Label.String = '$ | \overline{V_x}| (k_x,k_y,f)$';
+    cbar.Label.String = '$ | \hat{V_x}| (k_x,k_y,f)$';
     cbar.Label.Interpreter = 'latex';
     if caxis_amp > 0
         caxis([0 caxis_amp])
     end 
     %axis([-4 4 -4 4])
-    %axis([-2.5 2.5 -2.5 2.5]);
+    axis([-2.5 2.5 -2.5 2.5]);
     ax = gca;
     ax.FontSize = 13;
 
@@ -101,7 +102,7 @@ for i = 1:numel(relevant_indices)
     % plot position of the peak
     kx_peak = kx(row); % dimension 1
     ky_peak = ky(col); % dimension 2
-    
+%     [theta,k_r] = cart2pol(kx_peak,ky_peak); % convert cartesian coordinates to polar
     plot(kx_peak,ky_peak,'ro');
     hold off
     %axis([-1.5 1.5 -1.5 1.5]);
@@ -119,6 +120,7 @@ for i = 1:numel(relevant_indices)
     dist(i0 - start_freq_idx + 1) = dist_k;
     disp(['k = ' num2str(dist_k)])
     %pause(0.3)
+%     disp(['k_r = ' num2str(k_r)])
     
     if save_image
         

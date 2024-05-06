@@ -38,5 +38,9 @@ function [FFT_t,TF_spectrum,f] = temporal_FFT(H_ww,padding_bool,add_pow2,fps)
     TF_spectrum = TF_inter(1:N/2+1);
     TF_spectrum(2:end-1) = 2*TF_spectrum(2:end-1); % multiply by 2 for peaks that are both in positive an negative frequencies
     f = fps*(0:(N/2))/N; % frequency array
+    
+    % keep only one half of the spectrum
+    FFT_t = FFT_t(:,:,1:N/2+1);
+    FFT_t(:,:,2:end-1) = 2*FFT_t(:,:,2:end-1);
 
 end 

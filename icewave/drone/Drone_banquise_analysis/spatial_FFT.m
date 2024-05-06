@@ -10,12 +10,17 @@ function [shifted_fft,fft_2D,ky,kx] = spatial_FFT(img,padding_bool,add_pow2,fx)
     [Ny, Nx] = size(img);
     Nb_elements = Nx*Ny; % number of elements of matrix a
     if padding_bool 
+            % generate a 2D - hamming function
+            ham_window = window2(Ny,Nx,@hamming);
+            
             padding_x = 2^(nextpow2(Nx) + add_pow2);
             padding_y = 2^(nextpow2(Ny) + add_pow2);
-            fft_2D = fft2(img,padding_y,padding_x);
+            fft_2D = fft2(img.*ham_window,padding_y,padding_x);
             disp('Padding used')
     else 
-            fft_2D = fft2(img);
+            % generate a 2D - hamming function
+            ham_window = window2(Ny,Nx,@hamming);
+            fft_2D = fft2(img.*ham_window);
             padding_x = Nx;
             padding_y = Ny;
             disp('No padding')

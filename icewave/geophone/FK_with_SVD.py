@@ -113,7 +113,7 @@ geophones_spacing = 3 # spacing between two geophones in meter
 signals = np.transpose(seismic_matrix, (0, 2, 1))
 #signals = np.transpose(seismic_matrices_interp, (0, 2, 1))
 
-
+  
 
 f, k, FK = fn_svd(signals, fs, geophones_spacing,rang,'ExampleName', 0, 'threshold',-60)
 F, K = np.meshgrid(f, k)
