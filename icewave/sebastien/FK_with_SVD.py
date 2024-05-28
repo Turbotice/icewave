@@ -21,7 +21,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 from matplotlib.patches import PathPatch
+from matplotlib import ticker
+
 plt.rcParams['text.usetex'] = True
+# Parameters for plots
+font_size_medium = 30
+font_size_small = 26
+plt.rc('font', size=font_size_medium)          # controls default text sizes
+plt.rc('axes', titlesize=font_size_medium)     # fontsize of the axes title
+plt.rc('axes', labelsize=font_size_medium)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=font_size_small)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=font_size_small)    # fontsize of the tick labels
+plt.rc('legend', fontsize=font_size_medium)    # legend fontsize
+plt.rc('figure', titlesize=font_size_medium)  # fontsize of the figure title
+
+fig_size = (12,9)
+img_quality = 1000 # dpi to save images 
+
+
 
 def fn_svd(signals, fs, xs, rang,name, issaving, *varargin):
     if varargin:
@@ -103,7 +120,10 @@ def fn_svd(signals, fs, xs, rang,name, issaving, *varargin):
 
     return f, k, projections_sum
 
-
+def extents(f):
+    """ Computes the extents of an array, returns extremities to be used with plt.imshow """
+    delta = f[1] - f[0]
+    return [f[0] - delta/2, f[-1] + delta/2]
 
 #%%
 
@@ -112,38 +132,94 @@ geophones_spacing = 3 # spacing between two geophones in meter
 signals = np.transpose(seismic_matrix, (0, 2, 1))
 #signals = np.transpose(seismic_matrices_interp, (0, 2, 1))
 
-
 f, k, FK = fn_svd(signals, fs, geophones_spacing,rang,'ExampleName', 0, 'threshold',-60)
+# dimension 1 : f
+# dimension 2 : k
 F, K = np.meshgrid(f, k)
 #%%
 ######################################################
 # ! NEEDS FLIPUD DEPENDING ON DIRECTION OF PROPAGATION
 ######################################################
 
+#%%
 FK = FK/np.max(FK)
 # FK = np.flipud(FK/np.max(FK))
 
 vmin = 0     # Minimum value for colormap
-vmax = 1# Maximum value for colormap (adjust as needed)
-fig, axes = plt.subplots(1, 1, figsize=(16, 10))
-ax1 = axes  # No need for indexing when there's only one subplot
-c1 = ax1.contourf(F, K, FK, cmap='gnuplot2', vmin=vmin, vmax=vmax)
-#ax1.set_ylim([-1.5, 1.5])
-ax1.set_xlabel(r'$f \; \mathrm{(Hz)}$')
-ax1.set_ylabel(r'$k \; \mathrm{(m^{-1})}$')
-# ax1.set_title('Spectrum with SVD filter')
-plt.colorbar(c1, ax=ax1, label= r'$|\hat{s}(f,k)|$')
+vmax = 1 # Maximum value for colormap (adjust as needed)
+fig, ax1 = plt.subplots(1, 1, figsize = fig_size)
 
-ax1.set_xlim([0, 400])
+# Computes extents for imshow
+x = extents(k)
+y = extents(f)
+
+c1 = ax1.imshow(np.transpose(FK), aspect = 'auto', cmap='gnuplot2',origin = 'lower',extent = x + y,vmin = vmin, vmax = vmax)
+
+#ax1.set_ylim([-1.5, 1.5])
+ax1.set_ylabel(r'$f \; \mathrm{(Hz)}$',labelpad = 5)
+ax1.set_xlabel(r'$k \; \mathrm{(m^{-1})}$',labelpad = 5)
+# ax1.set_title('Spectrum with SVD filter')
+plt.colorbar(c1, ax=ax1, label= r'$\frac{|\hat{s}|}{|\hat{s}|_{max}}(f,k)$')
+ax1.tick_params(axis='both', which='major', pad=7)
+ax1.set_ylim([0, 400])
 
 #%%
 figname = fig_folder + 'FK_plot_dir1_' + channel_correspondance[channel]
-plt.savefig(figname + '.pdf',dpi = 1000)
-plt.savefig(figname + '.png',dpi = 1000)
-#points = plt.ginput(2, timeout=-1)
+plt.savefig(figname + '.pdf',dpi = img_quality, bbox_inches='tight')
+plt.savefig(figname + '.png',dpi = img_quality, bbox_inches='tight')
+
+
+
+# #%%
+# FK = FK/np.max(FK)
+# # FK = np.flipud(FK/np.max(FK))
+
+# vmin = 0     # Minimum value for colormap
+# vmax = 1 # Maximum value for colormap (adjust as needed)
+# fig, axes = plt.subplots(1, 1, figsize = (16,10))
+# ax1 = axes  # No need for indexing when there's only one subplot
+# c1 = ax1.contourf(K, F, FK, cmap='gnuplot2', vmin=vmin, vmax=vmax)
+# #ax1.set_ylim([-1.5, 1.5])
+# ax1.set_ylabel(r'$f \; \mathrm{(Hz)}$')
+# ax1.set_xlabel(r'$k \; \mathrm{(m^{-1})}$')
+# # ax1.set_title('Spectrum with SVD filter')
+# plt.colorbar(c1, ax=ax1, label= r'$\frac{|\hat{s}|}{|\hat{s}_{max}|}(f,k)$')
+
+# ax1.set_ylim([0, 400])
+
+# #%%
+# figname = fig_folder + 'FK_plot_dir1_' + channel_correspondance[channel]
+# plt.savefig(figname + '.pdf',dpi = 1000)
+# plt.savefig(figname + '.png',dpi = 1000)
+# #points = plt.ginput(2, timeout=-1)
+
 
 #%%
-# #----------------------- UNWRAPPING SPECTRUM ------------------
+# #----------------------- UNWRAPPING SPECTRUM - HORIZONTAL STACKING ------------------
+nb_stacking = 2 # number of times we want to stack the FK plot horizontally
+idx_stacking = 1
+FK_uwp = np.vstack((FK, FK))
+while idx_stacking < nb_stacking :
+    FK_uwp = np.vstack((FK_uwp, FK))
+    idx_stacking += 1
+    
+k_uwp= np.linspace(0,(nb_stacking + 1)*max(k),FK_uwp.shape[0])
+
+
+vmin = 0     # Minimum value for colormap
+vmax = 1# Maximum value for colormap (adjust as needed)
+fig, ax1 = plt.subplots(1, 1, figsize=(10, 10))
+
+c1 = ax1.imshow(np.transpose(FK_uwp), aspect = 'auto', cmap='gnuplot2',
+                origin = 'lower',extent = extents(k_uwp) + extents(f),vmin = vmin, vmax = vmax)
+#ax1.set_ylim([-1.5, 1.5])
+ax1.set_xlabel(r'$k \; \mathrm{(m^{-1})}$')
+ax1.set_ylabel(r'$f \; \mathrm{(Hz)}$')
+ax1.set_title('Spectrum with SVD filter')
+plt.colorbar(c1, ax=ax1, label='Spectrum Magnitude')
+
+ax1.set_ylim([0, 250])
+#%% UNWRAPPING SPECTRUM - VERTICAL STACKING
 nb_stacking = 2 # number of times we want to stack the FK plot vertically
 idx_stacking = 1
 FK_uwp = np.vstack((FK, FK))
@@ -164,11 +240,11 @@ ax1.set_ylabel('Wavenumber (k)')
 ax1.set_title('Spectrum with SVD filter')
 plt.colorbar(c1, ax=ax1, label='Spectrum Magnitude')
 
+
 # ####################################
 #%% Only for Flexural mode (mode Z) Select points on the FK plot 
 # ####################################
 points = plt.ginput(10, timeout=-1)
-
 
 # Extract x and y coordinates of the selected points
 f_mode, k_mode = zip(*points)

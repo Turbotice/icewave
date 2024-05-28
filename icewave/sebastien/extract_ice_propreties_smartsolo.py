@@ -1,10 +1,10 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Jan 22 10:38:04 2024
+Created on Fri May 24 17:25:05 2024
 
-@author: moreaul
+@author: sebas
 """
+
 %matplotlib qt
 
 import os
@@ -18,7 +18,13 @@ from datetime import datetime, date, time
 import numpy as np
 from scipy import interpolate
 import scipy.integrate as integrate 
+from scipy.fftpack import fft, ifft
+from scipy.linalg import svd
+import pickle
+import csv 
 
+import seb
+from seb import pickle_m
 ##############################################################
 #%% --------- SETTING PARAMETERS AND PATHS -------------------
 ##############################################################
@@ -29,7 +35,6 @@ geophones_table_path = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/
 #----------------------- SELECTING ACQ NUMBER AND CHANNEL ------------------ 
 
 acqu_numb = '0001' 
-channel = 2 #0 for E, 1 for N, 2 for Z. 
 channel_correspondance = ['E','N','Z']
 gain = 12 # gain in dB 
 scale_factor = 10**(-gain/10)
@@ -50,7 +55,7 @@ fig_size = (12,9)
 img_quality = 1200 # dpi to save images 
 
 
-fig_folder = path2data + 'Couder_conference/' # folder where figures are saved 
+fig_folder = path2data + acqu_numb + '/' + 'Results/' # folder where figures are saved 
 
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
@@ -60,13 +65,30 @@ if not os.path.isdir(fig_folder):
 ######################################################
 
 #warnings.filterwarnings("ignore", category=np.ComplexWarning)
-def fn_svd(signals, fs, xs, name, issaving, *varargin):
-    threshold_user = None
-    rang = None
-
+def fn_svd(signals, fs, xs, rang,name, issaving, *varargin):
+    """ Computes spatio-temporal Fourier Transform using SVD decomposition.
+    Arguments : 
+        - signals : matrix #dim 1 : nb_recepters, #dim 2 : time, #dim 3 : nb_emitters (sources)
+        - fs : sampling frequency in time 
+        - xs : distance between geophones (inverse of spatial sampling)
+        - rang : row used to perform decomposition using SVD method (number of singulavr values used to perform decomposition)
+        - name : title of figure showing singular values 
+        - issaving : boolean to choose to save figue showing singular values or not 
+        - varargin : optionnal argument
+        
+    Returns : 
+        
+        - f : array of frequencies, scaled
+        - k : array of wavenumber, scaled 
+        - projections_sum : amplitude of FFT of the signal in time and space, using SVD method 
+        #dim 1 : k
+        #dim 2 : f """
+        
+    # additional argument if needed 
     if varargin:
         if varargin[0] == 'threshold':
-            threshold_user = varargin[1]
+            threshold_user = varargin[1] # threshold between signal and noise in dB of a peak value
+            # we keep left singular vectors, only if the associated singular values intensity is higher than this threshold 
         elif varargin[0] == 'rang':
             rang = varargin[1]
         else:
@@ -75,27 +97,27 @@ def fn_svd(signals, fs, xs, name, issaving, *varargin):
     else:
         print('varargin empty')
 
-    Nreceiv, Nt, Nemit = signals.shape
+    Nreceiv, Nt, Nemit = signals.shape # number of recepter, time steps and sources  
 
     # time domain fft
-    Nf = 1024
-    f = (np.arange(Nf//2 + 1) / Nf) * (fs if fs else 1)
+    Nf = 2048
+    f = (np.arange(Nf) / Nf) * (fs if fs else 1)
     f_axename = 'f/fs' if not fs else 'f'
-    SIGNALS = fft(signals, Nf, axis=1)
-    SIGNALS = SIGNALS[:, :Nf//2 + 1, :]
+    SIGNALS = fft(signals, Nf, axis=1) # fft over time 
+    SIGNALS = SIGNALS[:, :Nf + 1, :] 
 
     # svd
-    U = np.zeros((Nreceiv, Nf//2 + 1, Nemit))
-    S = np.zeros((Nemit, Nf//2 + 1, Nemit))
-    V = np.zeros((Nemit, Nf//2 + 1, Nemit))
-    D = np.zeros((Nemit, Nf//2 + 1))
+    U = np.zeros((Nreceiv, Nf, Nemit), dtype=complex) # left singular vectors
+    S = np.zeros((Nemit, Nf, Nemit), dtype=complex) # diagonal matrix with singular values 
+    V = np.zeros((Nemit, Nf, Nemit), dtype=complex) # right singular vectors 
+    D = np.zeros((Nemit, Nf), dtype=complex) # singular values for each frequency 
 
-    for ii in range(Nf//2 + 1):
-        U[:, ii, :], S[:, ii, :], V[:, ii, :] = svd(SIGNALS[:, ii, :], full_matrices=False)
-        D[:, ii] = np.diag(S[:, ii, :])
+    for ii in range(Nf): # loop over frequencies
+        U[:, ii, :], S[:, ii, :], V[:, ii, :] = svd(SIGNALS[:, ii, :], full_matrices=False) 
+        D[:, ii] = np.diag(S[:, ii, :]) # extract singular values for the associated frequency 
 
-    for ne in range(Nemit):
-        titi = 20 * np.log10(D[ne, :] / np.max(D[0, :]))
+    for ne in range(Nemit): 
+        titi = 20 * np.log10(np.abs(D[ne, :]) / np.max(np.abs(D[0, :])))
         plt.plot(f, titi, label=f'Slice {ne}')
 
     if threshold_user is None:
@@ -108,11 +130,9 @@ def fn_svd(signals, fs, xs, name, issaving, *varargin):
     else:
         sigmacutsup = np.full(int(Nf/2+1), threshold_user)
         sigmacutsup = threshold_user
-        #print(sigmacutsup)              
-    #plt.plot(f, sigmacutsup)
-    
-    
-    # uncomment #U[:, idx, ne] = 0 for applying the threshold, otherwise
+        # print(sigmacutsup)              
+    # plt.plot(f, sigmacutsup)
+
     for ne in range(Nemit):
         titi = 20 * np.log10(D[ne, :] / np.max(D[0, :]))
         idx = np.where(titi <= sigmacutsup)[0]
@@ -123,29 +143,25 @@ def fn_svd(signals, fs, xs, name, issaving, *varargin):
 
     # projection onto each singular vector
     Nk = 2048
-    k = (np.arange(Nk//2 + 1) / Nk) * (2 * np.pi / xs) if xs else np.arange(Nk//2 + 1)
+    k = (np.arange(Nk) / Nk) * (2 * np.pi / xs)  if xs else np.arange(Nk + 1)
     k_axename = 'k/ks' if not xs else 'k'
 
-    projections = ifft(U, Nk, axis=0)
-    projections = projections[:Nk//2 + 1, :, :]
+    projections = ifft(U, Nk, axis=0)#np.fft.fftshift(ifft(U, Nk, axis=0), axes=0)
+    # projections = projections[:Nk + 1, :, :]
+    # projections = projections[:, :-1, :]
+    projections_sum = np.zeros((Nk, Nf, Nemit))
 
-    projections_sum = np.zeros((Nk//2 + 1, Nf//2 + 1, Nemit))
-    #for kemit in range(Nemit):
-    #    for ii in range(Nf//2 + 1):
-    #        projections_sum[:, ii, kemit] = np.abs(projections[:, ii, kemit]) ** 2
-            
-    #kemit_values = [1,2,3]
-    kemit_values = [0,1,2]
-    for kemit in kemit_values:
-        for ii in range(Nf//2 + 1):
-            max_value = 1#np.max(np.abs(projections[:, ii, kemit]))
+    # for kemit in range(Nemit):
+    #     for ii in range(Nf + 1):
+    #         projections_sum[:, ii, kemit] = np.abs(projections[:, ii, kemit]) ** 2
+
+
+    for kemit in rang:
+        for ii in range(Nf):
+            max_value = 1  # np.max(np.abs(projections[:, ii, kemit]))
             projections_sum[:, ii, kemit] = np.abs(projections[:, ii, kemit]/max_value) ** 2
-            
 
-    projections_sum = np.abs(np.mean(projections_sum, axis=2))
-
-    if issaving:
-        plt.savefig(name + '_svd')
+    projections_sum = np.abs(np.mean(projections_sum, axis=2)) # average over number of emitters 
 
     return f, k, projections_sum
 
@@ -230,6 +246,85 @@ def rename_traces(stream, geophones_dict):
 def sort_key(trace):
     """ Create a sorting key based on stream stations """
     return trace[0].stats.station
+
+def wavenumbers_stein( rho_ice, h, E, nu,freq,c_w,rho_w):
+    """ This function computes the wave vectors associated to a given array of frequencies
+    It takes as arguments : 
+        - rho_ice : ice density 
+        - h : a given thickness of ice 
+        - E : Young modulus of ice
+        - nu : Poisson coefficient of ice
+        - freq : an array of frequencies, to which will correspond wave vectors 
+        - c_w : waves phase velocity
+        - rho_w : water density 
+        
+    The function returns : 
+        - k_QS : wave vectors of the flexural mode
+        - k_QS0 : wave vecotrs of the acoustic mode
+        - k_SH0 : wave vectors of the shear mode
+        - cphQS : phase velocity of the flexural mode"""
+    
+    
+    g = 9.81
+    G = E/(2*(1+nu))
+    cS0 = np.sqrt(E/(rho_ice*(1-nu**2))) # celerity of longitudinal wave
+    cSH0 = np.sqrt(G/rho_ice) # celerity of shear wave 
+    D = E*pow(h,3)/(12*(1-nu**2)) # flexural modulus
+
+    k = np.linspace(1e-12,10,100000)
+    
+    idx_zero = np.zeros(len(freq)) 
+    flag = 0
+    for kf in range(len(freq)):
+        omeg = 2*np.pi*freq[kf]
+        if omeg == 0:
+            flag = 1;
+            idx_flag = kf;
+        else:
+            cph = omeg/k # phase velocity
+            # Ludovic version
+            func = rho_w/D*(g-omeg/np.lib.scimath.sqrt((1/cph)**2 - (1/c_w)**2  )) - h*omeg**2*rho_w/D + pow(omeg/cph,4)
+            # Sebastien version (Stein 1998)
+            # func = rho_w/D*(g-omeg/np.lib.scimath.sqrt((1/cph)**2 - (1/c_w)**2  )) - h*omeg**2*rho_ice/D + pow(omeg/cph,4)
+            
+            func[func.imag != 0] = -1
+            func = func.real # keep only real part 
+            print(np.where(np.diff(np.signbit(func)))[0])
+            idx_zero[kf] = (np.where(np.diff(np.signbit(func)))[0]) # index of the array k at which func(k) = 0
+            
+    idx_zero = idx_zero.astype(int)        
+    k_QS =  k[idx_zero] # wave vector associated to flexural mode 
+    if flag:
+        k_QS[idx_flag] = 0
+        
+    k_QS0 = freq/cS0*2*np.pi # wave vector associated to longitudinal wave
+    k_SH0 = freq/cSH0*2*np.pi   # wave vector associated to shear wave
+    cphQS = freq/k_QS*2*np.pi # phase velocity of the flexural wave
+
+    
+    return k_QS, k_QS0, k_SH0, cphQS
+
+
+def hydro_elastic(f,h,rho_ice,E,nu):
+    """ Computes the hydro-elastic wave vector associated to an array frequency. 
+    The function takes the following arguments : 
+        - f : frequency arrray 
+        - h = thickness of ice 
+        - rho_ice = density of ice
+        - E = Young modulus of ice
+        - nu = Poisson coefficient 
+    """
+    
+    omega = 2*np.pi*f
+    k = omega**2 * (12*rho_ice*(1 - nu**2))/(E*h**3)
+    k = np.power(k,1/5)
+    
+    return k
+
+def extents(f):
+    """ Computes the extents of an array, returns extremities to be used with plt.imshow """
+    delta = f[1] - f[0]
+    return [f[0] - delta/2, f[-1] + delta/2]
 
 ###################################################################
 #%% -------------------- Loading geophones Data -------------------
@@ -438,6 +533,10 @@ plt.savefig(figname + '.png', dpi = img_quality,bbox_inches = 'tight')
 #%%----------------------- PLOTTING SELECTED CHANNEL FOR WHOLE RECORDING ------------------ 
 ##############################################################################################
 
+channel = 2 #0 for E, 1 for N, 2 for Z. 
+# selected indices of the corresponding channel 
+selected_indices = range(channel, len(seismic_data_streams),3)
+
 fig, ax = plt.subplots(figsize = fig_size)
 for k in selected_indices:
     current_stream = seismic_data_streams[k]
@@ -519,7 +618,7 @@ t0_segments[1,1,:] = [UTCDateTime("2024-02-11T18:47:30.30"), # S101 N2
       UTCDateTime("2024-02-11T18:48:20.60")] # S103 N2
 
 ########################
-#%% Observation of the selected signal 
+#%% OPTIONAL - Observation of the selected signal 
 ########################
 
 signal_length = 1.5 # duration in seconds
@@ -608,11 +707,12 @@ ax.set_ylim([0 , fs/4])
 #%%----------------------- CONSTRUCTING MATRIX FOR FK WITH SVD ------------------
 ##################################################################################
 
+signal_length = 1.5 # duration in seconds
 
 ### Select direction on which we extract data #0 = dir1, #1 = dir2
-direction = 0
+direction = 1
 # choose channel from which we extract signals : #0 = E, #1 = N, #2 = Z
-channel = 0
+channel = 2
 
 t1_values = t0_segments[direction,channel,:]
 # if channel == 0 :
@@ -622,6 +722,8 @@ t1_values = t0_segments[direction,channel,:]
 # else:
 #     t1_values = tZ
     
+# selected indices of the corresponding channel 
+selected_indices = range(channel, len(seismic_data_streams),3)
 
 # Create a 3D matrix to store the seismic data
 num_traces = len(seismic_data_streams)
@@ -629,7 +731,7 @@ num_samples = int(signal_length * first_trace.stats.sampling_rate)
 
 # Dynamically determine the length of the third dimension
 third_dim_len = len(t1_values) if len(t1_values) > 1 else 1
-seismic_matrix = np.zeros((len(selected_indices), third_dim_len, num_samples)) # matrix dim : geo_indices x signal_number x time
+seismic_matrix = np.zeros((len(selected_indices), third_dim_len, num_samples)) # matrix dim : geo_indices x nb_sources x time
 
 # Extract the relevant data for each trace and populate the 3D matrix
 for i, stream_index in enumerate(range(channel, len(seismic_data_streams), 3)):
@@ -662,8 +764,6 @@ plt.show()
 #######################################################################
 
 # Interpolate along the first dimension
-
-
 
 xr = np.arange(0, 46, 3)
 xs = np.arange(5, 12, 3)
@@ -700,52 +800,289 @@ ax.set_ylabel('Normalized Seismic Data')
 ax.set_title('Seismic Data for Selected Streams at Different t1 Values')
 plt.show()
 
-#%% Select points to determine shear velocity 
+#############################################################################
+#%% -------------- COMPUTE FK-MATRIX USING SVD METHOD -------------------------
+#############################################################################
 
+rang = [0,1,2] # rank of singular values 
+signals = np.transpose(seismic_matrix, (0, 2, 1)) # #1 = geo_indices, #2 = time, #3 = nb_sources 
+#signals = np.transpose(seismic_matrices_interp, (0, 2, 1))
+
+f, k, FK = fn_svd(signals, fs, geophones_spacing,rang,'ExampleName', 0, 'threshold',-60)
+# dimension 1 : k
+# dimension 2 : f
+F, K = np.meshgrid(f, k)
+
+###############################################################
+#%% ------------ FK-PLOT USING SVD METHOD ---------
+###############################################################
+
+###########################################################
+# /!\ /!\ NEEDS FLIPUD DEPENDING ON DIRECTION OF PROPAGATION /!\ /!\
+###########################################################
+
+if direction:
+    FK = np.flipud(FK/np.max(FK))
+else : 
+    FK = FK/np.max(FK)
+
+
+vmin = 0     # Minimum value for colormap
+vmax = 1 # Maximum value for colormap (adjust as needed)
+fig, ax1 = plt.subplots(1, 1, figsize = fig_size)
+
+# Computes extents for imshow
+x = extents(k)
+y = extents(f)
+
+c1 = ax1.imshow(FK.T, aspect = 'auto', cmap='gnuplot2',origin = 'lower',extent = x + y,vmin = vmin, vmax = vmax)
+
+#ax1.set_ylim([-1.5, 1.5])
+ax1.set_ylabel(r'$f \; \mathrm{(Hz)}$',labelpad = 5)
+ax1.set_xlabel(r'$k \; \mathrm{(m^{-1})}$',labelpad = 5)
+# ax1.set_title('Spectrum with SVD filter')
+plt.colorbar(c1, ax=ax1, label= r'$\frac{|\hat{s}|}{|\hat{s}|_{max}}(f,k)$')
+ax1.tick_params(axis='both', which='major', pad=7)
+ax1.set_ylim([0, 400])
+
+#%%
+figname = fig_folder + 'FK_plot_dir1_' + channel_correspondance[channel]
+plt.savefig(figname + '.pdf',dpi = img_quality, bbox_inches='tight')
+plt.savefig(figname + '.png',dpi = img_quality, bbox_inches='tight')
+
+#########################################################################################
+#%% ----------------------- UNWRAPPING SPECTRUM - HORIZONTAL STACKING ------------------
+#########################################################################################
+
+nb_stacking = 2 # number of times we want to stack the FK plot horizontally
+idx_stacking = 1
+FK_uwp = np.vstack((FK, FK))
+while idx_stacking < nb_stacking :
+    FK_uwp = np.vstack((FK_uwp, FK))
+    idx_stacking += 1
+    
+k_uwp= np.linspace(0,(nb_stacking + 1)*max(k),FK_uwp.shape[0])
+
+
+vmin = 0     # Minimum value for colormap
+vmax = 1# Maximum value for colormap (adjust as needed)
+fig, ax1 = plt.subplots(1, 1, figsize=(10, 10))
+
+c1 = ax1.imshow(np.transpose(FK_uwp), aspect = 'auto', cmap='gnuplot2',
+                origin = 'lower',extent = extents(k_uwp) + extents(f),vmin = vmin, vmax = vmax)
+#ax1.set_ylim([-1.5, 1.5])
+ax1.set_xlabel(r'$k \; \mathrm{(m^{-1})}$')
+ax1.set_ylabel(r'$f \; \mathrm{(Hz)}$')
+ax1.set_title('Spectrum with SVD filter')
+plt.colorbar(c1, ax=ax1, label='Spectrum Magnitude')
+
+ax1.set_ylim([0, 250])
+
+##############################################
+#%% Select points to determine shear velocity 
+##############################################
+ 
 points_shear = plt.ginput(10, timeout=-1)
 k_mode, f_mode = zip(*points_shear)
 
-#%%
 # fit by a 1D polynome
 deg = 1
-p = np.polyfit(k_mode,f_mode,deg)
+p,V = np.polyfit(k_mode,f_mode,deg,cov = True )
 
-C_shear = p[0]*2*np.pi
+C_shear = np.zeros((2,1))
+C_shear[0] = p[0]*2*np.pi
+C_shear[1] = np.sqrt(2*np.pi*np.diag(V)[0]) # standard deviation
 print(C_shear)
 
-
+######################################################
 #%% Select points to determine longitudinal velocity 
+######################################################
 
 points_longi = plt.ginput(10, timeout=-1)
 f_mode, k_mode = zip(*points_longi)
 
-#%%
 # fit by a 1D polynome
 deg = 1
-p = np.polyfit(f_mode,k_mode,deg)
+p, V = np.polyfit(f_mode,k_mode,deg,cov = True )
 
-C_longi = 2*np.pi*p[0]
+C_longi = np.zeros((2,1))
+C_longi[0] = 2*np.pi*p[0]
+C_longi[1] = np.sqrt(2*np.pi*np.diag(V)[0])
 print(C_longi)
 
-#%%
-# C_shear = np.mean([2*np.pi*200/0.85])
-C_shear = np.mean([2*np.pi*220/0.5])
-# C_longi = np.mean([2*np.pi*100/0.59])
-C_longi = np.mean([2*np.pi*220/1.0])
+###################################################
+#%% Computes Young modulus & Poisson coefficient 
+###################################################
 
-#%%
 rho_ice = 917
-nu = 1-2*(C_shear/C_longi)**2
-E = rho_ice*C_longi**2*(1-nu**2)
+nu = np.zeros((2,1))
+E = np.zeros((2,1))
+nu[0] = 1-2*(C_shear[0]/C_longi[0])**2
+E[0] = rho_ice*C_longi[0]**2*(1-nu[0]**2)
+
+# Computes standrad deviation  
+nu[1] = 4*C_shear[0]/(C_longi[0]**2) * C_shear[1] + 4*C_shear[0]**2/(C_longi[0]**3) * C_longi[1]
+E[1] = 2*rho_ice * (C_longi[0]*(1-nu[0]**2)*C_longi[1] + C_longi[0]**2*nu[0]*nu[1])
 
 print(E*1e-9)
 print(nu)
 
+# #####################################################################
+#%% Only for Flexural mode (mode Z) Select points on the FK plot 
+# #####################################################################
+
+points = plt.ginput(10, timeout=-1)
+
+# Extract x and y coordinates of the selected points
+f_mode, k_mode = zip(*points)
+# Plot a line between the two selected points
+plt.plot(f_mode, k_mode, linestyle='--', color='r', label='Line between points')
+
+file2save = path2data +'/' +acqu_numb+'/'+'dispersion_QS_dir2.pkl'
+with open(file2save,'wb') as file:
+    pickle.dump([f_mode, k_mode], file)
+    
+#######################################################################
+#%% --------- INVERT ICE THICKNESS USING FK MATRIX -------------------
+#######################################################################
+
+rho_ice = 917 
+E_fit = 2.6041e9# 2.43e9
+nu_fit = 0.331
+
+c_w = 1450 # sound celerity in water 
+rho_w = 1027 # density of water 
+h_precision = 0.005 # precision on ice thickness (in meter)
+h = np.arange(0.1,0.6,h_precision) # array of height tested 
+#path2data = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/Data/0210/geophones' # path 2 data points saved from FK flexural
+acqu_numb = '0001' # acquisition number 
+
+# load selected points on the FK plot 
+file2load = path2data +'/' +acqu_numb+'/'+'dispersion_QS_dir2.pkl'
+with open(file2load, "rb") as filename:
+    data = pickle.load(filename)
+f_mode1 = data[1] 
+k_mode1 = data[0] 
+plt.plot(f_mode1, k_mode1, linestyle='--', color='r', label='Line between points')    
+    
+f_mode1 = f_mode1[1:]
+k_mode1 = k_mode1[1:]
+
+# file2load = path2data +'/' +acqu_numb+'/'+'dispersion_QS_dir2.pkl'
+# with open(file2load, "rb") as f:
+#     data = pickle.load(f)
+# f_mode2 = data[0] 
+# k_mode2 = data[1] 
 
 
+plt.plot(k_mode1, f_mode1, linestyle='--', color='r', label='Line between points') 
+#plt.plot(f_mode2, k_mode2, linestyle='--', color='r', label='Line between points') 
 
+f_mode = f_mode1
+k_mode = k_mode1
 
+# find h_ice that minimzes distance to data points 
+l2_norm = np.zeros(len(h))
+for i in range(len(h)):
+    k_mode_synthetic, k_QS0, k_SH0, cphQS = wavenumbers_stein( rho_ice, h[i], E_fit, nu_fit,f_mode,c_w,rho_w)
+    error = np.sum(np.power((k_mode-k_mode_synthetic),2))
+    l2_norm[i] = np.sqrt(error)
+    #plt.plot(f_mode, k_mode_synthetic, color='b', label='Line between points')  
+h_ice = h[np.argmin(l2_norm)] # keep thickness of ice that minimizes the error
+   
+# computes wavevectors k 
+k_mode_synthetic, k_QS0, k_SH0, cphQS = wavenumbers_stein( rho_ice, h_ice, E_fit, nu_fit,f_mode,c_w,rho_w)
 
+plt.plot(k_mode_synthetic, f_mode, color='g', label='Line between points')    
+plt.plot(k_mode, f_mode, linestyle='--', color='r', label='Line between points') 
 
+ 
+plt.plot(h,l2_norm)
 
+print(h_ice)
 
+###############################################
+#%% Save all relevant data into a file pickle
+###############################################
+
+pickle_file = path2data + '/' + acqu_numb + '/' + 'Physical_data_direction_1_bis.pkl'
+
+s = dict()
+s['C_shear']= C_shear[0]
+s['C_longi'] = C_longi[0]
+s['E'] = E[0]
+s['nu'] = nu[0]
+s['h_ice'] = h_ice
+s['rho_ice'] = rho_ice
+s['c_w'] = c_w
+s['rho_w'] = rho_w
+
+s['uC_shear'] = 2*C_shear[1]
+s['uC_longi'] = 2*C_longi[1]
+s['uE'] = 2*E[1]
+s['unu'] = 2*nu[1]
+s['uh_ice'] = h_precision
+pickle_m.write(s,pickle_file)
+
+#%% Save relevant data into a csv file 
+
+csv_file = path2data + '/' + acqu_numb  + '/' + 'Physical_data_direction_2_fk_with_errors.csv'
+
+with open(csv_file, 'w') as csvfile: 
+    writer = csv.DictWriter(csvfile, fieldnames = s.keys()) 
+    writer.writeheader() 
+    for key in s.keys(): 
+        csvfile.write("%.3f"% s[key] + ',')
+        
+#%% Create an other plot with data points and fitted curve 
+
+frequency_list = np.linspace(1,150,100)
+k_flex_theory, k_acoust_theory, k_shear_theory, cphQS = wavenumbers_stein( rho_ice, h_ice, E, nu,frequency_list,c_w,rho_w)
+
+fig, ax = plt.subplots()
+FK = FK/np.max(FK)
+c1 = ax.contourf(F, K, FK, cmap='gnuplot2', vmin=vmin, vmax=vmax)
+ax.scatter(data[0],data[1], label = 'Detected points')
+ax.plot(frequency_list,k_flex_theory,color = 'k', label = 'Flexural mode')
+plt.colorbar(c1, ax=ax, label= r'Spectrum Magnitude')
+
+ax.set_xlim([0, 100])
+ax.grid()
+ax.set_xlabel(r'$f \quad \mathrm{(Hz)}$')
+ax.set_ylabel(r'$k \quad \mathrm{(m^{-1})}$')
+# ax.scatter(f_mode,k_QS0)
+# ax.scatter(f_mode,k_SH0)
+
+#############################################################################
+#%% Superposition of the Unwrapped FK spectrum and the fitted flexural law 
+#############################################################################
+
+frequency_list = np.linspace(1,200,100)
+k_flex_theory, k_acoust_theory, k_shear_theory, cphQS = wavenumbers_stein( rho_ice, h_ice, E_fit, nu_fit,frequency_list,c_w,rho_w)
+k_hydro_elast = hydro_elastic(frequency_list, h_ice, rho_ice, E_fit, nu_fit)
+fig, ax1 = plt.subplots(1, 1, figsize=(18, 9))
+vmin = 0 
+vmax = 1 
+
+c1 = ax1.imshow(np.transpose(FK_uwp), aspect = 'auto', cmap='gnuplot2',
+                origin = 'lower',extent = extents(k_uwp) + extents(f),vmin = vmin, vmax = vmax)
+
+#ax1.set_ylim([-1.5, 1.5])
+ax1.set_ylabel(r'$f \; \mathrm{(Hz)}$', labelpad = 5)
+ax1.set_xlabel(r'$k \; \mathrm{(m^{-1})}$', labelpad = 5)
+# ax1.set_title(r'Spectrum with SVD filter')
+plt.colorbar(c1, ax=ax1, label = r'$\frac{|\hat{s}|}{|\hat{s}_{max}|}(f,k)$')
+ax1.plot(k_flex_theory,frequency_list,linestyle = '--', 
+         linewidth = 5 ,color = 'white', label = 'Flexural mode')
+ax1.tick_params(axis='both', which='major', pad=7)
+# ax1.plot(k_hydro_elast,frequency_list,linestyle = '--', 
+#          linewidth = 3, color = 'r')
+ax1.set_ylim([0 , 200])
+
+#%%
+figname = fig_folder + 'Unwrapped_flexural_with_theory_dir2'
+
+plt.savefig(figname + '.pdf', dpi = 1200, bbox_inches = 'tight')
+plt.savefig(figname + '.png', dpi = 1200, bbox_inches = 'tight')
+
+    
