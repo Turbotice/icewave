@@ -1,0 +1,252 @@
+
+
+%%
+base_bernache = '/media/turbots/DATA/thiou/labshared2/SagWin2024/Data/0211/Drones/bernache/matData/18-stereo_001/';
+base_mesange = '/media/turbots/DATA/thiou/labshared2/SagWin2024/Data/0211/Drones/mesange/matData/2-stereo_001/';
+
+file_bernache = [base_bernache 'Data_PIV_oblique_Dt4_W32_bernache.mat'];
+file_mesange = [base_mesange 'Data_PIV_oblique_Dt4_W32_mesange.mat'];
+
+disp('Loading data...')
+s_bernache = load(file_bernache);
+% s_mesange = load(file_mesange);
+disp('Data loaded')
+%%
+file_raw = [base_bernache 'PIV_processed_i011500_N15500_Dt4_b1_W32_full_total_processed.mat'];
+disp('Loading data...')
+load(file_raw)
+% s_mesange = load(file_mesange);
+disp('Data loaded')
+
+%%
+
+base = '/media/turbots/Hublot24/Share_hublot/Data/0211/Drones/bernache/18-stereo_001/';
+% 'E:/Rimouski_2024/Data/2024/0211/Drones/Fulmar/FULMAR_vertical/';
+% addpath(base);
+
+filename = fullfile(base , 'DJI_20240211153234_0273_D.MP4');
+% filename = 'LEGER_SWO_FUL_20240211T203233UTC.MP4'
+v = VideoReader(filename);
+
+%%
+img = read(v,6000);
+% figure,
+% imshow(img)
+
+x_pix = repmat([1:1:size(img,2)] + 1,size(img,1),1)';
+y_pix = repmat([1:1:size(img,1)]'+ 1,1,size(img,2))';
+
+% Les distances sont à prendre par rapport au centre du capteur
+
+x_0 = 3840/2;
+y_0 = 2160/2;
+
+%% Definition of X and Y in real framework
+H = s_bernache.s.param.H;
+alpha_0 = s_bernache.s.param.alpha_0;
+f = s_bernache.s.param.focale;
+Y_img = (y_pix - y_0)*H/sin(alpha_0)./(f*sin(alpha_0) + (y_pix - y_0).*cos(alpha_0));
+X_img = (x_pix - x_0)*H./(f*sin(alpha_0) + (y_pix - y_0).*cos(alpha_0));
+
+X_img = X_img;
+Y_img = -Y_img;
+
+fig = figure('units','normalized','outerposition',[0 0 1 1]); 
+surf(img(:,:,1)')
+shading interp
+colormap(gray)
+view(2)
+
+% select two points 
+[xi,yi] = getpts(fig);
+%% Show vertical field for a single time 
+i = 1500;
+X = s_bernache.s.X;
+Y = s_bernache.s.Y;
+dz = s_bernache.s.dz;
+% fig = figure('units','normalized','outerposition',[0 0 1 1]); 
+% surf(X,Y,dz(:,:,i))
+% shading interp 
+% axis image
+% view(2)
+% colormap(redblue)
+% 
+% % select two points 
+% [xi,yi] = getpts(fig);
+
+%% Line equation 
+
+alpha = (xi(1) - xi(2))/(yi(1) - yi(2));
+beta = yi(1) - alpha*xi(1);
+
+list_x = X_img(:,end);
+% list_x = X_img;
+list_y = alpha*list_x + beta;
+Z_line = ones(size(list_x));
+
+figure, 
+% surf(X,Y,dz(:,:,i))
+surf(X_img,Y_img,img(:,:,1)')
+shading interp
+colormap(gray)
+hold on 
+% plot3(list_x,list_y,Z_line,'r')
+plot(list_x,list_y,'r')
+view(2)
+
+%% Select indices of points closest to this line 
+% [Maximum, peak_position] = max(abs(shifted_fft), [],'all', 'linear');
+%     % convert linear index to subsc()ript
+%     sz = size(shifted_fft); % size of the matrix 2D FFT
+%     [row, col] = ind2sub(sz,peak_position); % position of the peak in the matrix
+
+% [~,idx_x] = min(abs(X - list_x),
+
+mask = (list_y < 57) & (list_y > -36);
+list_x = list_x(mask);
+list_y = list_y(mask);
+
+figure, 
+% surf(X,Y,dz(:,:,i))
+surf(X_img,Y_img,img(:,:,1)')
+shading interp
+colormap(gray)
+hold on 
+
+plot(list_x-30,list_y,'r','linewidth',3)
+plot(list_x,list_y,'r','linewidth',3)
+plot(list_x+30,list_y,'r','linewidth',3)
+view(2)
+
+graphe_legende('$x$ (m)','$y$ (m)','11/02 Bernache',true)
+
+%%
+t = s_bernache.s.t;
+T = repmat(t',1,size(dz,1),size(dz,2));
+T = permute(T,[2,3,1]);
+% 
+X3 = repmat(m.x',1,size(dz,2),length(t));
+Y3 = repmat(m.y',1,size(dz,1),length(t));
+Y3= permute(Y3,[2,1,3]);
+
+
+%%
+xi = m.x;
+yi = sort(m.y);
+ti = (1:1:length(t));
+
+w = m.w;
+
+xi = (w+1 : w/2 : length(xi)*w/2 + w/2 + 1);
+yi = (w+1 : w/2 : length(yi)*w/2 + w/2 + 1);
+Fz = griddedInterpolant({xi,yi,ti},m.Vy);
+
+%%
+y_0 = (size(img,1)+1)/2 ;
+[Fp] = backward_projection(Fz,y_0,H,alpha_0,f,1/m.ft,m.Dt);
+
+%% Backward reconstruction of interpolation
+
+a = Fp(10,10,10); % variables in pixels and frames 
+
+
+%% 
+% Les distances sont à prendre par rapport au centre du capteur
+
+x_0 = (size(img,2)+1)/2;
+y_0 = (size(img,1)+1)/2;
+
+xl = (1:1:1000);
+yl = (1:2:2000);
+
+
+[xp,yp] = projection_real_space(xl,yl,x_0,y_0,H,alpha_0,f);
+[x,y] = projection_pixel_space(xp,yp,x_0,y_0,H,alpha_0,f);
+
+
+%% one Profile 
+
+[xl,yl] = projection_pixel_space(list_x,list_y,x_0,y_0,H,alpha_0,f); % coordinates of the line in pixel 
+
+[Xl,T] = ndgrid(xl,t);
+[Yl,T] = ndgrid(yl,t);
+
+Vz_line = Fp(Xl,Yl,T/m.ft);
+
+ds = sqrt(diff(list_x).^2 + diff(list_y).^2);
+s = [0; cumsum(ds)];
+
+r={};
+
+r.s = s;
+r.W = Vz_line;
+r.t = t;
+%[S,T] = ndgrid(s,t);
+
+
+%% serie of profiles
+
+
+dx = (-30:1:30);
+
+r={};
+r.x_0 = x_0;
+r.y_0 = y_0;
+r.H = H;
+r.alpha_0 = alpha_0;
+r.f = f;
+
+
+
+for i=1:length(dx)
+    shift = dx(i);
+%    dX = repmat(dx,length(list_x),1);
+%list_X = repmat(list_x,1,length(dx))+dX;
+%list_Y = repmat(list_y,1,length(dx));
+
+    [xl,yl] = projection_pixel_space(list_x+shift,list_y,x_0,y_0,H,alpha_0,f); % coordinates of the line in pixel 
+
+    r.X(:,i)=x
+    [Xl,T] = ndgrid(xl,t);
+    [Yl,T] = ndgrid(yl,t);
+    Vz_line = Fp(Xl,Yl,T/m.ft);
+
+    ds = sqrt(diff(list_x).^2 + diff(list_y).^2);
+    s = [0; cumsum(ds)];
+
+end
+%%
+figure, 
+[S,T] = ndgrid(s,t);
+
+surf(S,T,Vz_line)
+shading interp
+view(2)
+colorbar()
+
+%%
+figure, 
+pcolor(t,s,Vz_line)
+shading interp
+axis image
+colorbar()
+
+%% Definition of X and Y in real framework
+
+Y = (y_pix - y_0)*H/sin(alpha_0)./(f*sin(alpha_0) + (y_pix - y_0).*cos(alpha_0));
+X = (x_pix - x_0)*H./(f*sin(alpha_0) + (y_pix - y_0).*cos(alpha_0));
+
+X = X;
+Y = -Y;
+
+
+% [~,idx_y] = min(squeeze(abs(Y(:,1) - list_y)),1);
+% 
+% disp(idx_y) 
+%%
+Fz();
+
+
+[Zp] = backward_projection(Z,yi,y_0,H,alpha_0,f,fps,Dt); 
+
+

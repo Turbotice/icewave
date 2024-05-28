@@ -1,0 +1,14 @@
+function [Zp] = backward_projection(fun,yboite,y_0,h,alpha_0,f,fps,Dt)
+
+y_pix = repmat([1:1:length(yboite)]'*W/2 + 1,1,size(Vy,1))';
+%     vx = Vx(:,:,i0);
+    
+%     y_prime = y_pix + vy;
+%     x_prime = x_pix + vx;
+    
+    Vz = h*f*fun./((yboite - y_0)*cos(alpha_0) + f*sin(alpha_0))...
+    ./((yboite - y_0 + Z)*sin(alpha_0) - f*cos(alpha_0));
+
+    Zp = Vz.*fps/Dt;
+    
+end 
