@@ -30,11 +30,16 @@ function [lambda,d,freq] = get_attenuation_coef(TF,f,fx,selected_freq,x_bound,fr
 
     % create arrays for plotting
     freq = f(start_freq_idx:end_freq_idx);
-    if left_bool % if x positive from left to right
-        x_xf = (1:1:size(TF_xf,1))/fx; % in meter !!
-    else % if x positive from right to left 
-        x_xf = (size(TF_xf,1):-1:1)/fx;
+    x_xf = (1:1:size(TF_xf,1))/fx; % in meter !!
+    
+    if ~left_bool
+        TF_xf = flip(TF_xf,1);
     end 
+%     if left_bool % if x positive from left to right
+%         x_xf = (1:1:size(TF_xf,1))/fx; % in meter !!
+%     else % if x positive from right to left 
+%         x_xf = (size(TF_xf,1):-1:1)/fx;
+%     end 
     
     A_xf = abs(TF_xf); % amplitude along x-axis for each frequency
     [nx,nf] = size(A_xf);

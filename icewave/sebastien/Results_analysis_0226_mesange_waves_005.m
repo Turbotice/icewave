@@ -5,7 +5,7 @@ close all;
 %% Loading structure obtained after PIV processing and post-processing
 
 base = 'W:/SagWin2024/Data/0226/Drones/mesange/matData/10-waves_005/';
-base = 'E:/Rimouski_2024/Data/2024/0226/Drones/mesange/matData/10-waves_005/';
+base = 'F:/Rimouski_2024/Data/2024/0226/Drones/mesange/matData/10-waves_005/';
 % base = 'E:/Rimouski_2024/Data/2024/0219/matData/waves_012/';
 
 filename = 'PIV_processed_i00_N0_Dt5_b1_W32_xROI600_width3240_yROI1_height2159_total_processed.mat';
@@ -397,19 +397,21 @@ ylabel('$\omega \: \rm (rad.s^{-1})$')
 set(gca,'YScale','log')
 set(gca,'XScale','log')
 set(gca,'ColorScale','log')
+% colormap(slanCM('gnuplot2'))
 cbar = colorbar();
 cbar.Label.String = '$|\hat{V}_x|(k,\omega)$';
 cbar.Label.Interpreter = 'latex';
 axis([0.1 6, 2*pi*0.1 2*pi*2])
-hold on 
-loglog(k_list,yth,'w--')
-hold on
-loglog(k_list,harmonic2,'w--')
-hold on 
-loglog(k_list,harmonic3,'w--')
+% hold on 
+% loglog(k_list,yth,'w--')
+% hold on
+% loglog(k_list,harmonic2,'w--')
+% hold on 
+% loglog(k_list,harmonic3,'w--')
 set_Papermode(gcf)
 set(gca,'FontSize',13)
 caxis([1e-5 5e-3])
+% xticks([1e-1 2e-1 3e-1 1 2 3])
 % lgnd = legend('',['$\omega^2 = gk \tanh(gh_w) \: h_w = ' num2str(h_w) '\: \rm m$'],'','');
 % set(lgnd,'Location','southeast')
 % set(lgnd,'color','none')
@@ -424,6 +426,14 @@ data_filename = replace(data_filename,'.','p');
 
 save([fig_folder data_filename],'f','omega','k','E','shift','-v7.3')
 disp('Data saved')
+
+%% Load Data for A(f,k) plot
+filename = 'Data_A_fk_0223_waves_005_hw3p8.mat' ;
+base = 'W:/SagWin2024/Data/0226/Drones/mesange/matData/10-waves_005/Plots/';
+
+disp('Loading data..')
+load([base filename])
+disp('Data loaded')
 
 %% Detect each branch of bound waves
 
@@ -486,11 +496,14 @@ ylabel('$\omega \: \rm (rad.s^{-1})$')
 
 omega_array = [];
 k_array = [];
+amplitude_array = [];
 for i = 1 : size(M_peaks,2)
     current_omeg = M_peaks(i).omega .* ones(1,length(M_peaks(i).k)); 
     current_k = M_peaks(i).k;
+    current_A = M_peaks(i).A;
     omega_array = cat(2,omega_array,current_omeg); % store omega 
     k_array = cat(2,k_array,current_k);
+    amplitude_array = cat(2,amplitude_array,current_A);
 end 
 
 %% 
@@ -498,12 +511,13 @@ end
 mask = ~(((omega_array > 1.58) & (k_array < 0.28)) | (omega_array < 0.4)) ; 
 omega_array = omega_array(mask);
 k_array = k_array(mask);
+A_array = amplitude_array(mask);
 
 mask2 = ((omega_array > 3.17) & (k_array < 0.38)) | ((k_array > 0.21) & (omega_array < 0.95));
 mask2 = ~mask2;
 omega_array = omega_array(mask2);
 k_array = k_array(mask2);
-
+A_array = A_array(mask2);
 %%
 
 g = 9.81; % gravity intensity 
@@ -534,10 +548,10 @@ set_Papermode(gcf)
 ax = gca;
 ax.FontSize = 13;
 
-figname = [fig_folder 'Harmonics_shallow_water_hw_' replace(num2str(h_w),'.','p') ];
-saveas(gcf,figname,'fig')
-saveas(gcf,figname,'pdf')
-saveas(gcf,figname,'png')
+% figname = [fig_folder 'Harmonics_shallow_water_hw_' replace(num2str(h_w),'.','p') ];
+% saveas(gcf,figname,'fig')
+% saveas(gcf,figname,'pdf')
+% saveas(gcf,figname,'png')
 
 %% Displace harmonics to main branch
 
@@ -587,11 +601,17 @@ axis([0.05 4 , 2e-1 10])
 set_Papermode(gcf)
 ax = gca;
 ax.FontSize = 13;
+% 
+% figname = [fig_folder 'Harmonics_shallow_water_hw_' replace(num2str(h_w),'.','p') '_different_colors'];
+% saveas(gcf,figname,'fig')
+% saveas(gcf,figname,'pdf')
+% saveas(gcf,figname,'png')
 
-figname = [fig_folder 'Harmonics_shallow_water_hw_' replace(num2str(h_w),'.','p') '_different_colors'];
-saveas(gcf,figname,'fig')
-saveas(gcf,figname,'pdf')
-saveas(gcf,figname,'png')
+%% Save selected points
+
+filename = 'Data_plot_selected_harmonics_0226_mesange_waves_005';
+directory = 'W:/SagWin2024/Data/0226/Drones/mesange/matData/10-waves_005/Plots/';
+save([directory filename],'omega_array','k_array','A_array','closest_harmonic','colors','k_list','harmonic1','harmonic2','harmonic3','-v7.3')
 
 %% Move each branch back to main one 
 
@@ -623,10 +643,10 @@ set_Papermode(gcf)
 ax = gca;
 ax.FontSize = 13;
 
-figname = [fig_folder 'Recomposition_harmonics_water_hw_' replace(num2str(h_w),'.','p')];
-saveas(gcf,figname,'fig')
-saveas(gcf,figname,'pdf')
-saveas(gcf,figname,'png')
+% figname = [fig_folder 'Recomposition_harmonics_water_hw_' replace(num2str(h_w),'.','p')];
+% saveas(gcf,figname,'fig')
+% saveas(gcf,figname,'pdf')
+% saveas(gcf,figname,'png')
 
 
 % #######################################

@@ -273,30 +273,74 @@ file_mesange = [base_mesange 'Data_PIV_oblique_Dt4_W32_mesange.mat'];
 
 disp('Loading data...')
 s_bernache = load(file_bernache);
-s_mesange = load(file_mesange);
+% s_mesange = load(file_mesange);
 disp('Data loaded')
 
+%% Create a MP4 movie
+fig_folder = 'W:/SagWin2024/Data/0211/Drones/bernache/matData/18-stereo_001/';
+vid_name = 'Vertical_displacement_bernache_redblue_caxis_1p5';
+
+save_video = 1;
+X = s_bernache.s.X;
+Y = s_bernache.s.Y;
+dz = s_bernache.s.dz;
+fps = s_bernache.s.param.fps;
+
+if save_video
+    video_filename = [fig_folder vid_name]; % folder where the video is saved
+    vid = VideoWriter(video_filename,'MPEG-4');
+    vid.FrameRate = fps;
+    vid.Quality = 90;
+    open(vid)
+end
+
+
+for i0 = 1:1:size(dz,3)
+    
+    surf(X,Y,squeeze(dz(:,:,i0)))
+    shading interp
+    cbar = colorbar();
+    cbar.Label.String = '$V_z \: \rm (m/s)$';
+    cbar.Label.Interpreter = 'latex';
+    xlabel('$x \: \rm (m)$')
+    ylabel('$y \: \rm (m)$')
+    colormap(redblue)
+    caxis([-1.5 1.5])
+    view(2)
+    title(['$t = ' num2str(s_bernache.s.t(i0),'%4.2f') ' \: \rm s$'])
+
+    ax = gca;
+    ax.FontSize = 13;
+    set_Papermode(gcf)
+    if save_video
+        T(i0) = getframe(gcf);
+    else 
+        pause(0.01)
+    end 
+end
+
+if save_video
+    all_valid = true;
+    flen = length(T);
+    for K = 1 : flen
+      if isempty(T(K).cdata)
+        all_valid = false;
+        fprintf('Empty frame occurred at frame #%d of %d\n', K, flen);
+      end
+    end
+    if ~all_valid
+       error('Did not write movie because of empty frames')
+    end
+
+    writeVideo(vid,T)
+    close(vid)   
+end 
 %% Plot both signal for buoy #4
 fig_folder = 'E:/Rimouski_2024/Data/2024/0211/Drones/bernache_mesange_superposition_plots/' ;
 
 if ~exist(fig_folder)
     mkdir(fig_folder)
 end
-%%
-x_bernache = 2594;
-y_bernache = 750;
-
-x_mesange = 1126;
-y_mesange = 891;
-
-signal_bernache = get_1D_signal(x_bernache,y_bernache,s_bernache.s.dz,W);
-signal_mesange = get_1D_signal(x_mesange,y_mesange,s_mesange.s.dz,W);
-
-figure,
-plot(m.t,signal_bernache)
-hold on 
-plot(m.t,-signal_mesange)
-grid on 
 
 %% Plot both signal for a given object
 %# Buoy #5
@@ -385,9 +429,9 @@ V_mesange = sqrt(raw_mesange.m.Vx.^2 + raw_mesange.m.Vy.^2);
 %% ################## Load Buoys signal #########################
 % ###############################################################
 
-base_buoys = 'W:/SagWin2024/Data/0211/BoueeVague/B2/mat/';
+base_buoys = 'W:/SagWin2024/Data/0211/BoueeVague/B5/mat/';
 
-buoy_filename = [base_buoys 'buoy2_sbg_20240211_1900.mat'];
+buoy_filename = [base_buoys 'buoy5_sbg_20240211_2000.mat'];
 
 disp('Loading data..')
 load(buoy_filename)
@@ -444,20 +488,28 @@ grid on
 % y_mesange = 821;
 
 %# Buoy #2
-obj_tkt = 'buoy_2';
-x_bernache = 1457;
-y_bernache = 738;
+% obj_tkt = 'buoy_2';
+% x_bernache = 1457;
+% y_bernache = 738;
+% 
+% x_mesange = 2401;
+% y_mesange = 846;
 
-x_mesange = 2401;
-y_mesange = 846;
+%# Buoy #3 
+% obj_txt = 'buoy_3';
+% x_bernache = 2029;
+% y_bernache = 755;
+% 
+% x_mesange = 1812;
+% y_mesange = 857;
 
 %# Buoy #5
-% obj_txt = 'buoy_5';
-% x_bernache = 3204;
-% y_bernache = 759;
-% 
-% x_mesange = 586;
-% y_mesange = 911;
+obj_txt = 'buoy_5';
+x_bernache = 3204;
+y_bernache = 759;
+
+x_mesange = 586;
+y_mesange = 911;
 
 %# Buoy #4
 % obj_txt = 'buoy_4';
@@ -515,9 +567,9 @@ plot(ROI_t,filtered_buoy)
 %% Compute the vertical velocity
 
 % dt = mean(diff(ROI_t)); %time step
-vz = cumsum(filtered_buoy - mean(filtered_buoy));
+vz = cumsum(filtered_buoy - mean(filtered_buoy))/fs;
 figure, 
-plot(ROI_t,vz/fs)
+plot(ROI_t,vz)
 
 %% Superposition of drones and buoy with UTC time 
 delta_t0 = s_bernache.s.UTC_time(1) - ROI_t(1); % difference of t0 between bernache UTC time and buoys UTC time 
@@ -529,7 +581,7 @@ plot(UTC_drone',signal_bernache)
 hold on 
 plot(UTC_drone',signal_mesange)
 hold on 
-plot(ROI_t,vz/fs,'k','LineWidth',1.0)
+plot(ROI_t,vz,'k','LineWidth',1.0)
 grid on 
 xlabel('$t$','Interpreter','latex')
 ylabel('$V_z \: \rm (m.s^{-1})$','Interpreter','latex')
@@ -540,6 +592,141 @@ set_Papermode(gcf)
 ax = gca;
 ax.FontSize = 13;
 
+% ######################################
+%% Get Drone signal noise 
+% ######################################
+
+%% Set fig_folder 
+fig_folder =  ['W:/SagWin2024/Data/0211/Drones/', 'Drone_noise/'];
+
+if ~exist(fig_folder)
+    mkdir(fig_folder)
+end
+
+%% Create a matrix with all signals for a given buoy 
+B(1) = struct('signal',vz,'UTC_t',ROI_t,'fps',vz);
+B(2) = struct('signal',signal_bernache,'UTC_t',UTC_drone','fps',s_bernache.s.param.fps);
+B(3) = struct('signal',signal_mesange,'UTC_t',UTC_drone','fps',s_bernache.s.param.fps);
+
+%% Interpolate Buoy signal with a sampling similar to drone sampling 
+I1 = interp1(B(1).UTC_t,B(1).signal,B(2).UTC_t);
+% Compare interpolated signal with original one 
+figure, 
+plot(B(2).UTC_t,I1,'.')
+hold on 
+plot(B(1).UTC_t,B(1).signal)
+grid on 
+
+%% FFT of each signal 
+padding_bool = 0;
+add_pow2 = 0;
+for i = 1:3
+    if i > 1
+        signal = B(i).signal;
+        [TF,TF_pos,f] = fft_1D(signal,B(i).fps,padding_bool,add_pow2);
+        B(i).TF_pos = TF_pos;
+        B(i).TF = TF;
+        B(i).f = f;
+    else
+        signal = I1;
+        [TF,TF_pos,f] = fft_1D(signal,B(2).fps,padding_bool,add_pow2);
+        B(i).TF_pos = TF_pos;
+        B(i).TF = TF;
+        B(i).f = f;
+    end 
+end 
+
+%% Superpose FFT of each signal 
+
+figure, 
+c = [0 0 0;0 0.4470 0.7410;0.8500 0.3250 0.0980];
+for i = 1:3
+    loglog(B(i).f,abs(B(i).TF_pos),'Color',c(i,:))
+    hold on 
+end
+grid on 
+
+xlabel('$f \: \rm (Hz)$')
+ylabel('$\hat{s}(f) \: \rm (m.s^{-1})$')
+axis([5e-3 30 1e-6  1])
+ax = gca;
+ax.FontSize = 13;
+set_Papermode(gcf)
+legend('Buoy','Bernache','Mesange')
+
+figname = [fig_folder 'Superposition_FFT_Buoy5'];
+saveas(gcf,figname,'fig')
+saveas(gcf,figname,'pdf')
+
+%% Divide FFT of bernache / mesange by FFT of buoy signal (only absolute value)
+
+norm_bernache = abs(B(2).TF_pos)./abs(B(1).TF_pos);
+norm_mesange = abs(B(3).TF_pos)./abs(B(1).TF_pos);
+
+B(2).TF_noise = B(2).TF./abs(B(1).TF);
+B(3).TF_noise = B(3).TF./abs(B(1).TF);
+
+figure, 
+loglog(B(2).f,norm_bernache)
+hold on 
+loglog(B(2).f,norm_mesange)
+grid on 
+
+xlabel('$f \: \rm (Hz)$')
+ylabel('$\hat{s}/\hat{s}_{buoy} (f) \: \rm (m.s^{-1})$')
+axis([5e-3 30 1e-1  1e3])
+ax = gca;
+ax.FontSize = 13;
+set_Papermode(gcf)
+legend('Bernache','Mesange','Location','southwest')
+
+figname = [fig_folder 'FFT_drone_noise_buoy5'];
+saveas(gcf,figname,'fig')
+saveas(gcf,figname,'pdf')
+
+%% Inverse Fourier transform 
+noise_bernache = ifft(B(2).TF_noise*numel(B(2).TF_noise));
+noise_mesange = ifft(B(3).TF_noise*numel(B(3).TF_noise));
+
+figure, 
+plot(B(2).UTC_t,noise_bernache)
+grid on 
+xlabel('$\rm Time \: (UTC)$')
+ylabel('$s \: \rm (m.s^{-1})$')
+% axis([5e-3 30 1e-1  1e3])
+ax = gca;
+ax.FontSize = 13;
+set_Papermode(gcf)
+
+figname = [fig_folder 'Bernache_noise_buoy5'];
+saveas(gcf,figname,'fig')
+saveas(gcf,figname,'pdf')
+
+%% Save Buoy Matrix 
+matname = [fig_folder 'Signal_initial_buoys_position'];
+save(matname,'B_matrix','-v7.3')
+
+%% Fourier spectrum for several pixels of displacement field 
+
+% select a buoy #1 -> buoy 1, #2 -> buoy 4, #3 -> buoy 5
+% buoy_idx = 1;
+%# Buoy #1
+% obj_txt = 'buoy_1';
+x_bernache = 1284;
+y_bernache = 752; 
+
+x_mesange = 2570;
+y_mesange = 821;
+
+% get closest boxes 
+% # (1,:) -> i,j box on bernache 
+% # (2,:) -> i,j box on mesange 
+W = 32;
+idx_buoy(1,:) = [floor(x_bernache*2/W) floor(y_bernache*2/W)];
+idx_buoy(2,:) = [floor(x_mesange*2/W) floor(y_mesange*2/W)];
+
+window = 3; % semi-width of window around the buoy
+Vz_local(1,:,:,:) = s_bernache.s.dz(idx_buoy(1,1)-window : idx_buoy,:);
 
 % ###################################
 %% Plot data at different positions 
@@ -704,6 +891,38 @@ idx_x = floor(x_obj*2/W);
 idx_y = floor(y_obj*2/W);
 
 signal = squeeze(dz(idx_x,idx_y,:));
-
-
 end
+
+function [TF,TF_pos,f] = fft_1D(signal,fs,padding_bool,add_pow2)
+    % Computes the Fourier transform of a 1D vector
+    % Inputs : 
+    % - signal : 1D vector 
+    % - fs : sampling frequency
+    % - padding_bool : boolean to choose to pad or not
+    % - add_pow2 : additional power of 2 if padding 
+    
+    % Outputs : 
+    % - TF : Fourier transform 
+    % - TF_pos : Fourier transform keeping only positive frequencies
+    % - f : frequency array, only positive frequencies 
+    
+    original_length = numel(signal);
+    padding_length = 2^(nextpow2(original_length) + add_pow2);
+
+    signal = signal - mean(signal);
+    if padding_bool 
+        TF = fft(signal,padding_length);
+        N = padding_length ;
+        disp('Padding used')
+    else 
+        TF = fft(signal);
+        N = original_length;
+        disp('No padding')
+    end
+
+    TF = TF/original_length; % normalization of the FFT
+    TF_pos = TF(1:N/2+1);
+    TF_pos(2:end-1) = 2*TF_pos(2:end-1); % multiply by 2 for peaks that are both in positive an negative frequencies
+    f = fs*(0:(N/2))/N; % frequency array
+  
+end 

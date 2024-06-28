@@ -1,4 +1,4 @@
-function m = genere_structure_banquise(u,v,u_filt,v_filt,fx,ft,scale_V,a,p,s,w)
+function m = genere_structure_banquise(u,v,u_filt,v_filt,a,filename)
 
 %%%% Change these parameters according to experiment
 % fx = 0.1018; %0.0504; % in mm/pixel
@@ -54,6 +54,7 @@ end
 [dimy, dimx]= size(squeeze(u_original{1}));
 m.Vx = zeros(dimx,dimy,n); % Remove 2b data points from both x and y
 m.Vy = zeros(dimx,dimy,n); % Remove 2b data points from both x and y
+m.Vz = ''; % create an empty field 
 
 for i=1:n
    %if mod(i-2,1000)==0
@@ -62,42 +63,28 @@ for i=1:n
     u_original{i} = squeeze(u_original{i});
     v_original{i} = squeeze(v_original{i});
     
-    m.Vx(:,:,i) = squeeze(u_original{i})'*scale_V; % Convert to m/s
-    m.Vy(:,:,i) = squeeze(v_original{i})'*scale_V; % Convert to m/s
+    m.Vx(:,:,i) = squeeze(u_original{i})';
+    m.Vy(:,:,i) = squeeze(v_original{i})';
 end
 
 %m.filename = filename;
-m.y = (dimy:-1:1)*fx; % Convert to meter
-m.x = (1:1:dimx)*fx; % Convert to meter
+m.x = (1:1:dimx);
+m.y = (1:1:dimy);
 
 dimt = size(m.Vx,3);
-m.t = (1:1:dimt)*ft;
+m.t = (1:1:dimt);
 
-m.p_param = p;
-m.s_param = s;
+m.units.Vx = 'pix/frame';
+m.units.Vy = 'pix/frame';
+m.units.Vz = '';
+m.units.x = 'box_idx';
+m.units.y = 'box_idx';
+m.units.t = 'frame_idx';
+     
+m.name = filename;%µµstrcat(num2str(dr(1).h), 'mm, z ',num2str(dr(1).z));
+m.ysign = +1;
     
-m.unitx = 'meter';
-m.unity = 'meter';
-    
-m.unitvx = 'm/s';
-m.unitvy = 'm/s';
-m.namevx = 'Vx';
-m.namevy = 'Vy';
-    
-m.namex = 'x';
-m.namey = 'y';
-m.history = {};
-    
-m.name = 'PIV_2d';%µµstrcat(num2str(dr(1).h), 'mm, z ',num2str(dr(1).z));
-m.setname = '';
-m.ysign = -1;
-    
-m.fx = fx;
-m.ft = ft;
-m.scale_V = scale_V;
-m.w = w;
-
-%% Remove 2b data points from both x and y 2D plane
+%% Remove 2a data points from both x and y 2D plane
 [nx,ny,n] = size(m.Vx);
 
 m.Vx = m.Vx(1+a:end-a,1+a:end-a,:);

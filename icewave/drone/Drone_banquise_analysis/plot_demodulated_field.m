@@ -11,7 +11,8 @@ function plot_demodulated_field(TF,f,fx,selected_freq,x_bound,caxis_amp,left_boo
 % - x_bound : 2 x 1 array, boundaries along x-axis to consider the field to
 % be plot 
 % - caxis_amp : amplitude on the colorbar axis
-% - left_bool : boolean to choose how to set direction of x-axis
+% - left_bool : boolean to choose how to set direction of x-axis and flip
+% image
 % - fig_folder : folder where plots and video will be waved
 % - fig_name : name under which the video will be saved
 % - save_image : boolean to save images or not
@@ -60,10 +61,12 @@ for i=1:numel(relevant_indices)
     idx = relevant_indices(i);
     disp(idx)
     R = real(TF(imin:imax,:,idx)); % get real intensity map of FFT_temporal at a given frequency
-
+    if left_bool
+       R = flip(R,1); 
+    end
     pcolor(x/fx,y/fx,R')
     shading interp
-    colormap(redblue)
+%     colormap(redblue)
     xlabel('$x$ (m)','Interpreter','latex');
     ylabel('$y$ (m)','Interpreter','latex');
     shading interp
@@ -88,10 +91,9 @@ for i=1:numel(relevant_indices)
     if save_video
         title(['$f = ' num2str(frequency) ' \: \rm(Hz)$'],'Interpreter','latex')
     end 
-    set(gcf,'Units','Inches');
-    pos = get(gcf,'Position');
-    set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-    print(gcf,'filename','-dpdf','-r0')
+    set_Papermode(gcf)
+    ax = gca;
+    ax.FontSize = 13;
     %pause(0.2)
     
     if save_image

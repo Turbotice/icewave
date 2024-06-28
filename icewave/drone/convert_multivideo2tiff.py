@@ -15,7 +15,7 @@ import os
 #%%
 
 def main():
-    datafolder = '/media/turbots/Hublot24/Share_hublot/Data/0223/Drones/mesange/20-frac+waves_002/'
+    datafolder = '/media/turbots/Hublot24/Share_hublot/Data/0211/Drones/mesange/2-stereo_001/'
 
     # datafolder = browse.find_path(datafolder)
     print(datafolder)

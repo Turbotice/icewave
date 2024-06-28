@@ -1,15 +1,15 @@
 % Example script how to use PIVlab from the commandline
 % Just run this script to see what it does.
 % You can adjust the settings in "s" and "p", specify a mask and a region of interest
-function [u,v,s,p] = PIVlab_commandline_parallel_stereo(directory,reference,N,i0,Dt,b)
+function [u,v,s,p] = PIVlab_commandline_parallel_stereo(directory,reference,N,i0,Dt,b,ROI)
 
 %clc; clear all
 % Create list of images inside specified directory
 suffix='*.tiff'; %*.bmp or *.tif or *.jpg or *.tiff or *.jpeg
 filesep = '/';
 direc = dir ( [directory filesep suffix] ); filenames={};
-[directory,filesep,suffix]
-direc
+% [directory,filesep,suffix]
+% direc
 [filenames{1:length(direc),1}] = deal(direc.name);
 filenames = sortrows(filenames); %sort all image files
 amount = length(filenames);
@@ -24,9 +24,8 @@ s{1,1}= 'Int. area 1';              s{1,2}=128;         % window size of first p
 s{2,1}= 'Step size 1';              s{2,2}=64;         % step of first pass
 s{3,1}= 'Subpix. finder';           s{3,2}=2;          % 1 = 3point Gauss, 2 = 2D Gauss
 s{4,1}= 'Mask';                     s{4,2}=[];         % If needed, generate via: imagesc(image); [temp,Mask{1,1},Mask{1,2}]=roipoly;
-%s{5,1}= 'ROI';                      s{5,2}=[1,1,3449,2159];         % Region of interest: [x,y,width,height] in pixels, may be left empty
-s{5,1}= 'ROI';                      s{5,2}=[];         % Region of interest: [x,y,width,height] in pixels, may be left empty
-%s{5,1}= 'ROI';                      s{5,2}=[1,1,895,603];         % Region of interest: [x,y,width,height] in pixels, may be left empty
+s{5,1}= 'ROI';                      s{5,2}=[ROI.x,ROI.y,ROI.width,ROI.height];         % Region of interest: [x,y,width,height] in pixels, may be left empty
+%s{5,1}= 'ROI';                      s{5,2}=[];         % Region of interest: [x,y,width,height] in pixels, may be left empty
 s{6,1}= 'Nr. of passes';            s{6,2}=3;          % 1-4 nr. of passes. Each path is achieved with a specific interrogation area
 s{7,1}= 'Int. area 2';              s{7,2}=64;        % second pass window size
 s{8,1}= 'Int. area 3';              s{8,2}=32;         % third pass window size
