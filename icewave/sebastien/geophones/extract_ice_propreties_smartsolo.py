@@ -29,12 +29,12 @@ from seb import pickle_m
 #%% --------- SETTING PARAMETERS AND PATHS -------------------
 ##############################################################
 
-path2data = 'E:/Rimouski_2024/Data/2024/0211/Geophones/'
+path2data = 'E:/Rimouski_2024/Data/2024/0306/Geophones/'
 geophones_table_path = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/Geophones/geophones_table'
 
 #----------------------- SELECTING ACQ NUMBER AND CHANNEL ------------------ 
 
-acqu_numb = '0001' 
+acqu_numb = '0002' 
 channel_correspondance = ['E','N','Z']
 gain = 12 # gain in dB 
 scale_factor = 10**(-gain/10)
@@ -52,7 +52,7 @@ plt.rc('legend', fontsize=font_size_medium)    # legend fontsize
 plt.rc('figure', titlesize=font_size_medium)  # fontsize of the figure title
 
 fig_size = (12,9)
-img_quality = 1200 # dpi to save images 
+img_quality = 1000 # dpi to save images 
 
 
 fig_folder = path2data + acqu_numb + '/' + 'Results/' # folder where figures are saved 
@@ -108,7 +108,7 @@ def fn_svd(signals, fs, xs, rang,name, issaving, *varargin):
 
     # svd
     U = np.zeros((Nreceiv, Nf, Nemit), dtype=complex) # left singular vectors
-    S = np.zeros((Nemit, Nf, Nemit), dtype=complex) # diagonal matrix with singular values 
+    S = np.zeros((Nemit, Nf, Nemit), dtype=complex) # diagonal matrix with singular values (in decreasing order)
     V = np.zeros((Nemit, Nf, Nemit), dtype=complex) # right singular vectors 
     D = np.zeros((Nemit, Nf), dtype=complex) # singular values for each frequency 
 
@@ -444,7 +444,7 @@ for k in range(0,3):
 #%% Save current figure
 fig.tight_layout()
 
-figname = 'Stream_ZEN_geophone_' + str(idx_geophone) + '_acqu_1'
+figname = 'Stream_ZEN_geophone_' + str(idx_geophone) + '_acqu_2'
 figname = fig_folder + figname
 
 plt.savefig(figname + '.pdf',dpi = img_quality,bbox_inches = 'tight')
@@ -533,7 +533,7 @@ plt.savefig(figname + '.png', dpi = img_quality,bbox_inches = 'tight')
 #%%----------------------- PLOTTING SELECTED CHANNEL FOR WHOLE RECORDING ------------------ 
 ##############################################################################################
 
-channel = 2 #0 for E, 1 for N, 2 for Z. 
+channel = 1 #0 for E, 1 for N, 2 for Z. 
 # selected indices of the corresponding channel 
 selected_indices = range(channel, len(seismic_data_streams),3)
 
@@ -568,8 +568,8 @@ ax.set_xlim([time_start, time_end])
 figname = 'Streams_all_geophones_' + channel_correspondance[channel] + acqu_numb
 figname = fig_folder + figname
 
-plt.savefig(figname + '.pdf')
-plt.savefig(figname + '.png')
+plt.savefig(figname + '.pdf',dpi = img_quality, bbox_inches = 'tight')
+plt.savefig(figname + '.png',dpi = img_quality ,bbox_inches = 'tight')
 
 #################################################################################
 #%%----------------------- SELECTING TIME RANGE FOR PROCESSING ------------------ 
@@ -586,36 +586,36 @@ t0_segments = np.empty((2,3,3))
 # direction 1
  
 # source Z 
-t0_segments[0,2,:] = [UTCDateTime("2024-02-11T18:44:29.20"), # S101 Z3
-      UTCDateTime("2024-02-11T18:44:58.45"), # S102 Z3
-      UTCDateTime("2024-02-11T18:45:31.05")] # S103 Z2
+t0_segments[0,2,:] = [UTCDateTime("2024-03-06T17:39:49.70"), # S101 Z3
+      UTCDateTime("2024-03-06T17:40:37.65"), # S102 Z3
+      UTCDateTime("2024-03-06T17:41:20.28")] # S103 Z2
 
 # source E
-t0_segments[0,0,:] = [UTCDateTime("2024-02-11T18:44:37.32"), # S101 E2
-      UTCDateTime("2024-02-11T18:45:08.30"), # S102 E3
-      UTCDateTime("2024-02-11T18:45:38.42")] # S103 E1
+t0_segments[0,0,:] = [UTCDateTime("2024-03-06T17:40:09.82"), # S101 E2
+      UTCDateTime("2024-03-06T17:40:58.25"), # S102 E3
+      UTCDateTime("2024-03-06T17:41:39.98")] # S103 E1
 
 # source N
-t0_segments[0,1,:] = [UTCDateTime("2024-02-11T18:44:48.14"), # S101 N2
-      UTCDateTime("2024-02-11T18:45:16.48"), # S102 N3
-      UTCDateTime("2024-02-11T18:45:48.15")] # S103 N2
+t0_segments[0,1,:] = [UTCDateTime("2024-03-06T17:40:18.56"), # S101 N2
+      UTCDateTime("2024-03-06T17:41:40.84"), # S102 N3
+      UTCDateTime("2024-03-06T17:41:54.98")] # S103 N2
 
 # direction 2
 
 # source Z 
-t0_segments[1,2,:] = [UTCDateTime("2024-02-11T18:47:08.80"), # S101 Z1
-      UTCDateTime("2024-02-11T18:47:40.80"), # S102 Z3
-      UTCDateTime("2024-02-11T18:48:09.50")] # S103 Z2
+t0_segments[1,2,:] = [UTCDateTime("2024-03-06T17:42:48.52"), # S101 Z1
+      UTCDateTime("2024-03-06T17:43:33.30"), # S102 Z3
+      UTCDateTime("2024-03-06T17:44:10.12")] # S103 Z2
 
 # source E
-t0_segments[1,0,:] = [UTCDateTime("2024-02-11T18:47:16.90"), # S101 E2
-      UTCDateTime("2024-02-11T18:47:51.00"), # S102 E3
-      UTCDateTime("2024-02-11T18:48:16.90")] # S103 E1
+t0_segments[1,0,:] = [UTCDateTime("2024-03-06T17:43:05.81"), # S101 E2
+      UTCDateTime("2024-03-06T17:43:51.72"), # S102 E3
+      UTCDateTime("2024-03-06T17:44:26.74")] # S103 E1
 
 # source N
-t0_segments[1,1,:] = [UTCDateTime("2024-02-11T18:47:30.30"), # S101 N2
-      UTCDateTime("2024-02-11T18:47:57.90"), # S102 N3
-      UTCDateTime("2024-02-11T18:48:20.60")] # S103 N2
+t0_segments[1,1,:] = [UTCDateTime("2024-03-06T17:43:14.06"), # S101 N2
+      UTCDateTime("2024-03-06T17:44:01.85"), # S102 N3
+      UTCDateTime("2024-03-06T17:44:33.86")] # S103 N2
 
 ########################
 #%% OPTIONAL - Observation of the selected signal 
@@ -626,9 +626,9 @@ signal_length = 1.5 # duration in seconds
 ### Select direction on which we extract data #0 = dir1, #1 = dir2
 direction = 0
 ### Select the channel on which we extract data
-channel = 0 # #0 = E, 1 = N, #2 = Z 
+channel = 1 # #0 = E, 1 = N, #2 = Z 
 ### Select source index 0, 1 or 2 (S1, S2 or S3)
-source_index = 0
+source_index = 1
 
 # selected indices of the corresponding channel 
 selected_indices = range(channel, len(seismic_data_streams),3)
@@ -714,7 +714,7 @@ direction = 1
 # choose channel from which we extract signals : #0 = E, #1 = N, #2 = Z
 channel = 2
 
-t1_values = t0_segments[direction,channel,:]
+t1_values = t0_segments[direction,channel,np.where(t0_segments[direction,channel,:] > 0)[0]]
 # if channel == 0 :
 #     t1_values = tE
 # elif channel == 1:
@@ -846,7 +846,7 @@ ax1.tick_params(axis='both', which='major', pad=7)
 ax1.set_ylim([0, 400])
 
 #%%
-figname = fig_folder + 'FK_plot_dir1_' + channel_correspondance[channel]
+figname = fig_folder + 'FK_plot_dir' + str(direction + 1) + '_' + channel_correspondance[channel]
 plt.savefig(figname + '.pdf',dpi = img_quality, bbox_inches='tight')
 plt.savefig(figname + '.png',dpi = img_quality, bbox_inches='tight')
 
@@ -876,7 +876,7 @@ ax1.set_ylabel(r'$f \; \mathrm{(Hz)}$')
 ax1.set_title('Spectrum with SVD filter')
 plt.colorbar(c1, ax=ax1, label='Spectrum Magnitude')
 
-ax1.set_ylim([0, 250])
+ax1.set_ylim([0, 400])
 
 ##############################################
 #%% Select points to determine shear velocity 
@@ -931,14 +931,14 @@ print(nu)
 #%% Only for Flexural mode (mode Z) Select points on the FK plot 
 # #####################################################################
 
-points = plt.ginput(10, timeout=-1)
+points = plt.ginput(12, timeout=-1)
 
 # Extract x and y coordinates of the selected points
 f_mode, k_mode = zip(*points)
 # Plot a line between the two selected points
 plt.plot(f_mode, k_mode, linestyle='--', color='r', label='Line between points')
 
-file2save = path2data +'/' +acqu_numb+'/'+'dispersion_QS_dir2.pkl'
+file2save = path2data +'/' +acqu_numb+'/'+'dispersion_QS_dir' + str(direction + 1) + '.pkl'
 with open(file2save,'wb') as file:
     pickle.dump([f_mode, k_mode], file)
     
@@ -947,18 +947,18 @@ with open(file2save,'wb') as file:
 #######################################################################
 
 rho_ice = 917 
-E_fit = 2.6041e9# 2.43e9
-nu_fit = 0.331
+E_fit = 8.1e9# 2.43e9
+nu_fit = 0.44
 
 c_w = 1450 # sound celerity in water 
 rho_w = 1027 # density of water 
-h_precision = 0.005 # precision on ice thickness (in meter)
+h_precision = 0.002 # precision on ice thickness (in meter)
 h = np.arange(0.1,0.6,h_precision) # array of height tested 
 #path2data = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/Data/0210/geophones' # path 2 data points saved from FK flexural
-acqu_numb = '0001' # acquisition number 
+# acqu_numb = '0002' # acquisition number 
 
 # load selected points on the FK plot 
-file2load = path2data +'/' +acqu_numb+'/'+'dispersion_QS_dir2.pkl'
+file2load = path2data +'/' +acqu_numb+'/'+'dispersion_QS_dir' + str(direction + 1) + '.pkl'
 with open(file2load, "rb") as filename:
     data = pickle.load(filename)
 f_mode1 = data[1] 
@@ -1005,7 +1005,7 @@ print(h_ice)
 #%% Save all relevant data into a file pickle
 ###############################################
 
-pickle_file = path2data + '/' + acqu_numb + '/' + 'Physical_data_direction_1_bis.pkl'
+pickle_file = path2data + '/' + acqu_numb + '/' + 'Physical_data_direction_' + str(direction + 1) + '.pkl'
 
 s = dict()
 s['C_shear']= C_shear[0]
@@ -1026,7 +1026,7 @@ pickle_m.write(s,pickle_file)
 
 #%% Save relevant data into a csv file 
 
-csv_file = path2data + '/' + acqu_numb  + '/' + 'Physical_data_direction_2_fk_with_errors.csv'
+csv_file = path2data + '/' + acqu_numb  + '/' + 'Physical_data_direction_' + str(direction + 1) + '_fk_with_errors.csv'
 
 with open(csv_file, 'w') as csvfile: 
     writer = csv.DictWriter(csvfile, fieldnames = s.keys()) 
@@ -1057,7 +1057,7 @@ ax.set_ylabel(r'$k \quad \mathrm{(m^{-1})}$')
 #%% Superposition of the Unwrapped FK spectrum and the fitted flexural law 
 #############################################################################
 
-frequency_list = np.linspace(1,200,100)
+frequency_list = np.linspace(1,300,100)
 k_flex_theory, k_acoust_theory, k_shear_theory, cphQS = wavenumbers_stein( rho_ice, h_ice, E_fit, nu_fit,frequency_list,c_w,rho_w)
 k_hydro_elast = hydro_elastic(frequency_list, h_ice, rho_ice, E_fit, nu_fit)
 fig, ax1 = plt.subplots(1, 1, figsize=(18, 9))
@@ -1077,12 +1077,18 @@ ax1.plot(k_flex_theory,frequency_list,linestyle = '--',
 ax1.tick_params(axis='both', which='major', pad=7)
 # ax1.plot(k_hydro_elast,frequency_list,linestyle = '--', 
 #          linewidth = 3, color = 'r')
-ax1.set_ylim([0 , 200])
+ax1.set_ylim([0 , 300])
 
 #%%
-figname = fig_folder + 'Unwrapped_flexural_with_theory_dir2'
+figname = fig_folder + 'Unwrapped_flexural_with_theory_dir'  + str(direction + 1)
 
 plt.savefig(figname + '.pdf', dpi = 1200, bbox_inches = 'tight')
 plt.savefig(figname + '.png', dpi = 1200, bbox_inches = 'tight')
 
-    
+#################################################
+#%% Save t0 array used for the analysis
+#################################################
+time_pickle_file = path2data + '/' + acqu_numb + '/' + 'Initial_times.pkl'
+
+pickle_m.write(t0_segments,time_pickle_file)
+print('Initial times saved as a pkl file')

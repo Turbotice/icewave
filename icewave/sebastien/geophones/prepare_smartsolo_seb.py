@@ -14,7 +14,7 @@ import shutil
 #####################################################################
 
 #path2data = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/2024_BICWIN/0206/Geophones'
-path2data = '//192.168.1.70/Share_hublot/Data/0306/Geophones/'
+path2data = 'E:/Rimouski_2024/Data/2024/0306/Geophones/'
 geophones_table_path = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/Geophones/geophones_table'
 
 
