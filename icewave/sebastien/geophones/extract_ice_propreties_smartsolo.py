@@ -200,7 +200,12 @@ class ZoomHandler:
 
 def read_data(path2data):
     """ Read path to folder where data are stored, 
-    Extracte each stream and create a list of streams """
+    Extract each stream and create a list of streams 
+    Inputs :
+        - path2data : path to data files
+    Outputs : 
+        - streams : list of stream of all geophones 
+        - minseed_files : list of files .miniseed """
     
     miniseed_files = []
     # Iterate over files in the specified directory
@@ -216,13 +221,23 @@ def read_data(path2data):
     return streams, miniseed_files
 
 def convert_to_utc_times(trace, time_vector):
-    """ Create a UTC-time time vector for a given trace """
+    """ Create a UTC-time time vector for a given trace 
+    Inputs :
+        - trace : trace object (obspy) 
+        - time_vector : array of time elapsed since beginning of the acquisition 
+    Output : 
+        - array of UTC time (datetime type)"""
     start_time_utc = UTCDateTime(trace.stats.starttime)
     return [start_time_utc + t for t in time_vector]
 
 
 def rename_traces(stream, geophones_dict):
-    """ Rename geophone traces using geophone_table """
+    """ Rename geophone traces using geophone_table 
+    Inputs : 
+        - stream : stream containing traces of each geophone 
+        - geophones_dict : dictionnary of geophone correspondance 
+    Output : 
+        - sorted_stream : stream sorted by name using geophone table of correspondance """
     for trace in stream:
         # Extract the last 5 digits after "SS."
         last_five_digits = trace.stats.station[-5:]
