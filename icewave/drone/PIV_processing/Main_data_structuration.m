@@ -11,21 +11,22 @@
 
 clear all;
 date = '20240211';
-base = ['/media/turbots/DATA/thiou/labshared2/SagWin2024/Data/' date(5:end) '/Drones/Fulmar/'];
 
+% base = ['/media/turbots/DATA/thiou/labshared2/SagWin2024/Data/' date(5:end) '/Drones/Fulmar/'];
+base = ['F:/Rimouski_2024/Data/2024/0211/Drones/mesange/'];
 % base = 'E:/PIVlab_drone/matdata/raw_datas/';
-folder = [base 'matData/'];% folder of raw datas
-filename = 'PIV_processed_i04500_Dt4_b1_W32_full.mat';
+folder = [base 'matData/2-stereo_001/structured_data/'];% folder of raw datas
+filename = 'PIV_processed_i011496_N15496_Dt4_b1_W32_full.mat';
 fullname = [folder filename];%[folder filename];% filename of raw datas
 
-drone_name = 'fulmar';
-ID = 'Saguenay_Fracture_fulmar';
+drone_name = 'mesange';
+ID = 'Saguenay_Fracture_mesange_0211';
 % PIV parameters 
 a = 1; % number of boxes to crop on the side
 w = 32; % size of the last window used during PIV process
 Dt = 4; % step between two frames that were compared during the PIV algorithm 
-N = 0; % total number of frames processed
-i0 = 4500; % first index of the frame processed
+N = 15496; % total number of frames processed
+i0 = 11496; % first index of the frame processed
 b = 1; % step between frame A and A' at which velocity is computed
 
 % ##################################################################
@@ -40,10 +41,10 @@ Lx = 3840; % size of the image in pixel, along larger axis (x-axis)
 Ly = 2160; % size of the image in pixel, along minor axis (y-axis)
 x_0 = (Lx + 1)/2; % camera sensor center
 y_0 = (Ly + 1)/2; % camera sensor center
-h_drone = 140; % height of the drone in meter
-theta_x = 32.75*pi/180; % semi AFOV of the drone, along x-axis, in °
-alpha_0 = 90*pi/180;
-focale = 2985; %in pixels 
+h_drone = 90.3; % height of the drone in meter
+focale = 2700; %in pixels 
+theta_x = atan(Lx/focale/2); % semi AFOV of the drone, along x-axis, in °
+alpha_0 = 59.8*pi/180;
 facq_pix = Lx/(2*h_drone*tan(theta_x)); % scale in pixels / meter
 facq_x = facq_pix*2/w; % scale in box / meter
 fx = 1/facq_x; % factor scaling in meter / box
@@ -51,19 +52,19 @@ scale_V = (facq_t/Dt) / facq_x; % scale of the velocity in m/s
 % ##########################################
 
 % Longitude and latitude during flight 
-latitude = 48.253077 ;
-longitude = -70.091325;
+latitude = 48.2531 ;
+longitude = -70.0906;
 
 % Create t0_UTC (beginning of flight)
 Y = 2024;
 M = 02;
 D = 11;
-H = 15;
+H = 21;
 MIN = 35;
-S = 03;
-MS = 269;
-TimeZone = 'America/Montreal'; % bernache 
-% TimeZone = 'Europe/Paris'; % mesange 
+S = 10;
+MS = 589;
+% TimeZone = 'America/Montreal'; % bernache 
+TimeZone = 'Europe/Paris'; % mesange 
 % initial time of recording
 t0_UTC = datetime(Y,M,D,H,MIN,S,MS,'TimeZone',TimeZone); 
 t0_UTC.TimeZone = 'UTC'; % converts time to UTC time 
@@ -107,17 +108,32 @@ m.PIV_param.p_param = p;
 m.PIV_param.s_param = s;
 
 % Store scales
-m.SCALE.scale_V = scale_V;
-m.SCALE.fx = fx;
-m.SCALE.facq_pix = facq_pix;
-m.SCALE.ft = ft;
-m.SCALE.facq_t = facq_t;
+if alpha_0 == pi/2
+    m.SCALE.scale_V = scale_V;
+    m.SCALE.fx = fx;
+    m.SCALE.facq_pix = facq_pix;
+    m.SCALE.ft = ft;
+    m.SCALE.facq_t = facq_t;
 
-m.SCALE.units.scale_V = 'm.frame/pixel/s';
-m.SCALE.units.fx = 'm/box';
-m.SCALE.units.facq_pix = 'pix/m';
-m.SCALE.units.ft = 's/frame';
-m.SCALE.units.facq_t = 'frame/s';
+    m.SCALE.units.scale_V = 'm.frame/pixel/s';
+    m.SCALE.units.fx = 'm/box';
+    m.SCALE.units.facq_pix = 'pix/m';
+    m.SCALE.units.ft = 's/frame';
+    m.SCALE.units.facq_t = 'frame/s';
+else
+    m.SCALE.scale_V = [];
+    m.SCALE.fx = [];
+    m.SCALE.facq_pix = [];
+    m.SCALE.ft = ft;
+    m.SCALE.facq_t = facq_t;
+
+    m.SCALE.units.scale_V = 'oblique view';
+    m.SCALE.units.fx = 'oblique view';
+    m.SCALE.units.facq_pix = 'oblique view';
+    m.SCALE.units.ft = 's/frame';
+    m.SCALE.units.facq_t = 'frame/s';
+    
+end
 
 % Store Physical parameters 
 m.DRONE.h_drone = h_drone;
@@ -158,7 +174,7 @@ if alpha_0 == 90*pi/180
     m = scaling_structure(m,m.SCALE.scale_V,m.SCALE.fx,m.SCALE.ft); 
 else
     m = scaling_structure_oblique(m,m.PIXEL.x_pix,m.PIXEL.y_pix,m.t,m.PIXEL.x0,m.PIXEL.y0,...
-        m.DRONE.H,m.DRONE.alpha_0,m.DRONE.focale,m.SCALE.facq_t,m.PIV_param.Dt);
+        m.DRONE.h_drone,m.DRONE.alpha_0,m.DRONE.focale,m.SCALE.facq_t,m.PIV_param.Dt);
 end 
 disp('Data scaled')
 

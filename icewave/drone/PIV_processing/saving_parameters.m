@@ -12,8 +12,14 @@ function saving_parameters(m,filename,parameters_list)
             fprintf(fileID,formatSpec,m.(param));
         else 
             disp( 'No unit found for this variable')
-            formatSpec = [param '  %4.3f  \n'];
-            fprintf(fileID,formatSpec,m.(param));
+            
+            if ischar(m.(param)) % test if the parameter is a character vector
+                formatSpec = [param ' %s \n '];
+                fprintf(fileID,formatSpec,m.(param));
+            else
+                formatSpec = [param '  %4.3f  \n'];
+                fprintf(fileID,formatSpec,m.(param));
+            end 
         end 
             
     end 
