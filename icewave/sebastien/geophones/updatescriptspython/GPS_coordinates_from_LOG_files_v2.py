@@ -15,27 +15,14 @@ import pickle
 plt.close('all')
 
 
-date = '0306'
+date = '0211'
 year = '2024'
-
-# path2logfile = f'/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/{year}_BICWIN/{date}/Geophones'
-path2logfile = f'F:/Rimouski_2024/Data/{year}/{date}/Geophones'
-# geophones_table_path = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/geophones_table'
-geophones_table_path = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/Geophones/geophones_table'
+path2logfile = f'/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/{year}_BICWIN/{date}/Geophones'
+geophones_table_path = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/geophones_table'
 acquisition_numbers_to_plot = [1,2,3,4,5]
 
 # Define the find_coordinates function
 def find_coordinates(file_path, date, year):
-    """ Extract position of a geophone from a single geophone LOG file
-    Inputs : 
-        - file_path : path to the geophone LOG file
-        - date : string date format 'mmdd'
-        - year : string year format 'yyyy'
-            
-    Outputs : 
-        - num_snippets : 
-        - GPS_coordinates_matrices : dictionnary, contains acquisition number, latitute and longitude """
-    
     num_snippets = 0
     target_date_found = False
     target_date_pattern = year + '/' + date[:2] + '/' + date[2:]
@@ -46,7 +33,7 @@ def find_coordinates(file_path, date, year):
         for line in file:
             if target_date_found and current_snippet:
                 current_snippet += line
-                if line.startswith("[Notify00001]"): # correspond to a new acquisition 
+                if line.startswith("[Notify00001]"):
                     num_snippets += 1
                     latitudes = [float(value) for value in re.findall(r'Latitude\s*=\s*(-?\d+\.\d+)', current_snippet)]
                     longitudes = [float(value) for value in re.findall(r'Longitude\s*=\s*(-?\d+\.\d+)', current_snippet)]
@@ -86,13 +73,12 @@ def find_coordinates(file_path, date, year):
 
 # Main function
 def main():
-    """ Main function which builds a dictionnary containing positions of all geophones """
     log_files = [file for file in os.listdir(path2logfile) if file.startswith("DigiSolo") and file.endswith(".txt")]
 
     # Sort the log files based on DigiSolo number
     log_files.sort(key=lambda x: int(re.search(r'\d+', x).group()))
-    
-    all_GPS_coordinates_matrices = {} 
+
+    all_GPS_coordinates_matrices = {}
 
     for log_file in log_files:
         log_file_path = os.path.join(path2logfile, log_file)
@@ -118,14 +104,7 @@ if __name__ == "__main__":
             print(f"Acquisition {acquisition}:")
             print(f"   GPS Coordinates Matrix: {matrix}")
 
-#%% ######################## PLOT SECTION ##########################
-
 def plot_average_coordinates(all_matrices, acquisition_numbers, geophones_table_path):
-    """ Plot geophones position for a set of acquisition 
-    Inputs : 
-        - all_matrices : dictionnary containing matrices of each geophone for each acquisition 
-        - acquisition_numbers : indices of the acquisition we want to plot (starting from 1)
-        - geophones_table_path : path to geophone table of correspondance """
     # Load geophones table
     geophones_table = {}
     with open(geophones_table_path, 'r') as table_file:
@@ -174,16 +153,7 @@ def plot_average_coordinates(all_matrices, acquisition_numbers, geophones_table_
 
 plot_average_coordinates(all_matrices, acquisition_numbers_to_plot, geophones_table_path)
 
-#%% ################# SAVE SECTION #################################
-
 def save_average_coordinates(all_matrices, acquisition_number, path2logfile):
-    """ Save geophones location in a .txt file. A single .txt file is created for a single acquisition.
-    We also plot the position of geophones in a figure and save it in the same folder as the .txt file.
-    Inputs : 
-        - all_matrices : dictionnary containing matrices of each geophone for each acquisition 
-        - acquisition_number : acquisition index 
-        - path2logfile : path where .txt files and plots will be saved """
-    
     # Prepare the full path to the text file
     output_file_name = os.path.join(path2logfile, f"GPS_coordinates_acq{acquisition_number}.txt")
 
