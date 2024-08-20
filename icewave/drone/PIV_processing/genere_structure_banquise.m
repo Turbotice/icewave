@@ -70,6 +70,9 @@ end
 %m.filename = filename;
 m.x = (1:1:dimx);
 m.y = (1:1:dimy);
+[X,Y] = meshgrid(m.x,m.y);
+m.X = permute(X,[2,1]);
+m.Y = permute(Y,[2,1]);
 
 dimt = size(m.Vx,3);
 m.t = (1:1:dimt);
@@ -79,6 +82,8 @@ m.units.Vy = 'pix/frame';
 m.units.Vz = '';
 m.units.x = 'box_idx';
 m.units.y = 'box_idx';
+m.units.X = 'box_idx';
+m.units.Y = 'box_idx';
 m.units.t = 'frame_idx';
      
 m.name = filename;%µµstrcat(num2str(dr(1).h), 'mm, z ',num2str(dr(1).z));

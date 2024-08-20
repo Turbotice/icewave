@@ -7,14 +7,20 @@ function m = scaling_structure(S,scale_V,fx,ft)
     m.Vx = S.Vx * scale_V; % Convert to m/s
     m.Vy = S.Vy * scale_V; % Convert to m/s
 
-    m.x = (S.x - S.x(1)) * fx ; % convert to meter
-    m.y = (S.y - S.y(1)) * fx ; % convert to meter
+    m.x = S.x * fx ; % convert to meter
+    m.y = S.y * fx ; % convert to meter
     m.t = (S.t - S.t(1)) * ft ; % convert to second 
-
+    
+    [X,Y] = meshgrid(m.x,m.y);
+    m.X = permute(X,[2,1]);
+    m.Y = permute(Y,[2,1]);
+    
     m.units.Vx = 'm/s';
     m.units.Vy = 'm/s';
     m.units.x = 'm';
     m.units.y = 'm';
+    m.units.X = 'm';
+    m.units.Y = 'm';
     m.units.t = 's';
     
     m.xref = 'bottom_left';
