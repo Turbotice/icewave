@@ -5,10 +5,10 @@ close all;
 %% Loading structure obtained after PIV processing and post-processing
 
 %base = 'W:/SagWin2024/Data/0223/Drones/bernache/matData/12-waves_010/';
-base = 'F:/Rimouski_2024/Data/2024/0223/bernache/matData/12-waves_010/';
+base = 'F:/Rimouski_2024/Data/2024/0223/mesange/matData/35-waves_014/';
 % base = 'E:/Rimouski_2024/Data/2024/0219/matData/waves_012/';
 
-filename = 'PIV_processed_i00_N0_Dt4_b1_W32_xROI1_width3388_yROI1_height2159_scaled.mat';
+filename = 'PIV_processed_i00_Dt4_b1_W32_xROI650_width3190_yROI1_height_2159_scaled.mat';
 matname = [base filename];
 %%
 disp('Loading Data..');
@@ -24,11 +24,41 @@ end
 
 %% Scales
 
-facq_x = 1/m.SCALE.fx; % scale in box / meter
-facq_t = 1/m.SCALE.ft; % scale in frame / sec
-scale_V = m.SCALE.scale_V; % factor scaling for velocity in meter / s
-W = m.PIV_param.w ;
+facq_x = 1/m.fx; % scale in box / meter
+facq_t = 1/m.ft; % scale in frame / sec
+scale_V = m.scale_V; % factor scaling for velocity in meter / s
+W = m.w ;
 font_size = 13;
+
+%% Scaling 
+% fe = 29.97; % Frame rate in Hz
+% nb_pass = m.s_param{6,2};
+% W = 32; % size of the window for DIC algorithm
+% font_size = 13;
+% 
+% % ##########################################
+% L_x = 3840; % size of the image in pixel, along x-axis
+% h_drone = 100.3; % height of the drone in meter
+% theta_x = 34.15; % semi AFOV of the drone, along x-axis, in °
+% 
+% fx_pix = L_x/(2*h_drone*tan(theta_x*pi/180)); % scale in pixels / meter
+% fx = fx_pix*2/W;
+% % fx = 1;
+% % ##########################################
+% 
+% % fx = 0.8857; % for W = 64; 
+% %fx = 0.8857*2; % spatial scale in boxes/meter
+% Dt = 4; % step between two frames that were compared during the PIV algorithm 
+% 
+% scale_V = (fe/Dt) / fx_pix; % scale of the velocity in m/s
+
+
+%% store scales in structure m
+% m.scale_V = scale_V;
+% m.ft = 1/fe;
+% m.fx = 1/fx;
+% m.h_drone = h_drone;
+% m.theta = theta_x;
 
 %% Get Histogram displacement 
 
@@ -41,11 +71,10 @@ get_histogram_displacement(m.Vx/scale_V,W,average_bool,font_size,filename);
 i_x = 30;
 i_y = 60;
 left_bool = 1;
-Vx = flip(m.Vx,1);
-profile_fig = plot_located_profile(Vx,i_x,i_y,facq_x,facq_t,left_bool);
+profile_fig = plot_located_profile(m.Vx,i_x,i_y,facq_x,facq_t,left_bool);
 set_Papermode(profile_fig)
 
-disp(mean(abs(Vx(i_x,i_y,:))))
+disp(mean(abs(m.Vx(i_x,i_y,:))))
 
 fig_file_name = [fig_folder 'Time_profile_ix_' num2str(i_x) '_iy_' num2str(i_y)];
 saveas(profile_fig,fig_file_name,'fig')
@@ -62,10 +91,8 @@ Vymoy = mean(mean(m.Vy,2),1);
 % m.Vx = m.Vx - Vxmoy;
 % m.Vy = m.Vy - Vymoy;
 
-Vx = supress_quadratic_noise(m.Vx,x,y); 
+Vx = supress_quadratic_noise(m.Vx,x,y);
 Vy = supress_quadratic_noise(m.Vy,x,y);
-Vx = flip(Vx,1); % waves are initially coming from the right boarder of the image
-Vy = flip(Vy,1);
 
 disp('Drone motion corrected')
 
@@ -78,7 +105,7 @@ plot_velocity_features(Vx,Vy,facq_x,idx_frame,caxis_amp,fig_folder,1);
 
 
 %% computes Quantile of the velocity field 
-Q = quantile(Vx,[0.1 0.9],'all');
+Q = quantile(m.Vx,[0.1 0.9],'all');
 
 %%
 %fig_folder_E = 'E:/Rimouski_2024/Data/2024/0226/Drones/mesange/12-FRAC_001/';
@@ -97,9 +124,9 @@ vid.FrameRate = facq_t/step;
 open(vid)
 
 figure, 
-x = (1:1:nx)*m.SCALE.fx;
-y = (ny:-1:1)*m.SCALE.fx;
-t = (1:1:nt)*m.SCALE.ft;
+x = (1:1:nx)*m.fx;
+y = (ny:-1:1)*m.fx;
+t = (1:1:nt)*m.ft;
 relevant_idx = (1:step:nt);
 
 for i0 = 1:length(relevant_idx)
@@ -155,7 +182,7 @@ plot_demodulated_field(FFT_t,f,facq_x,selected_freq,x_bound,caxis_amp,1,fig_fold
 
 %% Get wave vectors 
 disp('Getting wave vectors')
-selected_freq = [0.2 0.8]; % selected frequencies between which we proceed to the analysis
+selected_freq = [0.1 0.8]; % selected frequencies between which we proceed to the analysis
 x_bound = [1 size(FFT_t,1)]; % selected boundaries at which we perform 2D FFT
 padding_bool = 1;
 add_pow2 = 2; % additional power of 2 for padding 
