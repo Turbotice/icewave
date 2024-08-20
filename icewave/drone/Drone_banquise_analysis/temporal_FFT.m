@@ -1,13 +1,11 @@
 function [FFT_t,TF_spectrum,f] = temporal_FFT(H_ww,padding_bool,add_pow2,fps)
     % Description
     % This function computes the temporal FFT of the height matrix
-
     % It returns :
     % - FFT_t : a 3D matrix (nx,ny,nf)
     % - TF_spectrum : a 1D matrix, which represents the spacial average of
     % FFT_t 
     % - f : the frequency array [nf]
-
     % It takes as arguments :
     % - H_ww : the height matrix, obtained from FCD demodulation [nx,ny,nt]
     % - padding_bool : a boolean to know if we want to padd or not
