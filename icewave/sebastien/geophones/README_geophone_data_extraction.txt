@@ -20,17 +20,17 @@ code ordinateur : pmmh
 Il faut bien relancer le code move_data.py tous les 3 géophones !!
 #########
 
-- Téléverser les fichiers log file dans /Canada_2024/
+- Téléverser les fichiers log file dans /Canada_2024/ : Par exemple : DigiSolo_4075.txt 
 
 - Disconnect IGU (sur l'application Sololite)
 
-- Une fois les lumières des géophones éteintes, on peut retirer les géophones et téléverser les géophones suivants (4 -> 5 -> 6) etc...
+- Une fois les lumières des 3 géophones éteintes, on peut retirer les géophones et téléverser les géophones suivants (4 -> 5 -> 6) etc...
 
-- Une fois tous les géophones downloadé : 'Export Seismic Data', rond bleu sur Sololite
+- Une fois tous les géophones downloadés : 'Export Seismic Data', rond bleu sur Sololite
 
 - Choisir 'all components separate file'
 
-- Changer les paramètres suivants : output data: miniSEED, Sample interval : 1 ms, s'assurer que cela correspond bien à facq, 
+- Changer les paramètres suivants : output data: miniSEED, Sample interval : 1 ms, s'assurer que cela correspond bien à f_acq, 
 
 - Changer start_time et end_time associés aux fichiers du jour. Tous les fichiers du jour doivent se trouver dans la fenêtre de temps choisie
 
@@ -51,3 +51,15 @@ Il faut bien relancer le code move_data.py tous les 3 géophones !!
 - Attendre que la lumière des géophones ne clignotte plus, la lumière rouge doit s'éteindre
 
 - Ejecter les géophones depuis l'application, puis répéter l'opération avec la séquence de géophones suivante (3 -> 4 -> 5), etc... 
+
+###################################
+Logiciel Sololite
+###################################
+
+- La licence associée à un ordinateur doit être placée dans le bon dossier : 'C:/SmartSoloApps Sololite/'
+
+- Dans le logiciel Sololite, il est nécessaire de définir un script qui sera appliqué à chaque géophones. Au sein de ce script les propriétés à modifier sont les suivantes :
+	+ GNSS Working Mode : Always On 
+	+ Storage Type : MINISEED (requires Sololite firmware version 1.0.7.8bke or later 
+	+ Set the Gain for each channel : 12dB for each channel 
+
