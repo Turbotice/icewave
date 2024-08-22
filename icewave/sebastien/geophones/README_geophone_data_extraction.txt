@@ -22,7 +22,7 @@ Il faut bien relancer le code move_data.py tous les 3 géophones !!
 
 - Téléverser les fichiers log file dans /Canada_2024/ : Par exemple : DigiSolo_4075.txt 
 
-- Disconnect IGU (sur l'application Sololite)
+- Disconnect IGU (sur l'application Sololite, icone USB bleu)
 
 - Une fois les lumières des 3 géophones éteintes, on peut retirer les géophones et téléverser les géophones suivants (4 -> 5 -> 6) etc...
 
@@ -50,7 +50,7 @@ Il faut bien relancer le code move_data.py tous les 3 géophones !!
 
 - Attendre que la lumière des géophones ne clignotte plus, la lumière rouge doit s'éteindre
 
-- Ejecter les géophones depuis l'application, puis répéter l'opération avec la séquence de géophones suivante (3 -> 4 -> 5), etc... 
+- Ejecter les géophones depuis l'application (icone USB bleu), puis répéter l'opération avec la séquence de géophones suivante (3 -> 4 -> 5), etc... 
 
 ###################################
 Logiciel Sololite
@@ -62,4 +62,5 @@ Logiciel Sololite
 	+ GNSS Working Mode : Always On 
 	+ Storage Type : MINISEED (requires Sololite firmware version 1.0.7.8bke or later 
 	+ Set the Gain for each channel : 12dB for each channel 
+	+ Device Type : IGU 16HR 3C 5Hz
 

@@ -4,8 +4,13 @@ Created on Tue Jul  9 10:20:24 2024
 
 @author: sebas
 
-This script details how to extract initial times for different sources and channels of 
-geophones smartsolo 
+This script can be decomposed into 2 main Parts : 
+    Part 1: extraction of initial times for different sources performed on field 
+    Part 2: SVD decomposition of each geophone channel (E,N,Z) in order to compute phase velocity
+    of modes QS0 and SH0, and infer Young modulus E and Poisson coefficient nu. 
+    
+    Extraction of coordinates (f,k) from FK plot of channel Z (flexural waves) is also performed in order to infer 
+    ice thickness and ice density in an other Python script : 'Inv_disp_curves_bidir.py'
 
 """
 
@@ -36,18 +41,23 @@ import csv
 
 #%% Set parameters 
 year = '2024'
-date = '0226' #date format, 'mmdd'
+date = '0211' #date format, 'mmdd'
 acqu_numb = '0001' #acquisition number 
 
      
 path2data = os.path.join('F:/Rimouski_2024/Data/',year,date,'Geophones/')
+
+fig_folder = path2data + 'Figures/' + acqu_numb + '/' # folder where figures are saved 
+if not os.path.isdir(fig_folder):
+    os.mkdir(fig_folder)
+    
 geophones_table_path = 'C:/Users/sebas/git/icewave/sebastien/geophones/geophones_table'
-channel = 2  # 0 for E, 1 for N, 2 for Z. 
+channel = 1  # 0 for E, 1 for N, 2 for Z. 
 
 #files need to be organised as: data/0210/Geophones/0001/minised files
 
 geophones_spacing = 3 # space between geophones, in meter 
-signal_length = 1 # duration in seconds 
+signal_length = 1.0 # duration in seconds 
 channel_dic = {
     1: "N",
     2: "Z",
@@ -444,7 +454,7 @@ plt.savefig(figname + '.png',dpi = img_quality ,bbox_inches = 'tight')
 
 # open .pkl file and load dictionnary 
 filename = 't1_to_time_' + date + '_' + year + '.pkl'
-base = 'C:/Users/sebas/git/icewave/sebastien/geophones/'
+base = path2data
 file2save = base + filename
 if os.path.isfile(file2save):
     print('Time dictionnary already exists')
@@ -455,27 +465,29 @@ else:
     time_dict = {}
 
 
-composante = 'Z' #Z , E or N -> direction de la source
+composante = 'N' #Z , E or N -> direction de la source
 # S101, S102, S103
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '101' + composante 
-time_dict[key] = UTCDateTime("2024-02-26T18:16:30.44")
+time_dict[key] = UTCDateTime("2024-02-26T18:16:41.74")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '102' + composante 
-time_dict[key] = UTCDateTime("2024-03-06T17:39:49.70")
+time_dict[key] = UTCDateTime("2024-02-26T18:17:14.84")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '103' + composante 
-time_dict[key] = UTCDateTime("2024-03-06T17:39:49.70")
+time_dict[key] = UTCDateTime("2024-02-26T18:17:54.24")
+
 # S104, S105, S106
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '104' + composante 
-time_dict[key] = UTCDateTime("2024-03-06T17:39:49.70")
+time_dict[key] = UTCDateTime("2024-02-26T18:19:17.84")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '105' + composante 
-time_dict[key] = UTCDateTime("2024-03-06T17:39:49.70")
+time_dict[key] = UTCDateTime("2024-02-26T18:20:15.42")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '106' + composante 
-time_dict[key] = UTCDateTime("2024-03-06T17:39:49.70")
+time_dict[key] = UTCDateTime("2024-02-26T18:20:58.80")
 
 #%% Save t0 dictionnary in pickle file 
 
 with open(file2save, 'wb') as f:
     pickle.dump(time_dict, f)
 
+print('Time dictionnary saved')
 
 ###########################################################
 #%% -------------- Compute FK data ----------------------
@@ -487,7 +499,7 @@ channel = 2
 ch = channel_dic[channel]
 flexure_wave = composante == 'Z' # 1 to pick the dispersion curves of the flexure wave, 0 to pick those of the other 2 modes
 horizontal_wave = not flexure_wave
-direction = 1 # 1 ou 2 
+direction = 2 # 1 ou 2 
 # assign a string to S values depending on the direction
 if direction == 1 :
     S1 = '101' 
@@ -514,6 +526,9 @@ t3 = loaded_data.get('d' + date + 'a' + acqu_numb + 'tS' + S3 + composante)
 ta = t1 + signal_length 
 num_samples = int(signal_length * first_trace.stats.sampling_rate) # Number of points gereted in tim_vector (~1000)
 time_vector = np.linspace(t1.timestamp, ta.timestamp, num_samples) # timestamp gets the number of sec in ta, t1
+
+# selected indices of the corresponding channel 
+selected_indices = range(channel, len(seismic_data_streams),3)
 
 t1_values = [t1,t2,t3]
 # Create a 3D matrix to store the seismic data
@@ -551,8 +566,8 @@ plt.show()
 #plt.grid(True)
 
 
+#  Calling fn_SVD
 
-# Calling fn_SVD
 rang = [0,1,2]
 geophones_spacing = 3 # in meters
 signals = np.transpose(seismic_matrix, (0, 2, 1))
@@ -607,11 +622,12 @@ fig, ax1 = plt.subplots(1, 1, figsize=fig_size)
 
 #-----------------------------------------------
 # Set parameters 
-threshold = 0.5
+threshold = 0.5 # minimum relative amplitude to detect a local maximum in the dispersion relation FK plot 
 precision_k = [0.09,0.025] # precision over k values (when searching for a local maximum)
 prec = precision_k[flexure_wave]
 # 0: horizontal_wave 1: flexure_wave
 semirange_freq = 5 # semi-range of frequencies for horizontal waves
+nb_points = 12 # points to select on graph FK flexural
 #-----------------------------------------------
 
 plt.show()
@@ -625,8 +641,9 @@ if flexure_wave:
     plt.colorbar(c1, ax=ax1, label='Spectrum Magnitude')
 
     ax1.set_ylim([0, 400])
-   
-    points = plt.ginput(12, timeout=-1)
+    print(f"Select {nb_points} points on the graph")
+    points = plt.ginput(nb_points, timeout=-1)
+
     # Extract x and y coordinates of the selected points
     k_mode, f_mode = zip(*points)
     f_mode = np.array(f_mode)
@@ -640,14 +657,14 @@ if flexure_wave:
     k_m = k_mode_new - prec
     # Plot the original points
 
-    # Extract kmax values
+    # Extract values of k for which FK is maximum at a given frequency 
     kmax_values = []
-    for i, f in enumerate(f_mode_new): # loop over interpolated frequencies 
-        f_idx = np.argmin(np.abs(F - f))  # Find the closest frequency index in F
+    for i, freq in enumerate(f_mode_new): # loop over interpolated frequencies 
+        f_idx = np.argmin(np.abs(F - freq))  # Find the closest frequency index in F
         k_range = K_uwp[(K_uwp >= k_m[i]) & (K_uwp <= k_p[i])]  # k values within bounds
         k_indices = np.where((K_uwp >= k_m[i]) & (K_uwp <= k_p[i]))[0]  # indices of these k values
         FK_values = FK_uwp[k_indices, f_idx]  # corresponding FK values within the bounds
-        # Filter out values below the threshold
+        # Filter out values below the amplitude threshold
         valid_indices = np.where(FK_values >= threshold)[0]
         if valid_indices.size > 0:  # Check if there are any valid indices left
             k_range_valid = k_range[valid_indices]
@@ -661,16 +678,16 @@ if flexure_wave:
     kmax_values = np.array(kmax_values)
     [f_mode, k_mode] = [f_mode_new, kmax_values]
 
-    plt.plot(kmax_values, f_mode_new, linestyle='--', color='k', label='kmax values')
-    plt.ylabel('f_mode_new')
-    plt.xlabel('kmax')
-    plt.legend()
-    plt.show()
-    plt.scatter(k_mode, f_mode, color='b', label='Original points')
+    # plt.plot(kmax_values, f_mode_new, linestyle='--', color='k', label='kmax values')
+    # plt.ylabel('f_mode_new')
+    # plt.xlabel('kmax')
+    # plt.legend()
+    # plt.show()
+    plt.scatter(k_mode, f_mode, color='b', label='Selected points')
     plt.plot( k_p, f_mode_new, linestyle='--', color='g', label='sup bound line')
     plt.plot( k_m, f_mode_new, linestyle='--', color='g', label='inf bound line')
-    plt.ylabel('f_mode')
-    plt.xlabel('k_mode')
+    plt.xlabel(r'$k \; \mathrm{(m^{-1})}$')
+    plt.ylabel(r'$f \; \mathrm{(Hz)}$')
     plt.legend()
     plt.show()
 
@@ -691,6 +708,7 @@ elif horizontal_wave:
     ax1.tick_params(axis='both', which='major', pad=7)
     ax1.set_ylim([ymin, ymax])
     # ------------------------------------------------------------------------------------------
+    print('Select a single point on the graph')
     points = [(0, 0), (0, )]
     points[1] = plt.ginput(1, timeout=-1)[0]
     # Extract x and y coordinates of the selected points
@@ -762,37 +780,68 @@ elif horizontal_wave:
     # Redraw the graph with the new limits, added scatter points, and linear regression line
     plt.show()
 
-    # rho_ice = 917
-    # nu = np.zeros((2,1))
-    # E = np.zeros((2,1))
-    # nu[0] = 1-2*(C_shear[0]/C_longi[0])**2
-    # E[0] = rho_ice*C_longi[0]**2*(1-nu[0]**2)
+#%% Plot and save a clean graph
+
+fig, ax1 = plt.subplots(1, 1, figsize=fig_size)
+
+if horizontal_wave:
+    # Computes extents for imshow
+    x = extents(k)
+    y = extents(f)
+
+    c1 = ax1.imshow(FK_normalized.T, aspect = 'auto', cmap='gnuplot2',origin = 'lower',extent = x + y,vmin = vmin, vmax = vmax)
+    plt.plot(k_values_list, poly_function(k_values_list), color='white', linestyle='--', linewidth = 3, label='Linear Regression')
+    #ax1.set_ylim([-1.5, 1.5])
+    ax1.set_ylabel(r'$f \; \mathrm{(Hz)}$',labelpad = 5)
+    ax1.set_xlabel(r'$k \; \mathrm{(m^{-1})}$',labelpad = 5)
+    # ax1.set_title('Spectrum with SVD filter')
+    plt.colorbar(c1, ax=ax1, label= r'$\frac{|\hat{s}|}{|\hat{s}|_{max}}(f,k)$')
+    ax1.tick_params(axis='both', which='major', pad=7)
+    ax1.set_ylim([ymin, ymax])
     
-    # # Computes standrad deviation  
-    # nu[1] = 4*C_shear[0]/(C_longi[0]**2) * C_shear[1] + 4*C_shear[0]**2/(C_longi[0]**3) * C_longi[1]
-    # E[1] = 2*rho_ice * (C_longi[0]*(1-nu[0]**2)*C_longi[1] + C_longi[0]**2*nu[0]*nu[1])
+    if channel == 0:
+        wave_type = 'SH0'
+    elif channel == 1:
+        wave_type = 'QS0'
+        
+    figname = fig_folder + 'Horizontal_FKplot_' + wave_type + '_acqu_' + acqu_numb + '_dir'  + str(direction)
+
+    plt.savefig(figname + '.pdf', dpi = 1200, bbox_inches = 'tight')
+    plt.savefig(figname + '.png', dpi = 1200, bbox_inches = 'tight')
     
-    # print(E*1e-9)
-    # print(nu)
+    
+elif flexure_wave:
+    c1 = ax1.imshow(np.transpose(FK_uwp), aspect = 'auto', cmap='gnuplot2',
+                    origin = 'lower',extent = extents(k_uwp) + extents(f),vmin = vmin, vmax = vmax)
+    plt.plot(k_mode, f_mode, color='white', linestyle='-', linewidth = 3, label='Selected points')
+    #ax1.set_ylim([-1.5, 1.5])
+    ax1.set_xlabel(r'$k \; \mathrm{(m^{-1})}$')
+    ax1.set_ylabel(r'$f \; \mathrm{(Hz)}$')
+    ax1.set_title('Spectrum with SVD filter')
+    plt.colorbar(c1, ax=ax1, label='Spectrum Magnitude')
+    ax1.set_ylim([ymin, ymax])
+    
+    wave_type = 'QS'
+    figname = fig_folder + 'Flexural_FKplot_' + wave_type + '_acqu_' + acqu_numb + '_dir'  + str(direction)
+
+    plt.savefig(figname + '.pdf', dpi = 1200, bbox_inches = 'tight')
+    plt.savefig(figname + '.png', dpi = 1200, bbox_inches = 'tight')
     
 
-#%% Load data in a dictionnary  
+#%% Save data in a dictionnary  
 
-pkl_file = path2data + '/' + acqu_numb + '/' + 'Phase_velocity_dictionnary' + '.pkl'
+pkl_file = path2data + 'Phase_velocity_dictionnary_acqu_' + acqu_numb + '.pkl'
 if os.path.isfile(pkl_file):
     print('Phase velocity dictionnary already exists')
-    with open(pkl_file,'rb') as f:
-        s = pickle.load(f)
+    with open(pkl_file,'rb') as pfile:
+        s = pickle.load(pfile)
 else:
     print('No phase velocity dictionnary saved yet')
     s = {}
-with open (pkl_file,'wb') as f:
-    pickle.dump(s,f)
-    
+    s['dir1'] = {}
+    s['dir2'] = {}
     
 keys_phase_velocity = {'N':'C_longi','E':'C_shear'}
-s['dir1'] = {}
-s['dir2'] = {}
 
 if horizontal_wave :
     key_dir = 'dir' + str(direction)
@@ -803,31 +852,32 @@ if horizontal_wave :
 
 #%% write phase velocity in a csv file for a given direction 
 
-csv_file = path2data + '/' + acqu_numb  + '/' + 'Phase_velocity_direction_' + str(direction) + '_with_std.csv'
-with open(csv_file, 'w') as csvfile: 
-    key_direction = 'dir' + str(direction)
-    writer = csv.DictWriter(csvfile, fieldnames = s[key_direction].keys()) 
-    writer.writeheader() 
-    for key in s[key_direction].keys(): 
-        csvfile.write("%.3f"% s[key_direction][key] + ',')
+# csv_file = path2data + 'Phase_velocity_acqu_' + acqu_numb + '_direction_' + str(direction) + '_with_std.csv'
+# with open(csv_file, 'a') as csvfile: 
+#     key_direction = 'dir' + str(direction)
+#     writer = csv.DictWriter(csvfile, fieldnames = s[key_direction].keys()) 
+#     writer.writeheader() 
+#     for key in s[key_direction].keys(): 
+#         csvfile.write("%.3f"% s[key_direction][key] + ',')
+#     csvfile.write('\n')
 
 #%% Save phase velocity data 
-pkl_file = path2data + '/' + acqu_numb + '/' + 'Phase_velocity_dictionnary' + '.pkl'
-with open (pkl_file,'wb') as f:
-    pickle.dump(s,f)
+
+with open (pkl_file,'wb') as pfile:
+    pickle.dump(s,pfile)
 
 #%% Compute horizontal modes phase velocity in both directions
 
 wave_speed = 0.5*(s['dir1']['C_longi'] + s['dir2']['C_longi'])
-file2save = path2data  + '/' + date + '/Geophones/' + year + '_' + date + '_acq'+acqu_numb+ '_cQS0_bidir.pkl'
-with open(file2save, 'wb') as f:
-    pickle.dump(wave_speed, f)
+file2save = path2data  +  year + '_' + date + '_acq'+acqu_numb+ '_cQS0_bidir.pkl'
+with open(file2save, 'wb') as file:
+    pickle.dump(wave_speed, file)
     
 wave_speed = 0.5*(s['dir1']['C_shear'] + s['dir2']['C_shear'])
-file2save = path2data  + '/' + date + '/Geophones/' + year + '_' + date + '_acq'+acqu_numb+ '_cSH0_bidir.pkl'
-with open(file2save, 'wb') as f:
-    pickle.dump(wave_speed, f)
+file2save = path2data + year + '_' + date + '_acq'+acqu_numb+ '_cSH0_bidir.pkl'
+with open(file2save, 'wb') as file:
+    pickle.dump(wave_speed, file)
 
-file2save = path2data  + '/' + date + '/Geophones/' + year + '_' + date + '_acq'+acqu_numb+ 'disp_QS_dir' + str(direction) +'.pkl'
-with open(file2save, 'wb') as f:
-    pickle.dump([f_mode, k_mode], f)
+file2save = path2data + year + '_' + date + '_acq'+acqu_numb+ 'disp_QS_dir' + str(direction) +'.pkl'
+with open(file2save, 'wb') as file:
+     pickle.dump([f_mode, k_mode], file)
