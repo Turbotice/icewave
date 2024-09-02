@@ -71,8 +71,8 @@ def represent_table(table,gpx,imin,imax,ax=None):
                 label = norme[elem]
             ax.plot(x,y,label)
             
-            name = name.replace('_','_{')
-            name = '$'+name+'}$'
+            #name = name.replace('_','_{')
+            #name = r'$'+name+'}$'
             plt.text(x,y-10**(-7),name)
     #print(filename)
     savefolder = os.path.dirname(filename)+'/'
@@ -100,8 +100,8 @@ def display(x,y,ax=None,name='',table=None):
             label='bo'
         ax.plot(x,y,label)
         
-    name = name.replace('_','_{')
-    name = '$'+name+'}$'
+    #name = name.replace('_','_{')
+    #name = r'$'+name+'}$'
     plt.text(x,y-10**(-7),name)
     
 def get_day(waypoint):
@@ -132,12 +132,16 @@ def read_table(folder):
 def read_norme(path):
     #print(glob.glob(path+'Nomenclature_GPS.txt'))
     filename = glob.glob(path+'Nomenclature_GPS.txt')[0]
-    
+    print(filename)
     with open(filename,'r') as f:
         out = f.read()
     
     lines = out.split('\n')
-    table = np.asarray([line.split('\t') for line in lines])
+    print(lines)
+    tab = [line.split('\t') for line in lines]
+
+    pprint(tab)
+    table = np.asarray(tab)
 
     dtable = {tab[0]:tab[1] for tab in table[1:]}
     #pprint(dtable)

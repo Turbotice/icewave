@@ -47,7 +47,17 @@ def writedict_csv(filename,data):
         for key in data.keys():
             row = [key]+[data[key][k] for k in data[key].keys()]
             spamwriter.writerow(row)
-                
+
+def write_pkl(filename,data):
+    import pickle
+    with open(filename, 'wb') as handle:
+        pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+def load_pkl(filename):
+    import pickle
+    with open(filename, 'rb') as handle:
+        data = pickle.load(handle, protocol=pickle.HIGHEST_PROTOCOL)
+    return data
 
 def csv2dict(table):
     data = {}

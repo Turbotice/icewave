@@ -34,6 +34,9 @@ global osname,ostype
 ostype = platform.platform().split('-')[0]
 osname = socket.gethostname()
 
+print(ostype)
+print(osname)
+
 def find_path(disk='BicWin2024'):
     #print('OS type : '+str(ostype))
     #print('Computer name : '+str(osname))
@@ -72,14 +75,14 @@ def find_path(disk='BicWin2024'):
         if disk=='BicWin2024':
             base = '//192.168.1.70/Share/Data/'
 
-    if 'Darwin' in ostype:
+    if 'macOS' in ostype:
         if 'laita' in osname:
             if disk =='BicWin2024':
                 base = '/Volumes/Share_hublot/Data/'
             else:
                 base = '~/Documents/'+base #praise UNIX system    
         else:
-            base = '/Volumes/Share_hublot/Data/'
+            base = '/Users/stephane/Documents/git/icewave/icewave/field/Bicwin2024/Data/2024/'#/Volumes/Share_hublot/Data/'
 
     browse.create_folder(base)
     return base
@@ -143,9 +146,10 @@ def instrument_folder(key='G',date=''):
         return None
 
 def path_GPSdata():
+    print(ostype)
     if 'Linux' in ostype:
         base = '/media/turbots/'
-    if 'Darwin' in ostype:
+    if 'macOS' in ostype:
         base = '/Volumes/'
     return base
 

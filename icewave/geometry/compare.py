@@ -8,18 +8,20 @@ import icewave.geometry.tables as tables
 import icewave.geometry.save as save
 
 global norme
-date = '0223'
+date = '0211'
 import icewave.geometry.experiment_2024_0223 as experiment
 
 norme = display.read_norme()
 global path_GPS
 path_GPS = f"/Users/stephane/Documents/git/Data_local/{date}/GPS/"
+path_GPS = f"/Volumes/Share_hublot/Data/{date}/GPS/"
 
 def load():
     #load GPX table
     import gpxpy
     filelist = glob.glob(path_GPS+'*.gpx')
     filegpx = filelist[0]
+
     gpx_file = open(filegpx, 'r')
     gpx = gpxpy.parse(gpx_file)
 
@@ -65,4 +67,4 @@ def load():
     save.save(geom,filename)
     
 if __name__ == '__main__':
-    pass
+    load()

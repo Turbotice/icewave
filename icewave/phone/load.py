@@ -5,6 +5,7 @@ import csv
 
 global table
 table = {'Accelerometer':'a','Gyroscope':'g','Location':'l','Magnetometer':'m'}
+coords = {'x','y','z'}
 
 def extract_all(folder):
     filelist = glob.glob(folder+'*.zip')
@@ -45,17 +46,42 @@ def load(folder):
         key = os.path.basename(datafile).split('.')[0]
         if key in table:
             key = table[key]
-        try:
-            print(datafile)
-            data[key]={}
-            data[key]['d'] = np.loadtxt(datafile, delimiter=',',usecols=(0,1,2,3),skiprows=1)
+       #try:
+        print(key)
+        print(datafile)
+        data[key]={}
+        data[key]['d'] = np.loadtxt(datafile, delimiter=',',usecols=(1,2,3),skiprows=1)
             #get times
-            data[key]['t'] = np.loadtxt(datafile, delimiter=',',dtype=str,usecols=(4),skiprows=1)
-
-            print(datafile[:100])
-        except:
-            print('data cannotbe converted to float')
+        data[key]['t'] = np.loadtxt(datafile, delimiter=',',dtype=str,usecols=(0),skiprows=1)
+        #except:
+            #print('data cannotbe converted to float')
     return data
+
+def sort(data):
+    newdata = {}
+    keys = {'time','device'}
+    for key in keys:
+        if key in data.keys():
+            newdata[key]=data[key]
+    
+    keys = {'a','m','g'}
+    
+    for key in keys:
+        if key in data.keys():
+            for i,k in enumerate(coords):
+                newdata[key+k]=data[key]['d'][:,i]
+        newdata['t'+key] = data[key]['t'].astype(float)
+
+    key = 'l'
+    if key in data.keys():
+        newdata['loc'] = {}
+        newdata['loc']['lat']=data[key]['d'][:,0]
+        newdata['loc']['lon']=data[key]['d'][:,1]
+        newdata['loc']['elev']=data[key]['d'][:,2]
+        newdata['loc']['t']= data[key]['t'].astype(float)
+    
+    data['coords']=coords
+    return newdata
 
 def read_meta(csvfile):
     d={}
