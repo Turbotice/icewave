@@ -36,10 +36,10 @@ function [u_filt,v_filt] = PIV_banquise_postprocessing(u,v,W,N)
         v_filtered(v_filtered<vmin)=NaN;
         v_filtered(v_filtered>vmax)=NaN;
         % stddev check
-        meanu=nanmean(nanmean(u_filtered));
-        meanv=nanmean(nanmean(v_filtered));
-        std2u=nanstd(reshape(u_filtered,size(u_filtered,1)*size(u_filtered,2),1));
-        std2v=nanstd(reshape(v_filtered,size(v_filtered,1)*size(v_filtered,2),1));
+        meanu=mean(mean(u_filtered,"omitnan"),"omitnan");
+        meanv=mean(mean(v_filtered,"omitnan"),"omitnan");
+        std2u=std(reshape(u_filtered,size(u_filtered,1)*size(u_filtered,2),1),"omitnan");
+        std2v=std(reshape(v_filtered,size(v_filtered,1)*size(v_filtered,2),1),"omitnan");
         minvalu=meanu-stdthresh*std2u;
         maxvalu=meanu+stdthresh*std2u;
         minvalv=meanv-stdthresh*std2v;

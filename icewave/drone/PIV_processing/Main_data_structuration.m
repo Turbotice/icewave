@@ -10,23 +10,23 @@
 %% Post-process raw datas from PIV analysis and create an associated structure 
 
 clear all;
-date = '20240211';
+date = '20240226';
 
 % base = ['/media/turbots/DATA/thiou/labshared2/SagWin2024/Data/' date(5:end) '/Drones/Fulmar/'];
-base = ['F:/Rimouski_2024/Data/2024/0211/Drones/mesange/'];
+base = ['C:/Users/sebas/Desktop/BicWin2024/Data/0226/Drones/mesange/'];
 % base = 'E:/PIVlab_drone/matdata/raw_datas/';
-folder = [base 'matData/2-stereo_001/structured_data/'];% folder of raw datas
-filename = 'PIV_processed_i011496_N15496_Dt4_b1_W32_full.mat';
+folder = [base 'matData/10-waves_005/'];% folder of raw datas
+filename = 'PIV_processed_i00_N0_Dt5_b1_W32_xROI600_width3240_yROI1_height2159.mat';
 fullname = [folder filename];%[folder filename];% filename of raw datas
 
 drone_name = 'mesange';
-ID = 'Saguenay_Fracture_mesange_0211';
+ID = 'Haha_attenuation_mesange_0226-waves-010';
 % PIV parameters 
 a = 1; % number of boxes to crop on the side
 w = 32; % size of the last window used during PIV process
-Dt = 4; % step between two frames that were compared during the PIV algorithm 
-N = 15496; % total number of frames processed
-i0 = 11496; % first index of the frame processed
+Dt = 5; % step between two frames that were compared during the PIV algorithm 
+N = 5421; % total number of frames processed
+i0 = 0; % first index of the frame processed
 b = 1; % step between frame A and A' at which velocity is computed
 
 % ##################################################################
@@ -41,10 +41,10 @@ Lx = 3840; % size of the image in pixel, along larger axis (x-axis)
 Ly = 2160; % size of the image in pixel, along minor axis (y-axis)
 x_0 = (Lx + 1)/2; % camera sensor center
 y_0 = (Ly + 1)/2; % camera sensor center
-h_drone = 90.3; % height of the drone in meter
+h_drone = 128.3; % height of the drone in meter
 focale = 2700; %in pixels 
 theta_x = atan(Lx/focale/2); % semi AFOV of the drone, along x-axis, in °
-alpha_0 = 59.8*pi/180;
+alpha_0 = 90*pi/180;
 facq_pix = Lx/(2*h_drone*tan(theta_x)); % scale in pixels / meter
 facq_x = facq_pix*2/w; % scale in box / meter
 fx = 1/facq_x; % factor scaling in meter / box
@@ -52,17 +52,17 @@ scale_V = (facq_t/Dt) / facq_x; % scale of the velocity in m/s
 % ##########################################
 
 % Longitude and latitude during flight 
-latitude = 48.2531 ;
-longitude = -70.0906;
+latitude = 48.34883 ;
+longitude = -68.81797;
 
 % Create t0_UTC (beginning of flight)
 Y = 2024;
 M = 02;
-D = 11;
-H = 21;
-MIN = 35;
-S = 10;
-MS = 589;
+D = 26;
+H = 19;
+MIN = 15;
+S = 55;
+MS = 563;
 % TimeZone = 'America/Montreal'; % bernache 
 TimeZone = 'Europe/Paris'; % mesange 
 % initial time of recording
@@ -95,7 +95,8 @@ m.PIXEL.x_pix = ((w + 1)/2 : w/2 : (nx*w + 1)/2); % x-index in pixel system of e
 m.PIXEL.y_pix = ((w + 1)/2 : w/2 : (ny*w + 1)/2); % x-index in pixel system of each box 
 m.PIXEL.x0 = (Lx + 1)/2;
 m.PIXEL.y0 = (Ly + 1)/2;
-
+m.PIXEL.x0 = 1;
+m.PIXEL.y0 = 1;
 
 % Store parameters used for PIV processing
 m.PIV_param.Dt = Dt;
