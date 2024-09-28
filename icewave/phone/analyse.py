@@ -57,11 +57,14 @@ def step3(folder):
     #       agregate the results for each folder, save a summary csv file with the quantity of interest
     phonefiles = glob.glob(folder+'000*/*.pkl')
     pprint(phonefiles)
-    
+
+    results={}
     for filename in phonefiles:
         with open(filename, 'rb') as handle:
             data = pickle.load(handle)
         print(data.keys())
+        phone = int(filename.split('/')[-2].split('_')[1])
+        print(phone)
         result = averages(data)
         results[phone] = result
 
