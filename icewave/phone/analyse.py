@@ -33,22 +33,22 @@ def main(args):
     date = args.date
     base = '/media/turbots/Hublot24/Share_hublot/Data/'
     #date = '0221'
-    datafolder = base+date+'/Telephones/'    
-    folder = glob.glob(datafolder+'Bic24*/')[0]
-    print(folder)
-    phonefolders = glob.glob(folder+'000*/')
-    pprint(phonefolders)
+    datafolder = base+date+'/Telephones/'
+    folders = glob.glob(datafolder+'Bic24*/')
 
-    #phonefolders=[phonefolder[:-1] for phonefolder in phonefolders]
-    
-    savefolder = folder+'Results/'
+    for folder in folders:
+        print(folder)
+        phonefolders = glob.glob(folder+'000*/')
+        pprint(phonefolders)
 
-    for phonefolder in phonefolders:
-        data = load.load(phonefolder)
-        data = load.sort(data)
-        data = find_measure_interval(data)
-        data = cut(data)
-        rw.save_data_single_phone(data,phonefolder)
+        #phonefolders=[phonefolder[:-1] for phonefolder in phonefolders]
+        savefolder = folder+'Results/'
+        for phonefolder in phonefolders:
+            data = load.load(phonefolder)
+            data = load.sort(data)
+            data = find_measure_interval(data)
+            data = cut(data)
+            rw.save_data_single_phone(data,phonefolder)
 #    testfolder = 'Telephones/Soufflerie_dec23/131223/Telephones/121223_4_U400cms/'
 #    datafolder =  '/Volumes/labshared2/Telephones/Soufflerie_dec23/Results/'
 #    basefolder = 'Telephones/Soufflerie_dec23/131223/Telephones/'
