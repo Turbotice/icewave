@@ -13,9 +13,14 @@ import glob
 import pylab as plt
 from pprint import pprint
 
+global BicWin2024_datas
+BicWin2024_datas={'0226':{'folder':'Bic24*/','subfolders':'0001*/','sync':}\\
+                  '0223':{'folder':'Bic24*/','subfolders':'0001*/'}\\
+                  '0221':{'folder':'Bic24*/','subfolders':'0001*/'}}
+
 def main():
     base = '/media/turbots/Hublot24/Share_hublot/Data/'
-    date = '0226'
+    date = '0223'
     datafolder = base+date+'/Telephones/'    
     folder = glob.glob(datafolder+'Bic24*/')[0]
     print(folder)
