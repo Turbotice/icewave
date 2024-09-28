@@ -38,6 +38,44 @@ def main(args):
 
     for folder in folders:
         print(folder)
+        step3(folder)
+
+def step4(folders):
+    #step4: load .csv file
+    #       draw a map of the phone location
+    pass
+
+def step3(folder):
+    #step3: load .pkl data
+    #       compute for each phone
+    #           starting and end time (using cellphone values, no sync at this step)
+    #           duration, mean location, total distance traveled
+    #           ai_rms, vi_rms, mi_rms
+    #           main frequency f0
+    #           amplitude in a frequency band [f0/2,2*f0]
+    #       agregate the results for each folder, save a summary csv file with the quantity of interest
+    phonefiles = glob.glob(folder+'000*/*.pkl')
+    pprint(phonefiles)
+    
+    for filename in phonefiles:
+        with open(filename, 'rb') as handle:
+            data = pickle.load(handle)
+        print(data.keys())
+        result = averages(data)
+        results[phone] = result
+
+    rw.write_csv(results,folder)
+
+    #save results in .csv format
+    
+def step2(folder):
+    #step 2 :   load data in .csv format
+    #           make a dictionnary data
+    #           find the measurement interval,
+    #               using a criteria on the modulus of the acceleration,
+    #               on time interval Dt (default 5s)
+    #           cut the temporal serie
+    #           save the dictionnary data in a .pkl format (one for each phone)    
         phonefolders = glob.glob(folder+'000*/')
         pprint(phonefolders)
 
@@ -49,6 +87,7 @@ def main(args):
             data = find_measure_interval(data)
             data = cut(data)
             rw.save_data_single_phone(data,phonefolder)
+
 #    testfolder = 'Telephones/Soufflerie_dec23/131223/Telephones/121223_4_U400cms/'
 #    datafolder =  '/Volumes/labshared2/Telephones/Soufflerie_dec23/Results/'
 #    basefolder = 'Telephones/Soufflerie_dec23/131223/Telephones/'
@@ -74,13 +113,27 @@ def main(args):
 #        print(wind)
 #        run(folder,savefolder,name=wind)
 
+def step1(folders):
+    #step 1 : find all zip files, and extract the data
+    for folder in folders:#allfolders[11:]:
+#        name = folder.split('_')[-1][:-1]
+#        print(name,folder)
+#        time_sync(folder,savefolder,name)
+
+        print("Unzip files ...")
+        rw.extract_all(folder)
+        print("Done")
+#        wind = folder.split('_')[-1].split('/')[0]
+#        print(wind)
+#        run(folder,savefolder,name=wind)
+
 def find_measure_interval(data,var='a',Dt=5,S0=1,display=False):
     #work for same sampling frequency for all sensors
     print(data.keys())
     t = data['t'+var]
     y = np.sqrt(np.sum([data[var+coord]**2 for coord in data['coords']],axis=0))
 
-    n = int(np.round(np.sum(t<Dt)/2)*2) #windows of Dt seconds.
+    n = int(np.round(np.sum(t<Dt)/2)*2) #windows of Dt seconds. may not work for fs = 400Hz (values are designed for fs = 50Hz)
     print(f"Number of points per bin :{n}")
     N = int(np.floor(len(t)/n))
 
@@ -237,19 +290,25 @@ def analyse(data):
     return results
 
 def averages(data,keys='all'):
-    xyz = ['x','y','z']
     variables = ['a','g','m']
-
+    funlist = [np.mean,np.std]
     results={}
     for var in variables:
-        for l in xyz:
-            key = var+l
+        for coord in data['coords']:
+            key = var+coord
             y = data[key]
             #print(key,np.mean(y),np.std(y))
-            for fun in [np.mean,np.std]:
+            for fun in funlist:
+                if var=='g' and fun==np.mean:
+                    continue
                 results[key+'_'+fun.__name__] = fun(y)
+    #location
+    if 'loc' in data.keys():
+        for key in ['elev','lat','lon']:
+            y = data['loc'][key]
+            for fun in funlist:
+                    results[key+'_'+fun.__name__] = fun(y)
     return results
-
 
 import scipy.signal as sig
 
@@ -304,7 +363,6 @@ def Lambda(y,dt,twin=8,dist=50,fcut=0.001):
 
 def time_spectrum(data,key):
     TFt = np.fft.rfft(data[key])
-
 
 if __name__ =='__main__':
     args = gen_parser()
