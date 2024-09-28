@@ -15,9 +15,9 @@ from pprint import pprint
 
 def main():
     base = '/media/turbots/Hublot24/Share_hublot/Data/'
-    data = '0226'
+    date = '0226'
     datafolder = base+date+'/Telephones/'    
-    folder = glob.glob('Bic24*/')[0]
+    folder = glob.glob(datafolder+'Bic24*/')[0]
     print(folder)
     phonefolders = glob.glob(folder+'000*')
     pprint(phonefolders)
@@ -103,10 +103,11 @@ def cut(data,v='a'):
             data[var+coord]=np.asarray(data[var+coord])[indices]
 
     # same for GPS data
-    t = data['loc']['t']
-    indices = np.logical_and(t>=t0,t<=t1)
-    for key in ['lat','elev','lon','t']:
-        data['loc'][key]=data['loc'][key][indices]
+    if 'loc' in data.keys():
+        t = data['loc']['t']
+        indices = np.logical_and(t>=t0,t<=t1)
+        for key in ['lat','elev','lon','t']:
+            data['loc'][key]=data['loc'][key][indices]
     Dt = np.round(t1-t0,decimals=1)
     print(f"Duration of recording : {Dt}")
     return data
