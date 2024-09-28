@@ -31,7 +31,7 @@ def gen_parser():
 
 def main(date):
     base = '/media/turbots/Hublot24/Share_hublot/Data/'
-    date = '0221'
+    #date = '0221'
     datafolder = base+date+'/Telephones/'    
     folder = glob.glob(datafolder+'Bic24*/')[0]
     print(folder)
