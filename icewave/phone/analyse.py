@@ -29,7 +29,8 @@ def gen_parser():
     print(args)
     return args
 
-def main(date):
+def main(args):
+    date = args.date
     base = '/media/turbots/Hublot24/Share_hublot/Data/'
     #date = '0221'
     datafolder = base+date+'/Telephones/'    
