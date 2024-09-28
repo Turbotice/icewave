@@ -143,7 +143,6 @@ def convert_super_dict(results):
         datamat.append(data)
     return header,datamat
 
-
 def save_data_single_phone(data,savefolder):
     import pickle
     if 'time' in data.keys():
@@ -152,7 +151,7 @@ def save_data_single_phone(data,savefolder):
         date = month+day
     else:
         print('no date available')
-    filename = savefolder + 'phonedata.pkl'#+date+'_'+str(phone)+
+    filename = savefolder + '_phonedata.pkl'#+date+'_'+str(phone)+
     with open(filename, 'wb') as handle:
         pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
     

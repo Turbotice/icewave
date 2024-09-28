@@ -19,7 +19,7 @@ def main():
     datafolder = base+date+'/Telephones/'    
     folder = glob.glob(datafolder+'Bic24*/')[0]
     print(folder)
-    phonefolders = glob.glob(folder+'000*')
+    phonefolders = glob.glob(folder+'0001*/')
     pprint(phonefolders)
 
     savefolder = folder+'Results/'
@@ -57,6 +57,7 @@ def main():
 
 def find_measure_interval(data,var='a',Dt=5,S0=1,display=False):
     #work for same sampling frequency for all sensors
+    print(data.keys())
     t = data['t'+var]
     y = np.sqrt(np.sum([data[var+coord]**2 for coord in data['coords']],axis=0))
 
