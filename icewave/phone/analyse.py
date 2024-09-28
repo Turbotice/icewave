@@ -4,32 +4,49 @@
 #keys_a = ['ta','ax','ay','az']
 #keys_g = ['tg','gx','gy','gz']
 #keys_m = ['tm','mx','my','mz']
+import rw_pyphone as rw
+import timesync
+import load as load
 
 import numpy as np
-import rw_pyphone as rw
 import glob
-import timesync
+import pylab as plt
+from pprint import pprint
 
 def main():
-    testfolder = 'Telephones/Soufflerie_dec23/131223/Telephones/121223_4_U400cms/'
-    datafolder =  '/Volumes/labshared2/Telephones/Soufflerie_dec23/Results/'
-    basefolder = 'Telephones/Soufflerie_dec23/131223/Telephones/'
+    base = '/media/turbots/Hublot24/Share_hublot/Data/'
+    data = '0226'
+    datafolder = base+date+'/Telephones/'    
+    folder = glob.glob('Bic24*/')[0]
+    print(folder)
+    phonefolders = glob.glob(folder+'000*')
+    pprint(phonefolders)
+
+    savefolder = folder+'Results/'
+
+    for phonefolder in phonefolders:
+        data = load.load(phonefolder)
+        data = load.sort(data)
+        data = find_measure_interval(data)
+        data = cut(data)
+        rw.save_data_single_phone(data,phonefolder)
+#    testfolder = 'Telephones/Soufflerie_dec23/131223/Telephones/121223_4_U400cms/'
+#    datafolder =  '/Volumes/labshared2/Telephones/Soufflerie_dec23/Results/'
+#    basefolder = 'Telephones/Soufflerie_dec23/131223/Telephones/'
     #    basefolder = rw.find_path(testfolder)
 
-    allfolders = glob.glob(rw.find_path(basefolder)+'*/')
-    print(allfolders)
-    savefolder = rw.find_path('Telephones/Soufflerie_dec23/Results/')
+#    allfolders = glob.glob(rw.find_path(basefolder)+'*/')
+#    print(allfolders)
+#    savefolder = rw.find_path('Telephones/Soufflerie_dec23/Results/')
 
-    folder = 'Telephones/Soufflerie_dec23/131223/Telephones/121223_11h39_T1/'
+#    folder = 'Telephones/Soufflerie_dec23/131223/Telephones/121223_11h39_T1/'
     #time_sync(rw.find_path(folder),savefolder)
-
-    folders = glob.glob(rw.find_path(basefolder)+'*_T*/')
+#   folders = glob.glob(rw.find_path(basefolder)+'*_T*/')
     
-    
-    for folder in folders:#allfolders[11:]:
-        name = folder.split('_')[-1][:-1]
-        print(name,folder)
-        time_sync(folder,savefolder,name)
+#    for folder in folders:#allfolders[11:]:
+#        name = folder.split('_')[-1][:-1]
+#        print(name,folder)
+#        time_sync(folder,savefolder,name)
 
         #print("Unzip files ...")
         #rw.extract_all(folder)
@@ -37,6 +54,62 @@ def main():
 #        wind = folder.split('_')[-1].split('/')[0]
 #        print(wind)
 #        run(folder,savefolder,name=wind)
+
+def find_measure_interval(data,var='a',Dt=5,S0=1,display=False):
+    #work for same sampling frequency for all sensors
+    t = data['t'+var]
+    y = np.sqrt(np.sum([data[var+coord]**2 for coord in data['coords']],axis=0))
+
+    n = int(np.round(np.sum(t<Dt)/2)*2) #windows of Dt seconds.
+    print(f"Number of points per bin :{n}")
+    N = int(np.floor(len(t)/n))
+
+    Y = np.reshape(y[:N*n],(N,n))# cut the signal in pieces of n points (Dt time slots)
+    T = np.reshape(t[:N*n],(N,n))
+    S = np.std(Y,axis=1) # compute the std on these slots
+    Smean = np.mean(Y,axis=1)
+        
+    indices = np.where(S<S0)[0]
+    data[var+'i0']=indices[1]*n
+    data[var+'i1']=indices[-2]*n
+    data[var+'t0']=t[indices[1]*n]
+    data[var+'t1']=t[indices[-2]*n]
+
+    if display:
+        fig,axs = plt.subplots(figsize=(10,6),nrows=2,sharex=True)#,nrows=3,sharex=True)
+        axs[0].plot(t,y,'k')
+        axs[0].errorbar(T[:,int(n/2)],Smean,S,marker='o',color='r')
+        axs[0].set_ylim([5,20])
+        axs[0].vlines(t[indices[1]*n],0,20)
+        axs[0].vlines(t[indices[-2]*n],0,20)
+
+        text = t[data[var+'i0']:data[var+'i1']]
+        yext = y[data[var+'i0']:data[var+'i1']]
+        axs[1].plot(text,yext,'k')
+        axs[1].set_ylim([8,12])
+        fig.subplots_adjust(hspace=0)
+
+    return data
+
+def cut(data,v='a'):
+    variables = ['a','g','m']
+    t0 = data[v+'t0']
+    t1 = data[v+'t1']
+    for var in variables:
+        t = data['t'+var]
+        indices=np.logical_and(t>=t0,t<=t1)
+        data['t'+var]=data['t'+var][indices]
+        for coord in data['coords']:
+            data[var+coord]=np.asarray(data[var+coord])[indices]
+
+    # same for GPS data
+    t = data['loc']['t']
+    indices = np.logical_and(t>=t0,t<=t1)
+    for key in ['lat','elev','lon','t']:
+        data['loc'][key]=data['loc'][key][indices]
+    Dt = np.round(t1-t0,decimals=1)
+    print(f"Duration of recording : {Dt}")
+    return data
 
 def spatiotemp(basefolder,savefolder,datafolder):
     folderlist = rw.get_phone_list(basefolder)

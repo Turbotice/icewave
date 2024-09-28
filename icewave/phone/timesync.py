@@ -13,13 +13,13 @@ def timesync(data,ref=25,prominence=2):
 
 def get_comb(d,tmin,tmax,distance=50,dt=1/2000,prominence=2):
     t = np.asarray(d['ta'])
-    y = np.asarray(d['az'])    
-    peaks = sig.find_peaks(d['az'],distance=distance,prominence=prominence)[0]
+    y = np.asarray(np.sqrt(np.asarray(d['az'])**2+np.asarray(d['ay'])**2+np.asarray(d['ax'])**2))    
+    peaks = sig.find_peaks(y,distance=distance,prominence=prominence)[0]
         
     #d['tpks'] = np.asarray(d['ta'])[peaks]
     #d['vpks'] = np.asarray(d['az'])[peaks]
     yf = y*0
-    yf[peaks]=y[peaks]#keep the magnitude of the peaks.
+    yf[peaks]=y[peaks]/y[peaks]#keep the magnitude of the peaks.
     #Might not work perfectly for phones that are noiser
 
     ti = np.arange(tmin,tmax,dt)
@@ -40,8 +40,12 @@ def get_dt(d,yiref,tmax,prominence=2):
     C = sig.correlate(yi,yiref,mode="same")
     dt = ti-np.mean(ti)
     i = np.argmax(C)
+    good = np.nanmax(C)/len(yi)/np.nanstd(yi)/np.nanstd(yiref)
+    print(good)
     Dt = dt[i]
-    d['dt'] = Dt    
+    d['dt'] = Dt
+    d['ti'] = ti
+    d['yi']= yi
     return d
 
 def get_timetable(data,ref=25):

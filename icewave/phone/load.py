@@ -7,7 +7,7 @@ import zipfile
 
 global table
 table = {'Accelerometer':'a','Gyroscope':'g','Location':'l','Magnetometer':'m'}
-coords = {'x','y','z'}
+coords = ['x','y','z']
 
 def extract_all(folder):
     filelist = glob.glob(folder+'*.zip')
@@ -121,8 +121,8 @@ def sort(data):
         newdata['loc']['lon']=data[key]['d'][:,1]
         newdata['loc']['elev']=data[key]['d'][:,2]
         newdata['loc']['t']= data[key]['t'].astype(float)
-    
-    data['coords']=coords
+
+    newdata['coords']=coords
     return newdata
 
 def get_time(data):

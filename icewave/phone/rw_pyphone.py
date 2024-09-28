@@ -9,6 +9,7 @@ import socket
 import csv
 
 import numpy as np
+import time_phone
 
 global osname,ostype
 ostype = platform.platform().split('-')[0]
@@ -142,9 +143,19 @@ def convert_super_dict(results):
         datamat.append(data)
     return header,datamat
 
+
+def save_data_single_phone(data,savefolder):
+    import pickle
+    month = '0'+str(time_phone.get_time(data['time']['system_START'])[1].month)
+    day = str(time_phone.get_time(data['time']['system_START'])[1].day)
+    date = month+day
+    filename = savefolder + 'phonedata.pkl'#+date+'_'+str(phone)+
+    with open(filename, 'wb') as handle:
+        pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    
 def write_csv(data,savefolder,title=''):
     filename = savefolder+title+'_Summary.csv'
-    header,datamat =convert_super_dict(data)
+    header,datamat = convert_super_dict(data)
 
     with open(filename, 'w', encoding='UTF8') as f:
         writer = csv.writer(f)
