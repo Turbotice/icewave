@@ -7,6 +7,7 @@
 import rw_pyphone as rw
 import timesync
 import load as load
+import argparse
 
 import numpy as np
 import glob
@@ -18,15 +19,27 @@ global BicWin2024_datas
 #                  '0223':{'folder':'Bic24*/','subfolders':'0001*/'}//
 #                  '0221':{'folder':'Bic24*/','subfolders':'0001*/'}}
 
-def main():
+
+
+def gen_parser():    
+    parser = argparse.ArgumentParser(description="Manipulate smartphone data")
+    parser.add_argument('-date', dest='date', type=str,default='0226',help='select date to process data')
+#    print(parser)   
+    args = parser.parse_args()
+    print(args)
+    return args
+
+def main(date):
     base = '/media/turbots/Hublot24/Share_hublot/Data/'
-    date = '0223'
+    date = '0221'
     datafolder = base+date+'/Telephones/'    
     folder = glob.glob(datafolder+'Bic24*/')[0]
     print(folder)
     phonefolders = glob.glob(folder+'0001*/')
     pprint(phonefolders)
 
+    #phonefolders=[phonefolder[:-1] for phonefolder in phonefolders]
+    
     savefolder = folder+'Results/'
 
     for phonefolder in phonefolders:
@@ -293,4 +306,5 @@ def time_spectrum(data,key):
 
 
 if __name__ =='__main__':
-    main()
+    args = gen_parser()
+    main(args)
