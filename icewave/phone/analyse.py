@@ -36,7 +36,7 @@ def main(args):
     datafolder = base+date+'/Telephones/'    
     folder = glob.glob(datafolder+'Bic24*/')[0]
     print(folder)
-    phonefolders = glob.glob(folder+'0001*/')
+    phonefolders = glob.glob(folder+'000*/')
     pprint(phonefolders)
 
     #phonefolders=[phonefolder[:-1] for phonefolder in phonefolders]
