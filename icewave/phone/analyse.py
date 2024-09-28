@@ -68,7 +68,7 @@ def step3(folder):
         result = averages(data)
         results[phone] = result
 
-    rw.write_csv(results,folder)
+    rw.write_csv(results,folder,title='averages')
 
     #save results in .csv format
     
