@@ -146,9 +146,12 @@ def convert_super_dict(results):
 
 def save_data_single_phone(data,savefolder):
     import pickle
-    month = '0'+str(time_phone.get_time(data['time']['system_START'])[1].month)
-    day = str(time_phone.get_time(data['time']['system_START'])[1].day)
-    date = month+day
+    if 'time' in data.keys():
+        month = '0'+str(time_phone.get_time(data['time']['system_START'])[1].month)
+        day = str(time_phone.get_time(data['time']['system_START'])[1].day)
+        date = month+day
+    else:
+        print('no date available')
     filename = savefolder + 'phonedata.pkl'#+date+'_'+str(phone)+
     with open(filename, 'wb') as handle:
         pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
