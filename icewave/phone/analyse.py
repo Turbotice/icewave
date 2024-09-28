@@ -46,6 +46,7 @@ def step4(folders):
     pass
 
 def step3(folder):
+    import pickle
     #step3: load .pkl data
     #       compute for each phone
     #           starting and end time (using cellphone values, no sync at this step)
