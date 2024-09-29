@@ -62,9 +62,8 @@ def step3(folder):
     for filename in phonefiles:
         with open(filename, 'rb') as handle:
             data = pickle.load(handle)
-        print(data.keys())
         phone = int(filename.split('/')[-2].split('_')[1])
-        print(phone)
+        print(data.keys(),phone)
         result = averages(data)
         results[phone] = result
 
@@ -302,10 +301,14 @@ def averages(data,keys='all'):
             key = var+coord
             y = data[key]
             #print(key,np.mean(y),np.std(y))
+            y_high,y_wave,y_trend,err = filtering(y)
+            results[key+'_err'] = err
             for fun in funlist:
                 if var=='g' and fun==np.mean:
                     continue
-                results[key+'_'+fun.__name__] = fun(y)
+                results[key+'_w_'+fun.__name__] = fun(y_wave)
+                results[key+'_high_'+fun.__name__] = fun(y_high)
+                results[key+'_trend_'+fun.__name__] = fun(y_trend)
     #location
     if 'loc' in data.keys():
         for key in ['elev','lat','lon']:
@@ -315,6 +318,24 @@ def averages(data,keys='all'):
     return results
 
 import scipy.signal as sig
+
+def filtering(y,fc=0.1,flow=0.002):
+    #correspond to 5Hz and 0.1Hz at fs = 50Hz
+    [b1,a1] = sig.butter(4,fc,'high')
+    y_high =  sig.filtfilt(b1,a1,y)
+    
+    [b2,a2] = sig.butter(4,fc,'low')
+    y_low =  sig.filtfilt(b2,a2,y)
+
+    [b3,a3] = sig.butter(4,flow,'high')    
+    y_wave  =  sig.filtfilt(b3,a3,y_low)
+
+    [b4,a4] = sig.butter(4,flow,'low')
+    y_trend  =  sig.filtfilt(b4,a4,y_low)
+
+    sigma = np.std(y)
+    err = np.std(y-y_high-y_wave-y_trend)/sigma
+    return y_high,y_wave,y_trend,err
 
 def damping(data):
     results={}
