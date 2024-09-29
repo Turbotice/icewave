@@ -309,6 +309,12 @@ def averages(data,keys='all'):
                 results[key+'_w_'+fun.__name__] = fun(y_wave)
                 results[key+'_high_'+fun.__name__] = fun(y_high)
                 results[key+'_trend_'+fun.__name__] = fun(y_trend)
+    t = data['ta']
+    y = data['az']
+    y_high,y_wave,y_trend,err = filtering(y)
+    f,TFmoy,fmax = time_spectrum(t,y_wave)
+    results[key+'_w_freq']=fmax
+    
     #location
     if 'loc' in data.keys():
         for key in ['elev','lat','lon']:
@@ -386,8 +392,41 @@ def Lambda(y,dt,twin=8,dist=50,fcut=0.001):
     print(p[0])
     return p[0] #damping coefficient in s$^{-1}$
 
-def time_spectrum(data,key):
-    TFt = np.fft.rfft(data[key])
+def time_spectrum(data,var='a',coord='z'):
+        
+    #,color=(244/256,73/256,60/256)
+    t = np.asarray(data['t'+var])
+    y = np.asarray(data[var+coord])
+    y = y-np.mean(y)
+
+    n = y.shape[0]
+    nt = 50*60
+    N = int(np.floor(n/nt))
+#    nt = int(np.floor(n/N))
+    print("Number of samples : "+str(N))
+
+    Y = np.reshape(y[:nt*N],(N,nt))
+    win = np.transpose(np.repeat(np.reshape(np.hanning(nt),(nt,1)),N,axis=1))
+    Y = Y*win
+
+    Ypad = np.zeros((N,nt*9))
+    Ypad[:,4*nt:5*nt]=Y
+    Nt = 9*nt
+
+    dtmean = np.mean(np.diff(t))
+    fe = 1/dtmean
+    f = np.linspace(0,fe/2,int(Nt/2))
+    TF = np.abs(np.fft.fft(Ypad,axis=1))
+    df = f[1]-f[0]
+
+    TF = TF[:,:int(Nt/2)]/np.sqrt(df)/nt  #normalisation de la transformée de Fourier
+    TFmoy = np.mean(TF,axis=0)#/np.sqrt(N)
+
+    #remove first 10 points to find the maximu
+    Amax = np.max(TFmoy[10:])
+    i = np.argmax(TFmoy[10:])+10
+    fmax = f[i]
+    return f,TFmoy,fmax
 
 if __name__ =='__main__':
     args = gen_parser()
