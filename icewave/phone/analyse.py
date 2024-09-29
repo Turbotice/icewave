@@ -310,8 +310,11 @@ def averages(data,keys='all'):
                 results[key+'_high_'+fun.__name__] = fun(y_high)
                 results[key+'_trend_'+fun.__name__] = fun(y_trend)
 
-    t = data['ta']
-    y = data['az']
+    var = 'a'
+    coord = 'z'
+    key = var+coord
+    t = data['t'+var]
+    y = data[key]
     y_high,y_wave,y_trend,err = filtering(y)
     f,TFmoy,fmax = time_spectrum(t,y_wave)
     results[key+'_w_freq']=fmax
