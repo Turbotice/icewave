@@ -309,6 +309,7 @@ def averages(data,keys='all'):
                 results[key+'_w_'+fun.__name__] = fun(y_wave)
                 results[key+'_high_'+fun.__name__] = fun(y_high)
                 results[key+'_trend_'+fun.__name__] = fun(y_trend)
+
     t = data['ta']
     y = data['az']
     y_high,y_wave,y_trend,err = filtering(y)
@@ -392,11 +393,9 @@ def Lambda(y,dt,twin=8,dist=50,fcut=0.001):
     print(p[0])
     return p[0] #damping coefficient in s$^{-1}$
 
-def time_spectrum(data,var='a',coord='z'):
-        
-    #,color=(244/256,73/256,60/256)
-    t = np.asarray(data['t'+var])
-    y = np.asarray(data[var+coord])
+def time_spectrum(t,y):
+#    t = np.asarray(data['t'+var])
+#    y = np.asarray(data[var+coord])
     y = y-np.mean(y)
 
     n = y.shape[0]
