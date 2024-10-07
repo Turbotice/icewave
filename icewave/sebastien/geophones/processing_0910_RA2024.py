@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 """
 Created on Wed Aug 21 15:44:00 2024
@@ -46,9 +47,9 @@ import csv
 ##############################################################
 #%% --------- SETTING PARAMETERS AND PATHS -------------------
 ##############################################################
-date = '0211'
+date = '0910'
 year = '2024'
-path2data = 'F:/Rimouski_2024/Data/' + year + '/' + date +'/Geophones/'
+path2data = os.path.join('C:/Users/sebas/Desktop/Amundsen_RA_2024/Data/',year,date,'Geophones/')
 geophones_table_path = 'C:/Users/sebas/git/icewave/sebastien/geophones/geophones_table'
 
 #----------------------- SELECTING ACQ NUMBER AND CHANNEL ------------------ 
@@ -57,7 +58,7 @@ acqu_numb = '0001'
 channel_correspondance = ['E','N','Z']
 gain = 12 # gain in dB 
 scale_factor = 10**(-gain/10)
-geophones_spacing = 3 # space between geophones, in meter 
+geophones_spacing = 4 # space between geophones, in meter 
 
 # Parameters for plots
 font_size_medium = 24
@@ -74,11 +75,10 @@ fig_size = (12,9)
 img_quality = 1000 # dpi to save images 
 
 
-fig_folder = path2data + acqu_numb + '/' + 'Results/' # folder where figures are saved 
-
+fig_folder = path2data + 'Figures/' + acqu_numb + '/' # folder where figures are saved 
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
-    
+
 ######################################################
 #%% ----------------------- FUNCTIONS ------------------ 
 ######################################################
@@ -315,7 +315,7 @@ def wavenumbers_stein( rho_ice, h, E, nu,freq,c_w,rho_w):
     cSH0 = np.sqrt(G/rho_ice) # celerity of shear wave 
     D = E*pow(h,3)/(12*(1-nu**2)) # flexural modulus
 
-    k = np.linspace(1e-12,10,100000)
+    k = np.linspace(1e-12,4.0,100000)
     
     idx_zero = np.zeros(len(freq)) 
     flag = 0
@@ -372,6 +372,26 @@ def extents(f):
     """ Computes the extents of an array, returns extremities to be used with plt.imshow """
     delta = f[1] - f[0]
     return [f[0] - delta/2, f[-1] + delta/2]
+
+def E_nu_inversion(rho_ice,C_longi,C_shear,uC_longi,uC_shear):
+    """Computes Young modulus E and Poisson coefficient nu from phase velocity of modes QS0 and SH0 
+    Inputs : - rho_ice, ice density 
+             - C_longi, QS0 phase velocity
+             - C_shear, SH0 phase velocity
+             - uC_longi, standard deviation of C_longi
+             - uC_shear, standard deviation of C_shear
+   
+    Outputs : - s, dictionnary containing keys 'E','nu','uE' and 'unu' """
+    
+    s = {}
+    s['nu'] = 1-2*(C_shear/C_longi)**2
+    s['E'] = rho_ice*C_longi**2*(1-s['nu']**2)
+
+    # Computes standrad deviation  
+    s['unu'] = 4*C_shear/(C_longi**2) * uC_shear + 4*C_shear**2/(C_longi**3) * uC_longi
+    s['uE'] = 2*rho_ice * (C_longi*(1-s['nu']**2)*uC_longi + C_longi**2 * s['nu'] * s['unu'])
+
+    return s 
 
 ###################################################################
 #%% -------------------- Loading geophones Data -------------------
@@ -501,7 +521,7 @@ plt.savefig(figname + '.png',dpi = img_quality,bbox_inches = 'tight')
 #%%----------------------- PLOTTING SELECTED CHANNEL FOR WHOLE RECORDING ------------------ 
 ##############################################################################################
 
-channel = 2 #0 for E, 1 for N, 2 for Z. 
+channel = 1 #0 for E, 1 for N, 2 for Z. 
 # selected indices of the corresponding channel 
 selected_indices = range(channel, len(seismic_data_streams),3)
 
@@ -539,6 +559,87 @@ figname = fig_folder + figname
 plt.savefig(figname + '.pdf',dpi = img_quality, bbox_inches = 'tight')
 plt.savefig(figname + '.png',dpi = img_quality ,bbox_inches = 'tight')
 
+
+#%% Choose a source and build a seismic matrix associated 
+
+signal_length = 1.0 # duration in seconds
+
+# load data of intial times 
+composante = 'Z'
+channel = 2
+flexure_wave = composante == 'Z' # 1 to pick the dispersion curves of the flexure wave, 0 to pick those of the other 2 modes
+horizontal_wave = not flexure_wave
+direction = 1 # 1 ou 2 
+# assign a string to S values depending on the direction
+if direction == 1 :
+    S1 = '101' 
+    S2 = '102' 
+    S3 = '103'
+if direction == 2: 
+    S1 = '104' 
+    S2 = '105' 
+    S3 = '106'
+
+# load time dictionnary 
+base = 'C:/Users/sebas/Desktop/Amundsen_RA_2024/Data/2024/0909/Geophones/'
+pkl_path = base + 't1_to_time_' + date + '_' + year + '.pkl'
+with open(pkl_path, 'rb') as f:
+    loaded_data = pickle.load(f)
+
+# load a t0 value
+t1 = loaded_data.get('d' + date + 'a' + acqu_numb + 'tS' + S1 + composante)
+t2 = t1 + signal_length
+
+# Create a matrix to store the seismic data
+num_traces = len(seismic_data_streams)
+num_samples = int((t2 - t1) * first_trace.stats.sampling_rate)
+
+seismic_matrix = np.zeros((num_traces, num_samples))
+
+# Extract the relevant data for each trace and populate the matrix
+for i, stream_index in enumerate(range(channel,len(seismic_data_streams),3)):
+    stream = seismic_data_streams[stream_index]
+    print(stream[0])
+    for j, trace in enumerate(stream):
+        start_sample = int((t1 - trace.stats.starttime) * trace.stats.sampling_rate)
+        end_sample = start_sample + num_samples
+        seismic_matrix[i, :] = trace.data[start_sample:end_sample]
+
+
+# for i, stream in enumerate(seismic_data_streams):
+#     for j, trace in enumerate(stream):
+#         print(stream[0])
+#         start_sample = int((t1 - trace.stats.starttime) * trace.stats.sampling_rate)
+#         end_sample = start_sample + num_samples
+#         seismic_matrix[i, :] = trace.data[start_sample:end_sample]
+
+# Exchange geophones indices (misplacement on field)
+
+matrix_copy = np.copy(seismic_matrix)
+matrix_copy[0,:] = seismic_matrix[15,:]
+for i in range(1,16):
+    matrix_copy[i,:] = seismic_matrix[i-1,:]
+seismic_matrix = matrix_copy
+
+
+time_vector = np.linspace(t1.timestamp, t2.timestamp, num_samples)
+
+num_traces_to_plot = 48
+selected_indices = range(2, num_traces_to_plot,3)
+
+fig, ax = plt.subplots()
+
+for k in range(np.shape(seismic_matrix)[0]):
+    ax.plot(time_vector, seismic_matrix[k, :] / max(np.abs(seismic_matrix[k, :])) + k, label=f"Stream {k}")
+
+ax.set_xlabel('Time (UTC)')
+ax.set_ylabel('Normalized Seismic Data')
+ax.set_title('Seismic Data for Selected Streams')
+#ax.legend()
+plt.show()
+
+
+#########################################################################
 #%% OPTIONAL - FREQUENCY SPECTRUM VS WAVENUMBER for the selected signal
 ########################################################################
 
@@ -574,7 +675,7 @@ ax.set_ylim([0 , fs/4])
 #%%----------------------- CONSTRUCTING MATRIX FOR FK WITH SVD ------------------
 ##################################################################################
 
-signal_length = 1.0 # duration in seconds
+signal_length = 0.3 # duration in seconds
 
 # load data of intial times 
 composante = 'Z'
@@ -582,7 +683,7 @@ channel = 2
 # ch = channel_dic[channel]
 flexure_wave = composante == 'Z' # 1 to pick the dispersion curves of the flexure wave, 0 to pick those of the other 2 modes
 horizontal_wave = not flexure_wave
-direction = 1 # 1 ou 2 
+direction = 2 # 1 ou 2 
 # assign a string to S values depending on the direction
 if direction == 1 :
     S1 = '101' 
@@ -595,8 +696,8 @@ if direction == 2:
 
 # time dictionnary to be loaded
  
-base = 'C:/Users/sebas/Desktop/Amundsen_RA_2024/Data/2024/0909/Geophones/'
-pkl_path = base + 't1_to_time_' + date + '_' + year + '.pkl'
+base = 'C:/Users/sebas/Desktop/Amundsen_RA_2024/Data/2024/0910/Geophones/'
+pkl_path = base + 't1_to_time_' + date + '_' + year + '_short_length' + '.pkl'
 with open(pkl_path, 'rb') as f:
     loaded_data = pickle.load(f)
 
@@ -989,3 +1090,106 @@ figname = fig_folder + 'Unwrapped_flexural_with_theory_acqu_' + acqu_numb + '_di
 
 plt.savefig(figname + '.pdf', dpi = 1200, bbox_inches = 'tight')
 plt.savefig(figname + '.png', dpi = 1200, bbox_inches = 'tight')
+
+#%% Load phase velocity dictionnary 
+
+file2load = path2data + 'Phase_velocity_dictionnary_acqu_0001_sig_length_0p3.pkl'
+with open(file2load,'rb') as pfile:
+    s = pickle.load(pfile)
+    
+# compute E and nu 
+direction = 2
+key_direction = 'dir' + str(direction)
+rho_ice = 917
+
+data_Enu = E_nu_inversion(rho_ice, s[key_direction]['C_longi'], s[key_direction]['C_shear'], s[key_direction]['uC_longi'],
+                          s[key_direction]['uC_shear'])
+
+print(data_Enu)
+#%% Load (f,k) points extracted from QS mode
+direction = 2
+
+file2save = path2data + year + '_' + date + '_acq'+acqu_numb+ 'disp_QS_dir' + str(direction) +'.pkl'
+with open(file2save, 'rb') as file:
+     s_QS = pickle.load(file) # dim 1 = f, dim 2 =k 
+     
+#%% --------- INVERT ICE THICKNESS -------------------
+#######################################################################
+
+rho_ice = 917 
+E_fit = 4.62e9 # 2.43e9
+nu_fit = 0.31
+
+c_w = 1450 # sound celerity in water 
+rho_w = 1027 # density of water 
+h_precision = 0.01 # precision on ice thickness (in meter)
+h = np.arange(1.0,5.0,h_precision) # array of height tested 
+#path2data = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/Data/0210/geophones' # path 2 data points saved from FK flexural
+# acqu_numb = '0002' # acquisition number 
+
+fig, ax1 = plt.subplots(1,1,figsize = fig_size)
+vmin = 0     # Minimum value for colormap
+vmax = 1 # Maximum value for colormap (adjust as needed)
+
+# Computes extents for imshow
+x = extents(k)
+y = extents(f)
+
+c1 = ax1.imshow(FK.T, aspect = 'auto', cmap='gnuplot2',origin = 'lower',extent = x + y,vmin = vmin, vmax = vmax)
+
+#ax1.set_ylim([-1.5, 1.5])
+ax1.set_ylabel(r'$f \; \mathrm{(Hz)}$',labelpad = 5)
+ax1.set_xlabel(r'$k \; \mathrm{(m^{-1})}$',labelpad = 5)
+# ax1.set_title('Spectrum with SVD filter')
+plt.colorbar(c1, ax=ax1, label= r'$\frac{|\hat{s}|}{|\hat{s}|_{max}}(f,k)$')
+ax1.tick_params(axis='both', which='major', pad=7)
+ax1.set_ylim([0, 400])
+
+# add detected points
+ax1.scatter(s_QS[1], s_QS[0], color='r', label='Detected points')    
+    
+
+# find h_ice that minimzes distance to data points 
+l2_norm = np.zeros(len(h))
+for i in range(len(h)):
+    k_mode_synthetic, k_QS0, k_SH0, cphQS = wavenumbers_stein( rho_ice, h[i], E_fit, nu_fit,s_QS[0],c_w,rho_w)
+    error = np.sum(np.power((s_QS[1]-k_mode_synthetic),2))
+    l2_norm[i] = np.sqrt(error)
+    #plt.plot(f_mode, k_mode_synthetic, color='b', label='Line between points')  
+h_ice = h[np.argmin(l2_norm)] # keep thickness of ice that minimizes the error
+   
+# computes wavevectors k for the best fit
+k_mode_synthetic, k_QS0, k_SH0, cphQS = wavenumbers_stein( rho_ice, h_ice, E_fit, nu_fit,s_QS[0],c_w,rho_w)
+
+ax1.plot(k_mode_synthetic, s_QS[0], color='g', label='Best fit')    
+ax1.legend()
+
+
+figname = fig_folder + 'FK_mode_QS_acqu' + acqu_numb + '_dir' + str(direction) +  'sig_length_0p3_rho_ice_850' 
+plt.savefig(figname + '.pdf', dpi = 800, bbox_inches = 'tight')
+plt.savefig(figname + '.png', dpi = 800, bbox_inches = 'tight')
+print(h_ice)     
+
+
+fig, ax = plt.subplots(1,1,figsize = fig_size)
+ax.plot(h,l2_norm)
+ax.grid()
+ax.set_xlabel(r'$h_{ice} \: \mathrm{(m)}$',labelpad = 5)
+ax.set_ylabel('Distance of fitted curve to points',labelpad = 5)
+figname = fig_folder + 'Distance_fit_to_points_acqu' + acqu_numb + '_dir' + str(direction) + 'sig_length_0p3_rho_ice_850' 
+plt.savefig(figname + '.pdf', dpi = 800, bbox_inches = 'tight')
+plt.savefig(figname + '.png', dpi = 800, bbox_inches = 'tight')
+
+#%% Save data used for inversion 
+data = {}
+data['E'] = E_fit
+data['rho_ice'] = rho_ice
+data['nu_fit'] = nu_fit
+data['c_w'] = c_w
+data['rho_w'] = rho_w
+data['h_ice'] = h_ice
+
+pkl_file_datafit = path2data + 'Data_used_for_thickness_inversion_acqu' + acqu_numb + '_dir' + str(direction) + 'sig_length_0p3'
+with open(pkl_file_datafit,'wb') as pfile :
+    pickle.dump(data,pfile)
+print('Data saved')

@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 """
 Created on Wed Aug 21 15:44:00 2024
@@ -30,6 +31,7 @@ import shutil
 from obspy import read
 from obspy.core import UTCDateTime
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 from matplotlib.widgets import RectangleSelector
 import mplcursors
 from datetime import datetime, time 
@@ -40,15 +42,18 @@ from scipy.fftpack import fft, ifft
 from scipy.linalg import svd
 import pickle
 import csv 
+import math
+
+
 
 # import seb
 # from seb import pickle_m
 ##############################################################
 #%% --------- SETTING PARAMETERS AND PATHS -------------------
 ##############################################################
-date = '0211'
+date = '0909'
 year = '2024'
-path2data = 'F:/Rimouski_2024/Data/' + year + '/' + date +'/Geophones/'
+path2data = os.path.join('C:/Users/sebas/Desktop/Amundsen_RA_2024/Data/',year,date,'Geophones/')
 geophones_table_path = 'C:/Users/sebas/git/icewave/sebastien/geophones/geophones_table'
 
 #----------------------- SELECTING ACQ NUMBER AND CHANNEL ------------------ 
@@ -57,7 +62,7 @@ acqu_numb = '0001'
 channel_correspondance = ['E','N','Z']
 gain = 12 # gain in dB 
 scale_factor = 10**(-gain/10)
-geophones_spacing = 3 # space between geophones, in meter 
+geophones_spacing = 4 # space between geophones, in meter 
 
 # Parameters for plots
 font_size_medium = 24
@@ -74,11 +79,10 @@ fig_size = (12,9)
 img_quality = 1000 # dpi to save images 
 
 
-fig_folder = path2data + acqu_numb + '/' + 'Results/' # folder where figures are saved 
-
+fig_folder = path2data + 'Figures/' + acqu_numb + '/' # folder where figures are saved 
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
-    
+
 ######################################################
 #%% ----------------------- FUNCTIONS ------------------ 
 ######################################################
@@ -315,7 +319,7 @@ def wavenumbers_stein( rho_ice, h, E, nu,freq,c_w,rho_w):
     cSH0 = np.sqrt(G/rho_ice) # celerity of shear wave 
     D = E*pow(h,3)/(12*(1-nu**2)) # flexural modulus
 
-    k = np.linspace(1e-12,10,100000)
+    k = np.linspace(1e-12,2.0,100000)
     
     idx_zero = np.zeros(len(freq)) 
     flag = 0
@@ -372,6 +376,33 @@ def extents(f):
     """ Computes the extents of an array, returns extremities to be used with plt.imshow """
     delta = f[1] - f[0]
     return [f[0] - delta/2, f[-1] + delta/2]
+
+#--------------------------------------------------------------------------------------------------------------------------
+
+def nextpow2(x):
+    return 1 if x == 0 else 2**math.ceil(math.log2(x))
+
+#--------------------------------------------------------------------------------------------------------------------------
+
+def E_nu_inversion(rho_ice,C_longi,C_shear,uC_longi,uC_shear):
+    """Computes Young modulus E and Poisson coefficient nu from phase velocity of modes QS0 and SH0 
+    Inputs : - rho_ice, ice density 
+             - C_longi, QS0 phase velocity
+             - C_shear, SH0 phase velocity
+             - uC_longi, standard deviation of C_longi
+             - uC_shear, standard deviation of C_shear
+   
+    Outputs : - s, dictionnary containing keys 'E','nu','uE' and 'unu' """
+    
+    s = {}
+    s['nu'] = 1-2*(C_shear/C_longi)**2
+    s['E'] = rho_ice*C_longi**2*(1-s['nu']**2)
+
+    # Computes standrad deviation  
+    s['unu'] = 4*C_shear/(C_longi**2) * uC_shear + 4*C_shear**2/(C_longi**3) * uC_longi
+    s['uE'] = 2*rho_ice * (C_longi*(1-s['nu']**2)*uC_longi + C_longi**2 * s['nu'] * s['unu'])
+
+    return s 
 
 ###################################################################
 #%% -------------------- Loading geophones Data -------------------
@@ -501,17 +532,24 @@ plt.savefig(figname + '.png',dpi = img_quality,bbox_inches = 'tight')
 #%%----------------------- PLOTTING SELECTED CHANNEL FOR WHOLE RECORDING ------------------ 
 ##############################################################################################
 
-channel = 2 #0 for E, 1 for N, 2 for Z. 
-# selected indices of the corresponding channel 
-selected_indices = range(channel, len(seismic_data_streams),3)
+channel =  2#0 for E, 1 for N, 2 for Z. 
+# selected indices of the corresponding channel
+seismic_data_G16 = seismic_data_streams[45:]
+current_stream  = seismic_data_G16[channel] 
+print(current_stream[0])
+ax.plot(datetime_values, 
+        current_stream[0].data / max(np.abs(current_stream[0].data) ), 
+        label=f"Stream {k}")
+
+selected_indices = range(channel, len(seismic_data_streams) - 3,3)
 
 fig, ax = plt.subplots(figsize = fig_size)
-for k in selected_indices:
-    current_stream = seismic_data_streams[k]
+for k, idx in enumerate(selected_indices):
+    current_stream = seismic_data_streams[idx]
     print(current_stream[0])
     # Plot the data for each stream using precalculated datetime values
     ax.plot(datetime_values, 
-            current_stream[0].data / max(np.abs(current_stream[0].data) ) + k, 
+            current_stream[0].data / max(np.abs(current_stream[0].data) ) + geophones_spacing*k + geophones_spacing, 
             label=f"Stream {k}")
     
 
@@ -539,47 +577,14 @@ figname = fig_folder + figname
 plt.savefig(figname + '.pdf',dpi = img_quality, bbox_inches = 'tight')
 plt.savefig(figname + '.png',dpi = img_quality ,bbox_inches = 'tight')
 
-#%% OPTIONAL - FREQUENCY SPECTRUM VS WAVENUMBER for the selected signal
-########################################################################
 
-Nfft_t= 1024
-Nfft_k = 1024
- 
-fs = 1000
-ks = 2*np.pi/geophones_spacing
-space_vector = np.arange(0,seismic_matrix.shape[0],geophones_spacing)
+#%% Choose a source and build a seismic matrix associated 
 
-# Define the spatial and temporal frequencies
-wavenum = np.fft.fftfreq(Nfft_k, d=1/ks)
-freq = np.fft.fftfreq(Nfft_t, d=1/fs)
-
-# Create a 2D Fourier transform of the seismic matrix
-seismic_fft = np.fft.fft2(seismic_matrix, (Nfft_k, Nfft_t))
-
-# Shift zero frequency component to the center
-seismic_fft_shifted = np.fft.fftshift(seismic_fft)
-
-fig, ax = plt.subplots()
-# Plot the 2D Fourier transform
-plt.imshow(np.transpose(np.abs(seismic_fft_shifted)), extent=(wavenum.min(), wavenum.max(),freq.min(), freq.max()), aspect='auto', cmap='viridis')
-#plt.colorbar(label='Amplitude')
-plt.ylabel(r'$f\; \mathrm{(Hz)}$')
-plt.xlabel(r'$k \; \mathrm{(m^{-1})}$')
-plt.title('2D Fourier Transform of Seismic')
-plt.show()
-ax.set_ylim([0 , fs/4])
-
-
-##################################################################################
-#%%----------------------- CONSTRUCTING MATRIX FOR FK WITH SVD ------------------
-##################################################################################
-
-signal_length = 1.0 # duration in seconds
+signal_length = 0.25 # duration in seconds
 
 # load data of intial times 
-composante = 'Z'
-channel = 2
-# ch = channel_dic[channel]
+composante = 'N'
+channel = 1
 flexure_wave = composante == 'Z' # 1 to pick the dispersion curves of the flexure wave, 0 to pick those of the other 2 modes
 horizontal_wave = not flexure_wave
 direction = 1 # 1 ou 2 
@@ -593,10 +598,184 @@ if direction == 2:
     S2 = '105' 
     S3 = '106'
 
+# load time dictionnary 
+base = 'C:/Users/sebas/Desktop/Amundsen_RA_2024/Data/2024/0909/Geophones/'
+pkl_path = base + 't1_to_time_' + date + '_' + year + '.pkl'
+with open(pkl_path, 'rb') as f:
+    loaded_data = pickle.load(f)
+
+# load a t0 value
+# t1 = loaded_data.get('d' + date + 'a' + acqu_numb + 'tS' + S1 + composante)
+t1 = UTCDateTime("2024-09-09T20:25:12.13")
+t2 = t1 + signal_length
+
+# Create a matrix to store the seismic data
+selected_indices = np.arange(channel, len(seismic_data_streams),3)
+num_samples = int((t2 - t1) * first_trace.stats.sampling_rate)
+num_traces = len(selected_indices)
+seismic_matrix = np.zeros((num_traces, num_samples))
+
+# Extract the relevant data for each trace and populate the matrix
+for i, stream_index in enumerate(selected_indices):
+    stream = seismic_data_streams[stream_index]
+    print(stream[0])
+    for j, trace in enumerate(stream):
+        start_sample = int((t1 - trace.stats.starttime) * trace.stats.sampling_rate)
+        end_sample = start_sample + num_samples
+        seismic_matrix[i, :] = trace.data[start_sample:end_sample]
+
+
+# for i, stream in enumerate(seismic_data_streams):
+#     for j, trace in enumerate(stream):
+#         print(stream[0])
+#         start_sample = int((t1 - trace.stats.starttime) * trace.stats.sampling_rate)
+#         end_sample = start_sample + num_samples
+#         seismic_matrix[i, :] = trace.data[start_sample:end_sample]
+
+# Exchange geophones indices (misplacement on field)
+
+matrix_copy = np.copy(seismic_matrix)
+matrix_copy[0,:] = seismic_matrix[15,:]
+for i in range(1,16):
+    matrix_copy[i,:] = seismic_matrix[i-1,:]
+seismic_matrix = matrix_copy
+
+
+time_vector = np.linspace(0, t2.timestamp - t1.timestamp, num_samples)
+
+fig, ax = plt.subplots()
+
+for k in range(np.shape(seismic_matrix)[0]):
+    ax.plot(time_vector, seismic_matrix[k, :] / max(np.abs(seismic_matrix[k, :])) + k*geophones_spacing, label=f"Stream {k}")
+
+ax.set_xlabel(r'$t \: \rm (s)$')
+ax.set_ylabel(r'$x \: \rm (m)$')
+title = 'Channel ' + channel_correspondance[channel] + ' t0 = ' + t1.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+ax.set_title(title, fontsize = 10)
+#ax.legend()
+plt.show()
+
+file_figname = 'Signals' + channel_correspondance[channel] + '_t0_' + t1.strftime("%Y-%m-%dT%H_%M_%S_%fZ") + '_sig_length_' + str(signal_length).replace('.','p')
+
+
+plt.savefig(fig_folder + file_figname + '.png', bbox_inches='tight')
+plt.savefig(fig_folder + file_figname + '.pdf', bbox_inches='tight')
+
+#%% spatiotemporal FFT of this matrix 
+Nfft_t= nextpow2(np.shape(seismic_matrix)[1])
+Nfft_k = 512
+
+fs = 1000 # sampling frequency in time 
+ks = 2*np.pi / geophones_spacing # sampling frequency in space
+
+freq = np.fft.fftfreq(Nfft_t, d = 1/fs)
+wavenum = np.fft.fftfreq(Nfft_k, d = 1/ks)
+
+# Create a 2D Fourier transform of the seismic matrix
+seismic_fft = np.fft.fft2(seismic_matrix, (Nfft_k, Nfft_t),norm = 'forward')
+# Shift zero frequency component to the center
+seismic_fft_shifted = np.fft.fftshift(seismic_fft)
+
+fig, ax = plt.subplots()
+# Plot the 2D Fourier transform
+plt.imshow(np.transpose(np.abs(seismic_fft_shifted)), extent=(wavenum.min(), wavenum.max(),freq.min(), freq.max()), 
+           aspect='auto', cmap='viridis',norm = colors.LogNorm())
+plt.colorbar()
+plt.ylabel(r'$f\; \mathrm{(Hz)}$')
+plt.xlabel(r'$k \; \mathrm{(m^{-1})}$')
+plt.title('2D FFT ' + 'Channel ' + channel_correspondance[channel] + ' t0 = ' + t1.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),fontsize = 10)
+plt.clim([3e-4 , 3e-2])
+plt.show()
+ax.set_ylim([0 , fs/4])
+
+file_figname = '2D_FFT_ch_' + channel_correspondance[channel] + '_t0_' + t1.strftime("%Y-%m-%dT%H_%M_%S_%fZ") + '_sig_length_' + str(signal_length).replace('.','p')
+
+
+plt.savefig(fig_folder + file_figname + '.png', bbox_inches='tight')
+plt.savefig(fig_folder + file_figname + '.pdf', bbox_inches='tight')
+
+#%% Select points on the curve 
+
+pkl_file = path2data + 'Phase_velocity_fk_simple_dictionnary_acqu_' + acqu_numb + '.pkl'
+if os.path.isfile(pkl_file):
+    print('Phase velocity dictionnary already exists')
+    with open(pkl_file,'rb') as pfile:
+        s = pickle.load(pfile)
+else:
+    print('No phase velocity dictionnary saved yet')
+    s = {}
+    s['dir1'] = {}
+    s['dir2'] = {}
+    
+
+
+points = plt.ginput(10, timeout=-1)
+k_mode, f_mode = zip(*points)
+
+# fit by a 1D polynome
+deg = 1
+p,V = np.polyfit(k_mode,f_mode,deg,cov = True )
+s['dir2'][t1.strftime("%Y-%m-%dT%H:%M:%S:%fZ")] = {}
+s['dir2'][t1.strftime("%Y-%m-%dT%H:%M:%S:%fZ")]['C_longi'] = abs(p[0])*2*np.pi
+s['dir2'][t1.strftime("%Y-%m-%dT%H:%M:%S:%fZ")]['uC_longi'] = np.sqrt(2*np.pi*np.diag(V)[0]) # standard deviation
+
+print(s)
+
+#%% Save dictionnary
+
+with open (pkl_file,'wb') as pfile:
+    pickle.dump(s,pfile)
+
+#%% Inverse E,nu from these fk - measurements 
+
+# load dictionnary of phase velocity 
+pkl_file = path2data + 'Phase_velocity_fk_simple_dictionnary_acqu_' + acqu_numb + '.pkl'
+if os.path.isfile(pkl_file):
+    print('Phase velocity dictionnary already exists')
+    with open(pkl_file,'rb') as pfile:
+        s = pickle.load(pfile)
+
+dic_velocity = {}
+for key in s['dir2'].keys():
+    if key[:4] == '2024':
+        for subkey, value in s['dir2'][key].items():
+            dic_velocity[subkey] = value
+ 
+rho_ice = 917 # kg/m3
+dic_Enu = E_nu_inversion(rho_ice, dic_velocity['C_longi'],dic_velocity['C_shear'], dic_velocity['uC_longi'], dic_velocity['uC_shear'])
+
+
+pkl_file_Enu = path2data + 'E_nu_values_acqu' + acqu_numb + '_dir2' + '.pkl'
+with open(pkl_file_Enu,'wb') as pfile:
+    pickle.dump(dic_Enu,pfile)
+
+##################################################################################
+#%%----------------------- CONSTRUCTING MATRIX FOR FK WITH SVD ------------------
+##################################################################################
+
+signal_length = 0.3 # duration in seconds
+
+# load data of intial times 
+composante = 'Z'
+channel = 2
+# ch = channel_dic[channel]
+flexure_wave = composante == 'Z' # 1 to pick the dispersion curves of the flexure wave, 0 to pick those of the other 2 modes
+horizontal_wave = not flexure_wave
+direction = 2 # 1 ou 2 
+# assign a string to S values depending on the direction
+if direction == 1 :
+    S1 = '101' 
+    S2 = '102' 
+    S3 = '103'
+if direction == 2: 
+    S1 = '104' 
+    S2 = '105' 
+    S3 = '106'
+
 # time dictionnary to be loaded
  
 base = 'C:/Users/sebas/Desktop/Amundsen_RA_2024/Data/2024/0909/Geophones/'
-pkl_path = base + 't1_to_time_' + date + '_' + year + '.pkl'
+pkl_path = base + 't1_to_time_' + date + '_' + year + '_short_length' + '.pkl'
 with open(pkl_path, 'rb') as f:
     loaded_data = pickle.load(f)
 
@@ -607,47 +786,63 @@ t2 = loaded_data.get('d' + date + 'a' + acqu_numb + 'tS' + S2 + composante)
 t3 = loaded_data.get('d' + date + 'a' + acqu_numb + 'tS' + S3 + composante)
 t1_values = [t1,t2,t3]
 
-
+# Create a matrix to store the seismic data
+selected_indices = np.arange(channel, len(seismic_data_streams),3)
 ta = t1 + signal_length 
-num_samples = int(signal_length * first_trace.stats.sampling_rate) # Number of points gereted in tim_vector (~1000)
+num_samples = int(signal_length * first_trace.stats.sampling_rate) # Number of points generated in time_vector 
 time_vector = np.linspace(t1.timestamp, ta.timestamp, num_samples) # timestamp gets the number of sec in ta, t1
 
-# selected indices of the corresponding channel 
-selected_indices = range(channel, len(seismic_data_streams),3)
-
-# Create a 3D matrix to store the seismic data
-num_traces = len(seismic_data_streams)
-num_samples = int(signal_length * first_trace.stats.sampling_rate)  
+num_traces = len(selected_indices)
 
 # Dynamically determine the length of the third dimension
 third_dim_len = len(t1_values) if len(t1_values) > 1 else 1
-seismic_matrix = np.zeros((len(selected_indices), third_dim_len, num_samples)) # matrix dim : geo_indices x nb_sources x time
+seismic_matrix = np.zeros((num_traces, third_dim_len, num_samples)) # matrix dim : geo_indices x nb_sources x time
+
+# add G16 in first place 
+idx_G16 = selected_indices[-1]
+stream = seismic_data_streams[idx_G16]
+print(stream[0])
+for t1_index, t1 in enumerate(t1_values):
+    for j, trace in enumerate(stream):
+        start_sample = int((t1 - trace.stats.starttime) * trace.stats.sampling_rate)
+        # start_sample = int((t1 - trace.stats.starttime.timestamp) * trace.stats.sampling_rate)
+        end_sample = start_sample + num_samples
+        seismic_matrix[0, t1_index, :] = trace.data[start_sample:end_sample]
+
 
 # Extract the relevant data for each trace and populate the 3D matrix
-for i, stream_index in enumerate(range(channel, len(seismic_data_streams), 3)):
+for i, stream_index in enumerate(selected_indices[:-1]):
     stream = seismic_data_streams[stream_index]
-    
+    print(stream[0])
     for t1_index, t1 in enumerate(t1_values):
         for j, trace in enumerate(stream):
             start_sample = int((t1 - trace.stats.starttime) * trace.stats.sampling_rate)
             # start_sample = int((t1 - trace.stats.starttime.timestamp) * trace.stats.sampling_rate)
             end_sample = start_sample + num_samples
-            seismic_matrix[i, t1_index, :] = trace.data[start_sample:end_sample]
+            seismic_matrix[i+1, t1_index, :] = trace.data[start_sample:end_sample]
 
-print('Matrix computed for channel : ' + channel_correspondance[channel])
+print('Matrix computed for channel : ' + composante)
 
-#%% Plot the data (superposition of three sources)
 
-fig, ax = plt.subplots(figsize = fig_size)
-for k in range(seismic_matrix.shape[0]):
-    for t1_index in range(seismic_matrix.shape[1]):
+# Plot the data
+fig, ax = plt.subplots()
+#print(seismic_matrix.shape[0]) # Seismic_matrix 1000 values [2], 3 sources [1], 16 geophones [0]
+for k in range(seismic_matrix.shape[0]): # size of the array(nb of rows) = nb of geophones
+    for t1_index in range(seismic_matrix.shape[1]): #size of the array(nb of collumns) = nb of sources
         ax.plot(time_vector, seismic_matrix[k, t1_index, :] / max(np.abs(seismic_matrix[k, t1_index, :])) + 3*k,
-                label=f"Stream {k}, t1={t1_values[t1_index]}")
+                label=f"Stream {k}, t1={t1_values[t1_index]}") # : is each values (1000) for one geophones and 1 source
 
-ax.set_xlabel('Time (UTC)')
-ax.set_ylabel('Normalized Seismic Data')
-ax.set_title('Seismic Data for Selected Streams at Different t1 Values')
+# Visualization of the plot
+# Show time values for t1, t2, t3 ???
+ax.set_title(f"Seismic Data - {date}-{year}-{acqu_numb}\n" 
+             f"Channel: {ch}, Source: {composante}, Direction: {direction}", fontsize = font_size_medium)
+ax.set_ylabel('Normalized Seismic Data', fontsize = font_size_small)
+ax.tick_params(axis='x',labelsize = font_size_small)
+ax.tick_params(axis='y',labelsize = font_size_small)
 plt.show()
+#plt.grid(True)
+
+
 
 #######################################################################
 #%% OPTIONAL ---------------------- INTERPOLATING 3D MATRIX ------------------
@@ -805,17 +1000,9 @@ print(C_longi)
 ###################################################
 
 rho_ice = 917
-nu = np.zeros((2,1))
-E = np.zeros((2,1))
-nu[0] = 1-2*(C_shear[0]/C_longi[0])**2
-E[0] = rho_ice*C_longi[0]**2*(1-nu[0]**2)
+Enu_dic = E_nu_inversion(rho_ice,s['dir2']['C_longi'],s['dir2']['C_shear'],s['dir2']['uC_longi'],s['dir2']['uC_shear'])
 
-# Computes standrad deviation  
-nu[1] = 4*C_shear[0]/(C_longi[0]**2) * C_shear[1] + 4*C_shear[0]**2/(C_longi[0]**3) * C_longi[1]
-E[1] = 2*rho_ice * (C_longi[0]*(1-nu[0]**2)*C_longi[1] + C_longi[0]**2*nu[0]*nu[1])
-
-print(E*1e-9)
-print(nu)
+print(Enu_dic)
 
 
 #%% Import Phase velocity data averaged on both directions : 
@@ -841,7 +1028,7 @@ f_mode, k_mode = zip(*points)
 # Plot a line between the two selected points
 plt.plot(f_mode, k_mode, linestyle='--', color='r', label='Line between points')
 
-file2save = path2data + 'dispersion_QS_acq_' + acqu_numb + '_dir' + str(direction) + '.pkl'
+file2save = path2data + 'dispersion_QS_acq_' + acqu_numb + '_dir' + str(direction) + '_sig_length_' + str(signal_length).replace('.','p') +'.pkl'
 with open(file2save,'wb') as file:
     pickle.dump([f_mode, k_mode], file)
     
@@ -850,8 +1037,8 @@ with open(file2save,'wb') as file:
 #######################################################################
 
 rho_ice = 917 
-E_fit = 5.408e9 # 2.43e9
-nu_fit = 0.36
+E_fit = 5.01e9 # 2.43e9
+nu_fit = 0.26
 
 c_w = 1450 # sound celerity in water 
 rho_w = 1027 # density of water 
@@ -861,7 +1048,7 @@ h = np.arange(1.0,5.0,h_precision) # array of height tested
 # acqu_numb = '0002' # acquisition number 
 
 # load selected points on the FK plot 
-file2load = path2data +'/' +'dispersion_QS_acq_'+ acq_number + '_dir' + str(direction) + '.pkl'
+file2load = path2data +'/' +'dispersion_QS_acq_'+ acqu_numb + '_dir' + str(direction) + '_sig_length_' + str(signal_length).replace('.','p') + '.pkl'
 with open(file2load, "rb") as filename:
     data = pickle.load(filename)
 f_mode1 = data[1] 
@@ -941,7 +1128,7 @@ with open(csv_file, 'w') as csvfile:
         
 #%% Create an other plot with data points and fitted curve 
 
-frequency_list = np.linspace(1,150,100)
+frequency_list = np.linspace(1,60,100)
 k_flex_theory, k_acoust_theory, k_shear_theory, cphQS = wavenumbers_stein( rho_ice, h_ice, E, nu,frequency_list,c_w,rho_w)
 
 fig, ax = plt.subplots()
@@ -951,7 +1138,7 @@ ax.scatter(data[0],data[1], label = 'Detected points')
 ax.plot(frequency_list,k_flex_theory,color = 'k', label = 'Flexural mode')
 plt.colorbar(c1, ax=ax, label= r'Spectrum Magnitude')
 
-ax.set_xlim([0, 100])
+ax.set_xlim([0, 5])
 ax.grid()
 ax.set_xlabel(r'$f \quad \mathrm{(Hz)}$')
 ax.set_ylabel(r'$k \quad \mathrm{(m^{-1})}$')
@@ -989,3 +1176,91 @@ figname = fig_folder + 'Unwrapped_flexural_with_theory_acqu_' + acqu_numb + '_di
 
 plt.savefig(figname + '.pdf', dpi = 1200, bbox_inches = 'tight')
 plt.savefig(figname + '.png', dpi = 1200, bbox_inches = 'tight')
+
+#%% Load (f,k) points extracted from QS mode
+direction = 2
+
+file2save = path2data + year + '_' + date + '_acq'+acqu_numb+ 'disp_QS_dir' + str(direction) +'.pkl'
+with open(file2save, 'rb') as file:
+     s_QS = pickle.load(file) # dim 1 = f, dim 2 =k 
+     
+#%% --------- INVERT ICE THICKNESS -------------------
+#######################################################################
+
+rho_ice = 917 
+E_fit = 5.01e9 # 2.43e9
+nu_fit = 0.26
+
+c_w = 1450 # sound celerity in water 
+rho_w = 1027 # density of water 
+h_precision = 0.01 # precision on ice thickness (in meter)
+h = np.arange(1.0,5.0,h_precision) # array of height tested 
+#path2data = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/Data/0210/geophones' # path 2 data points saved from FK flexural
+# acqu_numb = '0002' # acquisition number 
+
+fig, ax1 = plt.subplots(1,1,figsize = fig_size)
+vmin = 0     # Minimum value for colormap
+vmax = 1 # Maximum value for colormap (adjust as needed)
+
+# Computes extents for imshow
+x = extents(k)
+y = extents(f)
+
+c1 = ax1.imshow(FK.T, aspect = 'auto', cmap='gnuplot2',origin = 'lower',extent = x + y,vmin = vmin, vmax = vmax)
+
+#ax1.set_ylim([-1.5, 1.5])
+ax1.set_ylabel(r'$f \; \mathrm{(Hz)}$',labelpad = 5)
+ax1.set_xlabel(r'$k \; \mathrm{(m^{-1})}$',labelpad = 5)
+# ax1.set_title('Spectrum with SVD filter')
+plt.colorbar(c1, ax=ax1, label= r'$\frac{|\hat{s}|}{|\hat{s}|_{max}}(f,k)$')
+ax1.tick_params(axis='both', which='major', pad=7)
+ax1.set_ylim([0, 400])
+
+# add detected points
+ax1.scatter(s_QS[1], s_QS[0], color='r', label='Detected points')    
+    
+
+# find h_ice that minimzes distance to data points 
+l2_norm = np.zeros(len(h))
+for i in range(len(h)):
+    k_mode_synthetic, k_QS0, k_SH0, cphQS = wavenumbers_stein( rho_ice, h[i], E_fit, nu_fit,s_QS[0],c_w,rho_w)
+    error = np.sum(np.power((s_QS[1]-k_mode_synthetic),2))
+    l2_norm[i] = np.sqrt(error)
+    #plt.plot(f_mode, k_mode_synthetic, color='b', label='Line between points')  
+h_ice = h[np.argmin(l2_norm)] # keep thickness of ice that minimizes the error
+   
+# computes wavevectors k for the best fit
+k_mode_synthetic, k_QS0, k_SH0, cphQS = wavenumbers_stein( rho_ice, h_ice, E_fit, nu_fit,s_QS[0],c_w,rho_w)
+
+ax1.plot(k_mode_synthetic, s_QS[0], color='g', label='Best fit')    
+ax1.legend()
+
+
+figname = fig_folder + 'FK_mode_QS_acqu' + acqu_numb + '_dir' + str(direction) +  'sig_length_0p3' 
+plt.savefig(figname + '.pdf', dpi = 800, bbox_inches = 'tight')
+plt.savefig(figname + '.png', dpi = 800, bbox_inches = 'tight')
+print(h_ice)     
+
+
+fig, ax = plt.subplots(1,1,figsize = fig_size)
+ax.plot(h,l2_norm)
+ax.grid()
+ax.set_xlabel(r'$h_{ice} \: \mathrm{(m)}$',labelpad = 5)
+ax.set_ylabel('Distance of fitted curve to points',labelpad = 5)
+figname = fig_folder + 'Distance_fit_to_points_acqu' + acqu_numb + '_dir' + str(direction) + 'sig_length_0p3' 
+plt.savefig(figname + '.pdf', dpi = 800, bbox_inches = 'tight')
+plt.savefig(figname + '.png', dpi = 800, bbox_inches = 'tight')
+
+#%% Save data used for inversion 
+data = {}
+data['E'] = E_fit
+data['rho_ice'] = rho_ice
+data['nu_fit'] = nu_fit
+data['c_w'] = c_w
+data['rho_w'] = rho_w
+data['h_ice'] = h_ice
+
+pkl_file_datafit = path2data + 'Data_used_for_thickness_inversion_acqu' + acqu_numb + '_dir' + str(direction) + 'sig_length_0p3'
+with open(pkl_file_datafit,'wb') as pfile :
+    pickle.dump(data,pfile)
+print('Data saved')

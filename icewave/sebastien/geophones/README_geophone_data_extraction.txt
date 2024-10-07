@@ -1,6 +1,6 @@
 Extraction des datas issus des géophones (ISTerre) :
 
-code ordinateur : pmmh
+code ordinateur : ISTerre
 
 ###################################
 ## Si problème / oubli => dossier SmartSolo, vidéo explicatives disponibles 

@@ -9,7 +9,7 @@ Created on Tue Jun 25 15:06:08 2024
 
 import numpy as np
 from random import random
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt 
 import pickle
 import os , sys
 import time
@@ -21,16 +21,17 @@ import seaborn as sns
 plt.close('all')
 
 year = '2024'
-date = '0211' #date format, 'mmdd'
-acqu_numb = '0003' #acquisition number 
-equation = 'squire'
+date = '0909' #date format, 'mmdd'
+acqu_numb = '0001' #acquisition number 
+equation = 'stein'
 # path to dispersion relation data 
-path2data = 'C:/Users/sebas/git/icewave/sebastien/geophones/updatescriptspython/'
+path2data = os.path.join('C:/Users/sebas/Desktop/Amundsen_RA_2024/Data/',year,date,'Geophones/')
+# path2data = 'C:/Users/sebas/icewave/icewave/sebastien/geophones/updatescriptspython/0211/Geophones/'
 # path2data = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/' +year+'_BICWIN/'
 
-
-direction = 2 # 1 ou 2 
-filename = year + '_' + date + '_acq'+acqu_numb+ 'disp_QS_dir' +str(direction) +'.pkl'
+# Load (f,k) points of QS dispersion relation 
+direction = 1 # 1 ou 2 
+filename = year + '_' + date + '_acq'+acqu_numb+ 'disp_QS_dir' +str(direction) +'_filtered.pkl'
 # file2load1 = path2data  + date + '/Geophones/' + filename
 file2load1  = os.path.join(path2data,filename)
 with open(file2load1, "rb") as f:
@@ -38,9 +39,9 @@ with open(file2load1, "rb") as f:
 freq1 = data[0] 
 kQS1 = data[1] 
 
-
-direction = 1 # 1 ou 2 
-filename = year + '_' + date + '_acq'+acqu_numb+ 'disp_QS_dir' +str(direction) +'.pkl'
+# Load (f,k) points of QS dispersion relation
+direction = 2 # 1 ou 2 
+filename = year + '_' + date + '_acq'+acqu_numb+ 'disp_QS_dir' +str(direction) +'_filtered.pkl'
 # file2load1 = path2data  + date + '/Geophones/' + filename
 file2load1  = os.path.join(path2data,filename)
 with open(file2load1, "rb") as f:
@@ -66,29 +67,29 @@ kQS = np.nanmean([kQS1_interp, kQS2_interp], axis=0)
 
 # Plot the results
 plt.figure(figsize=(12, 6))
-plt.plot(freq1, kQS1, 'b-', label='kQS1')
-plt.plot(freq2, kQS2, 'g-', label='kQS2')
-plt.plot(freq, kQS1_interp, 'b--', label='kQS1 interpolated')
-plt.plot(freq, kQS2_interp, 'g--', label='kQS2 interpolated')
-plt.plot(freq, kQS, 'r--', label='Average kQS')
-plt.xlabel('Frequency (Hz)')
-plt.ylabel('kQS')
+plt.plot(kQS1, freq1,  'bo', label='kQS1')
+plt.plot( kQS2,freq2, 'go', label='kQS2')
+plt.plot(kQS1_interp, freq,  'b--', label='kQS1 interpolated')
+plt.plot(kQS2_interp, freq, 'g--', label='kQS2 interpolated')
+plt.plot(kQS, freq, 'r--', label='Average kQS')
+plt.xlabel(r'$k_{QS} \: \mathrm{(rad.m^{-1})}$')
+plt.ylabel(r'$f \: \mathrm{rad.m^{(-1})}$')
 plt.legend()
 plt.title('Comparison and Average of kQS1 and kQS2')
 plt.show()
 
-#########################################################################
-#%%----------------------- PROCEED INVERSION ---------------------------
-#########################################################################
-
-file2load2 = path2data  + date + '/Geophones/' + year + '_' + date + '_acq'+acqu_numb+ '_cQS0_bidir.pkl'
-file2load3 = path2data  + date + '/Geophones/' + year + '_' + date + '_acq'+acqu_numb+ '_cSH0_bidir.pkl'
+#%% Load data for inversion 
 # file that will be saved 
-file2save  = path2data  + date + '/Geophones/' + year + '_' + date + '_acq'+acqu_numb+'_bidir_inversion.pkl'
-fig_save_path = path2data + '/' +acqu_numb+'_bidir'
+file2save  = path2data + year + '_' + date + '_acq'+acqu_numb+'_bidir_inversion.pkl'
+fig_save_path = path2data + '/Figures_inversion_MCMC_T_0p25/' 
+if not os.path.isdir(fig_save_path):
+    os.mkdir(fig_save_path)
+
+file2load2 = path2data + year + '_' + date + '_acq'+acqu_numb+ '_cQS0_bidir_filtered.pkl'
+file2load3 = path2data + year + '_' + date + '_acq'+acqu_numb+ '_cSH0_bidir_filtered.pkl'
 
 
-
+# Load phase velocity of in-plane waves 
 with open(file2load2, "rb") as f:
     data = pickle.load(f)
 cQS0 = data 
@@ -96,6 +97,11 @@ with open(file2load3, "rb") as f:
     data = pickle.load(f)
 cSH0 = data 
 
+# load dictionnary of phase velocity 
+# file2load2 = path2data +'Phase_velocity_dictionnary_acqu_0001_sig_length_0p3.pkl'
+# with open(file2load2,'rb') as pfile:
+#     dic_phase_velocity = pickle.load(pfile)
+# print('Phase velocities loaded')
 
 data = {
     'freq':freq,
@@ -104,7 +110,19 @@ data = {
     'cSH0': cSH0
 }
 
+#%% Find a first guess of E and nu, assuming a given density for ice 
 
+rho_ice = 917
+nu = 1-2*(data['cSH0']/data['cQS0'])**2
+E = rho_ice*data['cQS0']**2*(1-nu**2)
+
+print(f'Young modulus, E = {E*1e-9} and Poisson coefficient, nu = {nu}')
+
+#########################################################################
+#%%----------------------- PROCEED INVERSION ---------------------------
+#########################################################################
+
+#--------------------------------------------------------------------------------------------------------------------------
 
 def tic():
     global start_time
@@ -126,7 +144,8 @@ def candidate(X,delta_X,min_X,max_X):
     a minimal and a maximal value, but can also be restrained to a smaller range
     Inputs :
         - X : array, generation of candidate will be done along axis = 0
-        - delta_X : 
+        - delta_X : size of step within which we are generating a new candidate. 
+        Corresponds to step in Metropolis algorithm 
         - min_X : array, minimal values of each candidate
         - max_X : array, maximal values of each candidate
     Output :
@@ -159,7 +178,7 @@ def wavenumbers_stein_squire( rho_ice, h, H, E, nu,freq,c_w,rho_w,equation):
         - E : Young modulus of ice
         - nu : Poisson coefficient of ice
         - freq : an array of frequencies, to which will correspond wave vectors 
-        - c_w : sound waves phase velocity
+        - c_w : sound waves phase velocity in water
         - rho_w : water density 
         - equation: string, 'stein' : compute wavevectors using stein dispersion relation
                             'squire' : compute wavevectors using squire dispersion relation 
@@ -171,9 +190,9 @@ def wavenumbers_stein_squire( rho_ice, h, H, E, nu,freq,c_w,rho_w,equation):
     # G = E/(2*(1+nu))
     # cS0 = np.sqrt(E/(rho_ice*(1-nu**2)))
     # cSH0 = np.sqrt(G/rho_ice)
-    D = E*pow(h,3)/(12*(1-nu**2))
+    D = E*pow(h,3)/(12*(1-nu**2)) # flexural modulus 
 
-    k = np.linspace(1e-12,5,200000)
+    k = np.linspace(1e-12,8,200000)
     
     idx_zero = np.zeros(len(freq)) 
     flag = 0
@@ -194,7 +213,8 @@ def wavenumbers_stein_squire( rho_ice, h, H, E, nu,freq,c_w,rho_w,equation):
             
             func[func.imag != 0] = -1
             func = func.real
-            idx_zero[kf] = (np.where(np.diff(np.signbit(func)))[0]) # index of the array k at which func(k) = 0
+            a = np.where(np.diff(np.signbit(func)))[0] # indices of the array k at which func(k) = 0
+            idx_zero[kf] = a
             
     idx_zero = idx_zero.astype(int)        
     k_QS =  k[idx_zero]       
@@ -211,21 +231,21 @@ def wavenumbers_stein_squire( rho_ice, h, H, E, nu,freq,c_w,rho_w,equation):
 
 
 def simulated_annealing(delta_param0, T0, T0param, Tmin, Tminparam, X, MIN_param0, MAX_param0, data, isave):
-    """ Find best parameters using Monte-Carlos-Markof-Chains inversion (MCMC inversion), Metropolis-Hasting algorithm 
+    """ Find best parameters using Monte-Carlo-Markof-Chains inversion (MCMC inversion), Metropolis-Hasting algorithm 
     Inputs :
         - delta_param0 : array, initial uncertainty over parameters (h,E,nu,rho)
-        - T0 :
-        - T0param :
-        - Tmin : 
-        - Tminparam :
-        - X : array parameters to fit 
+        - T0 :float, initial temperature at which we perform Metropolis algorithm
+        - T0param : float, initial temperature used to determine the step used for Metropolis algorithm
+        - Tmin : float, minimal temperature at which we perform Metropolis algorithm
+        - Tminparam : float, minimal temperature used to determine the step used for Metropolis algorithm
+        - X : array of parameters to fit 
         - MIN_param0 : initial minimal value of each parameter
         - MAX_param0 : initial maximal value of each parameter
         - data : dictionary of data extracted from geophones data, with relevant keys : 'freq','kQS','cQS0','cSH0'
         - isave : int, save generated values every isave iterations
     Outputs : 
         - I : index of the best iteration
-        - T_critic : 
+        - T_critic : critical temperature 
         - it_critic : maximal iteration reached 
         - X : array of parameters generated at each iteration 
         - likelihood : likelihood of each set of parameters generated
@@ -240,11 +260,11 @@ def simulated_annealing(delta_param0, T0, T0param, Tmin, Tminparam, X, MIN_param
     cQS0data = data['cQS0']
     cSH0data = data['cSH0']
     N_SA = X.shape[1]
-    T = np.exp(np.linspace(np.log(T0), np.log(Tmin), N_SA))
+    T = np.exp(np.linspace(np.log(T0), np.log(Tmin), N_SA)) # temperatures used for 'recuit simulé'
     variance = T**2
     Tparam = np.exp(np.linspace(np.log(T0param), np.log(Tminparam), N_SA))
     T_critic = Tmin
-    it_critic = N_SA # maximum number of iteration
+    it_critic = N_SA # maximum number of iteration for 'recuit simulé'
     misfit_accepted = np.zeros(N_SA)
     likelihood = np.zeros(N_SA)
     G = X[1, 0] / (2 * (1 + X[2, 0])) # shear modulus
@@ -252,7 +272,8 @@ def simulated_annealing(delta_param0, T0, T0param, Tmin, Tminparam, X, MIN_param
     cSH0synthetics = np.sqrt(G / X[3, 0]) # phase velocity of shear mode 
     # compute wavenumber of flexural mode
     kQSsynthetics = wavenumbers_stein_squire(X[3, 0], X[0, 0], H, X[1, 0], X[2, 0], freq, c_w, rho_w, equation)
-    misfit_accepted[0] = 1/3 * (np.mean(np.abs(kQSdata - kQSsynthetics) / kQSdata) + np.mean(np.abs(cQS0data - cQS0synthetics) / cQS0data) + np.mean(np.abs(cSH0data - cSH0synthetics) / cSH0data))
+    misfit_accepted[0] = 1/3 * (np.mean(np.abs(kQSdata - kQSsynthetics) / kQSdata) + np.mean(np.abs(cQS0data - cQS0synthetics) / cQS0data) 
+                                + np.mean(np.abs(cSH0data - cSH0synthetics) / cSH0data))
     likelihood[0] = np.exp(-misfit_accepted[0]**2 / (2 * variance[0])) # gaussian likelihood 
     it = 1 
     it_tot = 0 # iteration counter 
@@ -271,7 +292,8 @@ def simulated_annealing(delta_param0, T0, T0param, Tmin, Tminparam, X, MIN_param
                 success = True
             except Exception as e:
                 print(f"Error: {e}. Retrying...")
-        misfit_cand = 1/3 * (np.mean(np.abs(kQSdata - kQSsynthetics) / kQSdata) + np.mean(np.abs(cQS0data - cQS0synthetics) / cQS0data) + np.mean(np.abs(cSH0data - cSH0synthetics) / cSH0data))
+        misfit_cand = 1/3 * (np.mean(np.abs(kQSdata - kQSsynthetics) / kQSdata) + np.mean(np.abs(cQS0data - cQS0synthetics) / cQS0data) 
+                             + np.mean(np.abs(cSH0data - cSH0synthetics) / cSH0data))
         likelihood_cand = np.exp(-misfit_cand**2 / (2 * variance[it])) # likelihood of the new candidate 
         # compute acceptance factor 
         test_likelihood = min(1, likelihood_cand / likelihood[it - 1])
@@ -285,18 +307,20 @@ def simulated_annealing(delta_param0, T0, T0param, Tmin, Tminparam, X, MIN_param
             print(it)
         else: # acceptance factor too small -> new candidate has a smaller likelihood
             cpt_out += 1
+            # If we have more than 500 consecutive acceptance test, we consider we found critical temperature
             if cpt_out > 500: # 500 failed acceptance test
                 I = np.argmin(misfit_accepted[0:it])
                 T_critic = T[it]
                 it_critic = it # critical iteration
-                with open(file2save, 'wb') as f:
-                    pickle.dump([T_critic, X, misfit_accepted], f)    
+                with open(file2save, 'wb') as pfile:
+                    pickle.dump([T_critic, X, misfit_accepted], pfile)    
                 break
+            
         if it % isave == 0 and cpt_out < 1:
             
             
-            with open(file2save, 'wb') as f:
-                pickle.dump([T_critic, X, misfit_accepted], f)
+            with open(file2save, 'wb') as pfile:
+                pickle.dump([T_critic, X, misfit_accepted], pfile)
             fig0, ax0 = plt.subplots()
             ax0.plot(misfit_accepted[:it], linestyle='-', color='k')
             ax0.set_ylabel('misfit vs iteration', fontsize=10)
@@ -312,8 +336,8 @@ def simulated_annealing(delta_param0, T0, T0param, Tmin, Tminparam, X, MIN_param
             ax1[1, 1].set_xlabel('iteration', fontsize=10)
             ax1[1, 1].set_ylabel('density (kg/m3)', fontsize=10)
             plt.tight_layout()
-            fig1.savefig(f"{fig_save_path}SA_inversion_parameters.png", dpi=300, bbox_inches='tight')
-            fig0.savefig(f"{fig_save_path}SA_inversion_misfit.png", dpi=300, bbox_inches='tight')
+            fig1.savefig(f"{fig_save_path}_{acqu_numb}_dir2_SA_inversion_parameters.png", dpi=300, bbox_inches='tight')
+            fig0.savefig(f"{fig_save_path}_{acqu_numb}_dir2_SA_inversion_misfit.png", dpi=300, bbox_inches='tight')
             plt.close(fig0)
             plt.close(fig1)
             I = np.argmin(misfit_accepted[0:it - 1])    
@@ -331,7 +355,7 @@ def simulated_annealing(delta_param0, T0, T0param, Tmin, Tminparam, X, MIN_param
                 ax.set_xlabel('Value')
                 ax.set_ylabel('Frequency')
             plt.tight_layout()
-            figname = path2data  + date + '/Geophones/' + year + '_' + date + '_acq'+acqu_numb+ '_MCMCinversion_bidir.png'
+            figname = fig_save_path + year + '_' + date + '_acq'+acqu_numb+ '_MCMCinversion_dir2.png'
             plt.savefig(figname)
             plt.close(fig2)
             
@@ -346,19 +370,21 @@ def simulated_annealing(delta_param0, T0, T0param, Tmin, Tminparam, X, MIN_param
 
 # simulated annealing schedule
 isave = 200 # save data every isave iterations
-N_SA = 2000 # maximum number of iterations 
-T0 = 0.025; Tmin = 0.025
+N_SA = 20000 # maximum number of iterations # initial value = 30 000
+T0 = 0.025; Tmin = 0.025 # range of temperature we are using 
 #T0param = 0.8; Tminparam = 0.05
-T0param = 0.5; Tminparam = 0.5
+T0param = 0.25; Tminparam = 0.25 # minimal and maximal range of the step for Metropolis algorithm 
+# If T0param != Tminparam : we are performing a Metropolis algorithm with a progressive step, we can make smaller step 
+# after each iteration 
 
 
 # extremal values of the fitted parameters
-min_thickness = 10e-2
-max_thickness = 30e-2
-min_E = 1.5e9
-max_E = 4e9
-min_nu = 0.2
-max_nu = 0.4
+min_thickness = 1.0
+max_thickness = 5.0
+min_E = 2.5e9
+max_E = 9.0e9
+min_nu = 0.15
+max_nu = 0.45
 min_rho = 600
 max_rho = 1000
 
@@ -376,17 +402,12 @@ MAX_param0[3] = max_rho
 MIN_param0[3] = min_rho    
 delta_param0 = (MAX_param0 - MIN_param0)
  
+# Initial values of the different parameters 
 X = np.zeros((4,N_SA))
-X[0,0] = 0.12 # ice thickness
-X[1,0] = 2.5e9 # Young modulus
-X[2,0] = 0.315 # Poisson coefficient 
-X[3,0] = 887 # ice density 
-
-
-
-
-
-
+X[0,0] = 3.0 # ice thickness
+X[1,0] = 5.0e9 # Young modulus
+X[2,0] = 0.3 # Poisson coefficient 
+X[3,0] = 900 # ice density 
 
 
 
@@ -394,15 +415,16 @@ X[3,0] = 887 # ice density
 # #-----------------------------Plotting--------------------------------------------------
 
 
-
+print('Start MCMC algorithm...')
 I,T_critic, it_critic, X, likelihood  ,misfit_accepted   = simulated_annealing(delta_param0,T0,T0param,Tmin,Tminparam,X,MIN_param0,MAX_param0,data,isave)
 
 toc()
+print('MCMC algorithm succeeded')
 print(['best fit for iter = ' + str(I) + ' -> ' + str(X[:, I])])
 
 
 
-
+#%%
 with open(file2save, 'rb') as file:
     data = pickle.load(file)
 
@@ -417,7 +439,7 @@ data_to_plot = [X[i, :nonzeroidx] for i in range(4)]
 # Step 3: Create a 2x2 subplot and plot histograms with KDE
 fig, axes = plt.subplots(2, 2, figsize=(12, 10))
 
-titles = ['Thickness (m)', 'E (GPa)',
+titles = ['Thickness (m)', 'E (Pa)',
           'nu ', 'rho (kg/m3)']
 
 for i, ax in enumerate(axes.flat):
@@ -434,6 +456,21 @@ for i, ax in enumerate(axes.flat):
 plt.tight_layout()
 plt.show()
 
-figname = path2data  + date + '/Geophones/' + year + '_' + date + '_acq'+acqu_numb+ '_MCMCinversion_bidir.png'
-plt.savefig(figname)
+figname = fig_save_path + year + '_' + date + '_acq'+ acqu_numb + '_final_MCMCinversion_dir2'
+plt.savefig(figname + '.pdf', dpi = 800, bbox_inches = 'tight')
+plt.savefig(figname + '.png', dpi = 800, bbox_inches = 'tight')
 
+#%% Try to find maximum of gaussian kde
+from scipy import stats
+
+
+kde = stats.gaussian_kde(data_to_plot[0])
+Y = kde.evaluate(data_to_plot[0])
+
+# compute argmax
+test = np.argmax(Y)
+
+
+
+fig, ax = plt.subplots(figsize = (12,10))
+ax.plot(data_to_plot[0],Y)

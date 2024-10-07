@@ -41,23 +41,22 @@ import csv
 
 #%% Set parameters 
 year = '2024'
-date = '0211' #date format, 'mmdd'
+date = '0918' #date format, 'mmdd'
 acqu_numb = '0001' #acquisition number 
 
-     
-path2data = os.path.join('F:/Rimouski_2024/Data/',year,date,'Geophones/')
+path2data = os.path.join('C:/Users/sebas/Desktop/Amundsen_RA_2024/Data/',year,date,'Geophones/')
 
-fig_folder = path2data + 'Figures/' + acqu_numb + '/' # folder where figures are saved 
+fig_folder = path2data + 'Figures/'  # folder where figures are saved 
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
     
 geophones_table_path = 'C:/Users/sebas/git/icewave/sebastien/geophones/geophones_table'
-channel = 1  # 0 for E, 1 for N, 2 for Z. 
+channel = 2  # 0 for E, 1 for N, 2 for Z. 
 
 #files need to be organised as: data/0210/Geophones/0001/minised files
 
-geophones_spacing = 3 # space between geophones, in meter 
-signal_length = 1.0 # duration in seconds 
+geophones_spacing = 4 # space between geophones, in meter 
+signal_length = 0.3 # duration in seconds 
 channel_dic = {
     1: "N",
     2: "Z",
@@ -352,6 +351,32 @@ start_time_utc = UTCDateTime(first_trace.stats.starttime)
 fs = first_trace.stats.sampling_rate # acquisition frequency (Hz) 
 
 
+#%% ---------------- Plot a single channel for a given geophone ----------------------
+
+idx_geophone = 2
+chan = 0
+selected_stream = seismic_data_streams[(idx_geophone - 1)*3 + chan]
+print(selected_stream[0])
+
+
+fig, ax = plt.subplots(figsize = fig_size)
+ax.plot(datetime_values,selected_stream[0].data / max(np.abs(selected_stream[0].data)))
+
+#%% FFT of the signal 
+fs = 1000
+
+FFT = np.fft.fft(selected_stream[0].data - np.mean(selected_stream[0].data))
+n = np.size(selected_stream[0].data)
+frequencies = np.fft.fftfreq(n,1/fs)
+
+x_fft = frequencies[:len(frequencies)//2]
+y_fft = FFT[:len(FFT)//2]
+
+fig,ax = plt.subplots()
+ax.plot(x_fft,np.abs(y_fft))
+
+
+
 ##############################################################################################
 #%% ---------------------- Plot all channels for a single geophone ---------------------------
 ##############################################################################################
@@ -383,6 +408,8 @@ for k, chan in enumerate([2,0,1]):
 ax[2].set_xlabel('$t \; \mathrm{(s)}$')
 fig.tight_layout()
 
+
+
 #%% Set xlim for all subplots
 
 Mydate = date(2024,2,11)
@@ -407,16 +434,25 @@ plt.savefig(figname + '.png',dpi = img_quality,bbox_inches = 'tight')
 #%%----------------------- PLOTTING SELECTED CHANNEL FOR WHOLE RECORDING ------------------ 
 ##############################################################################################
  
-# selected indices of the corresponding channel 
-selected_indices = range(channel, len(seismic_data_streams),3)
+channel =  1 #0 for E, 1 for N, 2 for Z. 
 
+# selected indices of the corresponding channel
+# seismic_data_G16 = seismic_data_streams[45:]
+# current_stream  = seismic_data_G16[channel] 
+# print(current_stream[0])
+# ax.plot(datetime_values, 
+#         current_stream[0].data / max(np.abs(current_stream[0].data) ), 
+#         label=f"Stream {k}")
+# selected_indices = range(channel, len(seismic_data_streams) - 3,3)
+
+selected_indices = range(channel, len(seismic_data_streams),3)
 fig, ax = plt.subplots(figsize = fig_size)
-for k in selected_indices:
-    current_stream = seismic_data_streams[k]
+for k, idx in enumerate(selected_indices):
+    current_stream = seismic_data_streams[idx]
     print(current_stream[0])
     # Plot the data for each stream using precalculated datetime values
     ax.plot(datetime_values, 
-            current_stream[0].data / max(np.abs(current_stream[0].data) ) + k, 
+            current_stream[0].data / max(np.abs(current_stream[0].data) ) + geophones_spacing*k + geophones_spacing, 
             label=f"Stream {k}")
     
 
@@ -429,7 +465,6 @@ mplcursors.cursor(hover=True)
 # Adjust the backend to make it work better in Spyder
 plt.ion()
 plt.show(block=True)  # Use block=True to make it work better in Spyder
-
 
 #%% Select xlim of the plot 
 Mydate = date(2024,2,11)
@@ -453,7 +488,7 @@ plt.savefig(figname + '.png',dpi = img_quality ,bbox_inches = 'tight')
 
 
 # open .pkl file and load dictionnary 
-filename = 't1_to_time_' + date + '_' + year + '.pkl'
+filename = 't1_to_time_' + date + '_' + year + '_short_length.pkl'
 base = path2data
 file2save = base + filename
 if os.path.isfile(file2save):
@@ -464,23 +499,23 @@ else:
     print('No time dictionnary saved yet')
     time_dict = {}
 
+composante = 'Z' #Z , E or N -> direction de la source
 
-composante = 'N' #Z , E or N -> direction de la source
 # S101, S102, S103
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '101' + composante 
-time_dict[key] = UTCDateTime("2024-02-26T18:16:41.74")
+time_dict[key] = UTCDateTime("2024-09-10T18:51:14.20")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '102' + composante 
-time_dict[key] = UTCDateTime("2024-02-26T18:17:14.84")
+time_dict[key] = UTCDateTime("2024-09-10T18:52:37.05")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '103' + composante 
-time_dict[key] = UTCDateTime("2024-02-26T18:17:54.24")
+time_dict[key] = UTCDateTime("2024-09-10T18:54:01.80")
 
 # S104, S105, S106
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '104' + composante 
-time_dict[key] = UTCDateTime("2024-02-26T18:19:17.84")
+time_dict[key] = UTCDateTime("2024-09-10T18:57:00.82")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '105' + composante 
-time_dict[key] = UTCDateTime("2024-02-26T18:20:15.42")
+time_dict[key] = UTCDateTime("2024-09-10T18:58:03.75")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '106' + composante 
-time_dict[key] = UTCDateTime("2024-02-26T18:20:58.80")
+time_dict[key] = UTCDateTime("2024-09-10T18:59:19.40")
 
 #%% Save t0 dictionnary in pickle file 
 
@@ -493,10 +528,12 @@ print('Time dictionnary saved')
 #%% -------------- Compute FK data ----------------------
 ###########################################################
 
+signal_length = 0.3 # duration in seconds
+
 # load data of intial times 
 composante = 'Z'
 channel = 2
-ch = channel_dic[channel]
+# ch = channel_dic[channel]
 flexure_wave = composante == 'Z' # 1 to pick the dispersion curves of the flexure wave, 0 to pick those of the other 2 modes
 horizontal_wave = not flexure_wave
 direction = 2 # 1 ou 2 
@@ -510,8 +547,10 @@ if direction == 2:
     S2 = '105' 
     S3 = '106'
 
-base = 'C:/Users/sebas/git/icewave/sebastien/geophones/'
-pkl_path = base + 't1_to_time_' + date + '_' + year + '.pkl'
+# time dictionnary to be loaded
+ 
+base = 'C:/Users/sebas/Desktop/Amundsen_RA_2024/Data/2024/0910/Geophones/'
+pkl_path = base + 't1_to_time_' + date + '_' + year + '_short_length' + '.pkl'
 with open(pkl_path, 'rb') as f:
     loaded_data = pickle.load(f)
 
@@ -520,32 +559,45 @@ with open(pkl_path, 'rb') as f:
 t1 = loaded_data.get('d' + date + 'a' + acqu_numb + 'tS' + S1 + composante)
 t2 = loaded_data.get('d' + date + 'a' + acqu_numb + 'tS' + S2 + composante)
 t3 = loaded_data.get('d' + date + 'a' + acqu_numb + 'tS' + S3 + composante)
+t1_values = [t1,t2,t3]
 
-# Get the value of "time_vector" for the x abscisse in plot, 1000 values between t1 and ta
-
+# Create a matrix to store the seismic data
+selected_indices = np.arange(channel, len(seismic_data_streams),3)
 ta = t1 + signal_length 
-num_samples = int(signal_length * first_trace.stats.sampling_rate) # Number of points gereted in tim_vector (~1000)
+num_samples = int(signal_length * first_trace.stats.sampling_rate) # Number of points generated in time_vector 
 time_vector = np.linspace(t1.timestamp, ta.timestamp, num_samples) # timestamp gets the number of sec in ta, t1
 
-# selected indices of the corresponding channel 
-selected_indices = range(channel, len(seismic_data_streams),3)
+num_traces = len(selected_indices)
 
-t1_values = [t1,t2,t3]
-# Create a 3D matrix to store the seismic data
-# Dynamically determine the length of the third dimension, number of sources
+# Dynamically determine the length of the third dimension
 third_dim_len = len(t1_values) if len(t1_values) > 1 else 1
-seismic_matrix = np.zeros((len(selected_indices), third_dim_len, num_samples)) # create the size of seismic_matrix
+seismic_matrix = np.zeros((num_traces, third_dim_len, num_samples)) # matrix dim : geo_indices x nb_sources x time
+
+# add G16 in first place 
+# idx_G16 = selected_indices[-1]
+# stream = seismic_data_streams[idx_G16]
+# print(stream[0])
+# for t1_index, t1 in enumerate(t1_values):
+#     for j, trace in enumerate(stream):
+#         start_sample = int((t1 - trace.stats.starttime) * trace.stats.sampling_rate)
+#         # start_sample = int((t1 - trace.stats.starttime.timestamp) * trace.stats.sampling_rate)
+#         end_sample = start_sample + num_samples
+#         seismic_matrix[0, t1_index, :] = trace.data[start_sample:end_sample]
+
 
 # Extract the relevant data for each trace and populate the 3D matrix
-for i, stream_index in enumerate(range(channel, len(seismic_data_streams), 3)): # stream index ??
+for i, stream_index in enumerate(selected_indices):
     stream = seismic_data_streams[stream_index]
-    for t1_index, t1 in enumerate(t1_values): #t1_index = indice de t1_values (0,1,2) t1 = 3 different t0
-        for j, trace in enumerate(stream): #stream cell above ? in loop, stream = seismic_data_streams[stream_index]
-            start_sample = int((t1 - trace.stats.starttime)
-                               * trace.stats.sampling_rate)
+    print(stream[0])
+    for t1_index, t1 in enumerate(t1_values):
+        for j, trace in enumerate(stream):
+            start_sample = int((t1 - trace.stats.starttime) * trace.stats.sampling_rate)
+            # start_sample = int((t1 - trace.stats.starttime.timestamp) * trace.stats.sampling_rate)
             end_sample = start_sample + num_samples
-            seismic_matrix[i, t1_index,
-                           :] = trace.data[start_sample:end_sample]
+            seismic_matrix[i, t1_index, :] = trace.data[start_sample:end_sample]
+
+print('Matrix computed for channel : ' + composante)
+
 
 # Plot the data
 fig, ax = plt.subplots()
@@ -566,10 +618,14 @@ plt.show()
 #plt.grid(True)
 
 
-#  Calling fn_SVD
+#%%  Calling fn_SVD
+
+#####################################
+##### IMPORTANT PARAMETERS ##########
+#####################################
 
 rang = [0,1,2]
-geophones_spacing = 3 # in meters
+geophones_spacing = 4 # in meters
 signals = np.transpose(seismic_matrix, (0, 2, 1))
 
 f, k, FK = fn_svd(signals, fs, geophones_spacing , rang ,'ExampleName', 0, 'threshold',-90) #plot valeurs  singuliere/freq
@@ -582,7 +638,7 @@ elif direction == 2:
     FK_normalized = np.flipud(FK / np.max(FK))
 
 # Unwrapping Spectrum
-nb_stacking = 2 # number of times we want to stack the FK plot horizontally
+nb_stacking = 1 # number of times we want to stack the FK plot horizontally
 idx_stacking = 1
 FK_uwp = np.vstack((FK_normalized, FK_normalized))
 while idx_stacking < nb_stacking :
@@ -622,8 +678,8 @@ fig, ax1 = plt.subplots(1, 1, figsize=fig_size)
 
 #-----------------------------------------------
 # Set parameters 
-threshold = 0.5 # minimum relative amplitude to detect a local maximum in the dispersion relation FK plot 
-precision_k = [0.09,0.025] # precision over k values (when searching for a local maximum)
+threshold = 0.2 # minimum relative amplitude to detect a local maximum in the dispersion relation FK plot 
+precision_k = [0.03,0.025] # precision over k values (when searching for a local maximum)
 prec = precision_k[flexure_wave]
 # 0: horizontal_wave 1: flexure_wave
 semirange_freq = 5 # semi-range of frequencies for horizontal waves
@@ -683,7 +739,7 @@ if flexure_wave:
     # plt.xlabel('kmax')
     # plt.legend()
     # plt.show()
-    plt.scatter(k_mode, f_mode, color='b', label='Selected points')
+    plt.scatter(k_mode, f_mode, color='w', label='Selected points')
     plt.plot( k_p, f_mode_new, linestyle='--', color='g', label='sup bound line')
     plt.plot( k_m, f_mode_new, linestyle='--', color='g', label='inf bound line')
     plt.xlabel(r'$k \; \mathrm{(m^{-1})}$')
@@ -795,7 +851,7 @@ if horizontal_wave:
     ax1.set_ylabel(r'$f \; \mathrm{(Hz)}$',labelpad = 5)
     ax1.set_xlabel(r'$k \; \mathrm{(m^{-1})}$',labelpad = 5)
     # ax1.set_title('Spectrum with SVD filter')
-    plt.colorbar(c1, ax=ax1, label= r'$\frac{|\hat{s}|}{|\hat{s}|_{max}}(f,k)$')
+    plt.colorbar(c1, ax=ax1, label= r'$\frac{|\hat{s}|}(f,k)$')
     ax1.tick_params(axis='both', which='major', pad=7)
     ax1.set_ylim([ymin, ymax])
     
@@ -804,10 +860,10 @@ if horizontal_wave:
     elif channel == 1:
         wave_type = 'QS0'
         
-    figname = fig_folder + 'Horizontal_FKplot_' + wave_type + '_acqu_' + acqu_numb + '_dir'  + str(direction)
+    figname = fig_folder + 'Horizontal_FKplot_' + wave_type + '_acqu_' + acqu_numb + '_dir'  + str(direction) + '_sig_length_' + str(signal_length).replace('.','p')
 
-    plt.savefig(figname + '.pdf', dpi = 1200, bbox_inches = 'tight')
-    plt.savefig(figname + '.png', dpi = 1200, bbox_inches = 'tight')
+    plt.savefig(figname + '.pdf', dpi = 1000, bbox_inches = 'tight')
+    plt.savefig(figname + '.png', dpi = 1000, bbox_inches = 'tight')
     
     
 elif flexure_wave:
@@ -817,20 +873,20 @@ elif flexure_wave:
     #ax1.set_ylim([-1.5, 1.5])
     ax1.set_xlabel(r'$k \; \mathrm{(m^{-1})}$')
     ax1.set_ylabel(r'$f \; \mathrm{(Hz)}$')
-    ax1.set_title('Spectrum with SVD filter')
-    plt.colorbar(c1, ax=ax1, label='Spectrum Magnitude')
+    # ax1.set_title('Spectrum with SVD filter')
+    plt.colorbar(c1, ax=ax1, label= r'$\frac{|\hat{s}|}(f,k)$')
     ax1.set_ylim([ymin, ymax])
     
     wave_type = 'QS'
     figname = fig_folder + 'Flexural_FKplot_' + wave_type + '_acqu_' + acqu_numb + '_dir'  + str(direction)
 
-    plt.savefig(figname + '.pdf', dpi = 1200, bbox_inches = 'tight')
-    plt.savefig(figname + '.png', dpi = 1200, bbox_inches = 'tight')
+    plt.savefig(figname + '.pdf', dpi = 1000, bbox_inches = 'tight')
+    plt.savefig(figname + '.png', dpi = 1000, bbox_inches = 'tight')
     
 
 #%% Save data in a dictionnary  
 
-pkl_file = path2data + 'Phase_velocity_dictionnary_acqu_' + acqu_numb + '.pkl'
+pkl_file = path2data + 'Phase_velocity_dictionnary_acqu_' + acqu_numb + '_sig_length_' + str(signal_length).replace('.','p') + '.pkl'
 if os.path.isfile(pkl_file):
     print('Phase velocity dictionnary already exists')
     with open(pkl_file,'rb') as pfile:
@@ -845,7 +901,7 @@ keys_phase_velocity = {'N':'C_longi','E':'C_shear'}
 
 if horizontal_wave :
     key_dir = 'dir' + str(direction)
-    key = keys_phase_velocity[ch]
+    key = keys_phase_velocity[composante]
     key_uncertainty = 'u' + key
     s[key_dir][key] = C[0] # value 
     s[key_dir][key_uncertainty] = C[1] # standard deviation 
@@ -865,6 +921,14 @@ if horizontal_wave :
 
 with open (pkl_file,'wb') as pfile:
     pickle.dump(s,pfile)
+    
+    
+    
+#%% Load phase velocity data
+pkl_file = path2data + 'Phase_velocity_dictionnary_acqu_' + acqu_numb + '.pkl'
+with open (pkl_file,'rb') as pfile:
+    s = pickle.load(pfile)    
+
 
 #%% Compute horizontal modes phase velocity in both directions
 
@@ -878,6 +942,7 @@ file2save = path2data + year + '_' + date + '_acq'+acqu_numb+ '_cSH0_bidir.pkl'
 with open(file2save, 'wb') as file:
     pickle.dump(wave_speed, file)
 
+#%% Save (f,k) points associated to QS mode 
 file2save = path2data + year + '_' + date + '_acq'+acqu_numb+ 'disp_QS_dir' + str(direction) +'.pkl'
 with open(file2save, 'wb') as file:
      pickle.dump([f_mode, k_mode], file)

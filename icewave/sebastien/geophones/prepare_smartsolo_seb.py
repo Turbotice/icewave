@@ -14,8 +14,8 @@ import shutil
 #####################################################################
 
 #path2data = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/2024_BICWIN/0206/Geophones'
-path2data = 'E:/Rimouski_2024/Data/2024/0306/Geophones/'
-geophones_table_path = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/Geophones/geophones_table'
+path2data = 'C:/Users/sebas/Desktop/Amundsen_RA_2024/Data/2024/0918/Geophones/'
+geophones_table_path = 'D:/PC Seb/These PMMH/Rimouski_2024/Geophones/geophones_table'
 
 
 # Read geophones_table into a dictionary
