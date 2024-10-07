@@ -8,7 +8,7 @@ function [field_star,x_star,y_star] = orientation_parallel2propagation(field,the
     % - field : 2D array [Nx,Ny], can be complex values 
     % - theta : angle of the propagation direction, defined between
     % [-pi;pi], positive in counterclockwise 
-    % - fx : scalign factor in meter/box 
+    % - fx : scaling factor in meter/box 
     % - L0 : length of the window along the direction of propagation
     
     x = (1:1:size(field,1))*fx;

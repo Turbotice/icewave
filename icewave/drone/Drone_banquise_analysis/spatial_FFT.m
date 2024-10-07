@@ -30,7 +30,7 @@ function [shifted_fft,fft_2D,ky,kx] = spatial_FFT(img,padding_bool,add_pow2,fx)
     % #################################
     % SCALING : create kx and ky arrays
     % #################################
-    kx = 2*pi*fx*(-padding_x/2:padding_x/2-1)/padding_x;
+    kx = -2*pi*fx*(-padding_x/2:padding_x/2-1)/padding_x;
     ky = -2*pi*fx*(-padding_y/2:padding_y/2-1)/padding_y;
 
     shifted_fft = fftshift(fft_2D);

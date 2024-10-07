@@ -1,4 +1,4 @@
-function plot_demodulated_field(TF,f,fx,selected_freq,x_bound,caxis_amp,left_bool,fig_folder,fig_name,save_image,save_video)
+function plot_demodulated_field(TF,f,fx,selected_freq,x_bound,caxis_amp,fig_folder,fig_name,save_image,save_video)
 % This function plots the real demodulated field of a velocity / height
 % field. It also creates a video of the successive demodulated field
 
@@ -11,8 +11,6 @@ function plot_demodulated_field(TF,f,fx,selected_freq,x_bound,caxis_amp,left_boo
 % - x_bound : 2 x 1 array, boundaries along x-axis to consider the field to
 % be plot 
 % - caxis_amp : amplitude on the colorbar axis
-% - left_bool : boolean to choose how to set direction of x-axis and flip
-% image
 % - fig_folder : folder where plots and video will be waved
 % - fig_name : name under which the video will be saved
 % - save_image : boolean to save images or not
@@ -27,11 +25,7 @@ imin = x_bound(1);
 imax = x_bound(2);
 
 % create a meshgrid
-if left_bool 
-    x = (imin:1:imax);
-else
-    x = (imax:-1:imin);
-end 
+x = (imin :1 :imax);
 y = (ny:-1:1);
 
 [X,Y]=meshgrid(x,y);
@@ -61,9 +55,6 @@ for i=1:numel(relevant_indices)
     idx = relevant_indices(i);
     disp(idx)
     R = real(TF(imin:imax,:,idx)); % get real intensity map of FFT_temporal at a given frequency
-    if left_bool
-       R = flip(R,1); 
-    end
     pcolor(x/fx,y/fx,R')
     shading interp
 %     colormap(redblue)
@@ -72,9 +63,6 @@ for i=1:numel(relevant_indices)
     shading interp
     axis([0 size(X,2)/fx 0 size(X,1)/fx])
     axis image
-    if ~left_bool
-       set(gca,'XDir','reverse') 
-    end
 %     set_Papermode(gcf)
     cbar = colorbar();
     cbar.Label.String = '$ \rm{Re} \left( \hat {V}_x(x,y,f) \right) \: \rm (m.s^{-1})$';

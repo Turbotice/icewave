@@ -1,4 +1,4 @@
-function plot_velocity_features(Vx,Vy,fx,i,caxis_amp,fig_folder,left_bool)
+function plot_velocity_features(Vx,Vy,fx,i,caxis_amp,fig_folder)
 
 % This function plots average and standard deviation of velocity fields 
 
@@ -15,11 +15,7 @@ function plot_velocity_features(Vx,Vy,fx,i,caxis_amp,fig_folder,left_bool)
 
     % create a meshgrid
     y = (ny:-1:1);
-    if left_bool
-        x = (1:1:nx);
-    else 
-        x = (nx:-1:1);
-    end
+    x = (1:1:nx);
     [X,Y]=meshgrid(x,y);
 
     % % compute the mean component of the velocity field for each frame
@@ -50,9 +46,6 @@ function plot_velocity_features(Vx,Vy,fx,i,caxis_amp,fig_folder,left_bool)
     ylabel('$y$ (m)','Interpreter','latex');
     ax = gca;
     ax.FontSize = 13;
-    if ~left_bool
-        set(gca,'XDir','reverse')
-    end
 
     subplot(2,1,2)
     hold off
@@ -70,9 +63,6 @@ function plot_velocity_features(Vx,Vy,fx,i,caxis_amp,fig_folder,left_bool)
     ylabel('$y$ (m)','Interpreter','latex');
     ax = gca;
     ax.FontSize = 13;
-    if ~left_bool
-        set(gca,'XDir','reverse')
-    end
 
     % set correctly the image position for a pdf format 
     set(gcf,'Units','Inches');
@@ -88,8 +78,8 @@ function plot_velocity_features(Vx,Vy,fx,i,caxis_amp,fig_folder,left_bool)
     %% Moyenne, ecart type
 
     % computes mean and standard deviation over time 
-    Vxmoy = nanmean(Vx,3);
-    Vymoy = nanmean(Vy,3);
+    Vxmoy = mean(Vx,3,'omitnan');
+    Vymoy = mean(Vy,3,'omitnan');
     Vxstd = std(Vx,[],3);
     Vystd = std(Vy,[],3);
 
@@ -109,9 +99,6 @@ function plot_velocity_features(Vx,Vy,fx,i,caxis_amp,fig_folder,left_bool)
     cbar.FontSize = 13;
     ax = gca;
     ax.FontSize = 13;
-    if ~left_bool
-        set(gca,'XDir','reverse')
-    end
 
     subplot(2,1,2)
     surf(X./fx,Y./fx,Vymoy')
@@ -128,9 +115,6 @@ function plot_velocity_features(Vx,Vy,fx,i,caxis_amp,fig_folder,left_bool)
     cbar.FontSize = 13;
     ax = gca;
     ax.FontSize = 13;    
-    if ~left_bool
-        set(gca,'XDir','reverse')
-    end
 
     % set correctly the image position for a pdf format 
     set(fig_average,'Units','Inches');
@@ -154,9 +138,6 @@ function plot_velocity_features(Vx,Vy,fx,i,caxis_amp,fig_folder,left_bool)
     cbar.FontSize = 13;
     ax = gca;
     ax.FontSize = 13;
-    if ~left_bool
-        set(gca,'XDir','reverse')
-    end
 
     subplot(2,1,2)
     surf(X./fx,Y./fx,Vystd')
@@ -173,9 +154,6 @@ function plot_velocity_features(Vx,Vy,fx,i,caxis_amp,fig_folder,left_bool)
     cbar.FontSize = 13;
     ax = gca;
     ax.FontSize = 13;
-    if ~left_bool
-        set(gca,'XDir','reverse')
-    end
 
     % set correctly the image position for a pdf format 
     set(fig_std,'Units','Inches');

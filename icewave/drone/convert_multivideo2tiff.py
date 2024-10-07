@@ -15,7 +15,7 @@ import os
 #%%
 
 def main():
-    datafolder = '/media/turbots/Hublot24/Share_hublot/Data/0211/Drones/mesange/2-stereo_001/'
+    datafolder = 'C:/Users/sebas/Desktop/Amundsen_RA_2024/Data/2024/0921/Drones/bernache/13-waves_002/'
 
     # datafolder = browse.find_path(datafolder)
     print(datafolder)
@@ -98,6 +98,6 @@ def later(filelist,directory_save,savename):
 
 if __name__=='__main__':
     filelist = main()
-    directory_save = '/media/turbots/Hublot24/Share_hublot/PIV_images/0223/Drones/mesange/'
-    savename = 'frac+waves_002'
+    directory_save = 'C:/Users/sebas/Desktop/Amundsen_RA_2024/Data/2024/0921/Drones/bernache/13-waves_002/'
+    savename = 'frames'
     vid = later(filelist,directory_save,savename)

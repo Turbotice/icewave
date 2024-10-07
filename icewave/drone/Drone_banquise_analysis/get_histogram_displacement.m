@@ -12,7 +12,7 @@ function get_histogram_displacement(Vx,W,bool_average,font_size,filename)
 % - fig_folder : folder where the histogram is saved
 
 % average over time, of the absolute velocity
-Vxmoy = nanmean(abs(Vx),3);
+Vxmoy = mean(abs(Vx),3,'omitnan'); 
 
 % first criteria : V > 0.1 pixels
 low_bound = log10(0.1);
