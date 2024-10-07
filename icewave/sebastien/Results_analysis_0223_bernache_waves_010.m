@@ -5,7 +5,7 @@ close all;
 %% Loading structure obtained after PIV processing and post-processing
 
 %base = 'W:/SagWin2024/Data/0223/Drones/bernache/matData/12-waves_010/';
-base = 'F:/Rimouski_2024/Data/2024/0223/bernache/matData/12-waves_010/';
+base = 'E:/Rimouski_2024/Data/2024/0223/bernache/matData/12-waves_010/';
 % base = 'E:/Rimouski_2024/Data/2024/0219/matData/waves_012/';
 
 filename = 'PIV_processed_i00_N0_Dt4_b1_W32_xROI1_width3388_yROI1_height2159_scaled.mat';
@@ -129,7 +129,6 @@ padding_bool = 1;
 add_pow2 = 0;
 [FFT_t,TF_spectrum,f] = temporal_FFT(Vx(:,:,:),padding_bool,add_pow2,facq_t);
 
-%%
 fig_spectrum = figure; 
 loglog(f,TF_spectrum)
 grid on 
@@ -144,18 +143,18 @@ saveas(fig_spectrum,file,'fig')
 
 %% Get demodulated field
 disp('Getting demodulated fields')
-selected_freq = [0.1 0.8];
+selected_freq = [0.1 1.0];
 x_bound = [1 size(FFT_t,1)];
-caxis_amp = 0.02; % amplitude of the colorbar in meter/second
+caxis_amp = 0.03; % amplitude of the colorbar in meter/second
 fig_name = ['Demodulated_field_Vx_caxis_' num2str(caxis_amp) 'ms'];
 
 save_image = 1;
 save_video = 1;
-plot_demodulated_field(FFT_t,f,facq_x,selected_freq,x_bound,caxis_amp,1,fig_folder,fig_name,save_image,save_video)
+plot_demodulated_field(FFT_t,f,facq_x,selected_freq,x_bound,caxis_amp,fig_folder,fig_name,save_image,save_video)
 
 %% Get wave vectors 
 disp('Getting wave vectors')
-selected_freq = [0.2 0.8]; % selected frequencies between which we proceed to the analysis
+selected_freq = [0.1 0.9]; % selected frequencies between which we proceed to the analysis
 x_bound = [1 size(FFT_t,1)]; % selected boundaries at which we perform 2D FFT
 padding_bool = 1;
 add_pow2 = 2; % additional power of 2 for padding 
@@ -175,131 +174,6 @@ filename = replace(filename,'.','p');
 dispersion_file = [fig_folder filename];
 save(dispersion_file,'k','freq','selected_freq','x_bound','add_pow2','black_mask')
 
-%% Quick plot of dispersion relation 
-% load data 
-base_disp = 'W:/SagWin2024/Data/0226/Drones/mesange/matData/10-waves_005/Plots/';
-filename_disp = 'dispersion_relation_data_Vx_fmin0p1_fmax0p8_add_pow2.mat';
-Sdisp = load([base_disp filename_disp]);
-disp('Dispersion relation data loaded')
-
-%%
-freq = Sdisp.freq;
-omega = 2*pi*freq;
-k = Sdisp.k;
-mask = (omega > 2.8);
-filt_k = k(mask);
-filt_omega = omega(mask);
-
-g = 9.81;
-k_list = linspace(0.07,5,100);
-deep_water = sqrt(g*k_list);
-
-figure,
-loglog(k,omega,'o')
-hold on 
-loglog(filt_k*2,filt_omega,'d')
-grid on 
-hold on 
-loglog(k_list,deep_water,'k-')
-xlabel('$k \: \rm (m)$')
-ylabel('$\omega \: \rm (rad.s^{-1})$')
-legend('Data','sub-k harmonic','$\omega = \sqrt{gk}$','Location','southeast')
-set(findall(gcf,'-property','FontSize'),'FontSize',13)
-
-figname = [fig_folder 'Dipersion_relation'];
-% saveas(gcf,figname,'fig')
-
-% ##################################
-%% Get attenuation coefficient 
-% ##################################
-
-disp('Getting attenuation coefficient')
-selected_freq = [0.1 0.8]; % selected frequencies between which we proceed to the analysis
-x_bound = [1 size(Vx,1)]; % selected boundaries at which we perform 2D FFT
-freq_thresh = [0.36  0.39  0.45  0.50  0.55  0.7];
-x_bound_thresh = round([1 90; 1 60 ; 1 50; 1 35; 1 20; 1 15]*facq_x);
-
-new_folder_fig = [fig_folder 'Attenuation_fit/'];
-if exist(new_folder_fig,'dir') ~= 7
-    mkdir(new_folder_fig)
-end
-
-fig_name = 'Decay_law_video_mode_1';
-save_image = 1;
-save_video = 1;
-left_bool = 1;
-
-[lambda,dist_fit,freq] = get_attenuation_coef(FFT_t,f,facq_x,selected_freq,x_bound,freq_thresh,x_bound_thresh,left_bool,new_folder_fig,fig_name,save_image,save_video);
-
-% save data to plot attenuation coefficient
-freq_min_txt = replace(num2str(selected_freq(1)),'.','p');
-freq_max_txt = replace(num2str(selected_freq(2)),'.','p');
-f_thresh_txt = replace(num2str(freq_thresh(1)),'.','p');
-attenuation_file = [fig_folder 'attenuation_coef_data_fmin' freq_min_txt '_fmax' freq_max_txt '_fthresh' f_thresh_txt];
-%attenuation_file = replace(attenuation_file,'.','p');
-attenuation_file = [attenuation_file '_mode_1'];
-save(attenuation_file,'lambda','dist_fit','freq','selected_freq','x_bound','freq_thresh','x_bound_thresh')
-
-disp('DONE.')
-
-%% Quick plot of the attenuation law 
-
-figure,
-loglog(freq,abs(lambda),'o')
-grid on 
-
-%%
-
-%  masking according to dist_fit
-d_thresh = 0.05;
-mask = (dist_fit < d_thresh) & (abs(lambda) > 0.001) ; % keep only points for which distance is smaller than..
-f = freq;
-fitted_f = f(mask);
-fitted_alpha = abs(lambda(mask))';
-
-save_boolean = 1;
-
-l1 = fminsearch(@(s)powerfit(fitted_f,fitted_alpha,s),[1,1]);
-% l1 = fminsearch(@(s)powerfit(fitted_k,fitted_omega,s),[1,1]);
-f_list = linspace(0.01,10,100);
-yth = powerfun(f_list,l1); % fitted exponential function
-
-% Take more datas 
-
-% theory = powerfun(freq_secondary,l1);
-% Need to take the orthogonal distance in the logarithm scale....
-% dist_to_fit = sum((log((theory)) - log((lambda_secondary))).^2)/sum(log(abs(lambda_secondary)).^2);
-% 
-% mask = dist_to_fit < 0.5;
-% freq_plot = freq_secondary(mask);
-% lambda_plot = lambda_secondary(mask);
-
-attenuation_fig = figure;
-% loglog(freq_secondary,lambda_secondary,'o');
-% hold on 
-loglog(fitted_f,fitted_alpha,'o','MarkerFaceColor',[0.3010 0.7450 0.9330],'MarkerEdgeColor','black');
-hold on
-plot(f_list,yth,'r--','LineWidth',1.5);
-% plot(freq_secondary,theory,'k-')
-xlabel('$f \: \rm (Hz)$','Interpreter','latex');
-ylabel('$\alpha \: \rm (m^{-1})$','Interpreter','latex');
-grid on 
-axis([4e-2 4 1e-3 1])
-ax = gca;
-ax.FontSize = 13;
-
-power_law_txt = ['$\alpha(f) = ' sprintf('%0.2f',l1(2)) 'f^{' sprintf('%0.2f',l1(1)) '}$'];
-% legend('Data','Fitted Data',power_law_txt,'Interpreter','latex','Location','southeast','FontSize',13)
-legend('',power_law_txt,'Interpreter','latex','Location','northwest','FontSize',13)
-
-set_Papermode(gcf);
-thresh_txt = replace(num2str(1-d_thresh),'.','p');
-if save_boolean
-    attenuation_filename = [fig_folder 'attenuation_law_mode_1_confidence_' thresh_txt];
-    saveas(attenuation_fig,attenuation_filename,'fig');
-    saveas(attenuation_fig,attenuation_filename,'pdf');
-end 
-
 % #####################################
 %% #### E(k,f) plot ###################
 % #####################################
@@ -309,9 +183,9 @@ N = size(Vx);
 add_pow2 = [0, 0, 0]; % additional padding for each dimension 
 padding = 2.^(nextpow2(N) + add_pow2); % padding for each dimension
 
-disp('Computing FFT')
+disp('Computing FFT 3D')
 FFT = fftn(Vx,padding)/numel(Vx); % FFT 
-disp('FFT computed')
+disp('FFT 3D computed')
 
 %%
 kx = 2*pi*facq_x*(-padding(1)/2:padding(1)/2-1)/padding(1);
@@ -323,7 +197,7 @@ FFT_positive(:,:,2:end-1) = 2*FFT_positive(:,:,2:end-1);
 
 f = facq_t*(0:padding(3)/2)/padding(3);
 
-%% FFT shift for all dimensions
+% FFT shift for all dimensions
 shift = fftshift(fftshift(FFT_positive,2),1);
 disp('FFT shifted')
 
@@ -352,7 +226,7 @@ k = 2*pi*R_tics*facq_x/padding(1);
 omega = 2*pi*f;
 
 g = 9.81; % gravity intensity 
-k_list = linspace(0.1,6,100);
+k_list = linspace(0.1,7,100);
 deep_water = sqrt(g*k_list);
 h_w = 3.8; % water depth
 shallow = sqrt(g*h_w*k_list.^2);
@@ -362,7 +236,7 @@ harmonic2 = sqrt(2*g*k_list.*tanh(h_w*k_list/2));
 harmonic3 = sqrt(3*g*k_list.*tanh(h_w*k_list/3));
 
 % plot A(omega,k)
-figure, 
+fig_Afk = figure; 
 pcolor(k,omega,E)
 shading interp
 xlabel('$k \: \rm (m^{-1})$')
@@ -374,16 +248,16 @@ set(gca,'ColorScale','log')
 cbar = colorbar();
 cbar.Label.String = '$|\hat{V}_x|(k,\omega)$';
 cbar.Label.Interpreter = 'latex';
-axis([0.1 6, 2*pi*0.1 2*pi*2])
-% hold on 
-% loglog(k_list,yth,'w--')
-% hold on
-% loglog(k_list,harmonic2,'w--')
-% hold on 
-% loglog(k_list,harmonic3,'w--')
+axis([0.1 7, 2*pi*0.15 2*pi*2.2])
+hold on 
+loglog(k_list,yth,'w--')
+hold on
+loglog(k_list,harmonic2,'w--')
+hold on 
+loglog(k_list,harmonic3,'w--')
 set_Papermode(gcf)
 set(gca,'FontSize',13)
-caxis([1e-5 5e-3])
+clim([4e-4 2e-2])
 % xticks([1e-1 2e-1 3e-1 1 2 3])
 % lgnd = legend('',['$\omega^2 = gk \tanh(gh_w) \: h_w = ' num2str(h_w) '\: \rm m$'],'','');
 % set(lgnd,'Location','southeast')
@@ -393,19 +267,24 @@ caxis([1e-5 5e-3])
 % loglog(k_list,harmonic3,'w--')
 % colormap(slanCM('thermal-2'))
 
+fig_filename = ['A_fk_0223_waves_010_with_harmonics_hw' num2str(h_w)];
+fig_filename = replace(fig_filename,'.','p');
+
+saveas(fig_Afk,[fig_folder fig_filename],'fig')
+saveas(fig_Afk,[fig_folder fig_filename],'pdf')
+
 %% Save data of plots
-data_filename = ['Data_A_fk_0223_waves_005_hw' num2str(h_w)];
+data_filename = ['Data_A_fk_0223_waves_010'];
 data_filename = replace(data_filename,'.','p');
 
 save([fig_folder data_filename],'f','omega','k','E','shift','-v7.3')
 disp('Data saved')
 
 %% Load Data for A(f,k) plot
-filename = 'Data_A_fk_0223_waves_005_hw3p8.mat' ;
-base = 'W:/SagWin2024/Data/0226/Drones/mesange/matData/10-waves_005/Plots/';
+filename = 'Data_A_fk_0223_waves_010.mat' ;
 
 disp('Loading data..')
-load([base filename])
+load([fig_folder filename])
 disp('Data loaded')
 
 %% Detect each branch of bound waves
@@ -434,7 +313,7 @@ for i = 1 : idx_end
 %     ylabel('$|\hat{V}_x|(k) \: \rm (m.s^{-1})$')
 %     xlim(2*pi*[1/50 1/2])
 % 
-    [pks,locs,w,prom] = findpeaks(profile,'MinPeakProminence',1e-1);
+    [pks,locs,w,prom] = findpeaks(profile,'MinPeakProminence',1.5e-1);
     [y_max,k_peaks] = subpix_precision(profile,k',locs);
     
     M_peaks(i).k = k_peaks;
@@ -448,6 +327,8 @@ for i = 1 : idx_end
     plot(M_peaks(i).k,y_max,'rd')
     xlim(2*pi*[1/50 1/2])
     hold off
+    xlabel('$k \: \rm (rad.m^{-1})$')
+    ylabel('$\hat{V_x}(k,f) \: \rm (m.s^{-1})$')
     pause(0.1)
 end 
 
@@ -481,16 +362,24 @@ end
 
 %% 
 
-mask = ~(((omega_array > 1.58) & (k_array < 0.28)) | (omega_array < 0.4)) ; 
+mask = ~(((omega_array > 3.0) & (k_array < 0.7)) | (omega_array < 1.0)); 
 omega_array = omega_array(mask);
 k_array = k_array(mask);
 A_array = amplitude_array(mask);
 
-mask2 = ((omega_array > 3.17) & (k_array < 0.38)) | ((k_array > 0.21) & (omega_array < 0.95));
+
+mask2 = ((omega_array > 1.37) & (k_array < 0.2)) | ((k_array > 0.45) & (omega_array < 1.35))...
+    | ((omega_array > 4.95) & (k_array < 0.89)) | ((omega_array > 5.44) & (k_array < 1.3));
 mask2 = ~mask2;
 omega_array = omega_array(mask2);
 k_array = k_array(mask2);
 A_array = A_array(mask2);
+
+figure, 
+plot(k_array,omega_array,'o')
+grid on 
+
+
 %%
 
 g = 9.81; % gravity intensity 
@@ -513,10 +402,10 @@ hold on
 loglog(k_list,harmonic1,'--b')
 hold on 
 loglog(k_list,harmonic2,'--r')
-hold on 
-loglog(k_list,harmonic3,'--g')
+% hold on 
+% loglog(k_list,harmonic3,'--g')
 
-axis([0.05 4 , 1e-1 30])
+% axis([0.05 4 , 1e-1 30])
 set_Papermode(gcf)
 ax = gca;
 ax.FontSize = 13;
@@ -538,22 +427,22 @@ D = sqrt((repmat(omega_array,[3,1]) - omegaN).*2);
 [~,closest_harmonic] = min(D,[],1);
 
 % set lowest values of k to closest_harmonic = 1
-closest_harmonic(k_array < 0.41) = 1;
+closest_harmonic(k_array < 0.5) = 1;
 
 % set lowest values of harmonic2 to closest_harmonic = 2
 % figure,
 % mask = (k_array < 0.62) & (closest_harmonic == 3);
 % loglog(k_array(mask),omega_array(mask),'o')
 % axis([1e-1 2, 5e-1 5])
-closest_harmonic((k_array < 0.62) & (closest_harmonic == 3)) = 2;
+% closest_harmonic((k_array < 0.62) & (closest_harmonic == 3)) = 2;
 
 %% Plot harmonics with different colours 
 
 % colors = ["blue","red","green"];
-colors = ["#0072BD","#D95319","#77AC30"];
-
+% colors = ["#0072BD","#D95319","#77AC30"];
+colors = ["#0072BD","#D95319"];
 figure(15)
-for i = 1 :3
+for i = 1 :2
     current_omega = omega_array(closest_harmonic == i);
     current_k = k_array(closest_harmonic == i);
     loglog(current_k,current_omega,'o','MarkerEdgeColor',colors(i))
@@ -568,9 +457,9 @@ hold on
 loglog(k_list,harmonic1,'--b')
 hold on 
 loglog(k_list,harmonic2,'--r')
-hold on 
-loglog(k_list,harmonic3,'--g')
-axis([0.05 4 , 2e-1 10])
+% hold on 
+% loglog(k_list,harmonic3,'--g')
+% axis([0.05 4 , 2e-1 10])
 set_Papermode(gcf)
 ax = gca;
 ax.FontSize = 13;
@@ -582,14 +471,70 @@ ax.FontSize = 13;
 
 %% Save selected points
 
-filename = 'Data_plot_selected_harmonics_0226_mesange_waves_005';
-directory = 'W:/SagWin2024/Data/0226/Drones/mesange/matData/10-waves_005/Plots/';
-save([directory filename],'omega_array','k_array','A_array','closest_harmonic','colors','k_list','harmonic1','harmonic2','harmonic3','-v7.3')
+filename = 'Data_plot_selected_harmonics_0223_bernache_waves_010';
+directory = 'E:/Rimouski_2024/Data/2024/0223/bernache/matData/12-waves_010/Plots/';
+save([directory filename],'omega_array','k_array','A_array','closest_harmonic','colors','k_list','harmonic1','harmonic2','-v7.3')
+
+%% Plot each harmonic with a different colormaps corresponding to the intensity of each points (omega,k)
+
+% Load Data of selected harmonics 
+filename = 'Data_plot_selected_harmonics_0223_bernache_waves_010';
+base = 'E:/Rimouski_2024/Data/2024/0223/bernache/matData/12-waves_010/Plots/';
+load([base filename])
+disp('Data of separated harmonics loaded')
+
+%%
+A_h1 = A_array(closest_harmonic == 1);
+A_h1 = (A_h1 - min(A_h1))/(max(A_h1) - min(A_h1));
+
+A_h2 = A_array(closest_harmonic == 2);
+A_h2 = (A_h2 - min(A_h2))/(max(A_h2) - min(A_h2));
+marker_size = 50;
+
+harmonic_cmaps = figure;
+% create two different axes 
+ax1 = axes(harmonic_cmaps);
+ax2 = copyobj(ax1,harmonic_cmaps);
+
+plot(ax1,k_list,harmonic1,'--b')
+hold on
+plot(ax1,k_list,harmonic2,'--r')
+hold on 
+s1 = scatter(ax1,k_array(closest_harmonic == 1),omega_array(closest_harmonic == 1),marker_size,A_h1,'filled','MarkerEdgeColor','k');
+
+s2 = scatter(ax2,k_array(closest_harmonic == 2),omega_array(closest_harmonic == 2),marker_size,A_h2,'filled','MarkerEdgeColor','k');
+
+colormap(ax1,slanCM(9))
+colormap(ax2,slanCM(11))
+ax2.Visible = "off";
+
+% sets limits of each axes
+xlim(ax1,[0.1 5])
+xlim(ax2,[0.1 5])
+ylim(ax1,[0.7 8])
+ylim(ax2,[0.7 8])
+grid on 
+% set axes scale in log-log
+set(ax1,'xscale','log')
+set(ax1,'yscale','log')
+set(ax2,'xscale','log')
+set(ax2,'yscale','log')
+
+xlabel(ax1,'$k \: \rm (rad.m^{-1})$')
+ylabel(ax1,'$\omega \: \rm (rad.s^{-1})$')
+legend(ax1,['$\omega_1 = \sqrt{gk \tanh(' num2str(h_w) 'k)}$'],...
+    ['$\omega_2 = \sqrt{2gk \tanh(' num2str(h_w) '\frac{k}{2})}$'],'','Location','southeast')
+ax1.FontSize = 13;
+set_Papermode(harmonic_cmaps)
+
+fig_filename = [fig_folder 'Harmonics_colormaps_12-waves_010_hw_' replace(num2str(h_w),'.','p') ];
+saveas(harmonic_cmaps,fig_filename,'fig')
+saveas(harmonic_cmaps,fig_filename,'pdf')
 
 %% Move each branch back to main one 
 
 figure(16)
-for i = 1 :3
+for i = 1 :2
     
     current_omega = omega_array(closest_harmonic == i);
     current_k = k_array(closest_harmonic == i);
@@ -609,17 +554,18 @@ hold on
 loglog(k_list,harmonic1,'--b')
 hold on 
 loglog(k_list,harmonic2,'--r')
-hold on 
-loglog(k_list,harmonic3,'--g')
-axis([0.05 4 , 2e-1 10])
+% hold on 
+% loglog(k_list,harmonic3,'--g')
+axis([0.1 6 , 5e-1 10])
 set_Papermode(gcf)
 ax = gca;
 ax.FontSize = 13;
-
-% figname = [fig_folder 'Recomposition_harmonics_water_hw_' replace(num2str(h_w),'.','p')];
-% saveas(gcf,figname,'fig')
-% saveas(gcf,figname,'pdf')
-% saveas(gcf,figname,'png')
+legend(ax,'','',['$\omega_1 = \sqrt{gk \tanh(' num2str(h_w) 'k)}$'],...
+    ['$\omega_2 = \sqrt{2gk \tanh(' num2str(h_w) '\frac{k}{2})}$'],'Location','southeast')
+figname = [fig_folder 'Recomposition_harmonics_water_12-waves_010_hw_' replace(num2str(h_w),'.','p')];
+saveas(gcf,figname,'fig')
+saveas(gcf,figname,'pdf')
+saveas(gcf,figname,'png')
 
 
 % #######################################
@@ -627,7 +573,7 @@ ax.FontSize = 13;
 % #######################################
 
 % Parameters 
-selected_freq = [0.15 0.33]; % selected frequencies between which we proceed to the analysis
+selected_freq = [0.3 0.6]; % selected frequencies between which we proceed to the analysis
 % get indices of frequencies closest to max and min selected frequency
 [min_freq, start_freq_idx] = min(abs(f - selected_freq(1))); 
 [max_freq, end_freq_idx] = min(abs(f - selected_freq(2)));
@@ -635,12 +581,16 @@ new_freq = f(start_freq_idx : end_freq_idx); % new frequency array
 FFT_cropped = FFT_t(:,:,start_freq_idx:end_freq_idx);
 nf = length(new_freq);
 
+% Select range of frequencies and space of shortened fit 
+f_short = [0.45 0.54]; % frequency above which the attenuation fit is shortened
+x_short = [50 30]; % meters % range over which the shrotened attenuation fit is performed
+
 x = m.x;
 y = m.y;
 padding_bool = 1;
 add_pow2 = 2;
 threshold = 0.8;
-L0 = 130; % segments size in meter 
+L0 = 80; % segments size in meter 
 
 new_folder_fig = [fig_folder 'attenuation_oriented/'];
 if exist(new_folder_fig,'dir') ~= 7
@@ -651,44 +601,79 @@ alpha = zeros(nf,1); % array of attenuation coefficients
 d = zeros(nf,1); % array of distance to plot
 
 for idx_freq = 1:nf
-
+    current_freq = new_freq(idx_freq);
+    disp(['f = ' num2str(current_freq) ' Hz'])
     field = FFT_cropped(:,:,idx_freq);
     freq_txt = replace(num2str(new_freq(idx_freq)),'.','p');
-    % 2D FFT of this real field 
+    % 2D FFT of this complex field 
     [shifted_fft,fft_2D,kx,ky] = spatial_FFT(field,padding_bool,add_pow2,facq_x);
 
     % Detect peaks 
     zmax = max(abs(shifted_fft),[],'all');
     norm_fft = abs(shifted_fft)/zmax;
 
-    i = 1; % select first peak 
-    % binarize the FFT spectrum
+    peak_idx = 1;
+    % binarize the 2D-FFT spectrum
     bin_fft = norm_fft;
     bin_fft(norm_fft > threshold) = 1;
     bin_fft(norm_fft <= threshold) = 0;
 
     CC = bwconncomp(bin_fft');
     stats = regionprops("table",CC,norm_fft','WeightedCentroid');
-    row = round(stats.WeightedCentroid(i,1));
-    col = round(stats.WeightedCentroid(i,2));
+    row = round(stats.WeightedCentroid(peak_idx,1));
+    col = round(stats.WeightedCentroid(peak_idx,2));
     kx_peak = kx(row);
     ky_peak = ky(col);
 
-    [theta,k_peak] = cart2pol(kx_peak,ky_peak); % converts to polar coordinates 
-    disp(['Theta = ' num2str(theta)])
+    FFT_space_fig = figure(1);
+    pcolor(kx,ky,abs(shifted_fft)')
+    shading interp
+    hold on 
+    plot(kx_peak,ky_peak,'ro')
+    xlabel('$k_x \: \rm (rad.m^{-1})$')
+    ylabel('$k_y \: \rm (rad.m^{-1})$')
+    axis([-2 2 -2 2 ]) 
+    hold off
 
-    % Build several segments for theta < 0
-    % initial line 
-    x0 = m.x(1); % minimal value along x axis
-    y0 = L0*sin(abs(theta)) + m.y(end);
-    ds = m.fx; % step of curvilinear coordinate
+    % select peak index 
+    % prompt = "Which peak index would you choose? (sorted in amplitude) : ";
+    % peak_idx = str2double(input(prompt,"s"));
+    % 
+    % row = round(stats.WeightedCentroid(peak_idx,1));
+    % col = round(stats.WeightedCentroid(peak_idx,2));
+    % kx_peak = kx(row);
+    % ky_peak = ky(col);
+    % 
+    % [theta,k_peak] = cart2pol(kx_peak,ky_peak); % converts to polar coordinates 
+    % disp(['Theta = ' num2str(theta)])
 
-    s = (0:ds:L0);
-    % Points that define the line 
-    x_line = x0+s*cos(theta);
-    y_line = y0+s*sin(theta);
+    if theta < 0
+        % Build several segments for theta < 0
+        % initial line 
+        x0 = m.x(1); % minimal value along x axis
+        y0 = L0*sin(abs(theta)) + m.y(1);
+        ds = m.SCALE.fx; % step of curvilinear coordinate
+        s = (0:ds:L0); % curvilinear coordinate
+        
+        % Points that define the line 
+        x_line = x0+s*cos(theta);
+        y_line = y0+s*sin(theta);
 
-    real_field_fig = figure(1); 
+        % Compute field correctly oriented
+        [field_star,x_star,y_star] = orientation_parallel2propagation(field,theta,m.SCALE.fx,L0);
+
+    else
+        % Building several segments for theta > 0
+        x0 = (m.y(end) - L0*sin(theta) - m.y(1))*tan(theta);
+        y0 = m.y(1);
+        ds = m.SCALE.fx;
+
+        s = (0:ds:L0); % curvilinear coordinate
+        x_line = x0 + s*cos(theta);
+        y_line = y0 + s*sin(theta);
+    end 
+
+    real_field_fig = figure(2); 
     pcolor(x,y,real(field)')
     shading interp
     colormap(redblue)
@@ -700,24 +685,49 @@ for idx_freq = 1:nf
     ax = gca; 
     ax.FontSize = 13;
     set_Papermode(gcf)
+ 
+    % ask if we choose reoriented field
+    prompt = "Do you want to reorient wave field ? y/n [y]: ";
+    txt = input(prompt,"s");
+    if isempty(txt)
+        txt = 'y';
+    end
+
+    if txt == 'y'
+        % Compute field correctly oriented
+        [field_star,x_star,y_star] = orientation_parallel2propagation(field,theta,m.SCALE.fx,L0);
+        hold on 
+        plot(x_line,y_line,'k-')
+    else
+        field_star = field;
+        x_star = m.x;
+        y_star = m.y;
+    end
+      
     hold off
-    
     figname = [new_folder_fig 'Real_field_f' freq_txt];
     saveas(gcf,figname,'fig')
     saveas(gcf,figname,'pdf')
-    
-    % Compute field correctly oriented
-    [field_star,x_star,y_star] = orientation_parallel2propagation(field,theta,m.fx,L0);
-    
+
     % Exponential fit 
     TF_x = squeeze(mean(field_star,2)); % average the TF over y  
     A = abs(TF_x); % amplitude along x-axis for each frequency
     
     % indices used to fit the exponential decay
-    i_min = 1;
-    i_max = length(A);
+    for idx_subdomain = 1:length(f_short)
+        current_fshort = f_short(idx_subdomain);
+        current_xshort = x_short(idx_subdomain);
+        [~,i_short] = min(abs(m.x - current_xshort));
+        if current_freq < current_fshort 
+            i_min = 1;
+            i_max = length(A);
+        else
+            i_min = 1;
+            i_max = i_short;
+        end 
+    end 
 
-    decay_fig = figure(2);
+    decay_fig = figure(3);
     decay_fig.Color = [1,1,1];
 
     log_A = log10(A); % take the log10 of the amplitude of freq i
@@ -756,7 +766,7 @@ end
 attenuation_file =  ['Data_attenuation_oriented_' num2str(selected_freq(1)) 'Hz_to_' num2str(selected_freq(2)) 'Hz'];
 attenuation_file = replace(attenuation_file,'.','p');
 attenuation_file = [fig_folder attenuation_file '_mode_1'];
-save(attenuation_file,'alpha','d','new_freq','selected_freq','L0','threshold','padding_bool','add_pow2')
+save(attenuation_file,'alpha','d','new_freq','selected_freq','L0','threshold','padding_bool','add_pow2','f_short','x_short')
 
 disp('DONE.')
 
@@ -765,49 +775,19 @@ disp('DONE.')
 % ##################################
 
 % load parameters 
-base = 'W:/SagWin2024/Data/0226/Drones/mesange/matData/10-waves_005/Plots/';
-filename = [base 'attenuation_coef_data_fmin0p1_fmax0p8_fthresh0p36 _mode1.mat'];
-S1 = load(filename);
+filename = attenuation_file;
+S = load(filename);
+disp('Attenuation data loaded')
 
-filename = [base 'Data_attenuation_oriented_0p15Hz_to_0p33Hz_mode_1.mat'];
-S2 = load(filename);
-
-%% merge data sets 
-fmin = 0.15; 
-fmax = 0.33; 
-
-freq_array = zeros(size(S1.freq));
-alpha = zeros(size(S1.lambda));
-dist = zeros(size(S1.dist_fit));
-
-for i = 1:length(freq_array)
-    current_f = S1.freq(i);
-    if ((S1.freq(i) >= fmin) && (S1.freq(i) <= fmax))
-        [~,i0] = min(abs(S2.new_freq - S1.freq(i)));
-        freq_array(i) = S2.new_freq(i0);
-        alpha(i) = S2.alpha(i0);
-        dist(i) = S2.d(i0);
-    else
-        freq_array(i) = S1.freq(i);
-        alpha(i) = S1.lambda(i);
-        dist(i) = S1.dist_fit(i);
-    end 
-    
-end 
-
-freq_thresh = S1.freq_thresh;
-x_bound_thresh = S1.x_bound_thresh;
-savename = [base 'Data_attenuation_merged_0p1Hz_to_0p8Hz_mode_1.mat'];
-save(savename,'freq_array','alpha','dist','freq_thresh','x_bound_thresh')
 %%
 
 %  masking according to dist_fit
-d_thresh = 0.05;
+d_thresh = 0.2;
 
-mask = (dist < d_thresh) & (abs(alpha) > 0.001) ; % keep only points for which distance is smaller than..
-f = freq_array;
+mask = (S.d < d_thresh) & (abs(S.alpha) > 0.001) ; % keep only points for which distance is smaller than..
+f = S.new_freq;
 fitted_f = f(mask);
-fitted_alpha = abs(alpha(mask))';
+fitted_alpha = abs(S.alpha(mask))';
 
 l1 = fminsearch(@(s)powerfit(fitted_f,fitted_alpha,s),[1,1]);
 f_list = linspace(0.01,10,100);
@@ -830,7 +810,7 @@ legend('',power_law_txt,'Interpreter','latex','Location','northwest','FontSize',
 set_Papermode(gcf);
 
 thresh_txt = replace(num2str(1-d_thresh),'.','p');
-attenuation_filename = [fig_folder 'attenuation_law_mode_1_merged_confidence_' thresh_txt];
+attenuation_filename = [fig_folder 'attenuation_law_mode_1_confidence_' thresh_txt];
 saveas(attenuation_fig,attenuation_filename,'fig');
 saveas(attenuation_fig,attenuation_filename,'pdf');
 
@@ -839,225 +819,130 @@ saveas(attenuation_fig,attenuation_filename,'pdf');
 %% MAIN DEVELOPMENTS 
 % ####################
 
-% ######################################################
-%% Try to fit a lorentzian on each peak of the 2D - FFT 
-% ######################################################
+% Check reorientation of wave field 
+% Parameters 
+selected_freq = 0.42; % selected frequencies between which we proceed to the analysis
+[~,idx_freq] = min(abs(f- selected_freq));
 
-% select a frequency 
-selected_freq = 0.5;
-[~,idx_freq] = min(abs(f - selected_freq));
-
-field = FFT_t(:,:,idx_freq);
-
-figure(17)
-x = m.x;
-y = m.y;
-
-pcolor(x,y,real(field)')
-shading interp
-colormap(redblue)
-axis image
-
-% plot a profile 
-selected_y = 50; % in meter
-[~,i_y] = min(abs(y - selected_y));
-figure(18)
-plot(x,real(field(:,i_y)),'.')
-
-%% 2D FFT of this real field 
-
+field  = FFT_t(:,:,idx_freq);
 padding_bool = 1;
 add_pow2 = 2;
+threshold = 0.8;
+L0 = 80; % segments size in meter 
 [shifted_fft,fft_2D,kx,ky] = spatial_FFT(field,padding_bool,add_pow2,facq_x);
 
-figure(19)
-pcolor(kx,ky,abs(shifted_fft)')
-shading interp
-
-[KY,KX] = meshgrid(ky,kx);
-figure(20)
-surf(KX,KY,abs(shifted_fft)')
-shading interp
-axis([-2 2, -2 2])
-set(gca,'ColorScale','log')
-%% Detect peaks 
-
+% Detect peaks 
 zmax = max(abs(shifted_fft),[],'all');
 norm_fft = abs(shifted_fft)/zmax;
 
-figure(21)
-surf(KX,KY,norm_fft')
-shading interp
-axis([-2 2, -2 2])
-set(gca,'ColorScale','log')
-%%
-% binarize the FFT spectrum
-threshold = 0.6;
+i = 1; % select first peak 
+% binarize the 2D-FFT spectrum
 bin_fft = norm_fft;
 bin_fft(norm_fft > threshold) = 1;
 bin_fft(norm_fft <= threshold) = 0;
 
 CC = bwconncomp(bin_fft');
-% stats = regionprops("table",CC,'Centroid');
-
-stats = regionprops("table",CC,norm_fft','WeightedCentroid','MaxIntensity','PixelIdxList');
-% transposed = norm_fft';
-% [~,idx_peak] = min(abs(transposed(stats.PixelIdxList{1}) - stats.MaxIntensity));
-% [row,col] = ind2sub(size(transposed),stats.PixelIdxList{1}(idx_peak));
-% kx_peak = kx(row);
-% ky_peak = ky(col);
-
-figure(22) 
-imagesc(kx,ky,norm_fft')
-hold on 
-plot(kx(round(stats.WeightedCentroid(:,1))),ky(round(stats.WeightedCentroid(:,2))),'.r')
-% plot(kx_peak,ky_peak,'.r')
-
-%% Fit a Lorentzian curve on a peak 
-
-[~,i0] = min(abs(freq - selected_freq));
-disp(['f = ' num2str(freq(i0))])
-disp(['From sinus fitting, alpha = ' num2str(lambda(i0))])
-
-i = 1; % index of the detected peak 
-
+stats = regionprops("table",CC,norm_fft','WeightedCentroid');
 row = round(stats.WeightedCentroid(i,1));
 col = round(stats.WeightedCentroid(i,2));
-
-% coordinates of the peak in Fourier space 
 kx_peak = kx(row);
-ky_peak = ky(col); 
+ky_peak = ky(col);
 
-% convert to polar coordinates 
-[theta,k_peak] = cart2pol(kx_peak,ky_peak);
+[theta,k_peak] = cart2pol(kx_peak,ky_peak); % converts to polar coordinates 
+disp(['Theta = ' num2str(theta)])
 
-% draw a line passing through peak and origin 
-L_seg = 0.15; % half size of the segment, in k units
-kx0 = kx_peak - cos(theta)*L_seg;
-ky0 = ky_peak - sin(theta)*L_seg; 
-ds = 2*pi*facq_x/size(shifted_fft,1); % step of the curvilinear coordinate 
-s = (0:ds:2*L_seg); % curvilinear coordinate 
-kx_line = kx0 + s*cos(theta);
-ky_line = ky0 + s*sin(theta); 
+if theta < 0
+    % Build several segments for theta < 0
+    % initial line 
+    x0 = m.x(1); % minimal value along x axis
+    y0 = L0*sin(abs(theta)) + m.y(1);
+    ds = m.SCALE.fx; % step of curvilinear coordinate
+    s = (0:ds:L0); % curvilinear coordinate
+    
+    % Points that define the line 
+    x_line = x0+s*cos(theta);
+    y_line = y0+s*sin(theta);
 
-figure(23),
+    Nb_lines = floor((y(end) - y0)/(ds*cos(theta))); % number of lines to draw 
+    X_line = zeros(length(s),Nb_lines);
+    Y_line = zeros(length(s),Nb_lines);
+
+    for j = 1:Nb_lines
+        x0 = x0 + ds*sin(abs(theta));
+        y0 = y0 + ds*cos(theta);
+
+        X_line(:,j) = x0 + s*cos(theta); % #1 : s-coordinate, #2 line index 
+        Y_line(:,j) = y0 + s*sin(theta);
+    end
+else 
+    x0 = (m.y(end) - L0*sin(theta) - m.y(1))*tan(theta);
+    y0 = m.y(1);
+    ds = m.SCALE.fx;
+
+    s = (0:ds:L0); % curvilinear coordinate
+    x_line = x0 + s*cos(theta);
+    y_line = y0 + s*sin(theta);
+
+    Nb_lines = floor((y(end) - L0*sin(theta) - y(1))/(ds*cos(theta))); % number of lines to draw 
+    X_line = zeros(length(s),Nb_lines);
+    Y_line = zeros(length(s),Nb_lines);
+    
+    for j = 1:Nb_lines
+        x0 = x0 - ds*sin(abs(theta));
+        y0 = y0 + ds*cos(theta);
+
+        X_line(:,j) = x0 + s*cos(theta); % #1 : s-coordinate, #2 line index 
+        Y_line(:,j) = y0 + s*sin(theta);
+    end
+end 
+
+
+figure(1), 
+pcolor(m.x,m.y,real(field)')
+shading interp
+colormap(redblue)
+hold on 
+for j = 1 : size(X_line,2)
+    plot(X_line(:,j),Y_line(:,j),'k--')
+end 
+axis image
+xlabel('$x \: \rm (m)$')
+ylabel('$y \: \rm (m)$')
+ax = gca; 
+ax.FontSize = 13;
+
+figure(2),
 pcolor(kx,ky,abs(shifted_fft)')
 shading interp
-hold on 
-plot(kx_line,ky_line,'r--')
-hold on 
-plot(kx_peak,ky_peak,'r.')
-hold on 
-plot(kx(size(shifted_fft,1)/2 + 1),ky(size(shifted_fft,2)/2 + 1),'g.')
-axis image 
-
-%% Interpolate Fourier spectrum on this line
-kx_inv = sort(kx); % sort kx in increasing order 
-ky_inv = sort(ky);
-F = griddedInterpolant({kx_inv,ky_inv},norm_fft); % create interpolant 
-
-values = F(kx(end) - kx_line + kx(1),ky_line);
-if ~rem(length(s),2)
-    middle_s = length(s)/2 + 1;
-else
-    middle_s = (length(s)+1)/2 ;
-end 
-s = s - s(middle_s);
-% fit by a lorentzian 
-[y_lorentz_0,p0,~] = lorentzfit(s,values,[],[],'2');
-figure(24)
-plot(s,abs(values),'.')
-hold on 
-plot(s(middle_s),abs(values(middle_s)),'dr')
-hold on 
-plot(s,y_lorentz_0,'r--')
-
-alpha = sqrt(p0(2));
-disp(['Alpha = ' num2str(alpha) ' m-1'])
-%%
-% select a profile along kx 
-
-window = 15;
-profile_kx = abs(shifted_fft(row - window : row + window,col)).^2;
-kx_tofit = kx(row - window : row + window);
-kx_tofit = kx_tofit - kx(row);
-
-% kx_inv = kx_tofit(end:-1:1);
-% profile = profile_kx(end:-1:1);
-% % Interpolate data
-% F = griddedInterpolant(kx_inv,profile);
-% k_precise = linspace(0.15,0.45,100);
-% value = F(k_precise);
-
-% use lorentzfit function 
-P0 = [abs(shifted_fft(row))^2, kx(row), 0.1]; % starting values of fitting parameters
-[y_lorentz_0,p0,~] = lorentzfit(kx_tofit,profile_kx',[],[],'2');
-
-% use home made lorentzfit function
-P1 = fminsearch(@(s)lorentzian_fit_2param(kx_tofit,profile_kx',s),[1,1]);
-
-k_list = linspace(kx_tofit(1),kx_tofit(end),100);
-yth = lorentzian_fun_2param(k_list,P1); % fitted exponential function
-
-figure(24),
-plot(kx_tofit,profile_kx,'.')
-hold on 
-plot(kx_tofit,y_lorentz_0,'r-')
-hold on 
-plot(k_list,yth,'b--')
-
-alpha = sqrt(p0(2));
-disp(['Alpha = ' num2str(alpha)])
-
-alpha_2 = sqrt(P1(2));
-disp(['Alpha = ' num2str(alpha_2)])
-
-
-%%
-figure,
-pcolor(kx,ky,abs(A)')
-shading interp
-xlabel('$k_x \: \rm (m^{-1})$')
-ylabel('$k_y \: \rm (m^{-1})$')
-colorbar()
-hold on 
-plot(kx(x0),ky(y0),'dr')
-
-figure,
-pcolor(abs(A)')
-% shading interp
-xlabel('$k_x \: \rm (m^{-1})$')
-ylabel('$k_y \: \rm (m^{-1})$')
-colorbar()
-hold on 
-plot(x0,y0,'dr')
-
-%% Plot radii over which we performed velocity field 
-
-R = 2*pi*R_tics*facq_x/padding(1);
-theta = linspace(-pi,pi,50);
-kx_rad = R.*cos(theta);
-ky_rad = R.*sin(theta);
-
-%% 
-figure, 
-plot(R_tics,R_profile)
-grid on 
-
-%% 
-[~,idx] = max(R_profile);
-
-figure, 
-pcolor(kx,ky,abs(A)')
-% shading interp
-xlabel('$k_x \: \rm (m^{-1})$')
-ylabel('$k_y \: \rm (m^{-1})$')
-colorbar()
 axis image
-for idx = 1:2
+xlabel('$k_x \: \rm (rad.m^{-1})$')
+ylabel('$k_y \: \rm (rad.m^{-1})$')
+
+
+%%
+    
+    real_field_fig = figure(1); 
+    pcolor(x,y,real(field)')
+    shading interp
+    colormap(redblue)
     hold on 
-    plot(kx_rad(idx,:),ky_rad(idx,:),'r.')
-end 
+    plot(x_line,y_line,'k--')
+    axis image
+    xlabel('$x \: \rm (m)$')
+    ylabel('$y \: \rm (m)$')
+    ax = gca; 
+    ax.FontSize = 13;
+    set_Papermode(gcf)
+    hold off
+    
+    figname = [new_folder_fig 'Real_field_f' freq_txt];
+    saveas(gcf,figname,'fig')
+    saveas(gcf,figname,'pdf')
+    
+    pause(0.2)
+    % Compute field correctly oriented
+    [field_star,x_star,y_star] = orientation_parallel2propagation(field,theta,m.SCALE.fx,L0);
+    
 
 
 %% Scale an image of the video 
