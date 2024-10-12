@@ -16,10 +16,10 @@ import csv
 def read_xml():
     pass
 
-def read_csv(filename):
+def read_csv(filename,delimiter=','):
     rows = []
     with open(filename,'r') as csvfile:
-        spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
+        spamreader = csv.reader(csvfile, delimiter=delimiter, quotechar='|')
         for row in spamreader:
             rows.append(row)
     return rows

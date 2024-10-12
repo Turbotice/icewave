@@ -9,7 +9,7 @@ import socket
 import csv
 
 import numpy as np
-import time_phone
+import icewave.phone.time_phone as time_phone
 
 global osname,ostype
 ostype = platform.platform().split('-')[0]

@@ -325,6 +325,10 @@ def averages(data,keys='all'):
             y = data['loc'][key]
             for fun in funlist:
                     results[key+'_'+fun.__name__] = fun(y)
+    #time
+    if 'time' in data.keys():
+        results['time_start']=data['time']['system_START']
+        results['time_end']=data['time']['system_PAUSE']
     return results
 
 import scipy.signal as sig
