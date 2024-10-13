@@ -24,7 +24,8 @@ def get_records(date):
 def read_summary(filename):
     print(filename)
     data_phone = rw_data.read_csv(filename)
-
+    h0 = -1 #for conversion to UTC
+    
     header = data_phone[0]
     keys = header
     phonedict = {}
@@ -39,7 +40,12 @@ def read_summary(filename):
         records[phone]={}
         t0 = phonedict[phone]['time_start'].split(' ')[1][:-4]
         t1 = phonedict[phone]['time_end'].split(' ')[1][:-4]
-        records[phone]['time']= [t0,t1]
+        times = [t0,t1]
+        for j,time in enumerate(times):
+            h,m,s = time.split(':')
+            hnew = str(int(h)+h0)
+            times[j] = f"{hnew}:{m}:{s}"
+        records[phone]['time']=times 
         records[phone]['latitude']= phonedict[phone]['lat_mean']
         records[phone]['longitude']= phonedict[phone]['lon_mean']
         records[phone]['params']= phonedict[phone]
