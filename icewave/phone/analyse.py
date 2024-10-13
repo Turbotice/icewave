@@ -136,14 +136,17 @@ def find_measure_interval(data,var='a',Dt=5,S0=1,display=False):
     T = np.reshape(t[:N*n],(N,n))
     S = np.std(Y,axis=1) # compute the std on these slots
     Smean = np.mean(Y,axis=1)
-        
-    indices = np.where(S<S0)[0]
-    if len(indices)<2:
-        indices = np.where(S<S0*10)[0]
-    data[var+'i0']=indices[1]*n
-    data[var+'i1']=indices[-2]*n
-    data[var+'t0']=t[indices[1]*n]
-    data[var+'t1']=t[indices[-2]*n]
+    if N>3:        
+        indices = np.where(S<S0)[0]
+        data[var+'i0']=indices[1]*n
+        data[var+'i1']=indices[-2]*n
+        data[var+'t0']=t[indices[1]*n]
+        data[var+'t1']=t[indices[-2]*n]
+    else:
+        data[var+'i0']=0
+        data[var+'i1']=1
+        data[var+'t0']=t[0]
+        data[var+'t1']=t[-1]
 
     if display:
         fig,axs = plt.subplots(figsize=(10,6),nrows=2,sharex=True)#,nrows=3,sharex=True)
