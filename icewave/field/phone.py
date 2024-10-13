@@ -11,14 +11,14 @@ def get_records(date):
     files = glob.glob(base+date+'/Telephones/*/averages_Summary.csv')
 
     records = {}
-    records['phone'] = {}
+    records['phones'] = {}
     for filename in files:
         record = read_summary(filename)
         for key in record.keys():
-            if not key in records['phone'].keys():
-                records['phone'][key]=[record[key]]
+            if not key in records['phones'].keys():
+                records['phones'][key]=[record[key]]
             else:
-                records['phone'][key].append(record[key])
+                records['phones'][key].append(record[key])
     return records
 
 def read_summary(filename):
