@@ -63,8 +63,12 @@ def get_flighrecord(srtfile,step=100,drone='mesange'):
             t = f"{hnew}:{m}:{s}"            
             record[i]['time']=t
             params = event[4][0]
-            latitude = float(params.split('latitude: ')[1].split(']')[0])
-            longitude = float(params.split('longitude: ')[1].split(']')[0])
+            if drone=='Fulmar':
+                print(params)
+                float(params.split('latitude: ')[1].split(']')[0])
+            else:
+                latitude = float(params.split('latitude: ')[1].split(']')[0])
+                longitude = float(params.split('longitude: ')[1].split(']')[0])
 
             #print(event[3],latitude,longitude)
             record[i]['latitude']=latitude
