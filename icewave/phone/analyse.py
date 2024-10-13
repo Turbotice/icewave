@@ -441,9 +441,9 @@ def main(args):
     folders2 = glob.glob(datafolder+'Sag24*/')
     folders = folders1+folders2
     for folder in folders:
-        func = locals()['step'+str(args.step)]
-        func(folder)
-
+        #func = locals()['step'+str(args.step)]
+        #func(folder)
+        step2(folder)
 if __name__ =='__main__':
     args = gen_parser()
     main(args)
