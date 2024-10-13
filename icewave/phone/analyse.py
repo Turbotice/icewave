@@ -138,13 +138,19 @@ def find_measure_interval(data,var='a',Dt=5,S0=1,display=False):
     Smean = np.mean(Y,axis=1)
     if N>3:        
         indices = np.where(S<S0)[0]
-        data[var+'i0']=indices[1]*n
-        data[var+'i1']=indices[-2]*n
-        data[var+'t0']=t[indices[1]*n]
-        data[var+'t1']=t[indices[-2]*n]
+        if len(indices)>=2:
+            data[var+'i0']=indices[1]*n
+            data[var+'i1']=indices[-2]*n
+            data[var+'t0']=t[indices[1]*n]
+            data[var+'t1']=t[indices[-2]*n]
+        else:
+            data[var+'i0']=0
+            data[var+'i1']=N-1
+            data[var+'t0']=t[0]
+            data[var+'t1']=t[-1]
     else:
         data[var+'i0']=0
-        data[var+'i1']=1
+        data[var+'i1']=N-1
         data[var+'t0']=t[0]
         data[var+'t1']=t[-1]
 
