@@ -39,8 +39,7 @@ def get_flighrecord(srtfile,step=100,drone='mesange'):
     elif drone=='Bernache':
         h0 = 5
     elif drone=='Fulmar':
-        print('Time to be checked')
-        h0 = 0
+        h0 = 5
     else:
         h0=0
         print(drone)
