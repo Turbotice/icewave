@@ -334,8 +334,8 @@ def averages(data,keys='all'):
         results['time_start']=data['time']['system_START']
         results['time_end']=data['time']['system_PAUSE']
     else:
-        results['time_start']='00:00:00.000'#data['time']['system_START']
-        results['time_end']='00:00:00.000'#data['time']['system_PAUSE']
+        results['time_start']='date 00:00:00.000'#data['time']['system_START']
+        results['time_end']='date 00:00:00.000'#data['time']['system_PAUSE']
     return results
 
 import scipy.signal as sig
