@@ -137,6 +137,8 @@ def find_measure_interval(data,var='a',Dt=5,S0=1,display=False):
     Smean = np.mean(Y,axis=1)
         
     indices = np.where(S<S0)[0]
+    if len(indices)<2:
+        indices = np.where(S<S0*10)[0]
     data[var+'i0']=indices[1]*n
     data[var+'i1']=indices[-2]*n
     data[var+'t0']=t[indices[1]*n]
