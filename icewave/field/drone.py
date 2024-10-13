@@ -57,7 +57,7 @@ def get_flighrecord(srtfile,step=100,drone='mesange'):
             record[i]['record_time']=event[1]
             record[i]['date']=event[3][0].split(' ')[0]
 
-            time = event[3][0].split(' ')[1][:-4]
+            time = event[3][0].split(' ')[1][:8]#[:-4]
             h,m,s = time.split(':')
             hnew = str(int(h)+h0)
             t = f"{hnew}:{m}:{s}"            
