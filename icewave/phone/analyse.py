@@ -34,8 +34,9 @@ def main(args):
     base = '/media/turbots/Hublot24/Share_hublot/Data/'
     #date = '0221'
     datafolder = base+date+'/Telephones/'
-    folders = glob.glob(datafolder+'Bic24*/')
-
+    folders1 = glob.glob(datafolder+'Bic24*/')
+    folders2 = glob.glob(datafolder+'Sag24*/')
+    folders = folders1+folders2
     for folder in folders:
         print(folder)
         step3(folder)
