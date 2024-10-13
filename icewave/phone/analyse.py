@@ -24,6 +24,8 @@ global BicWin2024_datas
 def gen_parser():    
     parser = argparse.ArgumentParser(description="Manipulate smartphone data")
     parser.add_argument('-date', dest='date', type=str,default='0226',help='select date to process data')
+    parser.add_argument('-step', dest='step', type=int,default=3,help='select Step to be performed')
+
 #    print(parser)   
     args = parser.parse_args()
     print(args)
@@ -38,8 +40,8 @@ def main(args):
     folders2 = glob.glob(datafolder+'Sag24*/')
     folders = folders1+folders2
     for folder in folders:
-        print(folder)
-        step3(folder)
+        func = locals()['step'+str(args.step)]
+        func(folder)
 
 def step4(folders):
     #step4: load .csv file
