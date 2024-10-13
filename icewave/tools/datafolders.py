@@ -37,12 +37,14 @@ osname = socket.gethostname()
 print(ostype)
 print(osname)
 
-def find_path(disk='BicWin2024'):
+def find_path(disk='Hublot24'):
     #print('OS type : '+str(ostype))
     #print('Computer name : '+str(osname))
 
     if disk=='BicWin2024':
-        base = 'BicWin2024/Share/Data/'
+        base = disk+'/Share/Data/'
+    elif disk=='Hublot24':
+        base = disk+'/Share_hublot/Data/'
     else:
         print('please specify the folder path')
     if 'Linux' in ostype:
@@ -76,15 +78,18 @@ def find_path(disk='BicWin2024'):
             base = '//192.168.1.70/Share/Data/'
 
     if 'macOS' in ostype:
-        if 'laita' in osname:
-            if disk =='BicWin2024':
-                base = '/Volumes/Share_hublot/Data/'
-            else:
-                base = '~/Documents/'+base #praise UNIX system    
-        else:
-            base = '/Users/stephane/Documents/git/icewave/icewave/field/Bicwin2024/Data/2024/'#/Volumes/Share_hublot/Data/'
+        base = '/Volumes/'+base
+        #if 'laita' in osname:
+        #    if disk =='BicWin2024':
+        #        base = '/Volumes/Share_hublot/Data/'
+        #    elif disk=='Hublot24':
+        #        base = disk+'/Share_hublot/Data/'
+        #    else:
+        #        base = '~/Documents/'+base #praise UNIX system    
+        #else:
+        #    base = '/Users/stephane/Documents/git/icewave/icewave/field/Bicwin2024/Data/2024/'#/Volumes/Share_hublot/Data/'
 
-    browse.create_folder(base)
+    #browse.create_folder(base)
     return base
 
 def date_folder(date=''):

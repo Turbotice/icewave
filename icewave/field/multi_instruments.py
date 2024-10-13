@@ -10,6 +10,7 @@ import icewave.tools.rw_data as rw_data
 import glob
 import csv
 import os
+import numpy as np
 
 import icewave.phone.rw_pyphone as rw
 
@@ -19,29 +20,16 @@ import icewave.phone.rw_pyphone as rw
 base = '/media/turbots/Hublot24/Share_hublot/Data/'
 
 
-def get_flighrecord(srtfile):
-    data = rw_data.read_csv(srtfile)
+def get_time_interval(record):
+    times = [record[key]['time'] for key in record.keys()]
+    t0 = times[0]
+    t1 = times[-1]
+    return t0,t1
 
-    n = int(len(data)/6)
-    print('number of records : '+str(n))
-    record = {}
-    for i in range(0,n-1,100):
-        event = data[i*6:(i+1)*6]
-        if int(event[0][0])==i+1:  
-            record[i]={}
-            record[i]['time']=event[1]
-            record[i]['date']=event[3]
-            params =event[4][0]
-
-            latitude = float(params.split('latitude: ')[1].split(']')[0])
-            longitude = float(params.split('longitude: ')[1].split(']')[0])
-
-            #print(event[3],latitude,longitude)
-            record[i]['latitude']=latitude
-            record[i]['longitude']=longitude
-            record[i]['params'] = params
-#pprint(d[6:12])
-    return record
-
-
+def get_avg_position(record):
+    latitudes = [record[key]['latitude'] for key in record.keys()]
+    longitudes = [record[key]['longitude'] for key in record.keys()]
+    latitude = np.mean(latitudes)
+    longitude = np.mean(longitudes)
+    return latitude,longitude
 
