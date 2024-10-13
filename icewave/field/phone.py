@@ -34,8 +34,14 @@ def read_summary(filename):
         phone = int(d[0])
         phonedict[phone]={}
         for i,key in enumerate(header):
-            phonedict[phone][key]=d[i]
-
+            try:
+                phonedict[phone][key]=d[i]
+                incomplete=False
+            except:
+                incomplete=True
+        if incomplete:
+            print(f'Header reading failed for {phone}')
+            continue
         print(phonedict[phone].keys())
         records[phone]={}
         if 'time_start' in phonedict[phone].keys():
