@@ -38,13 +38,18 @@ def read_summary(filename):
 
         print(phonedict[phone].keys())
         records[phone]={}
-        t0 = phonedict[phone]['time_start'].split(' ')[1][:-4]
-        t1 = phonedict[phone]['time_end'].split(' ')[1][:-4]
-        times = [t0,t1]
-        for j,time in enumerate(times):
-            h,m,s = time.split(':')
-            hnew = str(int(h)+h0)
-            times[j] = f"{hnew}:{m}:{s}"
+        if 'time_start' in phonedict[phone].keys():
+            t0 = phonedict[phone]['time_start'].split(' ')[1][:-4]
+            t1 = phonedict[phone]['time_end'].split(' ')[1][:-4]
+            times = [t0,t1]
+            for j,time in enumerate(times):
+                h,m,s = time.split(':')
+                hnew = str(int(h)+h0)
+                times[j] = f"{hnew}:{m}:{s}"
+        else:
+            print('No time stamp available')
+            times = ['00:00:00','00:00:00']
+
         records[phone]['time']=times 
         records[phone]['latitude']= phonedict[phone]['lat_mean']
         records[phone]['longitude']= phonedict[phone]['lon_mean']
