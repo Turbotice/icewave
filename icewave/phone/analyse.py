@@ -55,9 +55,11 @@ def step3(folder):
             data = pickle.load(handle)
         phone = int(filename.split('/')[-2].split('_')[1])
         print(data.keys(),phone)
-        result = averages(data)
-        results[phone] = result
-
+        n = len(data['ta'])
+        print(n)
+        if n>1000:            
+            result = averages(data)
+            results[phone] = result
     rw.write_csv(results,folder,title='averages')
 
     #save results in .csv format
