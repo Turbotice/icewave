@@ -45,6 +45,7 @@ def read_summary(filename):
         print(phonedict[phone].keys())
         records[phone]={}
         if 'time_start' in phonedict[phone].keys():
+            print(t0)
             t0 = phonedict[phone]['time_start'].split(' ')[1][:-4]
             t1 = phonedict[phone]['time_end'].split(' ')[1][:-4]
             times = [t0,t1]
