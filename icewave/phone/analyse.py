@@ -305,6 +305,7 @@ def averages(data,keys='all'):
         for coord in data['coords']:
             key = var+coord
             y = data[key]
+            print(key,len(y))
             #print(key,np.mean(y),np.std(y))
             y_high,y_wave,y_trend,err = filtering(y)
             results[key+'_err'] = err
