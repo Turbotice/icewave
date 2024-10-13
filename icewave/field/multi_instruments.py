@@ -14,8 +14,17 @@ import numpy as np
 
 import icewave.phone.rw_pyphone as rw
 
+import icewave.field.drone as drone
+import icewave.field.phone as phone
+import icewave.field.geophone as geophone
+import icewave.field.buoys as buoys
 
-
+def get_records(date):
+    records = drone.get_records(date)
+    records.update(phone.get_records(date))
+    records.update(geophone.get_records(date))
+    records.update(buoys.get_records(date))
+    return records
 
 base = '/media/turbots/Hublot24/Share_hublot/Data/'
 
