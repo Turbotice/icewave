@@ -2,6 +2,7 @@
 import icewave.tools.datafolders as df
 import icewave.tools.rw_data as rw_data
 import glob
+from pprint import pprint
 
 global base
 base = df.find_path(disk='Hublot24')
@@ -24,7 +25,7 @@ def get_srtfiles(date):
     drones = ['mesange','Bernache','Fulmar']
     for key in drones:
         srt = glob.glob(base+date+'/Drones/'+key+'/*/*.SRT')#/*/*.srt')
-        print(srt)
+        pprint(srt)
         if len(srt)>0:
             srtfiles[key] = srt
         else:
