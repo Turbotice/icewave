@@ -31,18 +31,6 @@ def gen_parser():
     print(args)
     return args
 
-def main(args):
-    date = args.date
-    base = '/media/turbots/Hublot24/Share_hublot/Data/'
-    #date = '0221'
-    datafolder = base+date+'/Telephones/'
-    folders1 = glob.glob(datafolder+'Bic24*/')
-    folders2 = glob.glob(datafolder+'Sag24*/')
-    folders = folders1+folders2
-    for folder in folders:
-        func = locals()['step'+str(args.step)]
-        func(folder)
-
 def step4(folders):
     #step4: load .csv file
     #       draw a map of the phone location
@@ -443,6 +431,18 @@ def time_spectrum(t,y):
     i = np.argmax(TFmoy[10:])+10
     fmax = f[i]
     return f,TFmoy,fmax
+
+def main(args):
+    date = args.date
+    base = '/media/turbots/Hublot24/Share_hublot/Data/'
+    #date = '0221'
+    datafolder = base+date+'/Telephones/'
+    folders1 = glob.glob(datafolder+'Bic24*/')
+    folders2 = glob.glob(datafolder+'Sag24*/')
+    folders = folders1+folders2
+    for folder in folders:
+        func = locals()['step'+str(args.step)]
+        func(folder)
 
 if __name__ =='__main__':
     args = gen_parser()
