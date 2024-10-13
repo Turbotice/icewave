@@ -56,7 +56,7 @@ def write_pkl(filename,data):
 def load_pkl(filename):
     import pickle
     with open(filename, 'rb') as handle:
-        data = pickle.load(handle, protocol=pickle.HIGHEST_PROTOCOL)
+        data = pickle.load(handle)#, protocol=pickle.HIGHEST_PROTOCOL)
     return data
 
 def csv2dict(table):

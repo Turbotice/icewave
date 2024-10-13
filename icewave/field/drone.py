@@ -15,7 +15,7 @@ def get_records(date):
         for i,srtfile in enumerate(srtfiles[key]):
             print(i,srtfile)
             name = srtfile.split('/')[-2]
-            record = get_flighrecord(srtfile)
+            record = get_flighrecord(srtfile,drone=name)
             records[key][name]=record
     return records
     
@@ -32,7 +32,18 @@ def get_srtfiles(date):
             print(f"No data for {key} on {date}")
     return srtfiles
 
-def get_flighrecord(srtfile,step=100):
+def get_flighrecord(srtfile,step=100,drone='mesange'):
+    #convert all times to UTC
+    if drone=='mesange':
+        h0 = -1
+    elif drone=='Bernache':
+        h0 = 5
+    elif drone=='Fulmar':
+        print('Time to be checked')
+        t0 = 0
+    else:
+        print('Drone unknown')
+        
     data = rw_data.read_csv(srtfile)
     n = int(len(data)/6)
     print('number of records : '+str(n))
@@ -43,7 +54,12 @@ def get_flighrecord(srtfile,step=100):
             record[i]={}
             record[i]['record_time']=event[1]
             record[i]['date']=event[3][0].split(' ')[0]
-            record[i]['time']=event[3][0].split(' ')[1][:-4]
+
+            time = event[3][0].split(' ')[1][:-4]
+            h,m,s = time.split(':')
+            hnew = str(int(h)+h0)
+            t = f"{hnew}:{m}:{s}"            
+            record[i]['time']=t
             params = event[4][0]
             latitude = float(params.split('latitude: ')[1].split(']')[0])
             longitude = float(params.split('longitude: ')[1].split(']')[0])

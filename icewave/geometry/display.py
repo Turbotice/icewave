@@ -20,6 +20,18 @@ labels = {  'G':'g>',\
             'CTD':'b>',\
             'H':'bv'}
 
+global colors
+
+colors = {  'geophones':'g>',\
+            'phones':'rs',\
+            'buoys':'mo',\
+            'mesange':'kp',\
+            'Bernache':'bp',\
+            'Fulmar':'gp',\
+            'GPS':'ks',\
+            'S':'bo',\
+            'H':'bv'}
+
 def show(table,dim=2,eps=1,sx=6,sy=6,display=True):
 
     norme = read_norme()
