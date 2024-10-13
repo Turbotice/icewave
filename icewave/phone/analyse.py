@@ -455,7 +455,15 @@ def main(args):
     for folder in folders:
         #func = locals()['step'+str(args.step)]
         #func(folder)
-        step2(folder)
+        if args.step==1:
+            step1(folder)
+        if args.step==2:
+            step2(folder)
+        if args.step==3:
+            step3(folder)
+        if args.step==4:
+            step4(folder)
+
 if __name__ =='__main__':
     args = gen_parser()
     main(args)
