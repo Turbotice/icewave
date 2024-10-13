@@ -306,8 +306,14 @@ def averages(data,keys='all'):
             key = var+coord
             y = data[key]
             print(key,len(y))
+            if len(y)>20:
             #print(key,np.mean(y),np.std(y))
-            y_high,y_wave,y_trend,err = filtering(y)
+                y_high,y_wave,y_trend,err = filtering(y)
+            else:
+                y_high=0
+                y_wave=0
+                y_trend=0
+                err=1
             results[key+'_err'] = err
             for fun in funlist:
                 if var=='g' and fun==np.mean:
