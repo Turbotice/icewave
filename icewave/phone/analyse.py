@@ -334,7 +334,7 @@ def averages(data,keys='all'):
                     results[key+'_'+fun.__name__] = np.nan
     #time
     if 'time' in data.keys():
-        if 'system_START' in data['time']:
+        if 'system_START' in data['time'] and 'system_PAUSE' in data['time']:
             results['time_start']=data['time']['system_START']
             results['time_end']=data['time']['system_PAUSE']
         else:
