@@ -12,7 +12,8 @@ import csv
 import os
 import numpy as np
 
-import icewave.phone.rw_pyphone as rw
+#import icewave.phone.rw_pyphone as rw
+import icewave.tools.rw_data as rw_data
 
 import icewave.field.drone as drone
 import icewave.field.phone as phone
@@ -26,8 +27,20 @@ def get_records(date):
     records.update(buoys.get_records(date))
     return records
 
-base = '/media/turbots/Hublot24/Share_hublot/Data/'
+def save_records(date):
+    records = get_records(date)
+    base = df.find_path()
+    filename = base+date+'/Summary/records_'+date+'.pkl'
 
+    folder = os.path.dirname(filename)
+    print(folder)
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    rw_data.write_pkl(filename,records)
+
+
+
+#base = '/media/turbots/Hublot24/Share_hublot/Data/'
 
 def get_time_interval(record):
     times = [record[key]['time'] for key in record.keys()]
