@@ -129,8 +129,8 @@ def find_measure_interval(data,var='a',Dt=5,S0=1,display=False):
 
     n = int(np.round(np.sum(t<Dt)/2)*2) #windows of Dt seconds. may not work for fs = 400Hz (values are designed for fs = 50Hz)
     print(f"Number of points per bin :{n}")
-    print(f"Number of bins : {N}")
     N = int(np.floor(len(t)/n))
+    print(f"Number of bins : {N}")
 
     Y = np.reshape(y[:N*n],(N,n))# cut the signal in pieces of n points (Dt time slots)
     T = np.reshape(t[:N*n],(N,n))
