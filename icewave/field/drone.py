@@ -15,7 +15,7 @@ def get_records(date):
         for i,srtfile in enumerate(srtfiles[key]):
             print(i,srtfile)
             name = srtfile.split('/')[-2]
-            record = get_flighrecord(srtfile,drone=name)
+            record = get_flighrecord(srtfile,drone=key)
             records[key][name]=record
     return records
     
@@ -40,8 +40,10 @@ def get_flighrecord(srtfile,step=100,drone='mesange'):
         h0 = 5
     elif drone=='Fulmar':
         print('Time to be checked')
-        t0 = 0
+        h0 = 0
     else:
+        h0=0
+        print(drone)
         print('Drone unknown')
         
     data = rw_data.read_csv(srtfile)
