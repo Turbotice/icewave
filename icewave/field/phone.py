@@ -16,9 +16,9 @@ def get_records(date):
         record = read_summary(filename)
         for key in record.keys():
             if not key in records['phones'].keys():
-                records['phones'][key]=[record[key]]
-            else:
-                records['phones'][key].append(record[key])
+                records['phones'][key] = {}
+            name = record[key]['name']
+            records['phones'][key][name]=record[key]
     return records
 
 def read_summary(filename):
@@ -60,5 +60,6 @@ def read_summary(filename):
         records[phone]['latitude']= phonedict[phone]['lat_mean']
         records[phone]['longitude']= phonedict[phone]['lon_mean']
         records[phone]['params']= phonedict[phone]
+        records[phone]['name']=phonedict[phone]['name']
     return records
     
