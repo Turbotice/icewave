@@ -17,7 +17,8 @@ def get_records(date,year='2024'):
         num = filename.split('/DigiSolo_')[1].split('.txt')[0]
         #find only the data from this day
         select=[]
-        for elem in record:
+        for key in record.keys():
+            elem = record[key]
             if elem['date'].split('/')==[year,date[:2],date[2:]]:
                 print(f'date matching for {num}')
                 select.append(elem)
@@ -38,7 +39,6 @@ def read_digiSolo(filename):
                 #print(serial)
             if 'Start Acquisition FileName' in l[0]:
                 rec = int(l[0].split('Seis')[1].split('.DLD')[0])
-                record[rec]={}
                 record[rec]['date']=line[0].split('= "')[1]
                 record[rec]['time']=[line[1][:-1]]
                 record[rec]['latitude']=[]
@@ -52,5 +52,4 @@ def read_digiSolo(filename):
                 elif 'Longitude' in line[0]:
                     lon = line[0].split(' = ')[1]
                     record[rec]['longitude'].append(float(lon))
-    
     return record    
