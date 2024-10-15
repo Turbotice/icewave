@@ -20,6 +20,18 @@ import icewave.field.phone as phone
 import icewave.field.geophone as geophone
 import icewave.field.buoys as buoys
 
+import argparse
+
+def gen_parser():    
+    parser = argparse.ArgumentParser(description="Manipulate multi instruments data")
+    parser.add_argument('-date', dest='date', type=str,default='0226',help='select date to process data')
+    #parser.add_argument('-step', dest='step', type=int,default=3,help='select Step to be performed')
+
+#    print(parser)   
+    args = parser.parse_args()
+    print(args)
+    return args
+
 def get_records(date):
     records = drone.get_records(date)
     records.update(phone.get_records(date))
@@ -173,3 +185,9 @@ def get_avg_position(record):
     longitude = np.mean(longitudes)
     return latitude,longitude
 
+def main(args):
+    get_records(args.date)
+    
+if __name__ =='__main__':
+    args = gen_parser()
+    main(args)

@@ -7,6 +7,17 @@ from pprint import pprint
 global base
 base = df.find_path(disk='Hublot24')
 
+import argparse
+def gen_parser():    
+    parser = argparse.ArgumentParser(description="Manipulate multi instruments data")
+    parser.add_argument('-date', dest='date', type=str,default='0226',help='select date to process data')
+    #parser.add_argument('-step', dest='step', type=int,default=3,help='select Step to be performed')
+#    print(parser)   
+    args = parser.parse_args()
+    print(args)
+    return args
+
+
 def get_records(date):
     srtfiles = get_srtfiles(date)
     records = {}
@@ -133,4 +144,10 @@ def get_flighrecord(srtfile,step=100,drone='mesange'):
             record['params'].append(params)
 #pprint(d[6:12])
     return record
+
+def main(args):
+    convert_flightrecords(args.date)
     
+if __name__ =='__main__':
+    args = gen_parser()
+    main(args)
