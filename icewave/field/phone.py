@@ -31,7 +31,7 @@ def read_summary(filename):
     phonedict = {}
     records = {}
     for d in data_phone[1:]:
-        phone = int(d[0])
+        phone = 'T'+d[0]
         phonedict[phone]={}
         for i,key in enumerate(header):
             try:

@@ -7,7 +7,7 @@ from pprint import pprint
 global base
 base = df.find_path(disk='Hublot24')
 
-def get_records(date):
+def get_records(date,year='2024'):
     files = glob.glob(base+date+'/Geophones/DigiSolo*.txt')#/*/*.srt')
 
     records = {}
@@ -15,7 +15,15 @@ def get_records(date):
     for filename in files:
         record = read_digiSolo(filename)
         num = filename.split('/DigiSolo_')[1].split('.txt')[0]
-        records['geophones'][num] = record    
+        #find only the data from this day
+        select=[]
+        for elem in record:
+            if elem['date'].split('/')==[year,date[:2],date[2:]]:
+                print(f'date matching for {num}')
+                select.append(elem)
+        #.keys()#.keys()#['04-waves_001'][0].keys()
+        if len(select)>0:         
+            records['geophones'][num] = select#record    
     return records
 
 def read_digiSolo(filename):

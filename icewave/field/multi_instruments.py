@@ -26,7 +26,6 @@ def gen_parser():
     parser = argparse.ArgumentParser(description="Manipulate multi instruments data")
     parser.add_argument('-date', dest='date', type=str,default='0226',help='select date to process data')
     #parser.add_argument('-step', dest='step', type=int,default=3,help='select Step to be performed')
-
 #    print(parser)   
     args = parser.parse_args()
     print(args)
