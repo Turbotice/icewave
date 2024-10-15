@@ -122,12 +122,13 @@ def get_flighrecord(srtfile,step=100,drone='mesange'):
     n = int(len(data)/6)
     print('number of records : '+str(n))
     record = {}
-    for key in ['record_time','date','frame','latitude','longitude','params']:
+    for key in ['record_time','time','date','frame','latitude','longitude','params']:
         record[key]=[]
     for i in range(0,n-1,step):
         #SRT Files contain 6 rows per timestamp
         event = data[i*6:(i+1)*6]
-        if int(event[0][0])==i+1:  
+        if int(event[0][0])==i+1:
+            record['frame'].append(i) #starting at frame 0
             record['record_time'].append(event[1])
             record['date'].append(event[3][0].split(' ')[0])
 
