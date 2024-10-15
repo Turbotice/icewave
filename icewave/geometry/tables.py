@@ -5,9 +5,41 @@ import os
 import shutil
 from pprint import pprint
 
-
 import icewave.gps.gps as gps
 import icewave.tools.datafolders as df
+def dict_from_gpx(gpx,folder):
+    data={}
+    table = read_table(folder)
+    tabledict = table_2dict(table)
+
+    pprint(tabledict.keys())
+    imin = np.min(list(tabledict.keys()))
+    imax = np.max(list(tabledict.keys()))
+    print(imin,imax)
+    
+    indices = select(gpx,imin,imax)
+    waypoints = np.asarray(gpx.waypoints)[indices]
+    
+    for key in tabledict.keys():
+        found=False
+        for waypoint in waypoints:
+            #name = waypoint.name
+            number = get_number(waypoint)
+            #print(number,key)
+            if number==key:
+                print(number)
+                found=True
+                tag = tabledict[key]['tag']
+                data[tag]={}
+                data[tag]['longitude']=waypoint.longitude
+                data[tag]['latitude']=waypoint.latitude
+                data[tag]['elevation']=waypoint.elevation
+                data[tag]['time']=waypoint.time
+                if 'value' in tabledict[number].keys():
+                    data[tag]['value']=tabledict[number]['value']
+        if not found:
+            print(f'Waypoint {key} not found in the table')
+    return data
 
 def represent_waypoints(gpx,imin,imax,iplus=[],table=None,ax=None,date=''):
     if table is None:
@@ -107,10 +139,13 @@ def display(x,y,ax=None,name='',table=None):
 def get_day(waypoint):
     return f"{waypoint.time.timetuple().tm_mon:02d}{waypoint.time.timetuple().tm_mday:02d}"
 
+def get_number(waypoint):
+    return int(waypoint.name[-3:])
+
 def select(gpx,imin,imax):
     indices = []
     for i,waypoint in enumerate(gpx.waypoints):
-        number = int(waypoint.name[-3:])
+        number = get_number(waypoint)
         #print(number)
         #print(waypoint)
         if number>=imin and number<=imax:#True:#int(waypoint.name)>155 and int(waypoint.name)<250:
@@ -126,8 +161,18 @@ def read_table(folder):
     
     lines = out.split('\n')
     table = [line.split('\t') for line in lines]
-    dtable = [[int(tab[0]),tab[1]] for tab in table]
+    dtable = [[int(tab[0])]+tab[1:] for tab in table]
     return dtable
+
+def table_2dict(table):
+    data = {}
+    for tab in table:
+        data[tab[0]]={}
+        data[tab[0]]['tag']=tab[1]
+        if len(tab)==3:
+            print(f"Value {tab[2]} associated to waypoint {tab[0]} for tag {tab[1]}")
+            data[tab[0]]['value']=tab[2]
+    return data
 
 def read_norme(path):
     #print(glob.glob(path+'Nomenclature_GPS.txt'))

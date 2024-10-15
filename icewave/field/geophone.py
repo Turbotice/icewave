@@ -54,5 +54,4 @@ def read_digiSolo(filename):
                 elif 'Longitude' in line[0]:
                     lon = line[0].split(' = ')[1]
                     record[rec]['longitude'].append(float(lon))
-    
     return record    

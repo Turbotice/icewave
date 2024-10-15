@@ -19,6 +19,8 @@ import icewave.field.drone as drone
 import icewave.field.phone as phone
 import icewave.field.geophone as geophone
 import icewave.field.buoys as buoys
+import icewave.field.gps as gps
+
 
 import argparse
 
@@ -36,6 +38,7 @@ def get_records(date):
     records.update(phone.get_records(date))
     records.update(geophone.get_records(date))
     records.update(buoys.get_records(date))
+    records.update(gps.get_records(date))
     return records
 
 def save_records(date):
