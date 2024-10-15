@@ -54,6 +54,7 @@ def convert_flightrecords(date):
     for drone in csvfiles.keys():
         records['drones'][drone]={}
         for i,csvfile in enumerate(csvfiles[drone]):
+            print(csvfile)
             record=parse_csv_flightrecord(csvfile,drone=drone)
             if i==0:
                 records['drones'][drone]=record
@@ -61,8 +62,11 @@ def convert_flightrecords(date):
                 for key in records['drones'][drone].keys():
                      records['drones'][drone][key]=records['drones'][drone][key]+record[key]
         savedict = records['drones'][drone]
+        print('save pickle')
         filename = os.path.dirname(csvfile)+'/Flightrecord_dict.pkl'
         rw_data.write_pkl(filename,savedict)
+        print('flightrecord saved in pickle format')
+
 #    return records
             #merge the record files ?
             
