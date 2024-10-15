@@ -9,7 +9,7 @@ import pickle
 import numpy as np
 
  
-#%%
+#%% 
 
 
 def open_dico(path):
