@@ -16,12 +16,12 @@ def get_records(date,year='2024'):
         record = read_digiSolo(filename)
         num = filename.split('/DigiSolo_')[1].split('.txt')[0]
         #find only the data from this day
-        select=[]
+        select={}
         for key in record.keys():
             elem=record[key]
             if elem['date'].split('/')==[year,date[:2],date[2:]]:
                 print(f'date matching for {num}')
-                select.append(elem)
+                select[key]=elem
         #.keys()#.keys()#['04-waves_001'][0].keys()
         if len(select)>0:         
             records['geophones'][num] = select#record    
