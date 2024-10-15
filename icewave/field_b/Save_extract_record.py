@@ -53,14 +53,16 @@ def extract_from_fr(date, drone, liste = True, selection = True, disque = 'K') :
     path_fr = disque + ':\Share_hublot\\Data\\' + date +'\\Drones\\'  + drone+'\\flightrecords\\Flightrecord_dict.pkl'    
     flight_record = open_dico(path_fr)
     summary = open_dico(path_SP)
-
-    path_selection = disque + ':\Share_hublot\\Summary\\' + date + '_path_drone.txt'
-    select = pandas.read_csv(path_selection, header= None)
-    select = 'K' + np.asarray(select)[:,0]
+    
     datas = []
-    for i in select :
-        # if i.split('\\')[-2] == drone : #on garde les noms de dossiers du bon drone, ATTENTION  écrire les drones en minuscule
-        datas += [i.split('\\')[-1]]
+    if selection :
+        path_selection = disque + ':\Share_hublot\\Summary\\' + date + '_path_drone.txt'
+        select = pandas.read_csv(path_selection, header= None)
+        select = 'K' + np.asarray(select)[:,0]
+        
+        for i in select :
+            # if i.split('\\')[-2] == drone : #on garde les noms de dossiers du bon drone, ATTENTION  écrire les drones en minuscule
+            datas += [i.split('\\')[-1]]
     
 
     timeline = np.array(create_timeline(flight_record)) # cree une timeline de tous les temps existants avec le bon format (pas avec les PM)
@@ -70,7 +72,7 @@ def extract_from_fr(date, drone, liste = True, selection = True, disque = 'K') :
     #, 'OSD.flyTime', 'OSD.flyTime [s]', 'OSD.latitude', 'OSD.longitude', 'OSD.height [ft]']
     keys1 = ['OSD.altitude [ft]', 'OSD.mileage [ft]', 'OSD.hSpeed [MPH]', 'OSD.xSpeed [MPH]', 'OSD.ySpeed [MPH]', 'OSD.zSpeed [MPH]']
     keys2 = ['OSD.pitch', 'OSD.roll', 'OSD.yaw', 'OSD.yaw [360]', 'OSD.gpsNum']
-    keys3 = ['GIMBAL.pitch', 'GIMBAL.roll', 'GIMBAL.yaw', 'GIMBAL.yaw [360]']            
+    keys3 = ['GIMBAL.pitch', 'GIMBAL.roll', 'GIMBAL.yaw', 'GIMBAL.yaw [360]']
     keys_float = keys1+keys2+keys3
     
     record = {}
@@ -96,7 +98,7 @@ def extract_from_fr(date, drone, liste = True, selection = True, disque = 'K') :
                     record[j][key] = np.array([])
                 for key in keys_bool:
                     record[j][key] = np.array([])
-            for k in summary['drones'][drone][j]['time'] :
+            for k in summary['drones'][drone][j]['time'] : #on peut regarder une autre liste (genre times pour les photos : 'K:\Share_hublot\\Summary\\Timeline\\')
 
                 if k in timeline : #si le temps du summary est dans la timeline, on cherche les indices et on garde toutes les keys interessantes
                     indices = [np.where(timeline == k)[0]]
@@ -139,10 +141,10 @@ def MAIN(date, drone, liste = True, selection = True, disque = 'K', save = False
         
     return record
         
-date = '0223'
-drone = 'mesange' #Bernache ou bernache ?????
+date = '0306'
+drone = 'Bernache' #Bernache ou bernache ?????
 
-record = MAIN(date, drone, save = False)
+record = MAIN(date, drone, save = False, selection = False)
 
 
 
