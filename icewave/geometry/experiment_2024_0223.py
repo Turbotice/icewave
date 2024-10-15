@@ -126,5 +126,5 @@ def Sag24(display=True):
     
 if __name__ == '__main__':
     Sag24()    
-    #plt.show()
+    plt.show()
     

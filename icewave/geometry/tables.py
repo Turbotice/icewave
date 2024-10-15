@@ -153,6 +153,9 @@ def select(gpx,imin,imax):
     return indices
 
 def read_table(folder):
+    filelist = glob.glob(folder+'map_table*.txt')
+    if len(filelist)>1:
+        print(f'Warning : several map tables found in {folder}')
     filename = glob.glob(folder+'map_table.txt')[0]
 
     #print(filename)

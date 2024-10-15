@@ -3,7 +3,7 @@ from pprint import pprint
 
 import icewave.geometry.display as display
 from icewave.geometry.define import *
-
+import pylab as plt
 import stephane.display.graphes as graphes
 
 def Geophones_line1():
@@ -122,6 +122,5 @@ def Sag24_0221():
     
 if __name__ == '__main__':
     Sag24_0221()    
-
-
+    plt.show()
     
