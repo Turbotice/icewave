@@ -192,7 +192,7 @@ def read_norme(path):
     #pprint(dtable)
     return dtable
 
-global norme
-path = '/Users/stephane/Documents/git/Data_local/Nomenclature/'
-norme = read_norme(path)
+#global norme
+#path = '/Users/stephane/Documents/git/Data_local/Nomenclature/'
+#norme = read_norme(path)
 
