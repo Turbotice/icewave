@@ -52,6 +52,7 @@ def step3(folder):
     pprint(phonefiles)
 
     results={}
+    name = folder.split('/')[-2]
     for filename in phonefiles:
         with open(filename, 'rb') as handle:
             data = pickle.load(handle)
@@ -62,7 +63,9 @@ def step3(folder):
         if n>1000:            
             result = averages(data)
             results[phone] = result
-            results[phone]['name']= os.path.basename(filename).split('.')[0]
+            results[phone]['name'] = name
+            print(results[phone]['name'])
+            print(toto)
     rw.write_csv(results,folder,title='averages')
 
     #save results in .csv format
