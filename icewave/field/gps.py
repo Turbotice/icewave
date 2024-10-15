@@ -12,7 +12,14 @@ import gpxpy
 
 def get_records(date,year='2024'):
     folder = base+date+'/GPS/'
-    filename = glob.glob(folder+'*.gpx')[0]#/*/*.srt')
+    filelist = glob.glob(folder+'*.gpx')
+    if len(filelist)==0:
+        print('No GPS data for this day')
+        return {}
+    if len(filelist)>1:
+        print('Warning : several gpx files found')
+    filename=filelist[0]
+
     with open(filename,'r') as f:
         gpx = gpxpy.parse(f)
 
@@ -20,4 +27,4 @@ def get_records(date,year='2024'):
     records={}
     records['gps']={}
     records['gps']['garmin_sp']=record
-    return record
+    return records
