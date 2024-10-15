@@ -94,11 +94,11 @@ def parse_csv_flightrecord(csvfile,drone='mesange'):
     record = {}
     for key in keys_float:
 #        print(key,data[key][1000])
-        record[key]= np.asarray([float(d) for d in data[key]])
+        record[key]= [float(d) for d in data[key]]
     for key in keys_date:
-        record[key]= np.asarray(data[key])
+        record[key]= data[key]
     for key in keys_bool:
-        record[key]= np.asarray([bool(d) for d in data[key]])
+        record[key]= [bool(d) for d in data[key]]
     return record
 
 def get_flighrecord(srtfile,step=100,drone='mesange'):
