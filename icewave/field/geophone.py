@@ -38,7 +38,8 @@ def read_digiSolo(filename):
                 serial = l[0].split(' = ')[1]
                 #print(serial)
             if 'Start Acquisition FileName' in l[0]:
-                rec = int(l[0].split('Seis')[1].split('.DLD')[0])
+                rec = l[0].split('Seis')[1].split('.DLD')[0]
+                rec = 'Seis'+rec #keep the full name as a key for the record dictionnary
                 record[rec]={}
                 record[rec]['date']=line[0].split('= "')[1]
                 record[rec]['time']=[line[1][:-1]]

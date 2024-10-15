@@ -3,6 +3,7 @@ import glob
 import h5py
 import numpy as np
 from pprint import pprint
+import os
 
 import icewave.tools.datafolders as df
 import icewave.tools.rw_data as rw_data
@@ -20,9 +21,9 @@ def get_records(date):
         if record==None:
             continue
         if not name in records['buoys'].keys():
-            records['buoys'][name] = [record]
-        else:
-            records['buoys'][name].append(record)
+            records['buoys'][name] = {}
+        key = os.path.basename(filename).split('.')[0]
+        records['buoys'][name][key]=record
     return records
 
 def read_matfile(filename):

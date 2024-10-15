@@ -40,7 +40,7 @@ def step3(folder):
     import pickle
     #step3: load .pkl data
     #       compute for each phone
-    #           starting and end time (using cellphone values, no sync at this step)
+    #           starting and end time (using cellphone values, no time sync at this step)
     #           duration, mean location, total distance traveled
     #           ai_rms, vi_rms, mi_rms
     #           main frequency f0
@@ -60,6 +60,7 @@ def step3(folder):
         if n>1000:            
             result = averages(data)
             results[phone] = result
+            results[phone]['name']= os.path.basename(filename).split('.')[0]
     rw.write_csv(results,folder,title='averages')
 
     #save results in .csv format
@@ -72,17 +73,18 @@ def step2(folder):
     #               on time interval Dt (default 5s)
     #           cut the temporal serie
     #           save the dictionnary data in a .pkl format (one for each phone)    
-        phonefolders = glob.glob(folder+'000*/')
-        pprint(phonefolders)
+    phonefolders = glob.glob(folder+'000*/')
+    pprint(phonefolders)
 
         #phonefolders=[phonefolder[:-1] for phonefolder in phonefolders]
-        savefolder = folder+'Results/'
-        for phonefolder in phonefolders:
-            data = load.load(phonefolder)
-            data = load.sort(data)
-            data = find_measure_interval(data)
-            data = cut(data)
-            rw.save_data_single_phone(data,phonefolder)
+    savefolder = folder+'Results/'
+    for phonefolder in phonefolders:
+        data = load.load(phonefolder)
+        data = load.sort(data)
+
+        data = find_measure_interval(data)
+        data = cut(data)
+        rw.save_data_single_phone(data,phonefolder)
 
 #    testfolder = 'Telephones/Soufflerie_dec23/131223/Telephones/121223_4_U400cms/'
 #    datafolder =  '/Volumes/labshared2/Telephones/Soufflerie_dec23/Results/'
@@ -110,18 +112,11 @@ def step2(folder):
 #        run(folder,savefolder,name=wind)
 
 def step1(folders):
-    #step 1 : find all zip files, and extract the data
+    #step 1 : extract the data from all the zip files specified in the list folders
     for folder in folders:#allfolders[11:]:
-#        name = folder.split('_')[-1][:-1]
-#        print(name,folder)
-#        time_sync(folder,savefolder,name)
-
         print("Unzip files ...")
         rw.extract_all(folder)
         print("Done")
-#        wind = folder.split('_')[-1].split('/')[0]
-#        print(wind)
-#        run(folder,savefolder,name=wind)
 
 def find_measure_interval(data,var='a',Dt=5,S0=1,display=False):
     #work for same sampling frequency for all sensors
