@@ -91,65 +91,102 @@ def dephasage(y1,y2,Np=2**15,nf = 500):
         Theta[j]=theta
     return freqs,R,Theta
 
-def main(params,data, method=1):
+def main(params,data):
 
     params = direction(params)
     size = np.shape(data)[0]
-    params["phi"] = np.zeros((int(size/params['lm']), int((params['fmax_analyse']*params['lm']/params['facq']))))
-    params["hist_weight"] = np.zeros((int(size/params['lm']), int((params['fmax_analyse']*params['lm']/params['facq']))))
     
-    for i in range (0, int(size/params['lm'])) :
-        if np.mod(i, 10) == 0 :
-            print ('iteration ' + str(i) + ' sur ' + str( int(size/params['lm'])))
-        
-        data_cut = data[i * params['lm']:(i+1) * params['lm'], params['index_geophone'][params['index']]]
-        
-        Y = fft.fft(data_cut, axis = 0)
-        
-        params['corrs'] = np.zeros( (int(params['fmax_analyse']*params['lm']/params['facq']),2 * Y.shape[0] - 1) )
-        
-        for j in range (1, int(params['fmax_analyse']*params['lm']/params['facq'])+1) :
     
-            if method == 1 :
+    params['lm'] = np.array([50000])
+    params['liste_f'] = np.array([0.06])
+    
+    while params['liste_f'][-1] < params['fmax_analyse']:
+        if params['lm'][-1] > 3000 :
+            params['lm'] = np.append(params['lm'], params['lm'][-1] / 1.1)
+            params['liste_f'] = np.append(params['liste_f'], 3 * params['facq'] / params['lm'][-1])
+        else :
+            params['lm'] = np.append(params['lm'], params['lm'][-1])
+            params['liste_f'] = np.append(params['liste_f'], params['liste_f'][-1] + 2 * params['facq'] / params['lm'][-1])
+        
+    params["phi"] = np.zeros(len(params['liste_f']), dtype = object)
+    params["hist_weight"] = np.zeros(len(params['liste_f']), dtype = object)
+    
+    
+    for j in range (len(params['liste_f'])) :
+        
+        if np.mod(j, 10) == 0 :
+            print ('iteration ' + str(j) + ' sur ' + str(len(params['liste_f'])) )
+        
+        # params['corrs'] = np.zeros( (int(params['fmax_analyse']*params['lm']/params['facq']),2 * Y.shape[0] - 1) )
+        
+        phi = np.array([])
+        corrs = np.array([])
+        
+        for i in range (1, int(size/params['lm'][j])) :
             
-                Y1= np.zeros(Y.shape[0], dtype= 'complex64')
-                Y2= np.zeros(Y.shape[0], dtype= 'complex64')
-                 
-                Y1[j] = Y[j, 0]
-                Y2[j] = Y[j, 1]
-                
-                Y1 = np.real(fft.ifft(Y1))
-                Y2 = np.real(fft.ifft(Y2))
-                
-                corr = correlate(Y1,Y2)
-                params['corrs'][j-1, :] = corr
-                lag = np.argmax(corr)
-                a = 5
-                z = corr[lag-a:lag+a]
-                x = [u for u in range (lag-a,lag+a) - lag ]
-                p = np.polyfit(x,z,2)   
-                maxmax = -p[1]/(2*p[0])
-                lag = lag + maxmax - a - len(corr)/2
-                period = params['lm'] / j    
-                phi = lag / period * 2 * np.pi 
-                params['phi'][i,j-1] = phi + np.pi
-                params['hist_weight'][i,j-1] = np.max(corr)
             
             
+            data_cut = data[i * int(params['lm'][j]): (i+1) * int(params['lm'][j]), params['index_geophone'][params['index']]]
+                                                                      
+            Y = fft.fft(data_cut, axis = 0)
+            
+            Y1= np.zeros(Y.shape[0], dtype= 'complex64')
+            Y2= np.zeros(Y.shape[0], dtype= 'complex64')
+             
+            Y1[int(params['liste_f'][j] * params['facq'] * params['lm'][j] / size)] = Y[int(params['liste_f'][j] * params['facq'] * params['lm'][j] / size), 0]
+            Y2[int(params['liste_f'][j] * params['facq'] * params['lm'][j] / size)] = Y[int(params['liste_f'][j] * params['facq'] * params['lm'][j] / size), 1]
+            
+            Y1 = np.real(fft.ifft(Y1))
+            Y2 = np.real(fft.ifft(Y2))
+            
+            corr = correlate(Y1,Y2)
+            # params['corrs'][j-1, :] = corr
+            lag = np.argmax(corr)
+            a = 5
+            z = corr[lag-a:lag+a]
+            x = [u for u in range (lag-a,lag+a) - lag ]
+            p = np.polyfit(x,z,2)   
+            maxmax = -p[1]/(2*p[0])
+            lag = lag + maxmax - a - len(corr)/2
+            period = params['lm'][j] / i   
+            phi = np.append(phi, lag / period * 2 * np.pi)
+            corrs = np.append(corrs, np.max(corr))
+            
+        params['phi'][j] = phi
+        params['hist_weight'][j] = corrs
         
     return params
 
-def histo(params, data, add_nom_fig = '', full_display = False):
+
+
+
+def histo(params, data, add_nom_fig = '', full_display = True):
     
     params = main(params, data)
-
+    size = np.shape(data)[0]
+    
+    if full_display :
+        params = disp.figurejolie(params = params, nom_fig = 'phase_shift_f_ttmorceaux_' + add_nom_fig)
+     
+    #On interpolle phi pour pouvoir l'afficher
     params['og_phi'] = params['phi'].copy()
     
-    params['n_morc'] = np.shape(params['phi'])[0]
-    params['n_f'] = np.shape(params['phi'])[1]
+    params['phi'] = []
+    
+
+    for i in range (np.shape(params['og_phi'])[0]):
+        x = np.linspace(0,int(size/params['lm'][i])-2, int(size/params['lm'][-1]) - 1)
+        x_old = np.linspace(0,int(size/params['lm'][i] - 2) , int(size/params['lm'][i]) - 1)
+        params['phi'].append(np.interp(x, x_old, params['og_phi'][i]))
+                                 
+                                 
+    params['phi'] = np.asarray(params['phi'])
+    
+    params['n_morc'] = np.shape(params['phi'])[1]
+    params['n_f'] = np.shape(params['liste_f'])[0]
     
     n_phase = np.linspace(0, params['n_morc'], params['n_morc'])
-    f = np.linspace(1, params['n_f'], params['n_f']) / params['lm'] * params['facq']
+    f = params['liste_f']
     histogram = np.zeros(( params['n_bins'], params['n_f']))
 
     while True in (params['phi'] > 2*np.pi) or True in (params['phi'] < 0) :
@@ -157,13 +194,12 @@ def histo(params, data, add_nom_fig = '', full_display = False):
         params['phi'][params['phi'] > 2*np.pi] += - 2 * np.pi
     
     if full_display :
-        params = disp.figurejolie(params = params, nom_fig = 'phase_shift_f_ttmorceaux_' + add_nom_fig)
         for u in range (0, params['n_morc']):
             plt.plot(f, params['phi'][u,:], '+')
         
     if full_display :
         params = disp.figurejolie(params, nom_fig = 'phase_shift_f_morceaux_'+ add_nom_fig)
-        params[str(params['num_fig'][-1])]['data'] = disp.joliplot( 'f','n_phase', f, n_phase ,color = 5, table = np.rot90(params['phi']))
+        params[str(params['num_fig'][-1])]['data'] = disp.joliplot( 'f','n_phase', f, n_phase ,color = 5, table = np.flip(np.rot90(params['phi']), 0))
     
     
     params = disp.figurejolie(params = params, nom_fig = 'histogram_'+ add_nom_fig)
@@ -182,7 +218,7 @@ def histo(params, data, add_nom_fig = '', full_display = False):
     if full_display :
         params = disp.figurejolie(params = params, nom_fig = 'phase_shift_histogrammed_'+ add_nom_fig)
         boites = np.linspace(0,params['n_bins'],params['n_bins'])
-        params[str(params['num_fig'][-1])]['data'] = disp.joliplot( r'f(Hz)',r'$\phi$', f, boites, table = np.rot90(np.flip(np.flip(histogram,0),1)))
+        params[str(params['num_fig'][-1])]['data'] = disp.joliplot( r'f(Hz)',r'$\phi$', f, boites, table = np.flip(np.rot90(histogram), 0))
         
         plt.clim(0,np.quantile(histogram,0.9))
         x = np.linspace(0, params['n_bins'], params['n_bins'] - 1)
@@ -195,7 +231,7 @@ def detect(params,f,histogram, add_nom_fig = '', save = False):
     
     test_detect = np.flip(histogram, 0)
     for i in range (0, params['nb_blocks'] - 1) :
-            test_detect = np.concatenate((np.flip(histogram, 0),test_detect), axis = 0)
+            test_detect = np.concatenate((test_detect, np.flip(histogram, 0)), axis = 0)
     
     params = disp.figurejolie(params = params, nom_fig = 'phase_shift_histogrammed_fois_'+ add_nom_fig)
     
@@ -325,5 +361,5 @@ def select_data(params,f, phase) :
 
 def omega_k(params, f, phase):
     omega = f * 2 * np.pi
-    k = phase / params['L'] /np.cos(params['theta_f']) / 2 / np.pi
+    k = phase / params['L'] /np.cos(params['theta_f'])
     return omega, k

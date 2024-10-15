@@ -53,9 +53,9 @@ data = np.loadtxt(filename, skiprows = 22)
 #%% PARAMETRES
 
 params['facq'] = 1000
-params['lm'] = 10000
+params['lm'] = 7200
 
-params['fmax_analyse'] = 40
+params['fmax_analyse'] = 16
 
 params['index_geophone'] = [[0, 3],[6, 0],[3, 6]]
 
