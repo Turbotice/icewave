@@ -66,10 +66,8 @@ def get_csvfiles(date):
     return csvfiles
 
 def parse_csv_flightrecord(csvfile,drone='mesange'):
-    import icewave.tools.rw_data as rw_data
-
     table = rw_data.read_csv(csvfile)
-    rw_data = rw_data.csv2dict(table,headerindex=1)
+    data = rw_data.csv2dict(table,headerindex=1)
     record = {}
     keys_date = ['CUSTOM.date [local]', 'CUSTOM.updateTime [local]']
     keys_bool = ['CAMERA.isPhoto', 'CAMERA.isVideo']
@@ -81,7 +79,7 @@ def parse_csv_flightrecord(csvfile,drone='mesange'):
 
     record = {}
     for key in keys_float:
-        print(key,data[key][1000])
+#        print(key,data[key][1000])
         record[key]= np.asarray([float(d) for d in data[key]])
     for key in keys_date:
         record[key]= np.asarray(data[key])
