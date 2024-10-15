@@ -59,7 +59,7 @@ def load_pkl(filename):
         data = pickle.load(handle)#, protocol=pickle.HIGHEST_PROTOCOL)
     return data
 
-def csv2dict(table):
+def csv2dict(table,headerindex=0):
     data = {}
     if table[0][0]=='#':
         keys = table[0][1:]
@@ -69,4 +69,12 @@ def csv2dict(table):
             data[int(tab[0])]={}
             for (t,key) in zip(tab[1:],keys):
                 data[int(tab[0])][key]=float(t)
+    else:
+        header = table[headerindex]
+        data = {}
+        for key in header:
+            data[key]=[]
+        for i in range(headerindex+1,len(table)):
+            for j,key in enumerate(header):
+                data[key].append(table[i][j])
     return data
