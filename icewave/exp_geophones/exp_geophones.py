@@ -65,8 +65,8 @@ def make_triangle(baricentre, size, inclination, display = True, bg_image = Fals
         if type(bg_image) != bool :
             plt.imshow(bg_image)
             
-        plt.plot(x, y, 'kx')
-        plt.grid(True)  # Afficher une grille
+        plt.plot(x, y, 'ro')
+        plt.grid(False)  # Afficher une grille
         plt.title("Triangle équilatéral avec côté de {} et angle de {} degrés".format(size, inclination))
         plt.axis('equal')
 
@@ -129,7 +129,8 @@ liste_img = os.listdir(loc_img)
 
 u = cv2.imread(loc_img + liste_img[0])
 
-x,y = make_triangle([275,250], 400, 15, bg_image = u)
+x,y = make_triangle([275,250], 380, 15, bg_image = u)
+plt.grid('off')
 
 
 #%% Import several triangles

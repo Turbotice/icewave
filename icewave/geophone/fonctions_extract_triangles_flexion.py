@@ -325,5 +325,5 @@ def select_data(params,f, phase) :
 
 def omega_k(params, f, phase):
     omega = f * 2 * np.pi
-    k = phase / params['L'] /np.cos(params['theta_f'])
+    k = phase / params['L'] /np.cos(params['theta_f']) / 2 / np.pi
     return omega, k

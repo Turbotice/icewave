@@ -38,7 +38,7 @@ params = {}
 params['special_folder'] = ''
 params['facq'] = 1000
 params['lm'] = 7200
-params['fmax_analyse'] = 50
+params['fmax_analyse'] = 16
 
 
 params['L'] = 20
@@ -59,7 +59,7 @@ params['liste_f_garde'] = [[0,26.3], [26.7,30], [79.5, 100]] #[[0,22.2]] #17-14 
 params['liste_f_2pi'] = [[40,70]] #17-14 Z
 params['liste_f_moins2pi'] = [[100,1100]]#[[33.5,36]] #17-14 Z
 params['f_min'] = 0
-params['f_max'] = 12
+params['f_max'] = 16
 params['select_data'] = False
 params['cut_data'] = False
 
@@ -76,7 +76,7 @@ params['liste_f_garde'] = [[4.7,17]]
 params['liste_f_2pi'] = [[0,4.7]]
 params['liste_f_moins2pi'] = [[17,36]]
 params['f_min'] = 0
-params['f_max'] = 90
+params['f_max'] = 16
 params['select_data'] = False
 params['cut_data'] = False
 
@@ -313,6 +313,36 @@ plt.annotate(r'$kL_d = 1$', (0.15, 100))
 plt.axvline(x=1/HH, color = 'k')
 plt.annotate(r'$kH = 1$', (0.41, 100))
 
+
+
+#%% depth+fit h ET E
+
+
+
+    
+save = False
+type_fit = 'flexion+h+H26dm'
+if type_fit == 'flexion+h+H26dm':
+    params = disp.figurejolie(params = params, nom_fig = type_fit)
+    popt,pcov = fit.fit(rdd.RDD_hfit_depth_E, k, omega, display = True, err = False, nb_param = 2, p0 = [0.4, 6e9],bounds = [[0.1,1e9],[1,1e10]], zero = True, xlabel = r'k (m$^{-1}$)', ylabel = r'$\omega$')
+    params[str(params['num_fig'][-1])]['h'] = popt[0]
+    params[str(params['num_fig'][-1])]['err_h'] = pcov
+    params[str(params['num_fig'][-1])]['data'] = sv.data_to_dict(['k','omega'], [k,omega], data = [k,omega])
+    plt.grid()
+    if save :
+        sv.save_graph(savefolder, type_fit, params = params)
+
+h = 0.4
+D = h**3 * 6.07e9 / (12 * ( 1 - 0.37**2))
+ld = (D / 1000 / 9.81)**0.25
+HH = 2.6
+
+plt.axvline(x=1/ld, color = 'k' ) 
+plt.annotate(r'$kL_d = 1$', (0.15, 100))
+
+
+plt.axvline(x=1/HH, color = 'k')
+plt.annotate(r'$kH = 1$', (0.41, 100))
 
 #%% Loi de puissance double
 
