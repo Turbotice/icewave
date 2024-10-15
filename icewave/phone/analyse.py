@@ -14,6 +14,8 @@ import glob
 import pylab as plt
 from pprint import pprint
 
+import os
+
 global BicWin2024_datas
 #BicWin2024_datas={'0226':{'folder':'Bic24*/','subfolders':'0001*/','sync':}//
 #                  '0223':{'folder':'Bic24*/','subfolders':'0001*/'}//
