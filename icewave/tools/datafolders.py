@@ -76,6 +76,8 @@ def find_path(disk='Hublot24'):
             base = 'Z:/'+base
         if disk=='BicWin2024':
             base = '//192.168.1.70/Share/Data/'
+        if disk=='Hublot24':
+            base = 'K:/Share_hublot/Data/'
 
     if 'macOS' in ostype:
         base = '/Volumes/'+base
