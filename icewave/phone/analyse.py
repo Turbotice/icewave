@@ -49,6 +49,8 @@ def step3(folder):
     #           amplitude in a frequency band [f0/2,2*f0]
     #       agregate the results for each folder, save a summary csv file with the quantity of interest
     phonefiles = glob.glob(folder+'000*/*.pkl')
+    #os.path.join(os.path.curdir, 'file.name')
+    
     pprint(phonefiles)
 
     results={}
