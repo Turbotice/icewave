@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Thu Oct 17 18:04:03 2024
+
+@author: Banquise
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Wed Oct  2 12:25:04 2024
 
 @author: Banquise
@@ -12,35 +19,6 @@ import os
 
 import icewave.tools.datafolders as df
 
-<<<<<<< HEAD
-=======
-def projection_real_space(x,y,x_0,y_0,h,alpha_0,f):
-
-    # % Definition of x and y in real framework, camera sensor center is
-    # % taken as a reference 
-    # % Inputs : 
-    # % - x: array of x-coordinates in pixels
-    # % - y: array of y-coordinates in pixels
-    # % - x_0 : x-coordinate of camera sensor center
-    # % - y_0 : y-coordinate of camera sensor center
-    # % - h : drone altitude in meter (above sea level)
-    # % - alpha_0 : inclination angle of the camera, angle to the horizontal 
-    # % - f : camera focal length
-    
-    yreal = (y - y_0) * h / np.sin(alpha_0) / (f*np.sin(alpha_0) + (y - y_0) * np.cos(alpha_0) )
-    xreal = (x - x_0) * h / (f*np.sin(alpha_0) + (y - y_0) * np.cos(alpha_0) )
-
-    yreal = -yreal
-    return xreal,yreal
-
-
-
-
-# x3840 y2160
-# (x + 1)/2 #centre de la camera
-# pi/2
-# 2700
->>>>>>> origin/main
 
 
 
@@ -153,6 +131,8 @@ def extract_from_fr(date, drone, selection = True, disque = 'K') :
     
     return record
                     
+
+
 def save_record(date, drone, record, disque = 'K') :
     #save le record là où il y a les données
     base = df.find_path(disk='Hublot24')
