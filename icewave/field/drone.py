@@ -14,6 +14,8 @@ import argparse
 def gen_parser():    
     parser = argparse.ArgumentParser(description="Manipulate multi instruments data")
     parser.add_argument('-date', dest='date', type=str,default='0226',help='select date to process data')
+    parser.add_argument('-step', dest='step', type=int,default=1,help='select step. 1: get_records, 2:convert_flightrecords')
+
     #parser.add_argument('-step', dest='step', type=int,default=3,help='select Step to be performed')
 #    print(parser)   
     args = parser.parse_args()
@@ -28,10 +30,15 @@ def get_records(date):
     for key in srtfiles.keys():
         records['drones'][key]={}
         for i,srtfile in enumerate(srtfiles[key]):
-            print(i,srtfile)
-            name = srtfile.split('/')[-2]
+            name = srtfile.split('/')[-2]#.split('.')[0]
+            print(i,srtfile,name)
             record = get_flighrecord(srtfile,drone=key)
-            records['drones'][key][name]=record
+            record['name']=srtfile.split('/')[-1].split('.')[0]
+            if not name in records['drones'][key]:
+                records['drones'][key][name]=[record]
+            else:
+                records['drones'][key][name].append(record)
+    print(records['drones'].keys())
     return records
     
 def get_srtfiles(date):
@@ -154,7 +161,11 @@ def get_flighrecord(srtfile,step=100,drone='mesange'):
     return record
 
 def main(args):
-    convert_flightrecords(args.date)
+    if args.step==1:
+        get_records(args.date)
+    if args.step==2:
+        convert_flightrecords(args.date)
+#    convert_flightrecords(args.date)
     
 if __name__ =='__main__':
     args = gen_parser()
