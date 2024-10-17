@@ -147,13 +147,17 @@ def find_measure_interval(data,var='a',Dt=5,S0=1,display=False):
         if len(inds)>=2:
             inds1 = [True]+inds
             indices_cut = np.asarray(indices)[inds1]
-            i0 = np.argmax(np.diff(indices_cut))
-            imin = indices_cut[i0]+1
+            if len(indices_cut)>1:
+                i0 = np.argmax(np.diff(indices_cut))
+                imin = indices_cut[i0]+1
 
-            inds2 = inds+[True]
-            indices_cut = np.asarray(indices)[inds2]
-            i0 = np.argmax(np.diff(indices_cut))
-            imax = indices_cut[i0+1]-1
+                inds2 = inds+[True]
+                indices_cut = np.asarray(indices)[inds2]
+                i0 = np.argmax(np.diff(indices_cut))
+                imax = indices_cut[i0+1]-1
+            else:
+                imin = indices[0]+1
+                imax = indices[-1]-1
             data[var+'i0']=imin*n
             data[var+'i1']=imax*n
             data[var+'t0']=t[imin*n]
