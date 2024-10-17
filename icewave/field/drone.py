@@ -30,10 +30,15 @@ def get_records(date):
     for key in srtfiles.keys():
         records['drones'][key]={}
         for i,srtfile in enumerate(srtfiles[key]):
-            name = srtfile.split('/')[-1].split('.')[0]
+            name = srtfile.split('/')[-2]#.split('.')[0]
             print(i,srtfile,name)
             record = get_flighrecord(srtfile,drone=key)
-            records['drones'][key][name]=record
+            record['name']=srtfile.split('/')[-1].split('.')[0]
+            if not name in records['drones'][key]:
+                records['drones'][key][name]=[record]
+            else:
+                records['drones'][key][name].append(record)
+    print(records['drones'].keys())
     return records
     
 def get_srtfiles(date):
