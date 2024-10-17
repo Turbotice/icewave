@@ -25,6 +25,7 @@ def gen_parser():
 
 def get_records(date):
     srtfiles = get_srtfiles(date)
+    nbase = len(base)
     records = {}
     records['drones']={}
     for key in srtfiles.keys():
@@ -34,6 +35,7 @@ def get_records(date):
             print(i,srtfile,name)
             record = get_flighrecord(srtfile,drone=key)
             record['name']=srtfile.split('/')[-1].split('.')[0]
+            record['path']=srtfile[nbase:].split('.')[0]
             if not name in records['drones'][key]:
                 records['drones'][key][name]=[record]
             else:

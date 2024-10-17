@@ -15,17 +15,21 @@ base = df.find_path(disk='Hublot24')
 
 def get_records(date):
     files = glob.glob(base+date+'/boueeVague/*/mat/*.mat')#/*/*.srt')
-
+    nbase = len(base)
+    
     records = {}
     records['buoys'] = {}
     for filename in files:
         record,name = read_matfile(filename)
+        path = filename[base:]
         if record==None:
             continue
         if not name in records['buoys'].keys():
             records['buoys'][name] = {}
         key = os.path.basename(filename).split('.')[0]
         records['buoys'][name][key]=record
+        records['buoys'][name][key]['path']=path
+        
     return records
 
 def read_buoy_data(filename):

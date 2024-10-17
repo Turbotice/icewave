@@ -9,7 +9,7 @@ base = df.find_path(disk='Hublot24')
 
 def get_records(date,year='2024'):
     files = glob.glob(base+date+'/Geophones/DigiSolo*.txt')#/*/*.srt')
-
+    nbase = len(base)
     records = {}
     records['geophones'] = {}
     for filename in files:
