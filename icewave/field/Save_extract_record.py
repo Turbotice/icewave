@@ -109,11 +109,15 @@ def extract_from_fr(date, drone, selection = True, disque = 'K') :
     
     for folder in summary['drones'][drone].keys() :
         if folder in datas or selection == False :
+            record[folder] = {}
+            for j in range( len(summary['drones'][drone][folder])) :
             
-            t0 = min(summary['drones'][drone][folder]['time'])
-            tf = max(summary['drones'][drone][folder]['time'])
-            
-            record[folder] = extract_time_f_r(flight_record, t0, tf)
+                t0 = min(summary['drones'][drone][folder][j]['time'])
+                tf = max(summary['drones'][drone][folder][j]['time'])
+                
+                key_name = summary['drones'][drone][folder][j]['name']
+                
+                record[folder][key_name] = extract_time_f_r(flight_record, t0, tf)
                 
 
 
