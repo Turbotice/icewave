@@ -4,6 +4,8 @@ import h5py
 import numpy as np
 from pprint import pprint
 import os
+import datetime
+
 
 import icewave.tools.datafolders as df
 import icewave.tools.rw_data as rw_data
@@ -51,3 +53,13 @@ def read_matfile(filename):
     times = [str(int(hour))+':'+str(int(m))+':'+str(sec).replace('.','')[:2] for (hour,m,sec) in zip(hours,mins,secs)]
     record['time']=times
     return record,name 
+
+def get_time(buoy):
+    a = buoy['IMU']['UTC_TIME']
+    time_stamp = f"{int(a['YEAR'][0,0])}-{int(a['MONTH'][0,0])}-{int(a['DAY'][0,0])} {int(a['HOUR'][0,0])}:{int(a['MIN'][0,0])}:{int(a['SEC'][0,0])}.{int(a['NANOSEC'][0,0])}"
+    #time.struct_time(tm_year=a['YEAR'],tm_mon=a['MONTH'],tm_day=a['DAY'],tm_hour=a['HOUR'],tm_min=a['MIN'],tm_sec=a['SEC'])
+    t00, t01 = time_stamp.split(".")
+    date = datetime.datetime.strptime(t00.split(" UTC")[0], "%Y-%m-%d %H:%M:%S")
+    tbuoys = date.timestamp() + int(t01)/1000
+    ts = datetime.datetime.fromtimestamp(tbuoys)
+    return (tbuoys,ts)
