@@ -4,16 +4,16 @@
 #keys_a = ['ta','ax','ay','az']
 #keys_g = ['tg','gx','gy','gz']
 #keys_m = ['tm','mx','my','mz']
-import rw_pyphone as rw
-import timesync
-import load as load
+
+import icewave.phone.load as load
+import icewave.phone.rw_pyphone as rw
+import icewave.phone.timesync as timsync
 import argparse
 
 import numpy as np
 import glob
 import pylab as plt
 from pprint import pprint
-
 import os
 
 global BicWin2024_datas
@@ -138,9 +138,18 @@ def find_measure_interval(data,var='a',Dt=5,S0=1,display=False):
     Y = np.reshape(y[:N*n],(N,n))# cut the signal in pieces of n points (Dt time slots)
     T = np.reshape(t[:N*n],(N,n))
     S = np.std(Y,axis=1) # compute the std on these slots
+
     Smean = np.mean(Y,axis=1)
     if N>3:        
         indices = np.where(S<S0)[0]
+        inds = np.diff(indices)>1
+        inds = inds+[True]
+        print(inds)
+        indices_cut = np.asarray(indices)[inds]
+        i0 = np.argmax(np.diff(indices_cut))
+        imin = indices_cut[i0]
+        imax = indices_cut[i0+1]
+        
         if len(indices)>=2:
             data[var+'i0']=indices[1]*n
             data[var+'i1']=indices[-2]*n
@@ -158,6 +167,13 @@ def find_measure_interval(data,var='a',Dt=5,S0=1,display=False):
         data[var+'t1']=t[-1]
 
     if display:
+        plt.figure()
+        plt.plot(np.diff(indices))
+        plt.plot(indices_cut,np.ones(len(indices_cut))*1.1,'ro')
+
+        plt.ylim([0,3])
+#        plt.plot(indices,np.ones(len(indices)),'o')
+        
         fig,axs = plt.subplots(figsize=(10,6),nrows=2,sharex=True)#,nrows=3,sharex=True)
         axs[0].plot(t,y,'k')
         axs[0].errorbar(T[:,int(n/2)],Smean,S,marker='o',color='r')

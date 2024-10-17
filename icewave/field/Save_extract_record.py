@@ -22,8 +22,6 @@ import os
 
 import icewave.tools.datafolders as df
 
-
-
 def projection_real_space(x,y,x_0,y_0,h,alpha_0,f):
 
     # % Definition of x and y in real framework, camera sensor center is
@@ -163,8 +161,6 @@ def extract_from_fr(date, drone, liste = True, selection = True, disque = 'K') :
                             record[j][key] = np.append(record[j][key], np.array(flight_record[key])[indices])       
     return record
                     
-
-
 def save_record(date, drone, record, disque = 'K') :
     #save le record là où il y a les données
     base = df.find_path(disk='Hublot24')

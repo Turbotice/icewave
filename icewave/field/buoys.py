@@ -26,10 +26,15 @@ def get_records(date):
         records['buoys'][name][key]=record
     return records
 
-def read_matfile(filename):
+def read_buoy_data(filename):
     print(filename)
-    name = filename.split('/')[-3]
     buoy = h5py.File(filename)
+    return buoy
+
+def read_matfile(filename):
+    name = filename.split('/')[-3]
+    buoy = read_buoy_data(filename)
+    
     record={}
         #location
     try:
@@ -45,6 +50,4 @@ def read_matfile(filename):
     secs = buoy['IMU']['UTC_TIME']['SEC'][:][0]#.keys()
     times = [str(int(hour))+':'+str(int(m))+':'+str(sec).replace('.','')[:2] for (hour,m,sec) in zip(hours,mins,secs)]
     record['time']=times
-
-
     return record,name 
