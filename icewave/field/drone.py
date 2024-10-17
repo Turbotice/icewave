@@ -14,6 +14,8 @@ import argparse
 def gen_parser():    
     parser = argparse.ArgumentParser(description="Manipulate multi instruments data")
     parser.add_argument('-date', dest='date', type=str,default='0226',help='select date to process data')
+    parser.add_argument('-step', dest='step', type=int,default=1,help='select step. 1: get_records, 2:convert_flightrecords')
+
     #parser.add_argument('-step', dest='step', type=int,default=3,help='select Step to be performed')
 #    print(parser)   
     args = parser.parse_args()
@@ -155,7 +157,11 @@ def get_flighrecord(srtfile,step=100,drone='mesange'):
     return record
 
 def main(args):
-    convert_flightrecords(args.date)
+    if args.step==1:
+        get_records(date)
+    if args.step==2:
+        convert_flightrecords(args.date)
+#    convert_flightrecords(args.date)
     
 if __name__ =='__main__':
     args = gen_parser()
