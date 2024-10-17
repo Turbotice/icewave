@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Thu Oct 17 18:04:03 2024
+
+@author: Banquise
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Wed Oct  2 12:25:04 2024
 
 @author: Banquise
@@ -7,47 +14,11 @@ Created on Wed Oct  2 12:25:04 2024
 import pandas
 import pickle 
 import numpy as np
-import matplotlib.pyplot as plt
-from skimage import filters
-from skimage import feature
-from scipy.signal import convolve2d
-from scipy.signal import savgol_filter, gaussian
-from scipy.signal import medfilt
-from scipy.signal import find_peaks
-from scipy.optimize import curve_fit
-from scipy import stats
-import scipy.fft as fft
 import os
 
 
 import icewave.tools.datafolders as df
 
-def projection_real_space(x,y,x_0,y_0,h,alpha_0,f):
-
-    # % Definition of x and y in real framework, camera sensor center is
-    # % taken as a reference 
-    # % Inputs : 
-    # % - x: array of x-coordinates in pixels
-    # % - y: array of y-coordinates in pixels
-    # % - x_0 : x-coordinate of camera sensor center
-    # % - y_0 : y-coordinate of camera sensor center
-    # % - h : drone altitude in meter (above sea level)
-    # % - alpha_0 : inclination angle of the camera, angle to the horizontal 
-    # % - f : camera focal length
-    
-    yreal = (y - y_0) * h / np.sin(alpha_0) / (f*np.sin(alpha_0) + (y - y_0) * np.cos(alpha_0) )
-    xreal = (x - x_0) * h / (f*np.sin(alpha_0) + (y - y_0) * np.cos(alpha_0) )
-
-    yreal = -yreal
-    return xreal,yreal
-
-
-
-
-# x3840 y2160
-# (x + 1)/2 #centre de la camera
-# pi/2
-# 2700
 
 
 
@@ -68,7 +39,10 @@ def save_dico(dico, path):
 
 def PM_to_normal(time_fr):
     if time_fr.split()[-1] == 'PM' :
-        hour = str(int(time_fr.split(':')[0]) + 12)
+        if int(time_fr.split(':')[0]) > 11 :
+            hour = str(int(time_fr.split(':')[0]))
+        else :
+            hour = str(int(time_fr.split(':')[0]) + 12)
         hh = ''
         for i in time_fr.split(':')[1:] :
             hh += ':' +  i
@@ -87,80 +61,78 @@ def create_timeline(flight_record) :
     return timeline
 
 
-def extract_from_fr(date, drone, liste = True, selection = True, disque = 'K') :
+
+def extract_time_f_r(flight_record, t0, tf) :
+    """
+    
+
+    Parameters
+    ----------
+    flight_record : Dict
+        Flight record 
+    t0 : "12:46:22"
+        DESCRIPTION.
+    tf : "12:48:22"
+        DESCRIPTION.
+
+    Returns
+    -------
+    new_fr : dict
+        flight record between t0 and tf.
+
+    """
+    timeline = np.array(create_timeline(flight_record)) # cree une timeline de tous les temps existants avec le bon format (pas avec les PM)
+    new_fr = {}
+    for key in flight_record.keys() :
+        new_fr[key] = []
+    for i in range (len(timeline)) :
+        if timeline[i] <= tf and timeline[i] >= t0 :
+            for key in flight_record.keys() :
+                new_fr[key] += [flight_record[key][i]]
+            
+    return new_fr
+    
+
+
+def extract_from_fr(date, drone, selection = True, disque = 'K') :
     #avec une date et un drone, on cree record avec toutes les valeurs interessantes et au temps d'enregistrement des cameras depuis les flight record
-    #base = disque + ':\Share_hublot
+    #base = disque + ':/Share_hublot
     base = df.find_path(disk='Hublot24')
 
     path_SP = base + date +'/Summary/records_' + date + '.pkl'
     path_fr = base + date +'/Drones/'  + drone+'/flightrecords/Flightrecord_dict.pkl'    
     flight_record = open_dico(path_fr)
     summary = open_dico(path_SP)
-
     path_selection = base+'/Summary/' + date + '_path_drone.txt'
     select = pandas.read_csv(path_selection, header= None)
     select = 'K' + np.asarray(select)[:,0]
     datas = []
     for i in select :
-        # if i.split('\\')[-2] == drone : #on garde les noms de dossiers du bon drone, ATTENTION  écrire les drones en minuscule
+        # if i.split('//')[-2] == drone : #on garde les noms de dossiers du bon drone, ATTENTION  écrire les drones en minuscule
         datas += [i.split('/')[-1]]
     
-
-    timeline = np.array(create_timeline(flight_record)) # cree une timeline de tous les temps existants avec le bon format (pas avec les PM)
-    
-    keys_date = ['CUSTOM.date [local]', 'CUSTOM.updateTime [local]']
-    keys_bool = ['CAMERA.isPhoto', 'CAMERA.isVideo']
-    #, 'OSD.flyTime', 'OSD.flyTime [s]', 'OSD.latitude', 'OSD.longitude', 'OSD.height [ft]']
-    keys1 = ['OSD.altitude [ft]', 'OSD.mileage [ft]', 'OSD.hSpeed [MPH]', 'OSD.xSpeed [MPH]', 'OSD.ySpeed [MPH]', 'OSD.zSpeed [MPH]']
-    keys2 = ['OSD.pitch', 'OSD.roll', 'OSD.yaw', 'OSD.yaw [360]', 'OSD.gpsNum']
-    keys3 = ['GIMBAL.pitch', 'GIMBAL.roll', 'GIMBAL.yaw', 'GIMBAL.yaw [360]']            
-    keys_float = keys1+keys2+keys3
     
     record = {}
     
-    
-    
-    for j in summary['drones'][drone].keys() :
-        if j in datas or selection == False :
-            record[j] = {}
-            if liste : # On peut ajouter des keys dans les keys ou enlever j (nom du dossier),  rajouter le path pour sauvegarder au bon endroit
-                for key in keys_float:
-                    record[j][key] = []
-                for key in keys_date:
-                    record[j][key] = []
-                for key in keys_bool:
-                    record[j][key] = []
-                    
-            else : #Fait tout en array
-                for key in keys_float:
-                    record[j][key] = np.array([])
-                for key in keys_date:
-                    record[j][key] = np.array([])
-                for key in keys_bool:
-                    record[j][key] = np.array([])
-            for k in summary['drones'][drone][j]['time'] :
+    for folder in summary['drones'][drone].keys() :
+        if folder in datas or selection == False :
+            record[folder] = {}
+            for j in range( len(summary['drones'][drone][folder])) :
+            
+                t0 = min(summary['drones'][drone][folder][j]['time'])
+                tf = max(summary['drones'][drone][folder][j]['time'])
+                
+                key_name = summary['drones'][drone][folder][j]['name']
+                
+                record[folder][key_name] = extract_time_f_r(flight_record, t0, tf)
+                
 
-                if k in timeline : #si le temps du summary est dans la timeline, on cherche les indices et on garde toutes les keys interessantes
-                    indices = [np.where(timeline == k)[0]]
+
     
-                    if liste :
-                        
-                        for key in keys_float:
-                            record[j][key] += np.array(flight_record[key])[indices].tolist()[0]
-                        for key in keys_date:
-                            record[j][key] += np.array(flight_record[key])[indices].tolist()[0]
-                        for key in keys_bool:
-                            record[j][key] += np.array(flight_record[key])[indices].tolist()[0]
-                    
-                    else : #Fait tout en array
-                        for key in keys_float:
-                            record[j][key] = np.append(record[j][key], np.array(flight_record[key])[indices])
-                        for key in keys_date:
-                            record[j][key] = np.append(record[j][key], np.array(flight_record[key])[indices])
-                        for key in keys_bool:
-                            record[j][key] = np.append(record[j][key], np.array(flight_record[key])[indices])       
     return record
                     
+
+
 def save_record(date, drone, record, disque = 'K') :
     #save le record là où il y a les données
     base = df.find_path(disk='Hublot24')
@@ -170,16 +142,12 @@ def save_record(date, drone, record, disque = 'K') :
         save_dico(record[key], path )
         print('saved')
         
-def MAIN(date, drone, liste = True, selection = True, disque = 'K', save = False) :
-    record = extract_from_fr(date, drone, liste = liste, selection = selection, disque = disque)
+def MAIN(date, drone, selection = True, disque = 'K', save = False) :
+    record = extract_from_fr(date, drone, selection = selection, disque = disque)
     
     if save :
         save_record(date, drone, record, disque = disque)
         
     return record
-
-
-
-
 
 
