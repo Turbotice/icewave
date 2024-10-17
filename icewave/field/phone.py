@@ -3,6 +3,7 @@ import icewave.tools.datafolders as df
 import icewave.tools.rw_data as rw_data
 import glob
 from pprint import pprint
+import datetime
 
 global base
 base = df.find_path(disk='Hublot24')
@@ -62,4 +63,15 @@ def read_summary(filename):
         records[phone]['params']= phonedict[phone]
         records[phone]['name']=phonedict[phone]['name']
     return records
-    
+
+def get_time_utc(t0):
+    tphone,ts = get_time(t0)
+    tphone = tphone
+    return tphone
+
+def get_time(t0):
+    t00, t01 = t0.split(" UTC")[0].split(".")
+    date = datetime.datetime.strptime(t00.split(" UTC")[0], "%Y-%m-%d %H:%M:%S")
+    tphone = date.timestamp() + int(t01)/1000-3600
+    ts = datetime.datetime.fromtimestamp(tphone)
+    return tphone,ts
