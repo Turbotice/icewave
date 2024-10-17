@@ -10,8 +10,6 @@ base = df.find_path(disk='Hublot24')
 
 def get_records(date):
     files = glob.glob(base+date+'/Telephones/*/averages_Summary.csv')
-    nbase = len(base)
-
     records = {}
     records['phones'] = {}
     for filename in files:
@@ -21,7 +19,7 @@ def get_records(date):
                 records['phones'][name] = {}
             key = record[name]['name']
             records['phones'][name][key]=record[name]
-            records['phones'][name][key]['path']=filename[nbase:]
+            #records['phones'][name][key]['path']=filename[nbase:]
     return records
 
 def read_summary(filename):

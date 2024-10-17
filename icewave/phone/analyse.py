@@ -8,6 +8,8 @@
 import icewave.phone.load as load
 import icewave.phone.rw_pyphone as rw
 import icewave.phone.timesync as timsync
+
+import icewave.tools.datafolders as df
 import argparse
 
 import numpy as np
@@ -56,17 +58,23 @@ def step3(folder):
     results={}
     name = folder.split('/')[-2]
     print(name)
+
+    base = df.find_path()
+    nbase = len(base)
+    
     for filename in phonefiles:
         with open(filename, 'rb') as handle:
             data = pickle.load(handle)
         phone = int(filename.split('/')[-2].split('_')[1])
-        print(data.keys(),phone)
+        #print(data.keys(),phone)
         n = len(data['ta'])
-        print(n)
+        path = filename[nbase:]
+        print(name,path)
         if n>1000:            
             result = averages(data)
             results[phone] = result
             results[phone]['name'] = name
+            results[phone]['path'] = path
     rw.write_csv(results,folder,title='averages')
 
     #save results in .csv format
@@ -486,7 +494,7 @@ def time_spectrum(t,y):
 
 def main(args):
     date = args.date
-    base = '/media/turbots/Hublot24/Share_hublot/Data/'
+    base = df.find_path()#'/media/turbots/Hublot24/Share_hublot/Data/'
     #date = '0221'
     datafolder = base+date+'/Telephones/'
     folders1 = glob.glob(datafolder+'Bic24*/')

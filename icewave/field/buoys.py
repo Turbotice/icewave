@@ -32,7 +32,9 @@ def get_records(date):
         
     return records
 
-def read_buoy_data(filename):
+def load_data(record):
+    base = df.find_path()
+    filename = base + record['path']
     print(filename)
     buoy = h5py.File(filename)
     return buoy
