@@ -41,10 +41,10 @@ import csv
 
 #%% Set parameters 
 year = '2024'
-date = '0918' #date format, 'mmdd'
-acqu_numb = '0001' #acquisition number 
+date = '0306' #date format, 'mmdd'
+acqu_numb = '0004' #acquisition number 
 
-path2data = os.path.join('C:/Users/sebas/Desktop/Amundsen_RA_2024/Data/',year,date,'Geophones/')
+path2data = os.path.join('U:/Share_hublot/Data/',date,'Geophones/')
 
 fig_folder = path2data + 'Figures/'  # folder where figures are saved 
 if not os.path.isdir(fig_folder):
@@ -434,7 +434,7 @@ plt.savefig(figname + '.png',dpi = img_quality,bbox_inches = 'tight')
 #%%----------------------- PLOTTING SELECTED CHANNEL FOR WHOLE RECORDING ------------------ 
 ##############################################################################################
  
-channel =  1 #0 for E, 1 for N, 2 for Z. 
+channel =  2 #0 for E, 1 for N, 2 for Z. 
 
 # selected indices of the corresponding channel
 # seismic_data_G16 = seismic_data_streams[45:]
