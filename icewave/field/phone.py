@@ -62,6 +62,7 @@ def read_summary(filename):
         records[phone]['longitude']= phonedict[phone]['lon_mean']
         records[phone]['params']= phonedict[phone]
         records[phone]['name']=phonedict[phone]['name']
+        records[phone]['path']=phonedict[phone]['path']
     return records
 
 def get_time_utc(t0):
