@@ -158,7 +158,7 @@ def get_flighrecord(srtfile,step=100,drone='mesange'):
 
 def main(args):
     if args.step==1:
-        get_records(date)
+        get_records(args.date)
     if args.step==2:
         convert_flightrecords(args.date)
 #    convert_flightrecords(args.date)
