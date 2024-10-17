@@ -21,7 +21,7 @@ def get_records(date):
     records['buoys'] = {}
     for filename in files:
         record,name = read_matfile(filename)
-        path = filename[base:]
+        path = filename[nbase:]
         if record==None:
             continue
         if not name in records['buoys'].keys():
