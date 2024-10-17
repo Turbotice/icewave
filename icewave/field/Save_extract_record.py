@@ -96,7 +96,6 @@ def extract_from_fr(date, drone, selection = True, disque = 'K') :
     path_fr = base + date +'/Drones/'  + drone+'/flightrecords/Flightrecord_dict.pkl'    
     flight_record = open_dico(path_fr)
     summary = open_dico(path_SP)
-
     path_selection = base+'/Summary/' + date + '_path_drone.txt'
     select = pandas.read_csv(path_selection, header= None)
     select = 'K' + np.asarray(select)[:,0]
