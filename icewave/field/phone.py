@@ -22,6 +22,12 @@ def get_records(date):
             #records['phones'][name][key]['path']=filename[nbase:]
     return records
 
+def load_data(record):
+    base = df.find_path()
+    filename = base + record['path']
+    data = rw_data.load_pkl(filename)
+    return data
+    
 def read_summary(filename):
     print(filename)
     data_phone = rw_data.read_csv(filename)

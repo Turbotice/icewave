@@ -7,7 +7,7 @@
 
 import icewave.phone.load as load
 import icewave.phone.rw_pyphone as rw
-import icewave.phone.timesync as timsync
+import icewave.phone.timesync as timesync
 
 import icewave.tools.datafolders as df
 import argparse

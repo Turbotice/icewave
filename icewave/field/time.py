@@ -12,10 +12,16 @@ def gps_get_times(gpx):
         Times.append(gps_time(waypoint))
     return Times
 
+def convert_time(t):
+    h,m,s = t.split(':')
+    return int(h)*3600+int(m)*60+int(s)
+
 def today_time(times):
     t0 = times[0]
     tstr = str(datetime.datetime.fromtimestamp(t0))
     tref = tstr.split(' ')[0]+' 00:00:00'
+
+    print(tref)
     tref = datetime.datetime.strptime(tref, '%Y-%m-%d %H:%M:%S')
 
     tdtimes = []
@@ -24,9 +30,7 @@ def today_time(times):
         tdtimes.append((t - tref).total_seconds())
     return tdtimes
 
-def display_time(times):
-    times = today_time(times)
-    
+def display_time(times):    
     timestamps=[]
     for t in times:
         hour = int(t/3600)
