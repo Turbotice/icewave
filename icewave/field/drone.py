@@ -56,6 +56,16 @@ def get_srtfiles(date):
             print(f"No data for {key} on {date}")
     return srtfiles
 
+def get_mp4files(date):
+    import cv2
+    import os
+
+    cam = cv2.VideoCapture(filename)
+    ret,frame = cam.read()
+    imagefile = filename.split('.')[0]
+    cv2.imwrite(imagefile, frame) # Save the image
+   
+
 def convert_flightrecords(date):
     csvfiles = get_csvfiles(date)
     records={}
