@@ -64,7 +64,7 @@ def get_mp4files(date):
     for key in drones:
         mp4files = glob.glob(base+date+'/Drones/'+key+'/*/*.MP4')#/*/*.srt')
         for filename in mp4files:
-            print(filename.split('/')[-2])
+            print(key,filename.split('/')[-2])
             cam = cv2.VideoCapture(filename)
             ret,frame = cam.read()
             imagefile = filename.split('.')[0]+'_exemple.tiff'
