@@ -59,12 +59,15 @@ def get_srtfiles(date):
 def get_mp4files(date):
     import cv2
     import os
+    key = 'mesange'
+    mp4files = glob.glob(base+date+'/Drones/'+key+'/*/*.MP4')#/*/*.srt')
 
-    cam = cv2.VideoCapture(filename)
-    ret,frame = cam.read()
-    imagefile = filename.split('.')[0]
-    cv2.imwrite(imagefile, frame) # Save the image
-   
+    for filename in mp4files[:1]:
+        print(filename)
+        cam = cv2.VideoCapture(filename)
+        ret,frame = cam.read()
+        imagefile = filename.split('.')[0]+'_exemple.tiff'
+        cv2.imwrite(imagefile, frame) # Save the image
 
 def convert_flightrecords(date):
     csvfiles = get_csvfiles(date)
@@ -177,6 +180,8 @@ def main(args):
         get_records(args.date)
     if args.step==2:
         convert_flightrecords(args.date)
+    if args.step==3:
+        get_mp4files(args.date)
 #    convert_flightrecords(args.date)
     
 if __name__ =='__main__':
