@@ -62,12 +62,15 @@ def get_mp4files(date):
     key = 'mesange'
     mp4files = glob.glob(base+date+'/Drones/'+key+'/*/*.MP4')#/*/*.srt')
 
-    for filename in mp4files[:1]:
-        print(filename)
-        cam = cv2.VideoCapture(filename)
-        ret,frame = cam.read()
-        imagefile = filename.split('.')[0]+'_exemple.tiff'
-        cv2.imwrite(imagefile, frame) # Save the image
+    for key in drones:
+        for filename in mp4files:
+            print(filename.split('/')[-2])
+            cam = cv2.VideoCapture(filename)
+            ret,frame = cam.read()
+            imagefile = filename.split('.')[0]+'_exemple.tiff'
+
+            print(f"Save image : {imagefile.split('/')[-1]}")
+            cv2.imwrite(imagefile, frame) # Save the image
 
 def convert_flightrecords(date):
     csvfiles = get_csvfiles(date)
