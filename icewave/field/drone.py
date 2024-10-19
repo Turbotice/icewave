@@ -9,6 +9,8 @@ import os
 
 global base
 base = df.find_path(disk='Hublot24')
+global drones
+drones = ['mesange','Bernache','Fulmar']
 
 import argparse
 def gen_parser():    
@@ -46,7 +48,6 @@ def get_records(date):
 def get_srtfiles(date):
     srtfiles = {}
     print(base)
-    drones = ['mesange','Bernache','Fulmar']
     for key in drones:
         srt = glob.glob(base+date+'/Drones/'+key+'/*/*.SRT')#/*/*.srt')
         pprint(srt)
@@ -59,10 +60,9 @@ def get_srtfiles(date):
 def get_mp4files(date):
     import cv2
     import os
-    key = 'mesange'
-    mp4files = glob.glob(base+date+'/Drones/'+key+'/*/*.MP4')#/*/*.srt')
 
     for key in drones:
+        mp4files = glob.glob(base+date+'/Drones/'+key+'/*/*.MP4')#/*/*.srt')
         for filename in mp4files:
             print(filename.split('/')[-2])
             cam = cv2.VideoCapture(filename)
