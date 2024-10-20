@@ -18,7 +18,11 @@ def projection_real_space(x,y,x0,y0,h,alpha_0,focale):
         - y0 : y-coordinate of camera sensor center
         - h : drone altitude in meter (above sea level)
         - alpha_0 : inclination angle of the camera, angle to the horizontal (rad) 
-        - focale : camera focal length (pixels) """
+        - focale : camera focal length (pixels)
+        Outputs :
+        - xreal : array of x-coordinates of the positions to the center of the image (in meter)
+        - yreal : array of y-coordinates of the positions to the center of the image (in meter)
+        """
 
     yreal = (y - y0)*h/np.sin(alpha_0)/(focale*np.sin(alpha_0) + (y - y0)*np.cos(alpha_0))
     xreal = (x - x0)*h/(focale*np.sin(alpha_0) + (y - y0)*np.cos(alpha_0))
@@ -48,7 +52,7 @@ def get_FOV_vertices(Lx,Ly,h,alpha_0,focale):
     y0 = Ly/2
 
     # get pixels associated to vertices 
-    vertices_pix = np.array([[0 , Ly], [0 , 0], [Lx, Ly], [Lx , 0 ]], dtype = np.float64)
+    vertices_pix = np.array([[0 , Ly], [0 , 0],[Lx , 0 ], [Lx, Ly]], dtype = np.float64)
     vertices_pix = np.tile(vertices_pix,(np.size(h),1,1))
     vertices_pix = np.transpose(vertices_pix,(1,2,0))
     vertices_real = np.zeros((4,2,np.size(h)))

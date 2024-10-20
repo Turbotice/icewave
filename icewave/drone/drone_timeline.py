@@ -6,7 +6,6 @@ Created on Fri Feb 16 11:28:05 2024
 """
 
 import numpy as np 
-import pandas as pd
 import csv
 import glob
 import os 
@@ -49,7 +48,20 @@ def convert_time(w):
     
     f = h + m + s + millis
     
-    return f 
+    return f
+
+def to_UTC(string,h0=-1):
+    #print("Convert flightrecord time in UTC")
+    if string[-2:]=='PM':
+        h,m,s = string.split(' PM')[0].split(':')
+        return (int(h)+h0+12)*3600+int(m)*60+float(s)
+    elif string[-2:]=='AM':
+        h,m,s = string.split(' AM')[0].split(':')
+        return (int(h)+h0)*3600+int(m)*60+float(s)
+    else:
+        h,m,s = string.split(':')
+        return (int(h)+h0)*3600+int(m)*60+float(s)
+
 
 def convert_UTC(date,t):
     
@@ -131,55 +143,57 @@ def get_timeline_row(data,idx,ref,objet,comments,facq):
 #%%%%% MAIN %%%%%
 #########################################
 
-path = '//192.168.1.70/Share/Data/0211/Drones/mesange/'
-folder = path + 'flightrecords/'
-filename = folder + 'DJIFlightRecord_2024-02-11_[21-28-11].csv'
+def MAIN():
+    import pandas as pd
+    path = '//192.168.1.70/Share/Data/0211/Drones/mesange/'
+    folder = path + 'flightrecords/'
+    filename = folder + 'DJIFlightRecord_2024-02-11_[21-28-11].csv'
 
-print(filename)
-test = os.path.isfile(filename)
-print(test)
+    print(filename)
+    test = os.path.isfile(filename)
+    print(test)
 
-#%%
-data = pd.read_csv(filename,header = 1, low_memory = False)
+    #%%
+    data = pd.read_csv(filename,header = 1, low_memory = False)
 
-# detect beginning of the movie
-mask = np.where(data['CAMERA.isVideo'] == 1)[0]
-idx_start = np.min(mask)
-#%%
-# detect end of the movie 
+    # detect beginning of the movie
+    mask = np.where(data['CAMERA.isVideo'] == 1)[0]
+    idx_start = np.min(mask)
+    #%%
+    # detect end of the movie 
 
-idx_end = idx_start
-cam_bool = data['CAMERA.isVideo'][idx_end]
-
-while cam_bool :
-    idx_end += 1
+    idx_end = idx_start
     cam_bool = data['CAMERA.isVideo'][idx_end]
 
-#%%
-idx_start = 950
-idx_end = 5801
-indices = np.array([idx_start,idx_end])
+    while cam_bool :
+        idx_end += 1
+        cam_bool = data['CAMERA.isVideo'][idx_end]
 
-# Collect data associated to the movie 
-ref = 'D002'
-objet = 'Stereo_001'
-comments = 'FR_[21-28-11]'
-facq = 30
-line_csv = get_timeline_row(data,indices,ref,objet,comments,facq)
+    #%%
+    idx_start = 950
+    idx_end = 5801
+    indices = np.array([idx_start,idx_end])
 
-# Generate headers for the csv file 
-header_0 = ['Instrument','','Temps','','Geometrie','','','Position','','','Texte','Variables','']
-header_1 = ['Index','Objet','T_0','T_F','X','Y','Z','Latitude','Longitude','Elevation','Commentaire','Facq','Theta']
+    # Collect data associated to the movie 
+    ref = 'D002'
+    objet = 'Stereo_001'
+    comments = 'FR_[21-28-11]'
+    facq = 30
+    line_csv = get_timeline_row(data,indices,ref,objet,comments,facq)
 
-# Create the csv file and fill it 
-csvname = 'Timeline_Drone_mesange_stereo001.csv'
-fullname = path + csvname
+    # Generate headers for the csv file 
+    header_0 = ['Instrument','','Temps','','Geometrie','','','Position','','','Texte','Variables','']
+    header_1 = ['Index','Objet','T_0','T_F','X','Y','Z','Latitude','Longitude','Elevation','Commentaire','Facq','Theta']
 
-with open(fullname, 'w', newline="") as file:
-    csvwriter = csv.writer(file) # 1. create a csvwriter object
-    csvwriter.writerow(header_0) # 2. write the header
-    csvwriter.writerow(header_1) # 3. write second header
-    csvwriter.writerow(line_csv) # 4. write data
+    # Create the csv file and fill it 
+    csvname = 'Timeline_Drone_mesange_stereo001.csv'
+    fullname = path + csvname
+
+    with open(fullname, 'w', newline="") as file:
+        csvwriter = csv.writer(file) # 1. create a csvwriter object
+        csvwriter.writerow(header_0) # 2. write the header
+        csvwriter.writerow(header_1) # 3. write second header
+        csvwriter.writerow(line_csv) # 4. write data
 
 
 

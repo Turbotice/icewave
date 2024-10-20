@@ -29,6 +29,8 @@ tz_dic['Bernache'] = pytz.timezone('America/Montreal')
 tz_dic['mesange'] = pytz.timezone('Europe/Paris')
 
 feet2meter = 0.3048
+
+global focale
 focale = 2700
 Lx = 3840
 Ly = 2160
