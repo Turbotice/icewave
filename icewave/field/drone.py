@@ -1,11 +1,12 @@
 
-import icewave.tools.datafolders as df
-import icewave.tools.rw_data as rw_data
 import glob
 from pprint import pprint
-
 import numpy as np
 import os
+
+import icewave.tools.datafolders as df
+import icewave.tools.rw_data as rw_data
+import icewave.drone.drone_timeline as timeline
 
 global base
 base = df.find_path(disk='Hublot24')
@@ -87,6 +88,12 @@ def convert_flightrecords(date):
                 for key in records['drones'][drone].keys():
                      records['drones'][drone][key]=records['drones'][drone][key]+record[key]
         savedict = records['drones'][drone]
+        times = np.asarray([timeline.to_UTC(s,h0=0) for s in savedict['CUSTOM.updateTime [local]']])
+        indices = np.argsort(times)
+    
+        for key in record.keys():
+            savedict[key]=np.asarray(savedict[key])[indices]    
+
         print('save pickle')
         filename = os.path.dirname(csvfile)+'/Flightrecord_dict.pkl'
         rw_data.write_pkl(filename,savedict)
