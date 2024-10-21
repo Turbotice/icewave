@@ -121,11 +121,11 @@ def parse_csv_flightrecord(csvfile,drone='mesange'):
     record = {}
     keys_date = ['CUSTOM.date [local]', 'CUSTOM.updateTime [local]']
     keys_bool = ['CAMERA.isPhoto', 'CAMERA.isVideo']
-    #, 'OSD.flyTime', 'OSD.flyTime [s]', 'OSD.latitude', 'OSD.longitude', 'OSD.height [ft]']
+    keys0 = ['OSD.flyTime', 'OSD.flyTime [s]', 'OSD.latitude', 'OSD.longitude', 'OSD.height [ft]']
     keys1 = ['OSD.altitude [ft]', 'OSD.mileage [ft]', 'OSD.hSpeed [MPH]', 'OSD.xSpeed [MPH]', 'OSD.ySpeed [MPH]', 'OSD.zSpeed [MPH]']
     keys2 = ['OSD.pitch', 'OSD.roll', 'OSD.yaw', 'OSD.yaw [360]', 'OSD.gpsNum']
     keys3 = ['GIMBAL.pitch', 'GIMBAL.roll', 'GIMBAL.yaw', 'GIMBAL.yaw [360]']            
-    keys_float = keys1+keys2+keys3
+    keys_float = keys0+keys1+keys2+keys3
 
     record = {}
     for key in keys_float:
