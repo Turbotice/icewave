@@ -36,6 +36,10 @@ def display_time(times):
         hour = int(t/3600)
         minute = int((t-hour*3600)/60)
         sec = int(t-hour*3600-minute*60)
+        if hour<10:
+            hour = '0'+str(hour)
+        if minute<10:
+            minute = '0'+str(minute)
         if sec<10:
             sec = '0'+str(sec)
         timestamps.append(f'{hour}:{minute}:{sec}')
