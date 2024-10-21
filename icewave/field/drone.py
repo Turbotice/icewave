@@ -119,9 +119,9 @@ def parse_csv_flightrecord(csvfile,drone='mesange'):
     table = rw_data.read_csv(csvfile)
     data = rw_data.csv2dict(table,headerindex=1)
     record = {}
-    keys_date = ['CUSTOM.date [local]', 'CUSTOM.updateTime [local]']
+    keys_date = ['CUSTOM.date [local]', 'CUSTOM.updateTime [local]','OSD.flyTime', 'OSD.flyTime [s]']
     keys_bool = ['CAMERA.isPhoto', 'CAMERA.isVideo']
-    keys0 = ['OSD.flyTime', 'OSD.flyTime [s]', 'OSD.latitude', 'OSD.longitude', 'OSD.height [ft]']
+    keys0 = ['OSD.latitude', 'OSD.longitude', 'OSD.height [ft]']
     keys1 = ['OSD.altitude [ft]', 'OSD.mileage [ft]', 'OSD.hSpeed [MPH]', 'OSD.xSpeed [MPH]', 'OSD.ySpeed [MPH]', 'OSD.zSpeed [MPH]']
     keys2 = ['OSD.pitch', 'OSD.roll', 'OSD.yaw', 'OSD.yaw [360]', 'OSD.gpsNum']
     keys3 = ['GIMBAL.pitch', 'GIMBAL.roll', 'GIMBAL.yaw', 'GIMBAL.yaw [360]']            
