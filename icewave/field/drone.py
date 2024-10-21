@@ -86,7 +86,7 @@ def convert_flightrecords(date):
                 records['drones'][drone]=record
             else:
                 for key in records['drones'][drone].keys():
-                     records['drones'][drone][key]=records['drones'][drone][key]+record[key]
+                     records['drones'][drone][key]=list(records['drones'][drone][key])+list(record[key])
         savedict = records['drones'][drone]
         times = np.asarray([timeline.to_UTC(s,h0=0) for s in savedict['CUSTOM.updateTime [local]']])
         indices = np.argsort(times)
