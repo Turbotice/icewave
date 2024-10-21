@@ -149,7 +149,11 @@ def get_flighrecord(srtfile,step=100,drone='mesange'):
     record = {}
     for key in ['record_time','time','date','frame','latitude','longitude','params']:
         record[key]=[]
-    for i in range(0,n-1,step):
+        
+    indlist = list(range(0,n-1,step))
+    if indlist[-1]<n-2:
+        indlist=indlist+[n-2]
+    for i in indlist:
         #SRT Files contain 6 rows per timestamp
         event = data[i*6:(i+1)*6]
         if int(event[0][0])==i+1:
