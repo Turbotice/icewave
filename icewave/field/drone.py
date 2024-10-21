@@ -151,10 +151,10 @@ def cut_flightrecord(record,flight):# at that stage, all files should already by
     print(fieldtime.display_time([tinit,tend]))#,tend)
     #print(flight['CUSTOM.updateTime [local]'][idx])
 
-    record_p = {}
-    for key in record.keys():
-        record_p[key]=record[key][iinit:iend]
-    return record_p
+    flight_p = {}
+    for key in flight.keys():
+        flight_p[key]=flight[key][iinit:iend]
+    return flight_p
     
 
 def get_flighrecord(srtfile,step=100,drone='mesange'):
