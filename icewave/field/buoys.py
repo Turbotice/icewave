@@ -49,8 +49,8 @@ def read_matfile(filename):
     record={}
         #location
     try:
-        record['latitude']=np.mean(buoy['IMU']['GPS1_POS']['LAT'][0])#.keys()
-        record['longitude']=np.mean(buoy['IMU']['GPS1_POS']['LONG'][0])
+        record['latitude']= [np.mean(buoy['IMU']['GPS1_POS']['LAT'][0])]#.keys()
+        record['longitude']= [np.mean(buoy['IMU']['GPS1_POS']['LONG'][0])]
     except:
         print(buoy['IMU'].keys())
         return None,None
