@@ -31,10 +31,10 @@ def get_records(date,year='2024'):
     return records
 
 
-def get_record_fromgpx(gpx,folder)
+def get_record_fromgpx(gpx,folder):
     record = tables.dict_from_gpx(gpx,folder)
     #
-    for key in record.keys()
+    for key in record.keys():
         record[key]['name']=key
         record[key]['time'] = str(record[key]['time']).split(' ')[1].split('+')[0]
     return record
