@@ -47,6 +47,8 @@ def get_records(date):
     print(records['drones'].keys())
 
     records2 = drone_save.get_jpg_records(date)
+    print(records2.keys())
+    print(toto)
     for key in records2.keys():
         print(key)
         if not key in records.keys():
