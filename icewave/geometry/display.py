@@ -25,10 +25,12 @@ global colors
 colors = {  'geophones':'g>',\
             'phones':'rs',\
             'buoys':'mo',\
+            'drones':'k.',\
             'mesange':'kp',\
             'Bernache':'bp',\
             'Fulmar':'gp',\
             'GPS':'ks',\
+            'gps':'ks',\
             'S':'bo',\
             'H':'bv'}
 

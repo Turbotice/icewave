@@ -2,43 +2,122 @@ import numpy as np
 import pylab as plt
 
 import icewave.display.graphes as graphes
+import icewave.geometry.display as disp
+import icewave.field.time as fieldtime
 
-def display_map(measures,remote=True,w=10,h=10):
-    plt,ax = plt.subplots(figsize=(w,h))
-    for measure in measures:
-        ax.plot(measure['longitude'],measure['latitude'],measure['label'])
-
+def display_map(measures,remote=True,w=10,h=10,ax=None):
+    b = -5*10**(-5)
+    if ax==None:
+        fig,ax = plt.subplots(figsize=(w,h))
+    for key in measures.keys():
+        m = measures[key]
+        instrument = key.split('_')[0]
+        sensor = key.split('_')[1]
+        #print(instrument,sensor)
+        if sensor=='mesange':
+            latshiftlabel = -b
+        else:
+            latshiftlabel = b
+            
+        label = disp.colors[instrument]
+        if instrument=='drones':
+            if key.split('_')[-1]=='0':
+                text = '_'.join(key.split('_')[1:-1])
+            else:
+                text = ''
+        elif instrument=='gps':
+            text=sensor
+            latshiftlabel = -b
+        elif instrument=='buoys':
+            
+            if m['recording'].split('_')[-1]=='1700':
+                text=sensor
+                latshiftlabel = b*1.5
+            else:
+                text=''
+        else:
+            text=''
+        if instrument=='gps':
+            k = m['name'][0].split('_')[0]
+            label = disp.labels[k]
+            text= m['name'][0][0]+m['name'][0][-2:]
+#            label = disp.colors[
+        if key=='buoys_B5_buoy5_sbg_20240223_1700_0' or instrument=='phones':# or instrument=='gps':
+            continue
+        ax.plot(m['longitude'][0],m['latitude'][0],label)
+        ax.text(m['longitude'][0],m['latitude'][0]+latshiftlabel,text,color='k')
     [Lonmin,Lonmax] = ax.get_xlim()
     [Latmin,Latmax] = ax.get_ylim()
 
-    deg,minute,sec = get_range(Lonmin,Lonmax)
-    lon_ticks = toangle(deg,minute,sec,sign=-1)
+
+    deg,minute,sec = get_range(Lonmax,Lonmin)
+    print(Lonmin)
+    lon_display = [display_longitude((deg,minute,s)) for s in sec]#(d,m,s in lon_ticks]
+    lon_ticks = coord2angle(deg,minute,sec,sign=-1)
+    
     deg,minute,sec = get_range(Latmin,Latmax)
-    lat_ticks = toangle(deg,minute,sec,sign=1)
-                
-    ax.set_xticks(lon_ticks,display_longitude(lon_ticks))
-    ax.set_yticks(lat_ticks,display_latitude(lat_ticks))
-
+    lat_display = [display_latitude((deg,minute,s)) for s in sec]#(d,m,s in lon_ticks]
+    lat_ticks = coord2angle(deg,minute,sec,sign=1)
+#    lat_display = [display_latitude(angle2coord(lat)) for lat in lat_ticks]
+    
+    ax.set_xticks(lon_ticks,lon_display)
+    ax.set_yticks(lat_ticks,lat_display)
+    plt.axis('equal')
     figs = graphes.legende('Longitude','Latitude','')
+    return figs
 
+def get_measures(records,tmin,tmax):
+    measures = {}
 
-        
+    ti = fieldtime.convert_time(tmin)
+    tf = fieldtime.convert_time(tmax)
+    trange = [ti,tf]
+    for instrument in records.keys():
+        for sensor in records[instrument].keys():
+            for k in records[instrument][sensor].keys():
+                record = records[instrument][sensor][k]
+                if not type(record)==list:
+                    record = [record]
+                for i,rec in enumerate(record):
+                    #print(instrument,sensor,k,i)
+                    ti = rec['time'][0]
+                    tf = rec['time'][-1]
+                    #print(ti,tf)
+                    ti = fieldtime.convert_time(ti)
+                    tf = fieldtime.convert_time(tf)
+
+                    if tf>trange[0] and ti<trange[1]:
+                        name = '_'.join([instrument,sensor,k,str(i)])
+                        measure={}
+                        for key in rec.keys():
+                            measure[key]=rec[key]
+                        measure['instrument']=instrument
+                        measure['sensor']=sensor
+                        measure['recording']=k
+                        measure['num']=i
+                        measures[name]=measure
+    return measures
+    
 def get_range(anglemin,anglemax):
     degm,minutem,secm = angle2coord(anglemin)
     degM,minuteM,secM = angle2coord(anglemax)
 
+    #print(angle2coord(anglemin))
+    #print(angle2coord(anglemax))
     if degm==degM:
         if minutem==minuteM:
             n = secM-secm+1
-            secs = np.arange(secm,secM+1,n)
+            step = int(np.ceil(n/8))
+            secs = np.arange(secm,secM+1,step)
+            #print(secs)
             return degm,minutem,secs
         else:
             n = minuteM-minutem+1
-            minutes = np.arange(minutem,minuteM+1,n)
+            minutes = np.arange(minutem,minuteM+1)
             return degm,minutes,0
     else:
         n = degM-degm+1
-        degs = np.arange(degm,degM+1,n)
+        degs = np.arange(degm,degM+1)
         return degs,0,0
     
 def convert_longitude(lon):
@@ -69,29 +148,37 @@ def convert_latitude(lat):
     return s
 
 def coord2angle(deg,minute,sec,sign=1):
-    return sign*(deg*3600+minute*60+sec)/3600
-
+    return sign*(np.abs(deg)*3600+minute*60+sec)/3600
+    
 def angle2coord(angle):
     if angle<0:
         angle=-angle
+        sign=-1
+    else:
+        sign=1
     deg = int(np.floor(angle))
     minute = int(np.floor((angle-deg)*60))
     sec = int(np.floor(((angle-deg)*60-minute)*60))
+
+    if sign==-1:
+        deg = -deg
     return deg,minute,sec
 
-def display_longitude(deg,minute,sec):
+def display_longitude(tup):
+    deg,minute,sec = tup
     if deg<0:
         s=str(-deg)+r'$^\circ$W'
     else:
-        s=str(-deg)+r'$^\circ$E'
+        s=str(deg)+r'$^\circ$E'
     s = s+' '+str(minute)+'\''+' '+str(sec)+'\"'
     return s
 
-def display_latitude(deg,minute,sec):
+def display_latitude(tup):
+    deg,minute,sec = tup
     if deg<0:
         s=str(-deg)+r'$^\circ$S'
     else:
-        s=str(-deg)+r'$^\circ$N'
+        s=str(deg)+r'$^\circ$N'
     s = s+' '+str(minute)+'\''+' '+str(sec)+'\"'
     return s
 
