@@ -47,7 +47,10 @@ def get_records(date):
                 records['drones'][key][name]=[record]
             else:
                 records['drones'][key][name].append(record)
+    print(jpgfiles)
+    print(toto)
     for key in jpgfiles.keys():
+
         for i,jpgfile in enumerate(jpgfiles[key]):
             name = jpgfile.split('/')[-2]#.split('.')[0]
             print(i,jpgfile,name)
