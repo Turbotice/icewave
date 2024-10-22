@@ -1,5 +1,46 @@
 import numpy as np
+import pylab as plt
 
+import icewave.display.graphes as graphes
+
+def display_map(measures,remote=True,w=10,h=10):
+    plt,ax = plt.subplots(figsize=(w,h))
+    for measure in measures:
+        ax.plot(measure['longitude'],measure['latitude'],measure['label'])
+
+    [Lonmin,Lonmax] = ax.get_xlim()
+    [Latmin,Latmax] = ax.get_ylim()
+
+    deg,minute,sec = get_range(Lonmin,Lonmax)
+    lon_ticks = toangle(deg,minute,sec,sign=-1)
+    deg,minute,sec = get_range(Latmin,Latmax)
+    lat_ticks = toangle(deg,minute,sec,sign=1)
+                
+    ax.set_xticks(lon_ticks,display_longitude(lon_ticks))
+    ax.set_yticks(lat_ticks,display_latitude(lat_ticks))
+
+    figs = graphes.legende('Longitude','Latitude','')
+
+
+        
+def get_range(anglemin,anglemax):
+    degm,minutem,secm = angle2coord(anglemin)
+    degM,minuteM,secM = angle2coord(anglemax)
+
+    if degm==degM:
+        if minutem==minuteM:
+            n = secM-secm+1
+            secs = np.arange(secm,secM+1,n)
+            return degm,minutem,secs
+        else:
+            n = minuteM-minutem+1
+            minutes = np.arange(minutem,minuteM+1,n)
+            return degm,minutes,0
+    else:
+        n = degM-degm+1
+        degs = np.arange(degm,degM+1,n)
+        return degs,0,0
+    
 def convert_longitude(lon):
     if lon<0:
         lon=-lon

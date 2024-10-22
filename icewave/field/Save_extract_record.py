@@ -42,7 +42,6 @@ def get_jpgfiles(date):
     return jpgfiles
 
 
-
 def get_jpg_records(date):
     base = df.find_path(disk='Hublot24')
     jpgfiles = get_jpgfiles(date)
@@ -50,7 +49,6 @@ def get_jpg_records(date):
     records = {}
     records['drones']={}
     
-
     for key in jpgfiles.keys(): 
         records['drones'][key]={}
         if key=='mesange':
@@ -119,12 +117,8 @@ def create_timeline(flight_record) :
         timeline += [PM_to_normal(i)[:-3]]
     return timeline
 
-
-
 def extract_time_fr(flight_record, t0, tf) :
     """
-    
-
     Parameters
     ----------
     flight_record : Dict
@@ -148,11 +142,8 @@ def extract_time_fr(flight_record, t0, tf) :
         if timeline[i] <= tf and timeline[i] >= t0 :
             for key in flight_record.keys() :
                 new_fr[key] += [flight_record[key][i]]
-            
     return new_fr
     
-
-
 def extract_all_fr(date, drone, selection = True) :
     #avec une date et un drone, on cree record avec toutes les valeurs interessantes et au temps d'enregistrement des cameras depuis les flight record
     #base = disque + ':/Share_hublot
@@ -186,16 +177,8 @@ def extract_all_fr(date, drone, selection = True) :
                 
                 record[folder] += [extract_time_fr(flight_record, t0, tf)]
                 record[folder][j]['name'] = name
-                
-                
-                
-
-
-    
     return record
                     
-
-
 def save_record(date, drone, record) :
     #save le record là où il y a les données
     base = df.find_path(disk='Hublot24')

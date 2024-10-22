@@ -44,6 +44,14 @@ def get_records(date):
             else:
                 records['drones'][key][name].append(record)
     print(records['drones'].keys())
+
+    records2 = get_jpg_records(date)
+    for key in records2.keys():
+        print(key)
+        if not key in records.keys():
+            records[key]=records[2][key]
+        else:
+            print("conflict between images and MP4 folders")
     return records
     
 def get_srtfiles(date):
