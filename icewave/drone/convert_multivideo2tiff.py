@@ -10,12 +10,13 @@ import imageio
 import cv2
 import numpy as np
 import os
-#import icewave.tools.browse as browse
+import icewave.tools.datafolders as df
 
 #%%
 
 def main():
-    datafolder = 'C:/Users/sebas/Desktop/Amundsen_RA_2024/Data/2024/0921/Drones/bernache/13-waves_002/'
+    base = df.find_path('Hublot24')
+    datafolder = base + '0223/Drones/Bernache/09-waves_009/'
 
     # datafolder = browse.find_path(datafolder)
     print(datafolder)
@@ -98,6 +99,7 @@ def later(filelist,directory_save,savename):
 
 if __name__=='__main__':
     filelist = main()
-    directory_save = 'C:/Users/sebas/Desktop/Amundsen_RA_2024/Data/2024/0921/Drones/bernache/13-waves_002/'
-    savename = 'frames'
+    base = df.find_path('Hublot24')
+    directory_save = base[:-5] + '/PIV_images/0223/Drones/bernache/'
+    savename = '09-waves_009'
     vid = later(filelist,directory_save,savename)

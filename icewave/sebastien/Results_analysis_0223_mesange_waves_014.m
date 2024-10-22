@@ -1,6 +1,12 @@
 clear all
 close all
 
+%% Add path to matlab functions 
+
+functions_path = 'C:\Users\sebas\icewave\icewave\drone\Drone_banquise_analysis\';
+% Add the folder and all its subfolders to the MATLAB path
+addpath(genpath(functions_path));
+
 %% Load structured data 
 year = '2024';
 date = '0223';
@@ -9,7 +15,7 @@ exp_ID = '35-waves_014';
 suffixe_fig = [year '_' date '_' drone '_' exp_ID] ;
 
 
-path2data = ['F:/Rimouski_2024/Data/' year '/' date '/' drone '/matData/' exp_ID '/'];
+path2data = ['H:/Rimouski_2024/Data/' year '/' date '/' drone '/matData/' exp_ID '/'];
 filename = 'PIV_processed_i00_Dt4_b1_W32_xROI650_width3190_yROI1_height_2159_scaled.mat';
 disp('Loading Data..')
 load([path2data filename])
@@ -90,7 +96,7 @@ saveas(fig_spectrum,file,'pdf')
 disp('Getting demodulated fields')
 selected_freq = [0.1 1.0];
 x_bound = [1 size(FFT_t,1)];
-caxis_amp = 0.03; % amplitude of the colorbar in meter/second
+caxis_amp = 0.2; % amplitude of the colorbar in meter/second
 fig_name = ['Demodulated_field_Vx_' suffixe_fig 'caxis_' num2str(caxis_amp) 'ms'];
 
 save_image = 1;
@@ -202,7 +208,7 @@ fig_filename = replace(fig_filename,'.','p');
 saveas(fig_Afk,[fig_folder fig_filename],'fig')
 saveas(fig_Afk,[fig_folder fig_filename],'pdf')
 
-%% Save data of plots
+%% Save data
 data_filename = ['Data_Afk_' suffixe_fig];
 data_filename = replace(data_filename,'.','p');
 
@@ -462,6 +468,64 @@ saveas(harmonic_cmaps,fig_filename,'fig')
 saveas(harmonic_cmaps,fig_filename,'pdf')
 
 %% Move each branch back to main one 
+recompo_harmonic = figure;
+% create two different axes 
+ax1 = axes(recompo_harmonic);
+ax2 = copyobj(ax1,recompo_harmonic);
+ax3 = copyobj(ax1,recompo_harmonic);
+
+plot(ax1,k_list,harmonic1,'--b')
+hold on
+plot(ax1,k_list,harmonic2,'--r')
+hold on 
+plot(ax1,k_list, harmonic3,'--g')
+s1 = scatter(ax1,k_array(closest_harmonic == 1),omega_array(closest_harmonic == 1),marker_size,A_h1,'filled','MarkerEdgeColor','k');
+
+s2 = scatter(ax2,k_array(closest_harmonic == 2)/2,omega_array(closest_harmonic == 2)/2,marker_size,A_h2,'filled','MarkerEdgeColor','k');
+
+s3 = scatter(ax3,k_array(closest_harmonic ==3)/3, omega_array(closest_harmonic == 3)/3, marker_size, A_h3, 'filled', ...
+    'MarkerEdgeColor','k');
+colormap(ax1,slanCM(9))
+colormap(ax2,slanCM(11))
+colormap(ax3,slanCM(10))
+ax2.Visible = "off";
+ax3.Visible = "off";
+
+% sets limits of each axes
+xmin = 6e-2;
+xmax = 5;
+ymin = 0.3;
+ymax = 8;
+xlim(ax1,[xmin xmax])
+xlim(ax2,[xmin xmax])
+xlim(ax3,[xmin xmax])
+ylim(ax1,[ymin ymax])
+ylim(ax2,[ymin ymax])
+ylim(ax3,[ymin ymax])
+grid on 
+% set axes scale in log-log
+set(ax1,'xscale','log')
+set(ax1,'yscale','log')
+set(ax2,'xscale','log')
+set(ax2,'yscale','log')
+set(ax3,'xscale','log')
+set(ax3,'yscale','log')
+
+
+set_Papermode(gcf)
+ax = gca;
+ax.FontSize = 13;
+legend(ax1,['$\omega_1 = \sqrt{gk \tanh(' num2str(h_w) 'k)}$'],...
+    ['$\omega_2 = \sqrt{2gk \tanh(' num2str(h_w) '\frac{k}{2})}$'],...,
+    ['$\omega_3 = \sqrt{3gk \tanh(' num2str(h_w) '\frac{k}{3})}$'],'','Location','southeast')
+figname = [fig_folder 'Recomposition_harmonics_water_' suffixe_fig '_hw_' replace(num2str(h_w),'.','p')];
+saveas(gcf,figname,'fig')
+saveas(gcf,figname,'pdf')
+saveas(gcf,figname,'png')
+
+
+
+%%
 
 figure(16)
 for i = 1 :3
@@ -487,16 +551,7 @@ loglog(k_list,harmonic2,'--r')
 hold on 
 loglog(k_list,harmonic3,'--g')
 axis([xmin xmax ymin ymax])
-set_Papermode(gcf)
-ax = gca;
-ax.FontSize = 13;
-legend(ax,'','','',['$\omega_1 = \sqrt{gk \tanh(' num2str(h_w) 'k)}$'],...
-    ['$\omega_2 = \sqrt{2gk \tanh(' num2str(h_w) '\frac{k}{2})}$'],...
-    ['$\omega_3 = \sqrt{3gk \tanh(' num2str(h_w) '\frac{k}{3})}$'],'Location','southeast')
-figname = [fig_folder 'Recomposition_harmonics_water_' suffixe_fig '_hw_' replace(num2str(h_w),'.','p')];
-saveas(gcf,figname,'fig')
-saveas(gcf,figname,'pdf')
-saveas(gcf,figname,'png')
+
 
 % #######################################
 %% Attenuation coefficient in corrected direction 
@@ -513,7 +568,7 @@ nf = length(new_freq);
 
 % Select range of frequencies and space of shortened fit 
 f_short = [0.45]; % frequency above which the attenuation fit is shortened
-x_short = [80]; % meters % range over which the shrotened attenuation fit is performed
+x_short = [80]; % meters % range over which the shortened attenuation fit is performed
 
 x = m.x;
 y = m.y;
@@ -528,6 +583,7 @@ if exist(new_folder_fig,'dir') ~= 7
 end
 
 alpha = zeros(nf,1); % array of attenuation coefficients
+C  =zeros(nx,1);
 d = zeros(nf,1); % array of distance to plot
 
 for idx_freq = 1:nf
@@ -669,6 +725,7 @@ for idx_freq = 1:nf
     A_fit = log_A(i_min:i_max); 
     p = polyfit(x_fit,A_fit,1); % fit log_A by a degree 1 polynome
     alpha(idx_freq) = log(10)*p(1); % get attenuation coefficient in m^-1
+    C(idx_freq) = 10.^p(0); % prefactor
 
     disp(['alpha = ' num2str(alpha(idx_freq)) ' m-1'])
     y_poly = 10.^polyval(p,x_fit);
@@ -679,7 +736,7 @@ for idx_freq = 1:nf
     ylabel('$\langle | \hat{V_x} | \rangle _y (x,f) \: \rm (m)$','Interpreter','latex');
     grid on 
     data_txt = 'Data';
-    fit_txt = ['$y(x) = C e^{' sprintf('%0.3f',alpha(idx_freq)) 'x}$'];
+    fit_txt = ['$y(x) = ' sprintf('%0.2f',C(idx_freq)) ' e^{' sprintf('%0.3f',alpha(idx_freq)) 'x}$'];
     legend(data_txt,fit_txt,'Interpreter','latex','location','northeast','FontSize',13);
     ax = gca;
     ax.FontSize = 13;
@@ -697,10 +754,10 @@ end
 
 %% Save relevant variables 
 attenuation_file =  ['Data_attenuation_oriented' suffixe_fig '_' num2str(selected_freq(1)) 'Hz_to_' ...
-    num2str(selected_freq(2)) 'Hz' '_mode_1'];
+    num2str(selected_freq(2)) 'Hz' '_mode_1_analyse_1021'];
 attenuation_file = replace(attenuation_file,'.','p');
 attenuation_file = [fig_folder attenuation_file];
-save(attenuation_file,'alpha','d','new_freq','selected_freq','L0','threshold','padding_bool','add_pow2','f_short','x_short')
+save(attenuation_file,'alpha','C','d','new_freq','selected_freq','L0','threshold','padding_bool','add_pow2','f_short','x_short')
 
 disp('DONE.')
 
@@ -716,7 +773,7 @@ disp('Attenuation data loaded')
 %%
 
 %  masking according to dist_fit
-d_thresh = 0.05;
+d_thresh = 0.3;
 
 mask = (S.d < d_thresh) & (abs(S.alpha) > 0.001) ; % keep only points for which distance is smaller than..
 f = S.new_freq;
@@ -747,6 +804,16 @@ thresh_txt = replace(num2str(1-d_thresh),'.','p');
 attenuation_filename = [fig_folder 'attenuation_law_ ' suffixe_fig '_mode_1_confidence_' thresh_txt];
 saveas(attenuation_fig,attenuation_filename,'fig');
 saveas(attenuation_fig,attenuation_filename,'pdf');
+
+
+%% Plot distance d to the curve as function of frequencies
+figure, 
+
+plot(S.new_freq,S.d,'o')
+xlabel('$f \: \rm (Hz)$')
+ylabel('$d$')
+
+
 
 
 % ##########################

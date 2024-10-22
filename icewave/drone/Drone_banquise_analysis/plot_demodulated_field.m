@@ -47,6 +47,7 @@ if save_video
     video_filename = [fig_folder fig_name '.avi']; % folder where the video is saved
     vid = VideoWriter(video_filename);
     vid.FrameRate = 3;
+    vid.Quality = 90;
     open(vid)
 end 
 
@@ -72,16 +73,16 @@ for i=1:numel(relevant_indices)
         caxis([-caxis_amp caxis_amp])
     end 
     ax = gca;
-    ax.FontSize = 13;
-    
+    ax.FontSize = 16;
     getframe();
     frequency = f(idx);
     if save_video
         title(['$f = ' num2str(frequency) ' \: \rm(Hz)$'],'Interpreter','latex')
     end 
-    set_Papermode(gcf)
+    % set_Papermode(gcf)
+    set(gcf, 'Position', [100, 100, 1280, 720]);
     ax = gca;
-    ax.FontSize = 13;
+    ax.FontSize = 16;
     %pause(0.2)
     
     if save_image

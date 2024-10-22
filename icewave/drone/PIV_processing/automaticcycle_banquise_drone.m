@@ -3,18 +3,18 @@
 
 date = '20240223';
 % base where images are saved and where we want to save data 
-base_img = ['/media/turbots/DATA/thiou/labshared2/SagWin2024/Data/' date(5:end) '/Drones/mesange/'];
-base = ['/media/turbots/DATA/thiou/labshared2/SagWin2024/Data/' date(5:end) '/Drones/mesange/'];
+base_img = ['/media/turbots/Hublot24/PIV_images/' date(5:end) '/Drones/bernache/'];
+base_save = ['/media/turbots/Hublot24/Share_hublot/Data/' date(5:end) '/Drones/mesange/'];
 
-folder_img = [base_img '35-waves_014/35-waves_014/']; % folder where images are saved 
+folder_img = [base_img '21-waves_014/']; % folder where images are saved 
 filelist = dir([folder_img 'im*.tiff']); dirnames={};
 % sort images 
 [dirnames{1:length(filelist),1}] = deal(filelist.name);
 dirnames = sortrows(dirnames);
 amount = length(dirnames);
 disp(amount)
-%save_folder = '/media/turbots/DATA/thiou/labshared2/Banquise/Rimouski_2023/Traitement_donnees/PIV_Sebastien';
-dirsave = [base 'matData/35-waves_014/'];
+
+dirsave = [base_save 'matData/21-waves_014/'];
 for i=1:length(filelist)
     disp([num2str(i) ' : ' filelist(i).name])
 end
@@ -37,12 +37,12 @@ for i=1:1%amount
     %disp(forcing)
     
     % Define parameters to process PIV
-    i0 = 0; %process starting from image i0
+    i0 = 50; %process starting from image i0
     N = 0; %number of frames to analyze
-    Dt = 4; %ratio between the fps and the scanning frequency (number of image between image A and image B)
+    Dt = 2; %ratio between the fps and the scanning frequency (number of image between image A and image B)
     b = 1; %number of images between image A and image A' (from one step to an other)
-    ROI.x = 650 ;
-    ROI.width = 3190;
+    ROI.x = 1 ;
+    ROI.width = 2849;
     ROI.y = 1;
     ROI.height = 2159;
     W = 32;
