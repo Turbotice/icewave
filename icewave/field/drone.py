@@ -29,6 +29,8 @@ def gen_parser():
 
 def get_records(date):
     srtfiles = get_srtfiles(date)
+    jpgfiles = drone_save.get_jpgfiles(date)
+    
     nbase = len(base)
     records = {}
     records['drones']={}
@@ -40,21 +42,21 @@ def get_records(date):
             record = get_flighrecord(srtfile,drone=key)
             record['name']=srtfile.split('/')[-1].split('.')[0]
             record['path']=srtfile[nbase:].split('.')[0]
+            record['format']='mp4'
             if not name in records['drones'][key]:
                 records['drones'][key][name]=[record]
             else:
                 records['drones'][key][name].append(record)
-    print(records['drones'].keys())
-
-    records2 = drone_save.get_jpg_records(date)
-    print(records2.keys())
-    print(toto)
-    for key in records2.keys():
-        print(key)
-        if not key in records.keys():
-            records[key]=records[2][key]
-        else:
-            print("conflict between images and MP4 folders")
+    for key in jpgfiles.keys():
+        for i,jpgfile in enumerate(jpgfiles[key]):
+            name = jpgfile.split('/')[-2]#.split('.')[0]
+            print(i,jpgfile,name)
+            record = get_jpg_record(jpgfile,drone=key)
+            record['format']='jpg'
+            if not name in records['drones'][key]:
+                records['drones'][key][name]=[record]
+            else:
+                records['drones'][key][name].append(record)
     return records
     
 def get_srtfiles(date):

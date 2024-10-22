@@ -25,12 +25,14 @@ import icewave.tools.rw_data as rw_data
 
 #%%  Select data and save it 
 
+global drones
 drones = ['mesange','Bernache','Fulmar']
+global base
 base = df.find_path(disk='Hublot24')
 
 def get_jpgfiles(date):
     base = df.find_path(disk='Hublot24')
-    drones = ['mesange', 'bernache']
+    #drones = ['mesange', 'Bernache',]
     jpgfiles = {}
     print(base)
     for key in drones:  
@@ -41,42 +43,28 @@ def get_jpgfiles(date):
             print(f"No data for {key} on {date}")
     return jpgfiles
 
-
-def get_jpg_records(date):
+def get_jpg_record(jpgfile,drone='mesange'):
     base = df.find_path(disk='Hublot24')
-    jpgfiles = get_jpgfiles(date)
     nbase = len(base)
-    records = {}
-    records['drones']={}
-    
-    for key in jpgfiles.keys(): 
-        records['drones'][key]={}
-        if key=='mesange':
-            h0 = -1
-        elif key=='bernache':
-            h0 = 5
-        elif key=='Fulmar':
-            h0 = 5
-        else:
-            h0 = 0
-            print(key)
-            print('Drone unknown')
-        record = {}
-        for i,files in enumerate(jpgfiles[key]):
-
-            name = files.split('\\')[-2]#.split('.')[0]
+    record={}
+    if drone=='mesange':
+        h0 = -1
+    elif drone=='bernache':
+        h0 = 5
+    elif drone=='Fulmar':
+        h0 = 5
+    else:
+        h0 = 0
+        print(key)
+        print('Drone unknown')
+    record = {}
+    name = jpgfile.split('/')[-2]#.split('.')[0]
             # print(i,files,name)
-            record['name']=files.split('\\')[-1].split('.')[0]
-            record['path']=files[nbase:].split('.')[0]
-            record['time'] = time_BA_to_SP(int(files[-17:-11]) + h0 * 10000)
-            record['folder'] = name
-            if not name in records['drones'][key]:
-                records['drones'][key][name]=[record]
-                record = {}
-            else:
-                records['drones'][key][name].append(record)
-    print(records['drones'].keys())
-    return records
+    record['name']=jpgfile.split('/')[-1].split('.')[0]
+    record['path']=jpgfile[nbase:].split('.')[0]
+    record['time'] = time_BA_to_SP(int(jpgfile[-17:-11]) + h0 * 10000)
+    record['folder'] = name
+    return record
 
 
 def open_dico(path):
