@@ -7,6 +7,7 @@ import os
 import icewave.tools.datafolders as df
 import icewave.tools.rw_data as rw_data
 import icewave.drone.drone_timeline as timeline
+import icewave.field.Save_extract_record as drone_save
 
 global base
 base = df.find_path(disk='Hublot24')
@@ -45,7 +46,7 @@ def get_records(date):
                 records['drones'][key][name].append(record)
     print(records['drones'].keys())
 
-    records2 = get_jpg_records(date)
+    records2 = drone_save.get_jpg_records(date)
     for key in records2.keys():
         print(key)
         if not key in records.keys():
