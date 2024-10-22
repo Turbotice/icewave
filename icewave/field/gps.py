@@ -37,4 +37,7 @@ def get_record_fromgpx(gpx,folder):
     for key in record.keys():
         record[key]['name']=key
         record[key]['time'] = str(record[key]['time']).split(' ')[1].split('+')[0]
+    for key in record.keys():
+        for k in record[key]:
+            record[key][k]=[record[key][k]]
     return record
