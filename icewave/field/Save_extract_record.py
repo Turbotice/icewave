@@ -40,7 +40,7 @@ def get_jpgfiles(date):
         if len(jpg)>0:
             jpgfiles[key] = jpg
         else:
-            print(f"No data for {key} on {date}")
+            print(f"No jpg files for {key} on {date}")
     return jpgfiles
 
 def get_jpg_record(jpgfile,drone='mesange'):

@@ -23,8 +23,18 @@ def get_records(date,year='2024'):
     with open(filename,'r') as f:
         gpx = gpxpy.parse(f)
 
-    record = tables.dict_from_gpx(gpx,folder)
+    record = get_record_fromgpx(gpx,folder)
     records={}
     records['gps']={}
     records['gps']['garmin_sp']=record
+
     return records
+
+
+def get_record_fromgpx(gpx,folder)
+    record = tables.dict_from_gpx(gpx,folder)
+    #
+    for key in record.keys()
+        record[key]['name']=key
+        record[key]['time'] = str(record[key]['time']).split(' ')[1].split('+')[0]
+    return record
