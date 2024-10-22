@@ -64,8 +64,8 @@ def read_summary(filename):
             times = ['00:00:00','00:00:00']
 
         records[phone]['time']=times 
-        records[phone]['latitude']= phonedict[phone]['lat_mean']
-        records[phone]['longitude']= phonedict[phone]['lon_mean']
+        records[phone]['latitude']= float(phonedict[phone]['lat_mean'])
+        records[phone]['longitude']= float(phonedict[phone]['lon_mean'])
         records[phone]['params']= phonedict[phone]
         records[phone]['name']=phonedict[phone]['name']
         records[phone]['path']=phonedict[phone]['path']
