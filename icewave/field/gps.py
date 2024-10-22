@@ -26,7 +26,7 @@ def get_records(date,year='2024'):
     record = get_record_fromgpx(gpx,folder)
     records={}
     records['gps']={}
-    records['gps']['garmin_sp']=record
+    records['gps']['garminSP']=record
 
     return records
 
