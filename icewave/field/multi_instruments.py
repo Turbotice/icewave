@@ -187,7 +187,12 @@ def get_avg_position(record):
     return latitude,longitude
 
 def main(args):
-    save_records(args.date)
+    if args.date=='all':
+        dates = ['0210','0211','0220','0221','0223','0226','0306']
+        for date in dates:
+            save_records(date)
+    else:
+        save_records(args.date)
     
 if __name__ =='__main__':
     args = gen_parser()
