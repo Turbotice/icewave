@@ -26,7 +26,7 @@ def gen_parser():
     print(args)
     return args
 
-def get_record(drone,srtfile)
+def get_record(drone,srtfile):
     nbase = len(base)
     name = srtfile.split('/')[-2]#.split('.')[0]
     record = get_flighrecord(srtfile,drone=drone)
