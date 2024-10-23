@@ -21,7 +21,7 @@ drone.get_mp4files(date,save=True)
 import icewave.phone.analyse as analyse
 
 # step1 : extract all data in .zip format
-analyse.process(date,1)
+#analyse.process(date,1)
 
 # step2 : find the measurement interval, generate a dataset in pkl format
 analyse.process(date,2)
