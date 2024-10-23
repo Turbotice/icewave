@@ -59,40 +59,40 @@ def compute_timeline(date,date_format='2024/02/03'):
 
     savefolder= os.path.dirname(filename)
     print(records.keys())
-    fig,ax,figs = display_records(records,date,date_format='2024/02/23')
+    fig,ax,figs = display_timeline(records,date,date_format=date_format)
     #ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
     #ax.set_xlim(['11:30:00','15:00:00'])
     #ax.xaxis.set_major_formatter(mdates.DateFormatter('%h-%m-%s'))
     #fig.autofmt_xdate()
-    graphes.save_figs(figs,savedir=savefolder,overwrite=True)
+    graphes.save_figs(figs,savedir=savefolder,overwrite=True,prefix=date+'_')
     #graphes.save_figs(figs,savedir=savefolder_local,overwrite=True,prefix=date+'_')
 
-def display_records(records,date,date_format='2024/02/23'):
+def display_timeline(records,date,date_format='2024/02/23'):
     fig = plt.figure(figsize=(15,10))
     ax = fig.add_subplot(111)
 
-    positions = {'mesange':1,'Bernache':2,'geophones':2.6,'buoys':3.8,'phones':4.5}
-
-    import matplotlib.dates as mdates
-    h0 = -6
-    b = 1
-    for k in ['mesange','Bernache']:
-        record = records[k]
-        pos = positions[k]
-
-        for name in record.keys():   
-            try:
-                title = name.split('-')[1]#.split('_')[0]
-            except:
-                title = name
-            times = [record[name][key]['time'] for key in record[name].keys()]
+    positions = {'Fulmar':1,'mesange':1,'Bernache':2,'geophones':2.6,'buoys':3.8,'phones':4.5}
+        
+    import matplotlib.dates as mdates    
+    bs = {'Fulmar':0,'mesange':1,'Bernache':1}
+    
+    record = records['drones']
+    for (drone,name) in selection:
+    #record = records['drones'][k]
+        pos = positions[drone]
+        try:
+            title = name.split('-')[1]#.split('_')[0]
+        except:
+            title = name
+        if name in record[drone].keys():
+            times = record[drone][name][0]['time']# for key in record[name][0].keys()]
             x = [times[0],times[-1]]
             x = np.asarray([multi.convert_time(x[0]),multi.convert_time(x[1])])
 
-            r=np.random.random()*b-0.5
+            r=np.random.random()*bs[drone]-0.5
             y = pos+r
-            ax.plot(x/3600+h0, [y,y],colors[k]+'-')
-            ax.text(x[0]/3600+h0,y+0.03,title)
+            ax.plot(x/3600, [y,y],colors[drone]+'-')
+            ax.text(x[0]/3600,y+0.03,title)
 
     key = 'geophones'
     record = records[key]
@@ -111,9 +111,9 @@ def display_records(records,date,date_format='2024/02/23'):
                 x = np.asarray([multi.convert_time(x[0]),multi.convert_time(x[1])])
 
                 y = pos+i*0.05#np.random.random()*b
-                ax.plot(x/3600+h0, [y,y],colors[key]+'-')
+                ax.plot(x/3600, [y,y],colors[key]+'-')
                 if first[num]:
-                    ax.text(x[0]/3600-0.25+h0,y,num)
+                    ax.text(x[0]/3600-0.25,y,num)
                     first[num]=False
 
     x0 = 0.1
@@ -124,49 +124,52 @@ def display_records(records,date,date_format='2024/02/23'):
         first={}
         for i,num in enumerate(record.keys()):
             first[num]=True
-            for elem in record[num]:
+            for k in record[num].keys():
+                elem = record[num][k]
                 t0 = elem['time'][0]
                 t1 = elem['time'][-1]
                 x = [t0,t1]
                 X[i] = np.asarray([multi.convert_time(x[0]),multi.convert_time(x[1])])
                 #np.asarray([convert(t0)-3600*6,convert(t1)-3600*6])
 
-                if (X[i][0]/3600)<11:
+                print(i,X[i][0]/3600)
+                if (X[i][0]/3600)<16:
                     if i>0:
                         X[i]=X[i-1]
                     else:
                         continue
                 y = pos+i*0.1#np.random.random()*b
-                ax.plot(X[i]/3600+h0, [y,y],colors[key]+'-')
+                ax.plot(X[i]/3600, [y,y],colors[key]+'-')
                 if first[num]:
-                    ax.text(X[i][0]/3600-x0+h0,y,num)
+                    ax.text(X[i][0]/3600-x0,y,num)
                     first[num]=False
-
+                    
     ax.set_ylim([0,6])
 
-    hours = [11,12,13,14,15]
+    hours = np.asarray([11,12,13,14,15])+6
     ax.set_xticks(hours,[str(h)+':00' for h in hours])
 
-    from matplotlib.lines import Line2D
     # access legend objects automatically created from data
     handles, labels = plt.gca().get_legend_handles_labels()
+
+    legends = timeline_legend()
+    # add manual symbols to auto legend
+    handles.extend(legends)
+    plt.legend(handles=handles,fontsize=20)
+    figs = graphes.legende('UTC time','Instruments',date)
+    #plt.show()
+    return fig,ax,figs
+
+def timeline_legend():
+    from matplotlib.lines import Line2D
+
     names = {'Smartphones':('r','s'),'Buoys':('m','o'),'Geophones':('g','>'),'Bernache':('b','o'),'Mesange':('k','o')}
     legends = []
     for key in names.keys():
         point = Line2D([0], [0], label=key, marker=names[key][1], markersize=20, 
              markeredgecolor=names[key][0], markerfacecolor=names[key][0], linestyle='')
         legends.append(point)
-
-    # add manual symbols to auto legend
-    handles.extend(legends)
-
-    plt.legend(handles=handles,fontsize=20)
-    figs = graphes.legende('Local time','Instruments',date)
-    #plt.show()
-    return fig,ax,figs
-
-
-
+    return legends
 #base = '/media/turbots/Hublot24/Share_hublot/Data/'
 
 def convert_time(t):
