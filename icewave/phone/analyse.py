@@ -493,7 +493,9 @@ def time_spectrum(t,y):
     return f,TFmoy,fmax
 
 def main(args):
-    date = args.date
+    process(args.date,args.step)
+    
+def process(date,step):
     base = df.find_path()#'/media/turbots/Hublot24/Share_hublot/Data/'
     #date = '0221'
     datafolder = base+date+'/Telephones/'
@@ -503,13 +505,13 @@ def main(args):
     for folder in folders:
         #func = locals()['step'+str(args.step)]
         #func(folder)
-        if args.step==1:
+        if step==1:
             step1(folder)
-        if args.step==2:
+        if step==2:
             step2(folder)
-        if args.step==3:
+        if step==3:
             step3(folder)
-        if args.step==4:
+        if step==4:
             step4(folder)
 
 if __name__ =='__main__':

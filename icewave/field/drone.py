@@ -26,41 +26,44 @@ def gen_parser():
     print(args)
     return args
 
-
-def get_records(date):
-    srtfiles = get_srtfiles(date)
-    jpgfiles = drone_save.get_jpgfiles(date)
-    
+def get_record(drone,srtfile)
     nbase = len(base)
+    name = srtfile.split('/')[-2]#.split('.')[0]
+    record = get_flighrecord(srtfile,drone=drone)
+    record['name']=srtfile.split('/')[-1].split('.')[0]
+    record['path']=srtfile[nbase:].split('.')[0]
+    record['format']='mp4'
+    return record,name
+
+def get_records(date,jpg=True):
+    srtfiles = get_srtfiles(date)
+    
     records = {}
     records['drones']={}
     for key in srtfiles.keys():
         records['drones'][key]={}
         for i,srtfile in enumerate(srtfiles[key]):
-            name = srtfile.split('/')[-2]#.split('.')[0]
+            record,name = get_record(key,srtfile)
             print(i,srtfile,name)
-            record = get_flighrecord(srtfile,drone=key)
-            record['name']=srtfile.split('/')[-1].split('.')[0]
-            record['path']=srtfile[nbase:].split('.')[0]
-            record['format']='mp4'
             if not name in records['drones'][key]:
                 records['drones'][key][name]=[record]
             else:
                 records['drones'][key][name].append(record)
 
-    print(jpgfiles)
-    #for now, it does not find any jpg files
-    for key in jpgfiles.keys():
-
-        for i,jpgfile in enumerate(jpgfiles[key]):
-            name = jpgfile.split('/')[-2]#.split('.')[0]
-            print(i,jpgfile,name)
-            record = get_jpg_record(jpgfile,drone=key)
-            record['format']='jpg'
-            if not name in records['drones'][key]:
-                records['drones'][key][name]=[record]
-            else:
-                records['drones'][key][name].append(record)
+    if jpg==True:
+        jpgfiles = drone_save.get_jpgfiles(date)
+        print(jpgfiles)
+        #for now, it does not find any jpg files
+        for key in jpgfiles.keys():
+            for i,jpgfile in enumerate(jpgfiles[key]):
+                name = jpgfile.split('/')[-2]#.split('.')[0]
+                print(i,jpgfile,name)
+                record = get_jpg_record(jpgfile,drone=key)
+                record['format']='jpg'
+                if not name in records['drones'][key]:
+                    records['drones'][key][name]=[record]
+                else:
+                    records['drones'][key][name].append(record)
     return records
     
 def get_srtfiles(date):
@@ -75,20 +78,29 @@ def get_srtfiles(date):
             print(f"No data for {key} on {date}")
     return srtfiles
 
-def get_mp4files(date):
+def get_mp4files(date,save=True):
     import cv2
     import os
 
     for key in drones:
         mp4files = glob.glob(base+date+'/Drones/'+key+'/*/*.MP4')#/*/*.srt')
         for filename in mp4files:
-            print(key,filename.split('/')[-2])
-            cam = cv2.VideoCapture(filename)
-            ret,frame = cam.read()
-            imagefile = filename.split('.')[0]+'_exemple.tiff'
+            if save:
+                save_mp4file(drone,filename)
+    return mp4files
 
-            print(f"Save image : {imagefile.split('/')[-1]}")
-            cv2.imwrite(imagefile, frame) # Save the image
+def  generate_flightrecords(date):
+    srtfiles = get_srtfiles(date)
+    
+
+def save_mp4file(drone,filename):
+    print(key,filename.split('/')[-2])
+    cam = cv2.VideoCapture(filename)
+    ret,frame = cam.read()
+    imagefile = filename.split('.')[0]+'_exemple.tiff'
+
+    print(f"Save image : {imagefile.split('/')[-1]}")
+    cv2.imwrite(imagefile, frame) # Save the image
 
 def convert_flightrecords(date):
     csvfiles = get_csvfiles(date)

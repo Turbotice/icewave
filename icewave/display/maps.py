@@ -5,6 +5,9 @@ import icewave.display.graphes as graphes
 import icewave.geometry.display as disp
 import icewave.field.time as fieldtime
 
+import argparse
+
+
 def display_map(measures,remote=True,w=10,h=10,ax=None):
     b = -5*10**(-5)
     if ax==None:
@@ -185,6 +188,4 @@ def display_latitude(tup):
 def display_longitudes(Longitudes):
     return [convert_longitude(Lon) for Lon in Longitudes] 
 def display_latitudes(Latitudes):
-    return [convert_latitude(Lat) for Lat in Latitudes] 
-
-
+    return [convert_latitude(Lat) for Lat in Latitudes]
