@@ -186,6 +186,17 @@ def get_avg_position(record):
     longitude = np.mean(longitudes)
     return latitude,longitude
 
+def read_BA_timeline(date):
+    base = df.find_path()
+    filename = base + f'Summary/{date}_path_drone.txt'
+    
+    filelist = rw_data.read_csv(filename)
+    keydrones = [f[0].split('/')[-1] for f in filelist]
+    drones = [f[0].split('/')[-3] for f in filelist]
+
+    out = [(drone,keydrone) for (drone,keydrone) in zip(drones,keydrones)]
+    return out
+
 def main(args):
     if args.date=='all':
         dates = ['0210','0211','0220','0221','0223','0226','0306']
