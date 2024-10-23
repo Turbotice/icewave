@@ -63,9 +63,11 @@ def read_summary(filename):
             print('No time stamp available')
             times = ['00:00:00','00:00:00']
 
-        records[phone]['time']=times 
-        records[phone]['latitude']= phonedict[phone]['lat_mean']
-        records[phone]['longitude']= phonedict[phone]['lon_mean']
+        records[phone]['time']=times
+        lat = float(phonedict[phone]['lat_mean'])
+        lon = float(phonedict[phone]['lon_mean'])
+        records[phone]['latitude']= [lat,lat]
+        records[phone]['longitude']= [lon,lon]
         records[phone]['params']= phonedict[phone]
         records[phone]['name']=phonedict[phone]['name']
         records[phone]['path']=phonedict[phone]['path']

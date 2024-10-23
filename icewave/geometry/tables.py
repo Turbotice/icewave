@@ -170,6 +170,7 @@ def read_table(folder):
 def table_2dict(table):
     data = {}
     for tab in table:
+        key = tab[0]
         data[tab[0]]={}
         data[tab[0]]['tag']=tab[1]
         if len(tab)==3:

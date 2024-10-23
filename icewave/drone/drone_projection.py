@@ -5,9 +5,83 @@ Created on Fri Oct 18 15:01:28 2024
 @author: sebas
 """
 
+import pylab as plt
 import numpy as np 
 from datetime import datetime
 import pytz
+
+import icewave.tools.rw_data as rw_data
+import icewave.tools.datafolders as df
+
+import icewave.field.drone as drone
+
+
+global feet2meter
+feet2meter = 0.3048
+
+def get_projected_image(drone,key,num,frame):
+    #only work currently for first image of the movie
+    
+    #Load flight record
+    base = df.find_path()
+    filename =  base+f'{date}/drones/{drone}/flightrecords/Flightrecord_dict.pkl'
+    flight = rw_data.load_pkl(filename)
+    print(flight.keys())
+
+    #Load global record
+    filename =  base+f'{date}/Summary/records_{date}.pkl'
+    records = rw_data.load_pkl(filename)
+    record = records['drones'][drone][key][num]
+
+    #Cut flight record
+    flight_p = drone.cut_flightrecord(record,flight)
+
+    #Load image
+    im = get_exemple_image(record)
+
+    #Find coordinates (Lat,Lon) of all pixels 
+    Lats,Lons = project_image(record,flight_p,im,0)
+
+    return Lats,Lons,im
+
+def get_exemple_image(record):
+    base = df.find_path()
+    filename = base+record['path']+'_exemple.tiff'
+    im = plt.imread(filename)
+    return im
+
+def project_image(record,flight,im,frame,focale=2700):
+    # warning ! only work for frame=0 now.
+    # sample frequency is different from mp4, srt and flightrecord movies
+    frameF = frame
+    frameR = frame
+    #focale is set to its default value
+    
+    h = flight['OSD.altitude [ft]'][frameF]*feet2meter # better to get altitude from .SRT file ?
+    alpha_0 = abs(flight['GIMBAL.pitch'][frameF])*np.pi/180
+    yaw = flight['OSD.yaw [360]'][frameF]#*np.pi/180
+
+    print(h,alpha_0,yaw)
+    Lat_drone = record['latitude'][frameR]
+    Long_drone = record['longitude'][frameR]
+
+    # get GPS coordinates of camera center
+    distance_todrone = h/np.tan(alpha_0)
+    Lat0,Long0 = proj.LatLong_coords_from_referencepoint(Lat_drone, Long_drone, yaw, distance_todrone)
+
+    Ly,Lx,nc = im.shape
+    x = np.linspace(0,Lx-1,Lx)
+    y = np.linspace(0,Ly-1,Ly)
+    [x,y]=np.meshgrid(x,y)
+    x0 = Lx/2
+    y0 = Ly/2
+
+    X,Y = projection_real_space(x,y,x0,y0,h,alpha_0,focale)
+    [ds,azimuths] = cart2pol(X,Y)
+    azimuths = 90-azimuths*180/np.pi
+
+    Lats,Lons = LatLong_coords_from_referencepoint(Lat0, Long0, azimuths,ds)
+    return Lats,Lons
 
 def projection_real_space(x,y,x0,y0,h,alpha_0,focale):
     """Definition of x and y in real framework, camera sensor center is taken as a reference 

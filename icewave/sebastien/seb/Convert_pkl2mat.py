@@ -18,7 +18,7 @@ import os
 #     d
 
 #%%
-file = 'W:/SagWin2024/Data/0211/BoueeVague/Resultats/*.pkl'
+file = 'K:/Share_hublot/Data/0223/Summary/*.pkl'
 
 # save_path = 'C:/Users/sebas/Stage_MIZ/Datas_mat/'
 file_pkl = glob.glob(file)
@@ -37,7 +37,7 @@ for f in file_pkl :
     p = open(f,'rb')
     data = pickle.load(p)
     dict = {}
-    dict['data'] = data
+    dict['data'] = data[]
     
     f_mat = f.strip('pkl') + 'mat'
     print(f_mat)
