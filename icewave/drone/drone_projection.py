@@ -9,11 +9,12 @@ import pylab as plt
 import numpy as np 
 from datetime import datetime
 import pytz
-
+import time
+from scipy.interpolate import RegularGridInterpolator
+ 
 import icewave.tools.rw_data as rw_data
 import icewave.tools.datafolders as df
 
-import icewave.field.drone as drone
 
 
 global feet2meter
@@ -185,3 +186,68 @@ def pol2cart(rho,phi):
     y = rho * np.sin(phi)
     return (x,y)
 
+def backward_projection(fun,points,y0,h,alpha_0,focale,fps,Dt):
+    """ Computation of vertical velocity field from the pixel displacement along vertical of the camera. 
+    
+    INPUTS : - fun : function of a tuple of pixel coordinates (x,y,t), or a list of tuples. It can typically be an interpolator of 
+                pixel vertical displacement 
+             - points : list of tuples. Each tuple corresponds to pixel coordinates (x,y,t) /!\ must keep this order of dimensions
+             - y0 : float, y-coordinate of the middle of the camera sensor
+             - alpha_0 : float, angle (in rad) of the camera axis to the horizontal 
+             - focale : float, camera focal length (pixels)
+             - fps : float, frame rate used (frame/s)
+             - Dt : float, time step between two image compared to computer pixel displacement field 
+             
+    OUTPUT : - Fp : function of a tuple of pixel coordinates (x,y,t), or a list of tuples, which computes the vertical velocity
+                associated to a given tuple
+    """
+    
+    Fp = h*focale*fun(points)/((points[:,1] - y0)*np.cos(alpha_0) + 
+                              focale*np.sin(alpha_0))/((points[:,1] - y0 + fun(points))*np.sin(alpha_0) - focale*np.cos(alpha_0))*fps/Dt
+    
+    return Fp 
+
+
+def vertical_velocity_from_pixel_displacement(Vy,x_pix,y_pix,t,y0,h,alpha_0,focale,fps,Dt):
+    """ Compute vertical velocity field from velocity field of pixel displacement on the camera sensor. 
+    
+    INPUTS : - Vy : numpy array, velocity field of pixel displacement along the vertical of the camera sensor (y-axis)
+             - x_pix : numpy 1D array, x-coordinate of boxes center used to compute Vy
+             - y_pix : numpy 1D array, y-coordinate of boxes center used to compute Vy
+             - t : numpy 1D array, frame index array 
+             - y0 : float, y-coordinate of the middle of the camera sensor
+             - alpha_0 : float, angle (in rad) of the camera axis to the horizontal 
+             - focale : float, camera focal length (pixels)
+             - fps : float, frame rate used (frame/s)
+             - Dt : float, time step between two image compared to computer pixel displacement field 
+             
+    OUTPUT : - Vz : numpy array, vertical velocity field (scaled in m/s), same shape as Vy
+    
+    """
+    
+    start_time = time.perf_counter()
+    
+    # Create the meshgrid of new points
+    new_x, new_y, new_t = np.meshgrid(x_pix, y_pix, t, indexing='ij')
+    
+    if new_x.shape != Vy.shape :
+        raise TypeError(f"Vy has shape {Vy.shape} while x, y and t have respective shapes : {x_pix.shape}, {y_pix.shape} and {t.shape}")
+    
+    # compute interpolation of pixel displacement vertical velocity field 
+    Fy = RegularGridInterpolator((x_pix,y_pix,t), Vy)
+    
+    # Combine the new coordinates into a single list of points to interpolate
+    new_points = np.array([new_x.ravel(), new_y.ravel(), new_t.ravel()]).T
+    
+    # Perform the interpolation
+    Vz = backward_projection(Fy,new_points,y0,h,alpha_0,focale,fps,Dt)
+    
+    # Reshape the interpolated field back to the new grid shape
+    Vz = Vz.reshape(len(x_pix), len(y_pix), len(t))
+    
+    end_time = time.perf_counter()
+    # show computation time 
+    elapsed_time = end_time - start_time
+    print('Elapsed time : ',elapsed_time, ' s')
+    
+    return Vz
