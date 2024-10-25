@@ -92,7 +92,7 @@ m = genere_structure_banquise(u,v,u_filt,v_filt,a,fullname);
 % Create arrays of pixel indices for each box
 [nx,ny,nt] = size(m.Vx);
 m.PIXEL.x_pix = ((w + 1)/2 : w/2 : (nx*w + 1)/2); % x-index in pixel system of each box 
-m.PIXEL.y_pix = ((w + 1)/2 : w/2 : (ny*w + 1)/2); % x-index in pixel system of each box 
+m.PIXEL.y_pix = ((w + 1)/2 : w/2 : (ny*w + 1)/2); % y-index in pixel system of each box 
 m.PIXEL.x0 = (Lx + 1)/2;
 m.PIXEL.y0 = (Ly + 1)/2;
 m.PIXEL.x0 = 1;
