@@ -184,7 +184,7 @@ def display_timesync_table(tab_dt,phonelist,vmax=200):
     #cbar.ax.set_yticklabels(['1','3','10','30'])#,'$10^1$'])  
     cbar.set_label(r'$\Delta t$ (ms)', rotation=270,fontsize=18,labelpad=20)
 
-    figs = graphes.legende(r'Reference phone #',r'Phone #','',cplot=True)
+    figs = graphes.legende(r'Reference phone',r'Phone','',cplot=True)
     #graphes.save_figs(figs,savedir=savefolder,prefix=f'Time_table_{date}_',overwrite=True)
     return figs
 
