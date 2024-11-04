@@ -18,7 +18,9 @@ labels = {  'G':'g>',\
             'X':'m+',\
             'P':'r*',\
             'CTD':'b>',\
-            'H':'bv'}
+            'H':'bv',\
+            'plot':'ro',\
+            'depart':'gp'}
 
 global colors
 

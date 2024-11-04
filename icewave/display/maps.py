@@ -45,21 +45,25 @@ def display_map(measures,remote=True,w=10,h=10,ax=None):
             label = disp.labels[k]
             text= m['name'][0][0]+m['name'][0][-2:]
 #            label = disp.colors[
-        if key=='buoys_B5_buoy5_sbg_20240223_1700_0' or instrument=='phones':# or instrument=='gps':
+        excludes = ['buoys_B5_buoy5_sbg_20240223_1700_0']
+        name = key.split('_')[1]
+        if name=='B5':# or instrument=='phones':# or instrument=='gps':
             continue
-        ax.plot(m['longitude'][0],m['latitude'][0],label)
-        ax.text(m['longitude'][0],m['latitude'][0]+latshiftlabel,text,color='k')
+        if len(m['longitude'])>0:
+            ax.plot(m['longitude'][0],m['latitude'][0],label)
+            ax.text(m['longitude'][0],m['latitude'][0]+latshiftlabel,text,color='k')
+        else:
+            print(f'No GPS coordinates for {key}')
     [Lonmin,Lonmax] = ax.get_xlim()
     [Latmin,Latmax] = ax.get_ylim()
 
 
     deg,minute,sec = get_range(Lonmax,Lonmin)
-    print(Lonmin)
-    lon_display = [display_longitude((deg,minute,s)) for s in sec]#(d,m,s in lon_ticks]
+    lon_display = get_range_display(deg,minute,sec)    
     lon_ticks = coord2angle(deg,minute,sec,sign=-1)
     
     deg,minute,sec = get_range(Latmin,Latmax)
-    lat_display = [display_latitude((deg,minute,s)) for s in sec]#(d,m,s in lon_ticks]
+    lat_display = get_range_display(deg,minute,sec)    
     lat_ticks = coord2angle(deg,minute,sec,sign=1)
 #    lat_display = [display_latitude(angle2coord(lat)) for lat in lat_ticks]
     
@@ -69,6 +73,22 @@ def display_map(measures,remote=True,w=10,h=10,ax=None):
     figs = graphes.legende('Longitude','Latitude','')
     return figs
 
+def get_range_display(deg,minute,sec):
+    #print(deg,minute,sec)
+    print(deg,minute,sec)
+    print(type(minute))
+    if type(sec)==list or type(sec)==np.ndarray:
+        lon_display = [display_longitude((deg,minute,s)) for s in sec]#(d,m,s in lon_ticks]
+    elif type(minute)==list or type(minute)==np.ndarray:
+        lon_display = [display_longitude((deg,m,sec)) for m in minute]#(d,m,s in lon_ticks]
+    elif type(deg)==list or type(deg)==np.ndarray:
+        lon_display = [display_longitude((d,minute,sec)) for d in deg]#(d,m,s in lon_ticks]
+    else:
+        print('No spatial coordinate range available')
+        lon_display=None
+    print(lon_display)
+    return lon_display
+    
 def get_measures(records,tmin,tmax):
     measures = {}
 

@@ -21,7 +21,7 @@ def today_time(times):
     tstr = str(datetime.datetime.fromtimestamp(t0))
     tref = tstr.split(' ')[0]+' 00:00:00'
 
-    print(tref)
+    #print(tref)
     tref = datetime.datetime.strptime(tref, '%Y-%m-%d %H:%M:%S')
 
     tdtimes = []
