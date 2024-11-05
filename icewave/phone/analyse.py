@@ -80,7 +80,7 @@ def step3(folder):
 
     #save results in .csv format
     
-def step2(folder,cut=True):
+def step2(folder,cut=True,prefix='000*'):
     #step 2 :   load data in .csv format
     #           make a dictionnary data
     #           find the measurement interval,
@@ -88,15 +88,17 @@ def step2(folder,cut=True):
     #               on time interval Dt (default 5s)
     #           cut the temporal serie
     #           save the dictionnary data in a .pkl format (one for each phone)    
-    phonefolders = glob.glob(folder+'000*/')
+    phonefolders = glob.glob(folder+prefix+'/')
     pprint(phonefolders)
 
         #phonefolders=[phonefolder[:-1] for phonefolder in phonefolders]
     savefolder = folder+'Results/'
     for phonefolder in phonefolders:
+        print(phonefolder)
         data = load.load(phonefolder)
         data = load.sort(data)
 
+        print(data.keys())
         data = find_measure_interval(data)
         if cut:
             data = cut(data)
@@ -497,7 +499,7 @@ def time_spectrum(t,y):
 def main(args):
     process(args.date,args.step,cut=args.cut)
     
-def process(date,step,cut=True):
+def process(date,step,cut=True,path=None):
     base = df.find_path()#'/media/turbots/Hublot24/Share_hublot/Data/'
     #date = '0221'
     datafolder = base+date+'/Telephones/'
