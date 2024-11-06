@@ -1,29 +1,27 @@
-function movie_velocity_field(V,facq_x,facq_t,step,caxis_amp,fps,fig_name,left_bool)
+function movie_velocity_field(V,facq_x,facq_t,step,caxis_amp,fps,fig_name)
 
 % This function create a movie of a given velocity field V
 % It takes as arguments :
 % - V : velocity field [nx,ny,nt]
 % - facq_x : frequency for spacial sampling in box / meter
 % - facq_t : acquisition frequency for time 
-% - step : step with which we display frames
+% - step : step with which we go through time array
 % - caxis_amp : the min and max values of the colorbar 1x2
 % - fps : fps whith which the image will be displayed 
 % - fig_name : string, under which the video will be saved 
-% - left_bool : boolean to choose the orientation of x-axis 
 
 video_filename = [fig_name '.avi']; % folder where the video is saved
 vid = VideoWriter(video_filename);
 vid.FrameRate = fps;
+vid.Quality = 90; 
 open(vid)
 
 [nx,ny,nt] = size(V);
-if left_bool
-    x = (1:1:nx)./facq_x;
-else 
-    x = (nx:-1:1)./facq_x;
-end 
+
+x = (1:1:nx)./facq_x;
 y = (ny:-1:1)./facq_x;
 t = (1:1:nt)./facq_t;
+
 [X,Y]=meshgrid(x,y);
 
 velocity_fig = figure;
@@ -43,16 +41,18 @@ for i0 = 1 : length(relevant_idx)
     ax.FontSize = 13;
     axis image
 
-    if ~left_bool
-        set(gca,'XDir','reverse')
-    end 
-    colormap(redblue)
+%     colormap(redblue)
     cbar = colorbar();
     caxis(caxis_amp)
-    cbar.Label.String = '$ V \: \rm (m.s^{-1})$';
+    cbar.Label.String = '$ V_x \: \rm (m.s^{-1})$';
     cbar.Label.Interpreter = 'latex';
-    cbar.FontSize = 13;
-    set_Papermode(gcf)
+    
+    % set figure resolution 
+    set(gcf, 'Position', [100, 100, 1280, 720]);
+    ax = gca;
+    ax.FontSize = 16;
+    cbar.FontSize = 16;
+%     set_Papermode(gcf)
 
     T(i0)=getframe(gcf);     
 

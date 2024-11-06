@@ -1,4 +1,4 @@
-function get_histogram_displacement(Vx,W,bool_average,font_size,filename)
+function hist_figure = get_histogram_displacement(Vx,W,bool_average)
 
 % This functions plots the Histogram of the pixel displacements after a PIV
 % process
@@ -9,7 +9,6 @@ function get_histogram_displacement(Vx,W,bool_average,font_size,filename)
 % - Vx : the wavefield of interest [ny,nx,nt]
 % - W : the last window size used
 % - bool_average : boolean to choose to average over time 
-% - fig_folder : folder where the histogram is saved
 
 % average over time, of the absolute velocity
 Vxmoy = mean(abs(Vx),3,'omitnan'); 
@@ -30,18 +29,8 @@ end
 
 xline(low_bound,'r--')
 xline(up_bound,'r--')
-xlabel('$\log_{10}( \vert V_x \vert )$','Interpreter','latex','FontSize',font_size);
-ylabel('$N( \vert V_x \vert )$','Interpreter','latex','FontSize',font_size);
-%title('Histogram of horizontal displacements','FontSize',font_size);
+xlabel('$\log_{10}( \vert V_x \vert )$','Interpreter','latex');
+ylabel('$N( \vert V_x \vert )$','Interpreter','latex');
 
-% set correctly the image position for a pdf format 
-set(hist_figure,'Units','Inches');
-pos = get(hist_figure,'Position');
-set(hist_figure,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-print(hist_figure,'filename','-dpdf','-r0')
-
-fig_file = filename;
-
-saveas(hist_figure, fig_file, 'fig');
 
 end 
