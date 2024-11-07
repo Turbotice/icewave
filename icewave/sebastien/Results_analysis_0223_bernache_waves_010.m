@@ -13,10 +13,28 @@ matname = [base filename];
 
 path2functions = 'C:/Users/sebas/git/icewave/drone/Drone_banquise_analysis/'; 
 addpath(path2functions)
-%%
+
+%% Load data 
 disp('Loading Data..');
 load(matname);
 disp('Data loaded');
+
+%% Create structure with main results 
+base_main_struct = [base '/Results/'];
+if ~exist(base_main_struct)
+    mkdir(base_main_struct)
+end 
+filename = ['Drone_PIV_main_results_' date '_' drone_ID '_' exp_ID]; % main structure where data are saved 
+
+filename_main_results = [base_main_struct filename '.mat'];
+if isfile(filename_main_results)
+    main_results = load(filename_main_results);
+else
+    main_results = struct('date',date,'drone_ID',drone_ID,'exp_ID',exp_ID);
+    main_results.DRONE = m.DRONE; % save flight parameters 
+end 
+
+
 %% Folder where plots are saved and set parameters for plotting 
 base_fig = base;
 fig_folder = [base_fig 'Plots/'];
@@ -129,6 +147,7 @@ padding_bool = 1;
 add_pow2 = 0;
 [FFT_t,TF_spectrum,f] = temporal_FFT(Vx(:,:,:),padding_bool,add_pow2,facq_t);
 
+TF_spectrum = TF_spectrum';
 fig_spectrum = figure; 
 loglog(f,TF_spectrum)
 grid on 
@@ -140,6 +159,8 @@ ax.FontSize = 13;
 
 file = [fig_folder 'FFT_spectrum'];
 saveas(fig_spectrum,file,'fig')
+
+main_results.FFT_spectrum = struct('TF_spectrum',TF_spectrum,'f',f);
 
 %% Get demodulated field
 disp('Getting demodulated fields')
@@ -380,6 +401,13 @@ filename = ['Data_plot_selected_harmonics_' date '_' drone_ID '_' exp_ID];
 directory = fig_folder;
 save([directory filename],'S_disp','-v7.3')
 
+
+%% Store dispersion relation data in main_results
+main_results.disp_relation = struct('f',S_disp.f,'k',S_disp.k,'A',S_disp.A,'omega',S_disp.omega,...
+    'closest_harmonic',S_disp.closest_harmonic);
+main_results.disp_relation.param = struct('h_w',S_disp.theory.h_w);
+main_results.disp_relation.param.units = struct('h_w','meter');
+
 %% Plot each harmonic with a different colormaps corresponding to the intensity of each points (omega,k)
 
 % Load Data of selected harmonics 
@@ -511,7 +539,7 @@ axis([0.1 6 , 5e-1 10])
 % #######################################
 
 % Parameters 
-selected_freq = [0.3 0.6]; % selected frequencies between which we proceed to the analysis
+selected_freq = [0.3 0.8]; % selected frequencies between which we proceed to the analysis
 % get indices of frequencies closest to max and min selected frequency
 [min_freq, start_freq_idx] = min(abs(f - selected_freq(1))); 
 [max_freq, end_freq_idx] = min(abs(f - selected_freq(2)));
@@ -520,15 +548,15 @@ FFT_cropped = FFT_t(:,:,start_freq_idx:end_freq_idx);
 nf = length(new_freq);
 
 % Select range of frequencies and space of shortened fit 
-f_short = [0.45 0.54]; % frequency above which the attenuation fit is shortened
-x_short = [50 30]; % meters % range over which the shrotened attenuation fit is performed
+f_short = [0.45 0.54 0.56 0.6]; % frequency above which the attenuation fit is shortened
+x_short = [50 30 20 15]; % meters % range over which the shrotened attenuation fit is performed
 
 x = m.x;
 y = m.y;
-padding_bool = 1;
-add_pow2 = 2;
-threshold = 0.8;
-L0 = 80; % segments size in meter 
+padding_bool = 1; % additional padding for space FFT computation
+add_pow2 = 2; 
+threshold = 0.8; % threshold used to binarize space FFT
+L0 = 80; % segments size over which we look at attenuation
 
 new_folder_fig = [fig_folder 'attenuation_oriented/'];
 if exist(new_folder_fig,'dir') ~= 7
@@ -536,18 +564,19 @@ if exist(new_folder_fig,'dir') ~= 7
 end
 
 alpha = zeros(nf,1); % array of attenuation coefficients
-C  = zeros(nx,1);
+C  = zeros(nx,1); % array of prefactor
 d = zeros(nf,1); % array of distance to plot
 
 for idx_freq = 1:nf
     current_freq = new_freq(idx_freq);
     disp(['f = ' num2str(current_freq) ' Hz'])
+
+    % 2D-FFT of complex field
     field = FFT_cropped(:,:,idx_freq);
     freq_txt = replace(num2str(new_freq(idx_freq)),'.','p');
-    % 2D FFT of this complex field 
-    [shifted_fft,fft_2D,kx,ky] = spatial_FFT(field,padding_bool,add_pow2,facq_x);
+    [shifted_fft,~,kx,ky] = spatial_FFT(field,padding_bool,add_pow2,facq_x);
 
-    % Detect peaks 
+    % Normalize 2D-FFT
     zmax = max(abs(shifted_fft),[],'all');
     norm_fft = abs(shifted_fft)/zmax;
 
@@ -571,7 +600,7 @@ for idx_freq = 1:nf
     plot(kx_peak,ky_peak,'ro')
     xlabel('$k_x \: \rm (rad.m^{-1})$')
     ylabel('$k_y \: \rm (rad.m^{-1})$')
-    axis([-2 2 -2 2 ]) 
+    axis([-2 2 -2 2]) 
     hold off
 
     % select peak index 
@@ -583,14 +612,14 @@ for idx_freq = 1:nf
     % kx_peak = kx(row);
     % ky_peak = ky(col);
     
-    [theta,k_peak] = cart2pol(kx_peak,ky_peak); % converts to polar coordinates 
-    disp(['Theta = ' num2str(theta)])
+    [theta,~] = cart2pol(kx_peak,ky_peak); % converts to polar coordinates 
+%     disp(['Theta = ' num2str(theta)])
 
     if theta < 0
         % Build several segments for theta < 0
         % initial line 
-        x0 = m.x(1); % minimal value along x axis
-        y0 = L0*sin(abs(theta)) + m.y(1);
+        x0 = x(1); % minimal value along x axis
+        y0 = L0*sin(abs(theta)) + y(1);
         ds = m.SCALE.fx; % step of curvilinear coordinate
         s = (0:ds:L0); % curvilinear coordinate
         
@@ -600,8 +629,8 @@ for idx_freq = 1:nf
 
     else
         % Building several segments for theta > 0
-        x0 = (m.y(end) - L0*sin(theta) - m.y(1))*tan(theta);
-        y0 = m.y(1);
+        x0 = (y(end) - L0*sin(theta) - y(1))*tan(theta);
+        y0 = y(1);
         ds = m.SCALE.fx;
 
         s = (0:ds:L0); % curvilinear coordinate
@@ -612,7 +641,6 @@ for idx_freq = 1:nf
     real_field_fig = figure(2); 
     pcolor(x,y,real(field)')
     shading interp
-    colormap(redblue)
     hold on 
     plot(x_line,y_line,'k--')
     axis image
@@ -636,8 +664,8 @@ for idx_freq = 1:nf
         plot(x_line,y_line,'k-')
     else
         field_star = field;
-        x_star = m.x;
-        y_star = m.y;
+        x_star = x;
+        y_star = y;
     end
       
     hold off
@@ -646,43 +674,49 @@ for idx_freq = 1:nf
     saveas(gcf,figname,'pdf')
 
     % Exponential fit 
-    TF_x = squeeze(mean(field_star,2)); % average the TF over y  
-    A = abs(TF_x); % amplitude along x-axis for each frequency
+    %TF_x = squeeze(mean(field_star,2)); % average the TF over y  
+    A = squeeze(mean(abs(field_star),2)); % amplitude along x-axis for each frequency
     
     % indices used to fit the exponential decay
 
     if isempty(f_short)
-        i_min = 1;
-        i_max = length(A);
+        i_min = 1; % minimum index 
+        i_max = length(A); % maximum index 
     else 
-        for idx_subdomain = 1:length(f_short)
-            current_fshort = f_short(idx_subdomain);
-            current_xshort = x_short(idx_subdomain);
-            [~,i_short] = min(abs(m.x - current_xshort));
-            if current_freq < current_fshort 
-                i_min = 1;
-                i_max = length(A);
-            else
-                i_min = 1;
-                i_max = i_short;
-            end 
+        idx_cutoff = 1;
+        current_fcutoff = f_short(idx_cutoff); % initialize cut off frequency 
+        current_xcutoff = x_short(idx_cutoff); % initialize cut off xmax 
+        while current_freq > current_fcutoff && current_freq < f_short(end)
+            idx_cutoff = idx_cutoff + 1; 
+            current_fcutoff = f_short(idx_cutoff);
+            current_xcutoff = x_short(idx_cutoff);
+        end 
+        [~,i_short] = min(abs(x - current_xcutoff));
+        if current_freq < current_fcutoff
+            i_min = 1;
+            i_max = length(A);
+        else
+            i_min = 1;
+            i_max = i_short;
         end 
     end 
 
     decay_fig = figure(3);
     decay_fig.Color = [1,1,1];
 
-    log_A = log10(A); % take the log10 of the amplitude of freq i
     % restrict to the boundaries in order to fit
     x_fit = x_star(i_min:i_max); % in meter !!
-    A_fit = log_A(i_min:i_max); 
+    A_red = A(i_min:i_max); % restricted to the region of interest
+    
+    log_A = log10(A_red); % take the log10 of the amplitude of freq i
+    A_fit = log_A; 
     p = polyfit(x_fit,A_fit,1); % fit log_A by a degree 1 polynome
     alpha(idx_freq) = log(10)*p(1); % get attenuation coefficient in m^-1
     C(idx_freq) = 10.^p(2); % prefactor
 
     disp(['alpha = ' num2str(alpha(idx_freq)) ' m-1'])
     y_poly = 10.^polyval(p,x_fit);
-    plot(x_fit,A(i_min:i_max),'o');
+    plot(x_fit,A_red,'o');
     hold on 
     plot(x_fit,y_poly,'r');
     xlabel('$x \: \rm (m)$','Interpreter','latex');
@@ -700,9 +734,8 @@ for idx_freq = 1:nf
     saveas(decay_fig,figname,'fig')
     saveas(decay_fig,figname,'pdf')
     
-    A_red = A(i_min:i_max); % restricted to the region of interest
     d(idx_freq) = sum((y_poly - A_red').^2)/sum(A_red.^2); % distance to the fit
-
+    disp(['Distance to fit : ' num2str(d(idx_freq)) ''])
 end 
 
 %% Save relevant variables 
@@ -763,6 +796,18 @@ figure,
 plot(S.new_freq,S.d,'o')
 xlabel('$f \: \rm (Hz)$')
 ylabel('$d$')
+
+%% Save main results 
+
+save(filename_main_results,'main_results','-v7.3')
+
+
+
+
+
+
+
+
 
 % ####################
 %% MAIN DEVELOPMENTS 
@@ -1149,4 +1194,29 @@ end
 %     % Computation of the subpixel amplitude
 %     y_max = p_0 + 0.5*(2*p_0 - p_right - p_left).*delta.^2;
 % 
+% end
+
+
+% %% Load main dictionnary of results
+% base_main_struct = 'K:/Share_hublot/Data/Results/';
+% base_main_struct_bis = 'W:/SagWin2024/Data/Results/';
+% main_struct = 'Drone_PIV_main_results'; % main structure where data are saved 
+% 
+% filename = [base_main_struct main_struct '.mat'];
+% if isfile(filename)
+%     main_results = load(filename);
+% else
+%     main_results = struct();
+% end 
+% 
+% % create new fields to be added 
+% fields = {['d' date],drone_ID,['e' exp_ID]};
+% local_results = main_results;
+% for i = 1 : length(fields)
+%     current_field = fields{i};
+%     if isfield(local_results,current_field)
+%         local_results = local_results.(curren_field);
+%     else 
+%         
+%     end 
 % end
