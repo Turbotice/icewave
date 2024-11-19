@@ -212,10 +212,12 @@ def find_measure_interval(data,var='a',Dt=5,S0=1,display=False):
 
     return data
 
-def cut(data,v='a'):
+def cut(data,v='a',t0=None,t1=None):
     variables = ['a','g','m']
-    t0 = data[v+'t0']
-    t1 = data[v+'t1']
+    if t0==None:
+        t0 = data[v+'t0']
+    if t1==None:
+        t1 = data[v+'t1']
     for var in variables:
         t = data['t'+var]
         indices=np.logical_and(t>=t0,t<=t1)
