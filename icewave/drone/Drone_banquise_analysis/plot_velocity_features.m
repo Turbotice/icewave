@@ -10,7 +10,6 @@ function plot_velocity_features(Vx,Vy,fx,i,caxis_amp,fig_folder)
 % - caxis_amp : amplitude of the colorbar
 % - fig_folder : folder where to save plots 
 
-
     [nx,ny,nt] = size(Vx);
 
     % create a meshgrid
@@ -27,9 +26,7 @@ function plot_velocity_features(Vx,Vy,fx,i,caxis_amp,fig_folder)
 
     %% get an image of the velocity fields
     figure;
-
-    save_boolean = 1;
-
+    
     subplot(2,1,1)
     hold off
     surf(X./fx,Y./fx,Vx(:,:,i)')
@@ -70,10 +67,8 @@ function plot_velocity_features(Vx,Vy,fx,i,caxis_amp,fig_folder)
     set(gcf,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
     print(gcf,'filename','-dpdf','-r0')
 
-    fig_file = [fig_folder 'Velocity_map_idx_' num2str(i)];
-    if save_boolean
-        saveas(gcf,fig_file,'fig');
-    end
+    fig_file = [fig_folder 'Velocity_map_idx_' num2str(i) 'caxis_amp_' num2str(caxis_amp)];
+    saveas(gcf,fig_file,'fig');
 
     %% Moyenne, ecart type
 
