@@ -80,7 +80,13 @@ def load(folder):
     data = {}
     for meta in metalist:
         key = os.path.basename(meta).split('.')[0]
-        data[key]  = read_meta(meta)
+        if key=='device':
+            data[key]  = read_meta_device(meta)
+        elif key=='time':
+            data[key]  = read_meta_time(meta)
+        else:
+            print(key)
+            print('meta csv file unrecognized')
 
     for datafile in datalist:
         key = os.path.basename(datafile).split('.')[0]
@@ -159,19 +165,46 @@ def get_mean_position(data):
         return np.nan,np.nan
     return Lat,Lon
 
-def read_meta(csvfile):
+def read_meta_device(csvfile):
     d={}
     with open(csvfile) as f:
         csv_reader = csv.reader(f, delimiter=',')
         line=0
-        for row in csv_reader:
+        for j,row in enumerate(csv_reader):
             if line==0:
                 headers = row
             else:
                 #print(headers,row)
                 for i,header in enumerate(headers):
-                    d[header[:6]+'_'+row[0]]=row[i]
+                    key = header[:6]+'_'+row[0]
+                    if not key in d.keys():
+                        d[key]=row[i]
             line+=1
+    return d
 
+def read_meta_time(csvfile):
+    d={}
+    with open(csvfile) as f:
+        csv_reader = csv.reader(f, delimiter=',')
+        line=0
+        for j,row in enumerate(csv_reader):
+            if line==0:
+                headers = row[1:]
+            else:
+                print(headers,row)
+                print('')
+                for i,header in enumerate(headers):
+                    #print(header) 
+                    key = header+'_'+row[0]#beware of back compatibility !!! header[:6] replaced by header
+                    print(key)
+                    if not key in d.keys():
+                        d[key]=row[i+1]
+                    else:
+                        print(int((j-1)/2))
+                        num = int((j-1)/2)
+                        d[key+'_'+str(num)] = row[i+1]
+                        print('key already exist ! Multiple recordings, num = '+str(num+1))
+                
+            line+=1
     return d
 
