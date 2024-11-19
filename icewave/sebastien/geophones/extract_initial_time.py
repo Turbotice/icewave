@@ -41,10 +41,10 @@ import csv
 
 #%% Set parameters 
 year = '2024'
-date = '0306' #date format, 'mmdd'
-acqu_numb = '0004' #acquisition number 
+date = '0910' #date format, 'mmdd'
+acqu_numb = '0001' #acquisition number 
 
-path2data = os.path.join('U:/Share_hublot/Data/',date,'Geophones/')
+path2data = os.path.join('C:/Users/sebas/Desktop/Amundsen_RA_2024/Data/',year,date,'Geophones/')
 
 fig_folder = path2data + 'Figures/'  # folder where figures are saved 
 if not os.path.isdir(fig_folder):
@@ -454,6 +454,10 @@ for k, idx in enumerate(selected_indices):
     ax.plot(datetime_values, 
             current_stream[0].data / max(np.abs(current_stream[0].data) ) + geophones_spacing*k + geophones_spacing, 
             label=f"Stream {k}")
+    
+    # ax.plot(datetime_values, 
+    #         current_stream[0].data  + geophones_spacing*k + geophones_spacing, 
+    #         label=f"Stream {k}")
     
 
 #fig.suptitle(f"Seismic Data - {start_time_utc.strftime('%Y-%m-%d %H:%M:%S')}", fontsize=16)
