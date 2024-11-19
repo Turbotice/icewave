@@ -508,6 +508,10 @@ def process(date,step,cut=True,path=None):
     folders1 = glob.glob(datafolder+'Bic24*/')
     folders2 = glob.glob(datafolder+'Sag24*/')
     folders = folders1+folders2
+
+    print(folders)
+    print('')
+    print('')
     for folder in folders:
         #func = locals()['step'+str(args.step)]
         #func(folder)
