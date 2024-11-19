@@ -29,6 +29,7 @@ def gen_parser():
     parser = argparse.ArgumentParser(description="Manipulate smartphone data")
     parser.add_argument('-date', dest='date', type=str,default='0226',help='select date to process data')
     parser.add_argument('-step', dest='step', type=int,default=3,help='select Step to be performed')
+    parser.add_argument('-cut', dest='cut', type=bool,default=True,help='Boolean, automatically find the measurement interval if cut = True')
 
 #    print(parser)   
     args = parser.parse_args()
@@ -79,7 +80,7 @@ def step3(folder):
 
     #save results in .csv format
     
-def step2(folder):
+def step2(folder,cut=True,prefix='000*'):
     #step 2 :   load data in .csv format
     #           make a dictionnary data
     #           find the measurement interval,
@@ -87,17 +88,20 @@ def step2(folder):
     #               on time interval Dt (default 5s)
     #           cut the temporal serie
     #           save the dictionnary data in a .pkl format (one for each phone)    
-    phonefolders = glob.glob(folder+'000*/')
+    phonefolders = glob.glob(folder+prefix+'/')
     pprint(phonefolders)
 
         #phonefolders=[phonefolder[:-1] for phonefolder in phonefolders]
     savefolder = folder+'Results/'
     for phonefolder in phonefolders:
+        print(phonefolder)
         data = load.load(phonefolder)
         data = load.sort(data)
 
+        print(data.keys())
         data = find_measure_interval(data)
-        data = cut(data)
+        if cut:
+            data = cut(data)
         rw.save_data_single_phone(data,phonefolder)
 
 #    testfolder = 'Telephones/Soufflerie_dec23/131223/Telephones/121223_4_U400cms/'
@@ -493,9 +497,9 @@ def time_spectrum(t,y):
     return f,TFmoy,fmax
 
 def main(args):
-    process(args.date,args.step)
+    process(args.date,args.step,cut=args.cut)
     
-def process(date,step):
+def process(date,step,cut=True,path=None):
     base = df.find_path()#'/media/turbots/Hublot24/Share_hublot/Data/'
     #date = '0221'
     datafolder = base+date+'/Telephones/'
@@ -508,7 +512,7 @@ def process(date,step):
         if step==1:
             step1(folder)
         if step==2:
-            step2(folder)
+            step2(folder,cut=cut)
         if step==3:
             step3(folder)
         if step==4:

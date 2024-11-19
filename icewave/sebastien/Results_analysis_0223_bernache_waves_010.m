@@ -3,43 +3,48 @@ clear all;
 close all;
 
 %% Loading structure obtained after PIV processing and post-processing
-
-%base = 'W:/SagWin2024/Data/0223/Drones/bernache/matData/12-waves_010/';
-base = 'H:/Rimouski_2024/Data/2024/0223/bernache/matData/12-waves_010/';
-% base = 'E:/Rimouski_2024/Data/2024/0219/matData/waves_012/';
+date = '0223';
+drone_ID = 'Bernache';
+exp_ID = '12-waves_010';
+base = ['K:/Share_hublot/Data/' date '/Drones/' drone_ID '/matData/' exp_ID '/'];
 
 filename = 'PIV_processed_i00_N0_Dt4_b1_W32_xROI1_width3388_yROI1_height2159_scaled.mat';
 matname = [base filename];
+
+path2functions = 'C:/Users/sebas/git/icewave/drone/Drone_banquise_analysis/'; 
+addpath(path2functions)
 %%
 disp('Loading Data..');
 load(matname);
 disp('Data loaded');
-%% Creates a folder where to save the generated plots
+%% Folder where plots are saved and set parameters for plotting 
 base_fig = base;
-%base_fig = 'E:/PIVlab_drone/';
 fig_folder = [base_fig 'Plots/'];
 if ~exist(fig_folder)
     mkdir(fig_folder)
 end
 
+font_size = 13;
 %% Scales
 
 facq_x = 1/m.SCALE.fx; % scale in box / meter
 facq_t = 1/m.SCALE.ft; % scale in frame / sec
 scale_V = m.SCALE.scale_V; % factor scaling for velocity in meter / s
 W = m.PIV_param.w ;
-font_size = 13;
 
 %% Get Histogram displacement 
 
-% Vx = m.Vx(10:end,:,:) - mean(mean(m.Vx(10:end,:,:),2),1);
 filename = [fig_folder 'histogramm_displacements_Vx_time_average'];
 average_bool = 1;
-get_histogram_displacement(m.Vx/scale_V,W,average_bool,font_size,filename);
+hist_figure = get_histogram_displacement(m.Vx/scale_V,W,average_bool);
+set(gca,'FontSize',font_size)
+set_Papermode(gcf)
+
+saveas(hist_figure, filename,'fig')
 
 %% Get profile of velocity
-i_x = 30;
-i_y = 60;
+i_x = 60;
+i_y = 100;
 left_bool = 1;
 Vx = flip(m.Vx,1);
 profile_fig = plot_located_profile(Vx,i_x,i_y,facq_x,facq_t,left_bool);
@@ -47,7 +52,7 @@ set_Papermode(profile_fig)
 
 disp(mean(abs(Vx(i_x,i_y,:))))
 
-fig_file_name = [fig_folder 'Time_profile_ix_' num2str(i_x) '_iy_' num2str(i_y)];
+fig_file_name = [fig_folder 'Time_profile_Vx_ix_' num2str(i_x) '_iy_' num2str(i_y)];
 saveas(profile_fig,fig_file_name,'fig')
 
 %% Get rid off quadratic noise (drone movements)
@@ -58,9 +63,6 @@ y = (ny:-1:1);
 % compute the mean component of the velocity field for each frame
 Vxmoy = mean(mean(m.Vx,2),1);
 Vymoy = mean(mean(m.Vy,2),1);
-% reduce the velocity field from its mean value
-% m.Vx = m.Vx - Vxmoy;
-% m.Vy = m.Vy - Vymoy;
 
 Vx = supress_quadratic_noise(m.Vx,x,y); 
 Vy = supress_quadratic_noise(m.Vy,x,y);
@@ -72,21 +74,19 @@ disp('Drone motion corrected')
 %% Plot main features of the velocity field
 disp('Get velocity features')
 idx_frame = 20;
-caxis_amp = 1.0; % Amplitude of the colorbar scale (in meter / second)
+caxis_amp = 2.0; % Amplitude of the colorbar scale (in meter / second)
 
-plot_velocity_features(Vx,Vy,facq_x,idx_frame,caxis_amp,fig_folder,1);
+plot_velocity_features(Vx,Vy,facq_x,idx_frame,caxis_amp,fig_folder);
 
 
 %% computes Quantile of the velocity field 
 Q = quantile(Vx,[0.1 0.9],'all');
 
-%%
-%fig_folder_E = 'E:/Rimouski_2024/Data/2024/0226/Drones/mesange/12-FRAC_001/';
-caxis_amp = [Q(1)-0.1 Q(2)+0.1]; 
-fig_name = [fig_folder 'Velocity_field_Vx_movie_test'];
+caxis_amp = [-3 3]; 
+fig_name = [fig_folder 'Velocity_field_Vx_movie'];
 fps = facq_t ;
 step = 5; % prints every 5 frames 
-movie_velocity_field(m.Vx,facq_x,facq_t,caxis_amp,fps,fig_name,0)
+movie_velocity_field(Vx,facq_x,facq_t,step,caxis_amp,fps,fig_name)
 
 %% Show quickly the velocity field 
 step = 2; % step between two frames 
@@ -178,54 +178,17 @@ save(dispersion_file,'k','freq','selected_freq','x_bound','add_pow2','black_mask
 %% #### E(k,f) plot ###################
 % #####################################
 
-% FFT 3D of the velocity field 
-N = size(Vx);
-add_pow2 = [0, 0, 0]; % additional padding for each dimension 
-padding = 2.^(nextpow2(N) + add_pow2); % padding for each dimension
-
-disp('Computing FFT 3D')
-FFT = fftn(Vx,padding)/numel(Vx); % FFT 
-disp('FFT 3D computed')
-
-kx = 2*pi*facq_x*(-padding(1)/2:padding(1)/2-1)/padding(1);
-ky = -2*pi*facq_x*(-padding(2)/2:padding(2)/2-1)/padding(2);
-
-% keep only positive frequencies 
-FFT_positive = FFT(:,:,1:padding(3)/2 +1);
-FFT_positive(:,:,2:end-1) = 2*FFT_positive(:,:,2:end-1);
-
-f = facq_t*(0:padding(3)/2)/padding(3);
-
-% FFT shift for all dimensions
-shift = fftshift(fftshift(FFT_positive,2),1);
-disp('FFT shifted')
-
-% Radial average for each frequency
-
-radial_step = 1;
-% center of the 2D-FFT
-x0 = padding(1)/2 + 1;
-y0 = padding(2)/2 + 1;
-
-%loop over all frequencies 
-for i0 = 1:size(shift,3)
-    % demodulated 2D-FFT
-    img = shift(:,:,i0);
-
-    [R_tics, R_profile] = radialavg2(abs(img),radial_step,x0,y0);
-    E(i0,:) = R_profile; % Amplitude for value (f,k)
-end 
-disp('Amplitude computed')
-
-k = 2*pi*R_tics*facq_x/padding(1);
+add_pow2 = [0, 0, 0]; % additional padding for each dimension
+[E,f,k,shift] = space_time_spectrum_Efk(Vx,add_pow2,facq_t,facq_x);
 
 %% Plot A(f,k)
 omega = 2*pi*f;
 
 g = 9.81; % gravity intensity 
+h_w = 3.8; % water depth
+
 k_list = linspace(0.1,7,100);
 deep_water = sqrt(g*k_list);
-h_w = 3.8; % water depth
 shallow = sqrt(g*h_w*k_list.^2);
 yth = sqrt(g*k_list.*tanh(h_w*k_list));
 
@@ -254,7 +217,7 @@ hold on
 loglog(k_list,harmonic3,'w--')
 set_Papermode(gcf)
 set(gca,'FontSize',13)
-clim([4e-4 2e-2])
+caxis([4e-4 2e-2])
 % xticks([1e-1 2e-1 3e-1 1 2 3])
 % lgnd = legend('',['$\omega^2 = gk \tanh(gh_w) \: h_w = ' num2str(h_w) '\: \rm m$'],'','');
 % set(lgnd,'Location','southeast')
@@ -264,21 +227,21 @@ clim([4e-4 2e-2])
 % loglog(k_list,harmonic3,'w--')
 % colormap(slanCM('thermal-2'))
 
-fig_filename = ['A_fk_0223_waves_010_with_harmonics_hw' num2str(h_w)];
+fig_filename = ['A_fk_' date '_' drone_ID '_' exp_ID '_with_harmonics_hw' num2str(h_w)];
 fig_filename = replace(fig_filename,'.','p');
 
 saveas(fig_Afk,[fig_folder fig_filename],'fig')
 saveas(fig_Afk,[fig_folder fig_filename],'pdf')
 
 %% Save data of plots
-data_filename = ['Data_A_fk_0223_waves_010'];
+data_filename = ['Data_A_fk_' date '_' drone_ID '_' exp_ID];
 data_filename = replace(data_filename,'.','p');
 
 save([fig_folder data_filename],'f','omega','k','E','shift','-v7.3')
 disp('Data saved')
 
 %% Load Data for A(f,k) plot
-filename = 'Data_A_fk_0223_waves_010.mat' ;
+filename = ['Data_A_fk_' date '_' drone_ID '_' exp_ID '.mat'];
 
 disp('Loading data..')
 load([fig_folder filename])
@@ -286,94 +249,39 @@ disp('Data loaded')
 
 %% Detect each branch of bound waves
 
-% Select a profile of the A(f,k) : 
-selected_freq = 0.63;
-[~,idx_freq] = min(abs(selected_freq - f));
+min_prominence = 1.5e-1; % minimal prominence of detected peaks 
+freq_range = [f(1) 0.9]; % stop loop at this frequency
 
-% figure(10),
-% plot(2*pi./k,E(idx_freq,:))
-% xlabel('$\lambda \: \rm (m)$')
-% ylabel('$|\hat{V}_x|(k) \: \rm (m.s^{-1})$')
-% xlim([0 50])
-freq_end = 0.9; % stop loop at this frequency
-[~,idx_end] = min(abs(freq_end - f));
+[S_disp] = extract_branchs_from_Efk(E,f,k,min_prominence,freq_range);
 
-figure(12)
-for i = 1 : idx_end
-
-    disp(['Omega = ' num2str(omega(i))])
-    max_absolute = max(E(i,:));
-    profile = E(i,:)/max_absolute;
-%     figure(11),
-%     plot(k,profile)
-%     xlabel('$k \: \rm (m^{-1})$')
-%     ylabel('$|\hat{V}_x|(k) \: \rm (m.s^{-1})$')
-%     xlim(2*pi*[1/50 1/2])
-% 
-    [pks,locs,w,prom] = findpeaks(profile,'MinPeakProminence',1.5e-1);
-    [y_max,k_peaks] = subpix_precision(profile,k',locs);
-    
-    M_peaks(i).k = k_peaks;
-    M_peaks(i).A = y_max*max_absolute;
-    M_peaks(i).width = w;
-    M_peaks(i).omega = omega(i);
-    
-%     findpeaks(profile,k,'MinPeakProminence',1e-1,'Annotate','extents')
-    plot(k,profile,'o')
-    hold on 
-    plot(M_peaks(i).k,y_max,'rd')
-    xlim(2*pi*[1/50 1/2])
-    hold off
-    xlabel('$k \: \rm (rad.m^{-1})$')
-    ylabel('$\hat{V_x}(k,f) \: \rm (m.s^{-1})$')
-    pause(0.1)
-end 
 
 %% Plot detected peaks
-c = [0 0.4470 0.7410];
+c = [0 0.4470 0.7410]; % marine blue color
 
 figure(13)
-for i = 1 : size(M_peaks,2)
-%     disp(M_peaks(i).k)
-%     disp(M_peaks(i).omega .* ones(1,length(M_peaks(i).k)))
-    plot(M_peaks(i).k,M_peaks(i).omega .* ones(1,length(M_peaks(i).k)),'o','MarkerFaceColor',c,'MarkerEdgeColor','k')
-    hold on 
-end
+plot(S_disp.k,S_disp.omega,'o','MarkerFaceColor',c,'MarkerEdgeColor','k')
 
-xlabel('$k \: \rm (m^{-1})$')
-ylabel('$\omega \: \rm (rad.s^{-1})$')
-
-%% Filtering data & creating two arrays
-
-omega_array = [];
-k_array = [];
-amplitude_array = [];
-for i = 1 : size(M_peaks,2)
-    current_omeg = M_peaks(i).omega .* ones(1,length(M_peaks(i).k)); 
-    current_k = M_peaks(i).k;
-    current_A = M_peaks(i).A;
-    omega_array = cat(2,omega_array,current_omeg); % store omega 
-    k_array = cat(2,k_array,current_k);
-    amplitude_array = cat(2,amplitude_array,current_A);
-end 
 
 %% 
+fields = fieldnames(S_disp);
+mask = ~(((S_disp.omega > 3.0) & (S_disp.k < 0.7)) | (S_disp.omega < 1.0)); 
+for i = 1 : length(fields)
+    key = fields{i};
+    S_disp.(key) = S_disp.(key)(mask);
+end 
 
-mask = ~(((omega_array > 3.0) & (k_array < 0.7)) | (omega_array < 1.0)); 
-omega_array = omega_array(mask);
-k_array = k_array(mask);
-A_array = amplitude_array(mask);
+%%
 
-
-mask2 = ((omega_array > 1.37) & (k_array < 0.2)) | ((k_array > 0.45) & (omega_array < 1.35))...
-    | ((omega_array > 4.95) & (k_array < 0.89)) | ((omega_array > 5.44) & (k_array < 1.3));
+mask2 = ((S_disp.omega > 1.37) & (S_disp.k < 0.2)) | ((S_disp.k > 0.45) & (S_disp.omega < 1.35))...
+    | ((S_disp.omega > 4.95) & (S_disp.k < 0.89)) | ((S_disp.omega > 5.44) & (S_disp.k < 1.3));
 mask2 = ~mask2;
-omega_array = omega_array(mask2);
-k_array = k_array(mask2);
-A_array = A_array(mask2);
+for i = 1 : length(fields)
+    key = fields{i};
+    S_disp.(key) = S_disp.(key)(mask2);
+end 
 
 figure, 
-plot(k_array,omega_array,'o')
+plot(S_disp.k,S_disp.omega,'o')
 grid on 
 
 
@@ -382,7 +290,7 @@ grid on
 g = 9.81; % gravity intensity 
 k_list = linspace(0.05,6,100);
 deep_water = sqrt(g*k_list);
-h_w = 3.8; % water depth
+h_w = 3.6; % water depth
 shallow = sqrt(g*h_w*k_list.^2);
 yth = sqrt(g*k_list.*tanh(h_w*k_list));
 
@@ -391,7 +299,7 @@ harmonic2 = sqrt(2*g*k_list.*tanh(h_w*k_list/2));
 harmonic3 = sqrt(3*g*k_list.*tanh(h_w*k_list/3));
 
 figure(14)
-loglog(k_array,omega_array,'o','MarkerFaceColor',c,'MarkerEdgeColor','k')
+loglog(S_disp.k,S_disp.omega,'o','MarkerFaceColor',c,'MarkerEdgeColor','k')
 xlabel('$k \: \rm (m^{-1})$')
 ylabel('$\omega \: \rm (rad.s^{-1})$')
 grid on 
@@ -407,10 +315,7 @@ set_Papermode(gcf)
 ax = gca;
 ax.FontSize = 13;
 
-% figname = [fig_folder 'Harmonics_shallow_water_hw_' replace(num2str(h_w),'.','p') ];
-% saveas(gcf,figname,'fig')
-% saveas(gcf,figname,'pdf')
-% saveas(gcf,figname,'png')
+S_disp.theory = struct('h_w',h_w,'k',k_list,'harmonic1',harmonic1,'harmonic2',harmonic2);
 
 %% Displace harmonics to main branch
 
@@ -419,12 +324,12 @@ N = [1,2,3]';
 % k = [1 1.5 2];
 
 % #idx1 : N, idx2 : k
-omegaN = bound_harmonicN(k_array,N,h_w);
-D = sqrt((repmat(omega_array,[3,1]) - omegaN).*2); 
+omegaN = bound_harmonicN(S_disp.k,N,h_w);
+D = sqrt((repmat(S_disp.omega,[3,1]) - omegaN).*2); % create a distance to a given dispersion curve
 [~,closest_harmonic] = min(D,[],1);
 
 % set lowest values of k to closest_harmonic = 1
-closest_harmonic(k_array < 0.5) = 1;
+closest_harmonic(S_disp.k < 0.5) = 1;
 
 % set lowest values of harmonic2 to closest_harmonic = 2
 % figure,
@@ -433,6 +338,9 @@ closest_harmonic(k_array < 0.5) = 1;
 % axis([1e-1 2, 5e-1 5])
 % closest_harmonic((k_array < 0.62) & (closest_harmonic == 3)) = 2;
 
+% save array in structure 
+S_disp.closest_harmonic = closest_harmonic;
+
 %% Plot harmonics with different colours 
 
 % colors = ["blue","red","green"];
@@ -440,8 +348,8 @@ closest_harmonic(k_array < 0.5) = 1;
 colors = ["#0072BD","#D95319"];
 figure(15)
 for i = 1 :2
-    current_omega = omega_array(closest_harmonic == i);
-    current_k = k_array(closest_harmonic == i);
+    current_omega = S_disp.omega(S_disp.closest_harmonic == i);
+    current_k = S_disp.k(S_disp.closest_harmonic == i);
     loglog(current_k,current_omega,'o','MarkerEdgeColor',colors(i))
     hold on
     
@@ -468,23 +376,22 @@ ax.FontSize = 13;
 
 %% Save selected points
 
-filename = 'Data_plot_selected_harmonics_0223_bernache_waves_010';
-directory = 'E:/Rimouski_2024/Data/2024/0223/bernache/matData/12-waves_010/Plots/';
-save([directory filename],'omega_array','k_array','A_array','closest_harmonic','colors','k_list','harmonic1','harmonic2','-v7.3')
+filename = ['Data_plot_selected_harmonics_' date '_' drone_ID '_' exp_ID];
+directory = fig_folder;
+save([directory filename],'S_disp','-v7.3')
 
 %% Plot each harmonic with a different colormaps corresponding to the intensity of each points (omega,k)
 
 % Load Data of selected harmonics 
-filename = 'Data_plot_selected_harmonics_0223_bernache_waves_010';
-base = 'H:/Rimouski_2024/Data/2024/0223/bernache/matData/12-waves_010/Plots/';
-load([base filename])
+filename = ['Data_plot_selected_harmonics_' date '_' drone_ID '_' exp_ID];
+load([fig_folder filename])
 disp('Data of separated harmonics loaded')
 
 %%
-A_h1 = A_array(closest_harmonic == 1);
+A_h1 = S_disp.A(S_disp.closest_harmonic == 1);
 A_h1 = (A_h1 - min(A_h1))/(max(A_h1) - min(A_h1));
 
-A_h2 = A_array(closest_harmonic == 2);
+A_h2 = S_disp.A(S_disp.closest_harmonic == 2);
 A_h2 = (A_h2 - min(A_h2))/(max(A_h2) - min(A_h2));
 marker_size = 50;
 
@@ -492,14 +399,14 @@ harmonic_cmaps = figure;
 % create two different axes 
 ax1 = axes(harmonic_cmaps);
 ax2 = copyobj(ax1,harmonic_cmaps);
-
-plot(ax1,k_list,harmonic1,'--b')
+k_list = S_disp.theory.k;
+plot(ax1,k_list,S_disp.theory.harmonic1,'--b')
 hold on
-plot(ax1,k_list,harmonic2,'--r')
+plot(ax1,k_list,S_disp.theory.harmonic2,'--r')
 hold on 
-s1 = scatter(ax1,k_array(closest_harmonic == 1),omega_array(closest_harmonic == 1),marker_size,A_h1,'filled','MarkerEdgeColor','k');
+s1 = scatter(ax1,S_disp.k(S_disp.closest_harmonic == 1),S_disp.omega(S_disp.closest_harmonic == 1),marker_size,A_h1,'filled','MarkerEdgeColor','k');
 
-s2 = scatter(ax2,k_array(closest_harmonic == 2),omega_array(closest_harmonic == 2),marker_size,A_h2,'filled','MarkerEdgeColor','k');
+s2 = scatter(ax2,S_disp.k(S_disp.closest_harmonic == 2),S_disp.omega(S_disp.closest_harmonic == 2),marker_size,A_h2,'filled','MarkerEdgeColor','k');
 
 colormap(ax1,slanCM(9))
 colormap(ax2,slanCM(11))
@@ -524,7 +431,7 @@ legend(ax1,['$\omega_1 = \sqrt{gk \tanh(' num2str(h_w) 'k)}$'],...
 ax1.FontSize = 13;
 set_Papermode(harmonic_cmaps)
 
-fig_filename = [fig_folder 'Harmonics_colormaps_12-waves_010_hw_' replace(num2str(h_w),'.','p') ];
+fig_filename = [fig_folder 'Harmonics_colormaps_' date '_' drone_ID '_' exp_ID '_hw_' replace(num2str(h_w),'.','p') ];
 saveas(harmonic_cmaps,fig_filename,'fig')
 saveas(harmonic_cmaps,fig_filename,'pdf')
 
@@ -535,13 +442,13 @@ harmonic_cmaps = figure;
 ax1 = axes(harmonic_cmaps);
 ax2 = copyobj(ax1,harmonic_cmaps);
 
-plot(ax1,k_list,harmonic1,'--b')
+plot(ax1,k_list,S_disp.theory.harmonic1,'--b')
 hold on
-plot(ax1,k_list,harmonic2,'--r')
+plot(ax1,k_list,S_disp.theory.harmonic2,'--r')
 hold on 
-s1 = scatter(ax1,k_array(closest_harmonic == 1),omega_array(closest_harmonic == 1),marker_size,A_h1,'filled','MarkerEdgeColor','k');
+s1 = scatter(ax1,S_disp.k(S_disp.closest_harmonic == 1),S_disp.omega(S_disp.closest_harmonic == 1),marker_size,A_h1,'filled','MarkerEdgeColor','k');
 
-s2 = scatter(ax2,k_array(closest_harmonic == 2)/2,omega_array(closest_harmonic == 2)/2,marker_size,A_h2,'filled','MarkerEdgeColor','k');
+s2 = scatter(ax2,S_disp.k(S_disp.closest_harmonic == 2)/2,S_disp.omega(S_disp.closest_harmonic == 2)/2,marker_size,A_h2,'filled','MarkerEdgeColor','k');
 
 colormap(ax1,slanCM(9))
 colormap(ax2,slanCM(11))
@@ -567,7 +474,7 @@ legend(ax1,['$\omega_1 = \sqrt{gk \tanh(' num2str(h_w) 'k)}$'],...
 set_Papermode(gcf)
 ax = gca;
 ax.FontSize = 13;
-figname = [fig_folder 'Recomposition_harmonics_water_12-waves_010_hw_' replace(num2str(h_w),'.','p')];
+figname = [fig_folder 'Recomposition_harmonics_' date '_' drone_ID '_' exp_ID '_hw_' replace(num2str(h_w),'.','p')];
 saveas(gcf,figname,'fig')
 saveas(gcf,figname,'pdf')
 saveas(gcf,figname,'png')
@@ -576,8 +483,8 @@ saveas(gcf,figname,'png')
 figure(16)
 for i = 1 :2
     
-    current_omega = omega_array(closest_harmonic == i);
-    current_k = k_array(closest_harmonic == i);
+    current_omega = S_disp.omega(S_disp.closest_harmonic == i);
+    current_k = S_disp.k(S_disp.closest_harmonic == i);
     if i > 1
         current_omega = current_omega/i;
         current_k = current_k/i;
@@ -591,9 +498,9 @@ xlabel('$k \: \rm (m^{-1})$')
 ylabel('$\omega \: \rm (rad.s^{-1})$')
 grid on 
 hold on 
-loglog(k_list,harmonic1,'--b')
+loglog(k_list,S_disp.theory.harmonic1,'--b')
 hold on 
-loglog(k_list,harmonic2,'--r')
+loglog(k_list,S_disp.theory.harmonic2,'--r')
 % hold on 
 % loglog(k_list,harmonic3,'--g')
 axis([0.1 6 , 5e-1 10])

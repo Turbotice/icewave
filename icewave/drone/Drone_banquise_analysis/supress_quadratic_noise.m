@@ -10,22 +10,14 @@ function [V_s] = supress_quadratic_noise(V,x,y)
 [nx,ny,n] = size(V);
 
 [Y_quad,X_quad] = meshgrid(y,x);
-quadratic_boolean = 1;
 V_s = zeros(nx,ny,n);
 for i=1:n
-    if quadratic_boolean
-        Vx = V(:,:,i);
-        % fit by a quadratic function
-        P = polyFit2D(Vx,X_quad,Y_quad,2,2);
-        Pth = polyVal2D(P,X_quad,Y_quad,2,2);
+    
+    Vx = V(:,:,i);
+    % fit by a quadratic function
+    P = polyFit2D(Vx,X_quad,Y_quad,2,2);
+    Pth = polyVal2D(P,X_quad,Y_quad,2,2);
 
-        %size(Pth)
-        %imagesc(Vx'-Pth')
-%         Ptot(i,:) = P;
-        V_s(:,:,i) = Vx-Pth; % get rid off quaratic noise (drone movements)
-        %disp('Reduction of quadratic noise');
-    else 
-        V_s(:,:,i) = V(:,:,i);
-    end
+    V_s(:,:,i) = Vx-Pth; % get rid off quaratic noise (drone movements)
 
 end 
