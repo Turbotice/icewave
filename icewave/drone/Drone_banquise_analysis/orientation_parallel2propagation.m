@@ -4,12 +4,20 @@ function [field_star,x_star,y_star] = orientation_parallel2propagation(field,the
     % coordinates : x_star (direction of propagation), y_star (oriented
     % upward) 
     % !!! WE CONSIDER ONLY WAVE FIELDS PROPAGATING ALONG + x-direction 
-    % Arguments : 
+    % Inputs : 
     % - field : 2D array [Nx,Ny], can be complex values 
     % - theta : angle of the propagation direction, defined between
     % [-pi;pi], positive in counterclockwise 
     % - fx : scaling factor in meter/box 
     % - L0 : length of the window along the direction of propagation
+    % 
+    % Outputs : 
+    % - field_star : 2D array interpolated [Nx,Ny] along the direction
+    % given by angle theta
+    % - x_star : curvilinear coordinate (x-coordinate in field_star
+    % framework)
+    % - y_star : y-coordinate in field_star framework 
+    
     
     x = (1:1:size(field,1))*fx;
     y = (1:1:size(field,2))*fx;

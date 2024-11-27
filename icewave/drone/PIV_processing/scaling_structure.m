@@ -23,8 +23,8 @@ function m = scaling_structure(S,scale_V,fx,ft)
     m.units.Y = 'm';
     m.units.t = 's';
     
-    m.xref = 'bottom_left';
-    m.yref = 'top_left';
+    m.xref = 'bottom_left_box_center';
+    m.yref = 'top_left_box_center';
     
     if isfield(S,'t0_UTC')
         time_s = milliseconds(m.t*1000); 

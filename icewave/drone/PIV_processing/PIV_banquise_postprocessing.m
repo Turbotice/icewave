@@ -2,16 +2,12 @@
 % Settings
 function [u_filt,v_filt] = PIV_banquise_postprocessing(u,v,W,N)
    
-    %%% Function used to post-process raw datas from PIV, it takes as
-    %%% arguments : 
-    %%% - directory, the directory where the file we want to post-process
-    %%% is placed
-    %%% - filename, the name of the file we want to process contains
-    %%% velocity field (u,v) and parameters of the PIV (s,p)
-    %%% - save_directory, the directory to which we can save our post-process datas
+    %%% Function used to post-process raw datas from PIV
+    %%% Inputs : 
+    %%% - u : displacement field along horizontal (ny,nx,nt)
+    %%% - v : displacement field along vertical (ny,nx,nt)
     %%% - W, the size of the last_interrogation area used
     %%% - N, number of frames to process, if N = 0, process the entire number of images in the tiff folder
-
 
     % start post processing
     disp('Post processing..');
