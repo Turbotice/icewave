@@ -13,6 +13,7 @@ matname = [base filename];
 
 path2functions = 'C:/Users/sebas/git/icewave/drone/Drone_banquise_analysis/'; 
 addpath(path2functions)
+<<<<<<< HEAD
 
 %% Load data 
 disp('Loading Data..');
@@ -35,6 +36,12 @@ else
 end 
 
 
+=======
+%%
+disp('Loading Data..');
+load(matname);
+disp('Data loaded');
+>>>>>>> origin/main
 %% Folder where plots are saved and set parameters for plotting 
 base_fig = base;
 fig_folder = [base_fig 'Plots/'];
@@ -52,7 +59,11 @@ W = m.PIV_param.w ;
 
 %% Get Histogram displacement 
 
+<<<<<<< HEAD
 filename = [fig_folder 'histogramm_displacements_Vx_time_average_' date '_' drone_ID '_' exp_ID];
+=======
+filename = [fig_folder 'histogramm_displacements_Vx_time_average'];
+>>>>>>> origin/main
 average_bool = 1;
 hist_figure = get_histogram_displacement(m.Vx/scale_V,W,average_bool);
 set(gca,'FontSize',font_size)
@@ -101,7 +112,11 @@ plot_velocity_features(Vx,Vy,facq_x,idx_frame,caxis_amp,fig_folder);
 Q = quantile(Vx,[0.1 0.9],'all');
 
 caxis_amp = [-3 3]; 
+<<<<<<< HEAD
 fig_name = [fig_folder 'Velocity_field_Vx_movie_' date '_' drone_ID '_' exp_ID];
+=======
+fig_name = [fig_folder 'Velocity_field_Vx_movie'];
+>>>>>>> origin/main
 fps = facq_t ;
 step = 5; % prints every 5 frames 
 movie_velocity_field(Vx,facq_x,facq_t,step,caxis_amp,fps,fig_name)
@@ -395,6 +410,7 @@ ax.FontSize = 13;
 filename = ['Data_plot_selected_harmonics_' date '_' drone_ID '_' exp_ID];
 directory = fig_folder;
 save([directory filename],'S_disp','-v7.3')
+<<<<<<< HEAD
 
 
 %% Store dispersion relation data in main_results
@@ -402,6 +418,8 @@ main_results.disp_relation = struct('f',S_disp.f,'k',S_disp.k,'A',S_disp.A,'omeg
     'closest_harmonic',S_disp.closest_harmonic);
 main_results.disp_relation.param = struct('h_w',S_disp.theory.h_w);
 main_results.disp_relation.param.units = struct('h_w','meter');
+=======
+>>>>>>> origin/main
 
 %% Plot each harmonic with a different colormaps corresponding to the intensity of each points (omega,k)
 
