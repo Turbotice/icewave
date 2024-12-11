@@ -10,17 +10,15 @@
 %% Post-process raw datas from PIV analysis and create an associated structure 
 
 clear all;
-date = '0226';
+date = '0223';
 drone_name = 'mesange';
-ID = 'Haha_attenuation_mesange_0226-waves-010';
+exp_ID = '35-waves_014';
+ID = [date '_' drone_name '_' exp_ID];
 
-% base = ['/media/turbots/DATA/thiou/labshared2/SagWin2024/Data/' date(5:end) '/Drones/Fulmar/'];
-base = ['C:/Users/sebas/Desktop/BicWin2024/Data/' date '/Drones/' drone_name '/'];
-% base = 'E:/PIVlab_drone/matdata/raw_datas/';
-folder = [base 'matData/10-waves_005/'];% folder of raw datas
-filename = 'PIV_processed_i00_N0_Dt5_b1_W32_xROI600_width3240_yROI1_height2159.mat';
-fullname = [folder filename];%[folder filename];% filename of raw datas
-
+base = ['K:/Share_hublot/Data/' date '/Drones/' drone_name '/'];
+folder = [base 'matData/' exp_ID '_test_1211/'];% folder of raw datas
+filename = 'PIV_processed_i00_Dt4_b1_W32_xROI650_width3190_yROI1_height2159.mat';
+fullname = [folder filename];
 
 
 % ##################################################################
@@ -32,30 +30,27 @@ Lx = 3840; % size of the image in pixel, along larger axis (x-axis)
 Ly = 2160; % size of the image in pixel, along minor axis (y-axis)
 x_0 = (Lx + 1)/2; % camera sensor center
 y_0 = (Ly + 1)/2; % camera sensor center
-h_drone = 128.3; % height of the drone in meter
+h_drone = 120.4; % height of the drone in meter
 focale = 2700; %in pixels 
 theta_x = atan(Lx/focale/2); % semi AFOV of the drone, along x-axis, in °
 alpha_0 = 90*pi/180; % camera pitch angle to the horizontal 
 facq_pix = Lx/(2*h_drone*tan(theta_x)); % scale in pixels / meter
-facq_x = facq_pix*2/w; % scale in box / meter
-fx = 1/facq_x; % factor scaling in meter / box
-scale_V = (facq_t/Dt) / facq_x; % scale of the velocity in m/s
 facq_t = 29.97; % Frame rate in Hz
 ft = 1/facq_t ; % factor scaling for time in sec / frame
 % ##########################################
 
 % Longitude and latitude during flight 
-latitude = 48.34883 ;
-longitude = -68.81797;
+latitude = 48.32998 ;
+longitude = -68.85302;
 
 % Create t0_UTC (beginning of flight)
 Y = 2024;
 M = 02;
-D = 26;
+D = 23;
 H = 19;
-MIN = 15;
-S = 55;
-MS = 563;
+MIN = 44;
+S = 56;
+MS = 100;
 
 if strcmp(drone_name,'mesange')
     TimeZone = 'Europe/Paris'; % mesange 
@@ -86,11 +81,16 @@ N = PIV_param.N; % total number of frames processed
 i0 = PIV_param.i0; % first index of the frame processed
 b = PIV_param.b; % step between frame A and A' at which velocity is computed
 
-disp(['Window size = ' num2str(w) ''])
+disp(['Interrogation window size = ' num2str(w) ''])
+
+% define space scaling for PIV boxes
+facq_x = facq_pix*2/w; % scale in box / meter
+fx = 1/facq_x; % factor scaling in meter / box
+scale_V = (facq_t/Dt) / facq_x; % scale of the velocity in m/s
+
+
 % post-processing
 [u_filt,v_filt] = PIV_banquise_postprocessing(u,v,w,N);
-
-%post_pro_fullname = [ base ]
 
 % create a matlab structure from the post-processed data file 
 m = genere_structure_banquise(u,v,u_filt,v_filt,x_pix,y_pix,a,fullname);

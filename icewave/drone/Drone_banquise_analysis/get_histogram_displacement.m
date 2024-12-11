@@ -31,6 +31,6 @@ xline(low_bound,'r--')
 xline(up_bound,'r--')
 xlabel('$\log_{10}( \vert V_x \vert )$','Interpreter','latex');
 ylabel('$N( \vert V_x \vert )$','Interpreter','latex');
-
+xlim([-1.2 1])
 
 end 

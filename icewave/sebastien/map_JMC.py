@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 import os 
 import glob
 
+import pandas as pd
+
 import folium
 import geopandas as gpd
 from shapely.geometry import Point 
@@ -17,7 +19,7 @@ import contextily as ctx
 import pyproj
 #%%
 
-fig_folder = 'H:/Presentations/JMC/'
+fig_folder = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Présentations/Environnement_Arctic_Refuge/'
 img_quality = 800 #image quality in dpi 
 #%% 
 
