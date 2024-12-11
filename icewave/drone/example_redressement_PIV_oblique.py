@@ -8,9 +8,6 @@ Created on Wed Oct 23 10:29:21 2024
 import numpy as np
 import matplotlib.pyplot as plt 
 import glob
-from scipy.interpolate import RegularGridInterpolator
-import time 
-
 import h5py
 
 import icewave.tools.datafolders as df
@@ -32,8 +29,7 @@ filelist_mat = glob.glob(f'{path2data}*.mat')
 structured_mat = glob.glob(f'{path2data}*scaled.mat')[0]
 
 
-#%%
-# Load the .mat file and convert to a dictionary
+#%% Load the .mat file and convert to a dictionary
 
 with h5py.File(structured_mat, 'r') as fmat:
     mat_dict = {}
@@ -43,6 +39,10 @@ with h5py.File(structured_mat, 'r') as fmat:
     mat_dict = mat2py.mat_to_dict(fmat['m'],fmat['m'])
     mat_dict['PIV_param']['p_param'] = mat2py.matcell2dict_PIV(mat_dict['PIV_param']['p_param'])
     mat_dict['PIV_param']['s_param'] = mat2py.matcell2dict_PIV(mat_dict['PIV_param']['s_param'])
+
+######################################################################################################################
+# If we want to preform again the computation of vertical displacement, it is described below using python packages : 
+######################################################################################################################
 
 #%% Convert Vy displacement field to vertical field Vz 
 key_pix = 'PIXEL'
@@ -55,12 +55,6 @@ Dt = mat_dict['PIV_param']['Dt'] # time step between two image that are compared
 t = mat_dict['t']*fps
 x = mat_dict[key_pix]['x_pix'] # pixel position of each PIV box
 y = mat_dict[key_pix]['y_pix'] # pixel position of each PIV box 
-# compute interpolation of pixel displacement vertical velocity field 
-Fy = RegularGridInterpolator((x,y,t), Vy_transposed)
-
-
-#%%
-
 
 Vz = dp.vertical_velocity_from_pixel_displacement(Vy_transposed,x,y,t,mat_dict[key_pix]['y0'],mat_dict['DRONE']['h_drone'],
                                                mat_dict['DRONE']['alpha_0'],mat_dict['DRONE']['focale'],fps,Dt)
@@ -83,8 +77,10 @@ Xedges,Yedges = np.meshgrid(x_edges,y_edges, indexing = 'ij')
 Xreal,Yreal = dp.projection_real_space(Xedges, Yedges, mat_dict[key_pix]['x0'], mat_dict[key_pix]['y0'], mat_dict['DRONE']['h_drone']
                                        ,mat_dict['DRONE']['alpha_0'],mat_dict['DRONE']['focale'])
 
+
+idx_frame = 1500
 fig, ax = plt.subplots()
-c = ax.pcolormesh(Xreal,Yreal,Vz[:,:,1500],shading = 'auto')
+c = ax.pcolormesh(Xreal,Yreal,Vz[:,:,idx_frame],shading = 'auto')
 fig.colorbar(c,ax = ax)
 
 
