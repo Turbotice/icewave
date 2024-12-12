@@ -396,9 +396,9 @@ def averages(data,keys='all'):
         if 'system_START' in data['time'] and 'system_PAUSE' in data['time']:
             results['time_start']=data['time']['system_START']
             results['time_end']=data['time']['system_PAUSE']
-        elif 'system time_START' in data['time'] and 'system time_PAUSE' in data['time']:
-            results['time_start']=data['time']['system time_START']
-            results['time_end']=data['time']['system time_PAUSE']
+        elif 'system time text_START' in data['time'] and 'system time text_PAUSE' in data['time']:
+            results['time_start']=data['time']['system time text_START']
+            results['time_end']=data['time']['system time text_PAUSE']
         else:
             print(data['time'].keys())
             print('non standard time stamp, check phone.analyse.py')
