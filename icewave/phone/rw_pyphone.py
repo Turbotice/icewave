@@ -155,7 +155,8 @@ def save_data_single_phone(data,savefolder,suffix=''):
             found=False
             print('time START key not found')
             print('no date available')
-        if found:
+            print(found)
+        if found:    
             month = '0'+str(time_phone.get_time(data['time'][key])[1].month)
             day = str(time_phone.get_time(data['time'][key])[1].day)    
         else:
