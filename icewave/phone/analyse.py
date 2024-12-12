@@ -67,7 +67,7 @@ def step3(folder):
         with open(filename, 'rb') as handle:
             data = pickle.load(handle)
         phone = int(filename.split('/')[-2].split('_')[1])
-        print(data.keys(),phone)
+        print(phone,data.keys())
         key_test = 'experiment time_PAUSE'
         if key_test in data.keys():
             print(key_test,data[key_test])
@@ -396,7 +396,13 @@ def averages(data,keys='all'):
         if 'system_START' in data['time'] and 'system_PAUSE' in data['time']:
             results['time_start']=data['time']['system_START']
             results['time_end']=data['time']['system_PAUSE']
+        elif:
+            results['time_start']=data['time']['system time_START']
+            results['time_end']=data['time']['system time_PAUSE']
         else:
+            print(data['time'].keys())
+            print('non standard time stamp, check phone.analyse.py')
+            print(toto)
             print(data['time'].keys())
     else:
         results['time_start']='date 00:00:00.000'#data['time']['system_START']
