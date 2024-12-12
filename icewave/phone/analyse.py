@@ -67,7 +67,8 @@ def step3(folder):
         with open(filename, 'rb') as handle:
             data = pickle.load(handle)
         phone = int(filename.split('/')[-2].split('_')[1])
-        #print(data.keys(),phone)
+        print(data.keys(),phone)
+        print(toto)
         n = len(data['ta'])
         path = filename[nbase:]
         print(name,path)
