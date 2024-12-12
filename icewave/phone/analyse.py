@@ -68,7 +68,7 @@ def step3(folder):
             data = pickle.load(handle)
         phone = int(filename.split('/')[-2].split('_')[1])
         print(data.keys(),phone)
-        print(toto)
+        #print(toto)
         n = len(data['ta'])
         path = filename[nbase:]
         print(name,path)
@@ -77,6 +77,8 @@ def step3(folder):
             results[phone] = result
             results[phone]['name'] = name
             results[phone]['path'] = path
+        else:
+            print('recording is too short, ignoring')
     rw.write_csv(results,folder,title='averages')
 
     #save results in .csv format
