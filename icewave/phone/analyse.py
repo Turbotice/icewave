@@ -498,9 +498,9 @@ def time_spectrum(t,y,nt=300):
     return f,TFmoy,fmax,Amax
 
 def main(args):
-    process(args.date,args.step,cut=args.cut)
+    process(args.date,args.step,cutting=args.cut)
     
-def process(date,step,cut=True,path=None):
+def process(date,step,cutting=True,path=None):
     base = df.find_path()#'/media/turbots/Hublot24/Share_hublot/Data/'
     #date = '0221'
     datafolder = base+date+'/Telephones/'
@@ -517,7 +517,7 @@ def process(date,step,cut=True,path=None):
         if step==1:
             step1(folder)
         if step==2:
-            step2(folder,cut=cut)
+            step2(folder,cutting=cutting)
         if step==3:
             step3(folder)
         if step==4:
