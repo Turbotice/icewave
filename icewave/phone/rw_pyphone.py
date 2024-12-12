@@ -147,13 +147,12 @@ def save_data_single_phone(data,savefolder,suffix=''):
     import pickle
     if 'time' in data.keys():
         found = True
-
-        
         if 'system_START' in data['time'].keys():
             key = 'system_START'
         elif 'system time text_START' in data['time'].keys():
             key = 'system time text_START'
         else:
+            found=False
             print('time START key not found')
             print('no date available')
         if found:
