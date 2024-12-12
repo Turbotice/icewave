@@ -68,6 +68,11 @@ def step3(folder):
             data = pickle.load(handle)
         phone = int(filename.split('/')[-2].split('_')[1])
         print(data.keys(),phone)
+        key_test = 'experiment time_PAUSE'
+        if key_test in data.keys():
+            print(key_test,data[key_test])
+#        print(data.keys(),phone)
+        
         #print(toto)
         n = len(data['ta'])
         path = filename[nbase:]
@@ -100,7 +105,7 @@ def step2(folder,cutting=True,prefix='000*'):
         print(phonefolder)
         data = load.load(phonefolder)
         data = load.sort(data)
-
+ 
         print(data.keys())
         data = find_measure_interval(data)
         if cutting:
