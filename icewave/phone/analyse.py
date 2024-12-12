@@ -80,7 +80,7 @@ def step3(folder):
 
     #save results in .csv format
     
-def step2(folder,cut=True,prefix='000*'):
+def step2(folder,cutting=True,prefix='000*'):
     #step 2 :   load data in .csv format
     #           make a dictionnary data
     #           find the measurement interval,
@@ -100,7 +100,7 @@ def step2(folder,cut=True,prefix='000*'):
 
         print(data.keys())
         data = find_measure_interval(data)
-        if cut:
+        if cutting:
             data = cut(data)
         rw.save_data_single_phone(data,phonefolder)
 
@@ -464,13 +464,12 @@ def Lambda(y,dt,twin=8,dist=50,fcut=0.001):
     print(p[0])
     return p[0] #damping coefficient in s$^{-1}$
 
-def time_spectrum(t,y):
+def time_spectrum(t,y,nt=300):
 #    t = np.asarray(data['t'+var])
 #    y = np.asarray(data[var+coord])
     y = y-np.mean(y)
 
     n = y.shape[0]
-    nt = 50*60
     N = int(np.floor(n/nt))
 #    nt = int(np.floor(n/N))
     print("Number of samples : "+str(N))
@@ -496,7 +495,7 @@ def time_spectrum(t,y):
     Amax = np.max(TFmoy[10:])
     i = np.argmax(TFmoy[10:])+10
     fmax = f[i]
-    return f,TFmoy,fmax
+    return f,TFmoy,fmax,Amax
 
 def main(args):
     process(args.date,args.step,cut=args.cut)

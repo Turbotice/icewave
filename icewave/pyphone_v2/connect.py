@@ -4,8 +4,14 @@ import subprocess
 import time
 
 
-def ipbase():
-    return '192.168.0.'
+global path
+path = '/home/turbots/Documents/Bicwin2024/git/icewave/icewave/pyphone_v2/adb_usb_liste.txt'
+global local_folder
+localfolder = '/Users/stephane/Documents/PMMH/Telephones/test/'
+
+
+def ipbase(network=0):
+    return f'192.168.{network}.'
 
 def basefolder():
     return 'Data_test/'
@@ -42,7 +48,6 @@ def connected():
     return idlist
 
 def identify(id):
-    path = '/home/turbots/Documents/Bicwin2024/git/icewave/icewave/pyphone_v2/adb_usb_liste.txt'
     with open(path) as f:
         while True:
             line = f.readline()
@@ -58,7 +63,6 @@ def identify(id):
 def connect():
     #first test
     #c = subprocess.run(['ping',ip],text=True)
-    localfolder = '/Users/stephane/Documents/PMMH/Telephones/test/'
     folder = '/storage/self/primary/'
 
     c = subprocess.run(['adb','devices'],text=True,capture_output = True,shell=False)
