@@ -402,8 +402,6 @@ def averages(data,keys='all'):
         else:
             print(data['time'].keys())
             print('non standard time stamp, check phone.analyse.py')
-            print(toto)
-            print(data['time'].keys())
     else:
         results['time_start']='date 00:00:00.000'#data['time']['system_START']
         results['time_end']='date 00:00:00.000'#data['time']['system_PAUSE']
