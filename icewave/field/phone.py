@@ -18,6 +18,7 @@ def get_records(date):
             if not name in records['phones'].keys():
                 records['phones'][name] = {}
             key = record[name]['name']
+            print(key)
             records['phones'][name][key]=record[name]
             #records['phones'][name][key]['path']=filename[nbase:]
     return records
