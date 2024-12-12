@@ -396,7 +396,7 @@ def averages(data,keys='all'):
         if 'system_START' in data['time'] and 'system_PAUSE' in data['time']:
             results['time_start']=data['time']['system_START']
             results['time_end']=data['time']['system_PAUSE']
-        elif:
+        elif 'system time_START' in data['time'] and 'system time_PAUSE' in data['time']:
             results['time_start']=data['time']['system time_START']
             results['time_end']=data['time']['system time_PAUSE']
         else:
