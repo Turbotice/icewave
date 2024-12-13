@@ -4,6 +4,36 @@ import numpy as np
 
 import pylab as plt
 import icewave.display.graphes as graphes
+import icewave.tools.rw_data as rw_data
+
+def syncfleet(datas,filesync,dt0=0,ref=1):
+    tablesync = rw_data.read_csv(filesync)
+    refsync = rw_data.csv2dict(tablesync,symbol='Phone')
+
+    synclist=[]
+    for phone in datas.keys():
+        p = str(int(phone))
+        print(phone,p)
+        if p in refsync.keys():
+            #check reference
+            if refsync[p]['ref']==ref:
+                dt = refsync[p]['dt_tot']+dt0
+            else:
+                print(refsync[p]['ref'])
+                print(f'Phone {phone} sync with another reference')
+        else:
+            print(f'Phone {phone} not found in sync table')
+        if 'time' in datas[phone].keys():
+            key = 'system time_START'
+            if key in datas[phone]['time'].keys():
+                datas[phone]['gps_time']= datas[phone]['ta']+dt+float(datas[phone]['time'][key])
+                synclist.append(phone)
+            else:
+                print(f'The key {key} not found for {phone}, passing. Check keys for time')
+        else:
+            print(f'no time stamp found for {phone}, passing')
+    return datas,synclist
+    
 
 def timesync(data,ref=25,prominence=2):
     data[ref],tmax = process_ref(data[ref],prominence=prominence)

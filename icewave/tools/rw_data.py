@@ -59,16 +59,19 @@ def load_pkl(filename):
         data = pickle.load(handle)#, protocol=pickle.HIGHEST_PROTOCOL)
     return data
 
-def csv2dict(table,headerindex=0):
+def csv2dict(table,headerindex=0,symbol='#'):
     data = {}
-    if table[0][0]=='#':
+    if table[0][0]==symbol:
         keys = table[0][1:]
         print(keys)
         for tab in table[1:]:
             print(tab)
-            data[int(tab[0])]={}
+            data[tab[0]]={}
             for (t,key) in zip(tab[1:],keys):
-                data[int(tab[0])][key]=float(t)
+                if '.' in t:
+                    data[tab[0]][key]=float(t)
+                else:
+                    data[tab[0]][key]=int(t)
     else:
         header = table[headerindex]
         data = {}

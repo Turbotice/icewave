@@ -11,6 +11,8 @@ import csv
 import numpy as np
 import icewave.phone.time_phone as time_phone
 
+import icewave.tools.rw_data as rw
+
 global osname,ostype
 ostype = platform.platform().split('-')[0]
 osname = socket.gethostname()
@@ -98,6 +100,16 @@ def load_data(folder):
         d = load_csv(csvfile)
         data.update(d)
             
+    return data
+
+def load_pickle_data(folder):
+    filelist = glob.glob(folder +'*/*phonedata.pkl')
+    data = {}
+    for filename in filelist:
+        phone = filename.split('/')[-2].split('_')[1]
+        print(phone,filename)
+        d = rw.load_pkl(filename)
+        data[phone]=d
     return data
 
 def load_csv(filename):
