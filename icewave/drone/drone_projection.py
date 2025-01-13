@@ -106,6 +106,29 @@ def projection_real_space(x,y,x0,y0,h,alpha_0,focale):
     
     return xreal,yreal
 
+
+
+def projection_pixel_space(xreal,yreal,x_0,y_0,h,alpha_0,f):
+
+    # Definition of x and y in pixel framework
+
+    # Inputs : 
+    # - xreal: array of x-coordinates in metric system
+    # - yreal: array of y-coordinates in metric system
+    # - x_0 : x-coordinate of camera sensor center (pixel system)
+    # - y_0 : y-coordinate of camera sensor center (pixel system)
+    # - h : drone altitude in meter (above sea level)
+    # - alpha_0 : inclination angle of the camera, angle to the horizontal 
+    # - f : camera focal length
+
+    xreal = xreal
+    yreal = -yreal
+    
+    y = yreal*f*np.sin(alpha_0)/(h/np.sin(alpha_0) - yreal*np.cos(alpha_0)) + y_0
+    x = xreal/h*(f*np.sin(alpha_0) + (y - y_0)*np.cos(alpha_0))+x_0
+
+    return x, y
+
 def get_FOV_vertices(Lx,Ly,h,alpha_0,focale):
     """ Return coordinates of the 4 vertices of a given image. Coordinates are given in the local coordinate system of the drone, 
     choosing point corresponding to the camera center as the origin 
