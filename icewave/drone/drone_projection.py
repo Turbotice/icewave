@@ -68,7 +68,7 @@ def project_image(record,flight,im,frame,focale=2700):
 
     # get GPS coordinates of camera center
     distance_todrone = h/np.tan(alpha_0)
-    Lat0,Long0 = proj.LatLong_coords_from_referencepoint(Lat_drone, Long_drone, yaw, distance_todrone)
+    Lat0,Long0 = LatLong_coords_from_referencepoint(Lat_drone, Long_drone, yaw, distance_todrone)
 
     Ly,Lx,nc = im.shape
     x = np.linspace(0,Lx-1,Lx)

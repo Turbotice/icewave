@@ -477,6 +477,16 @@ def Lambda(y,dt,twin=8,dist=50,fcut=0.001):
     return p[0] #damping coefficient in s$^{-1}$
 
 def time_spectrum(t,y,nt=300):
+    f,TF = time_spectrum_all(t,y,nt=nt)
+    TFmoy = np.mean(np.abs(TF),axis=0)#/np.sqrt(N)
+
+    #remove first 10 points to find the maximu
+    Amax = np.max(TFmoy[10:])
+    i = np.argmax(TFmoy[10:])+10
+    fmax = f[i]
+    return f,TFmoy,fmax,Amax
+
+def time_spectrum_all(t,y,nt=300):
 #    t = np.asarray(data['t'+var])
 #    y = np.asarray(data[var+coord])
     y = y-np.mean(y)
@@ -497,19 +507,11 @@ def time_spectrum(t,y,nt=300):
     dtmean = np.mean(np.diff(t))
     fe = 1/dtmean
     f = np.linspace(0,fe/2,int(Nt/2))
-    TF = np.abs(np.fft.fft(Ypad,axis=1))
+    TF = np.fft.fft(Ypad,axis=1)
     df = f[1]-f[0]
 
     TF = TF[:,:int(Nt/2)]/np.sqrt(df)/nt  #normalisation de la transformée de Fourier
-    TFmoy = np.mean(TF,axis=0)#/np.sqrt(N)
-
-    #remove first 10 points to find the maximu
-    Amax = np.max(TFmoy[10:])
-    i = np.argmax(TFmoy[10:])+10
-    fmax = f[i]
-    return f,TFmoy,fmax,Amax
-
-
+    return f,TF
 
 def main(args):
     process(args.date,args.step,cutting=args.cut)
