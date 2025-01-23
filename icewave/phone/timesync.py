@@ -4,6 +4,36 @@ import numpy as np
 
 import pylab as plt
 import icewave.display.graphes as graphes
+import icewave.tools.rw_data as rw_data
+
+def syncfleet(datas,filesync,dt0=0,ref=1):
+    tablesync = rw_data.read_csv(filesync)
+    refsync = rw_data.csv2dict(tablesync,symbol='Phone')
+
+    synclist=[]
+    for phone in datas.keys():
+        p = str(int(phone))
+        print(phone,p)
+        if p in refsync.keys():
+            #check reference
+            if refsync[p]['ref']==ref:
+                dt = refsync[p]['dt_tot']+dt0
+            else:
+                print(refsync[p]['ref'])
+                print(f'Phone {phone} sync with another reference')
+        else:
+            print(f'Phone {phone} not found in sync table')
+        if 'time' in datas[phone].keys():
+            key = 'system time_START'
+            if key in datas[phone]['time'].keys():
+                datas[phone]['gps_time']= datas[phone]['ta']+dt+float(datas[phone]['time'][key])
+                synclist.append(phone)
+            else:
+                print(f'The key {key} not found for {phone}, passing. Check keys for time')
+        else:
+            print(f'no time stamp found for {phone}, passing')
+    return datas,synclist
+    
 
 def timesync(data,ref=25,prominence=2):
     data[ref],tmax = process_ref(data[ref],prominence=prominence)
@@ -87,7 +117,7 @@ def compute_table_sync(data_sync,pair=(0,1)):
                 tab_dt_tot[i][j1,j2]=res[i][key]['dt_tot']
     return phonelist,tab_dt_tot,tab_dt
             
-def check_timesync_accuracy(data_sync,ref,prominence=0.1,pair=(0,1)):
+def check_timesync_accuracy(data_sync,ref,prominence=0.1,pair=(0,1),dtmax=0.1):
     res = {}
     for i in data_sync.keys():
         data_sync[i] = timesync(data_sync[i],ref=ref,prominence=prominence)
@@ -103,10 +133,11 @@ def check_timesync_accuracy(data_sync,ref,prominence=0.1,pair=(0,1)):
     if len(list(data_sync.keys()))<2:
         print("Need at least two time sync recordings to check timesync accuracy")
     else:
+        s=0
         for key in res[0].keys():
             dt = res[pair[1]][key]['dt_tot']-res[pair[0]][key]['dt_tot']
             #print(key,dt)
-            if np.abs(dt)<0.1:
+            if np.abs(dt)<dtmax:
                 print(key,str(np.round(dt*1000,decimals=1))+' ms')
                 for i in res.keys():
                     dt_final[i][key]={}
@@ -115,6 +146,7 @@ def check_timesync_accuracy(data_sync,ref,prominence=0.1,pair=(0,1)):
                     dt_final[i][key]['dt_tot']=res[i][key]['dt_tot']
                     dt_final[i][key]['ref']=ref
             else:
+                s+=1
                 for i in res.keys():
                     dt_final[i][key]={}
                     dt_final[i][key]['dt']=np.nan
@@ -122,7 +154,8 @@ def check_timesync_accuracy(data_sync,ref,prominence=0.1,pair=(0,1)):
                     dt_final[i][key]['dt_tot']=np.nan#res[i][key]['dt_tot']
                     dt_final[i][key]['ref']=np.nan
                     notsyncs.append(key)
-                    print(str(key)+' not sync')
+                    #print(str(key)+' not sync')
+        print(f'Number of phone unsync : {s}')
     return dt_final,notsyncs
 
 
@@ -166,11 +199,11 @@ def merge_timesync_references(dt_final,ref):
     return dt_final
 
 
-def display_timesync_table(tab_dt,phonelist,vmax=200):
+def display_timesync_table(tab_dt,phonelist,vmax=200,w=5,h=4):
     n = len(phonelist)
     cm = plt.colormaps['Oranges']
 
-    fig,ax = plt.subplots(figsize=(5,4))#,sharex=True)
+    fig,ax = plt.subplots(figsize=(w,h))#,sharex=True)
 
     sc = ax.pcolormesh(np.abs(tab_dt)*1000,vmin=0,vmax=vmax,cmap=cm)
     plt.xticks(np.arange(n)+0.5,labels=phonelist)
@@ -182,9 +215,10 @@ def display_timesync_table(tab_dt,phonelist,vmax=200):
 
     #cbar = plt.colorbar(sc)#,
     #cbar.ax.set_yticklabels(['1','3','10','30'])#,'$10^1$'])  
-    cbar.set_label(r'$\Delta t$ (ms)', rotation=270,fontsize=18,labelpad=20)
+    cbar.set_label(r'Error (ms)', rotation=270,fontsize=18,labelpad=20)
 
-    figs = graphes.legende(r'Reference phone',r'Phone','',cplot=True)
+    figs = graphes.legende(r'Reference phone',r'Phone','',cplot=False,ax=ax)
+    print(figs)
     #graphes.save_figs(figs,savedir=savefolder,prefix=f'Time_table_{date}_',overwrite=True)
     return figs
 

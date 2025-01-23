@@ -11,6 +11,8 @@ import csv
 import numpy as np
 import icewave.phone.time_phone as time_phone
 
+import icewave.tools.rw_data as rw
+
 global osname,ostype
 ostype = platform.platform().split('-')[0]
 osname = socket.gethostname()
@@ -100,6 +102,16 @@ def load_data(folder):
             
     return data
 
+def load_pickle_data(folder):
+    filelist = glob.glob(folder +'*/*phonedata.pkl')
+    data = {}
+    for filename in filelist:
+        phone = filename.split('/')[-2].split('_')[1]
+        print(phone,filename)
+        d = rw.load_pkl(filename)
+        data[phone]=d
+    return data
+
 def load_csv(filename):
     data = {}
     rows = []
@@ -143,15 +155,29 @@ def convert_super_dict(results):
         datamat.append(data)
     return header,datamat
 
-def save_data_single_phone(data,savefolder):
+def save_data_single_phone(data,savefolder,suffix=''):
     import pickle
     if 'time' in data.keys():
-        month = '0'+str(time_phone.get_time(data['time']['system_START'])[1].month)
-        day = str(time_phone.get_time(data['time']['system_START'])[1].day)
+        found = True
+        if 'system_START' in data['time'].keys():
+            key = 'system_START'
+        elif 'system time text_START' in data['time'].keys():
+            key = 'system time text_START'
+        else:
+            found=False
+            print('time START key not found')
+            print('no date available')
+            print(found)
+        if found:    
+            month = '0'+str(time_phone.get_time(data['time'][key])[1].month)
+            day = str(time_phone.get_time(data['time'][key])[1].day)    
+        else:
+            month = ''
+            day = ''
         date = month+day
     else:
         print('no date available')
-    filename = savefolder + '_phonedata.pkl'#+date+'_'+str(phone)+
+    filename = savefolder + '_phonedata'+suffix+'.pkl'#+date+'_'+str(phone)+
     with open(filename, 'wb') as handle:
         pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
     

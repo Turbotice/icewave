@@ -1,15 +1,23 @@
-function [field_star,x_star,y_star] = orientation_parallel2propagation(field,theta,fx,L0)
+function [field_star,x_star,y_star,X_line,Y_line] = orientation_parallel2propagation(field,theta,fx,L0)
     % Select a rectangular window aligned with the propagation direction 
     % Within this window, create an interpolated field, and associated
     % coordinates : x_star (direction of propagation), y_star (oriented
     % upward) 
     % !!! WE CONSIDER ONLY WAVE FIELDS PROPAGATING ALONG + x-direction 
-    % Arguments : 
+    % Inputs : 
     % - field : 2D array [Nx,Ny], can be complex values 
     % - theta : angle of the propagation direction, defined between
     % [-pi;pi], positive in counterclockwise 
     % - fx : scaling factor in meter/box 
     % - L0 : length of the window along the direction of propagation
+    % 
+    % Outputs : 
+    % - field_star : 2D array interpolated [Nx,Ny] along the direction
+    % given by angle theta
+    % - x_star : curvilinear coordinate (x-coordinate in field_star
+    % framework)
+    % - y_star : y-coordinate in field_star framework 
+    
     
     x = (1:1:size(field,1))*fx;
     y = (1:1:size(field,2))*fx;
@@ -39,7 +47,7 @@ function [field_star,x_star,y_star] = orientation_parallel2propagation(field,the
         % Interpolate 
         F = griddedInterpolant({x,y},field); % Interpolate demodulated field 
         % interpolate along new grid 
-        field_star = F(X_line, y(end) - Y_line);
+        field_star = F(X_line, Y_line);
 
         x_star = s; 
         y_star = (0:ds:(y(end) - (L0*sin(abs(theta)) + y(1)))/cos(theta)-ds);
@@ -65,7 +73,7 @@ function [field_star,x_star,y_star] = orientation_parallel2propagation(field,the
         % Interpolate 
         F = griddedInterpolant({x,y},field); % Interpolate demodulated field 
         % interpolate along new grid 
-        field_star = F(X_line, y(end) - Y_line);
+        field_star = F(X_line, Y_line);
 
         x_star = s; 
         y_star = (0:ds:(y(end) - L0*sin(abs(theta)) - y(1))/cos(theta) - ds);

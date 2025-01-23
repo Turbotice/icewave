@@ -67,7 +67,13 @@ def step3(folder):
         with open(filename, 'rb') as handle:
             data = pickle.load(handle)
         phone = int(filename.split('/')[-2].split('_')[1])
-        #print(data.keys(),phone)
+        print(phone,data.keys())
+        key_test = 'experiment time_PAUSE'
+        if key_test in data.keys():
+            print(key_test,data[key_test])
+#        print(data.keys(),phone)
+        
+        #print(toto)
         n = len(data['ta'])
         path = filename[nbase:]
         print(name,path)
@@ -76,11 +82,13 @@ def step3(folder):
             results[phone] = result
             results[phone]['name'] = name
             results[phone]['path'] = path
+        else:
+            print('recording is too short, ignoring')
     rw.write_csv(results,folder,title='averages')
 
     #save results in .csv format
     
-def step2(folder,cut=True,prefix='000*'):
+def step2(folder,cutting=True,prefix='000*'):
     #step 2 :   load data in .csv format
     #           make a dictionnary data
     #           find the measurement interval,
@@ -97,10 +105,10 @@ def step2(folder,cut=True,prefix='000*'):
         print(phonefolder)
         data = load.load(phonefolder)
         data = load.sort(data)
-
+ 
         print(data.keys())
         data = find_measure_interval(data)
-        if cut:
+        if cutting:
             data = cut(data)
         rw.save_data_single_phone(data,phonefolder)
 
@@ -142,7 +150,7 @@ def find_measure_interval(data,var='a',Dt=5,S0=1,display=False):
     t = data['t'+var]
     y = np.sqrt(np.sum([data[var+coord]**2 for coord in data['coords']],axis=0))
 
-    n = int(np.round(np.sum(t<Dt)/2)*2) #windows of Dt seconds. may not work for fs = 400Hz (values are designed for fs = 50Hz)
+    n = int(np.round(np.sum((t-t[0])<Dt)/2)*2) #windows of Dt seconds. may not work for fs = 400Hz (values are designed for fs = 50Hz)
     print(f"Number of points per bin :{n}")
     N = int(np.floor(len(t)/n))
     print(f"Number of bins : {N}")
@@ -212,10 +220,12 @@ def find_measure_interval(data,var='a',Dt=5,S0=1,display=False):
 
     return data
 
-def cut(data,v='a'):
+def cut(data,v='a',t0=None,t1=None):
     variables = ['a','g','m']
-    t0 = data[v+'t0']
-    t1 = data[v+'t1']
+    if t0==None:
+        t0 = data[v+'t0']
+    if t1==None:
+        t1 = data[v+'t1']
     for var in variables:
         t = data['t'+var]
         indices=np.logical_and(t>=t0,t<=t1)
@@ -368,7 +378,7 @@ def averages(data,keys='all'):
     t = data['t'+var]
     y = data[key]
     y_high,y_wave,y_trend,err = filtering(y)
-    f,TFmoy,fmax = time_spectrum(t,y_wave)
+    f,TFmoy,fmax,Amax = time_spectrum(t,y_wave)
     results[key+'_w_freq']=fmax
     
     #location
@@ -386,8 +396,12 @@ def averages(data,keys='all'):
         if 'system_START' in data['time'] and 'system_PAUSE' in data['time']:
             results['time_start']=data['time']['system_START']
             results['time_end']=data['time']['system_PAUSE']
+        elif 'system time text_START' in data['time'] and 'system time text_PAUSE' in data['time']:
+            results['time_start']=data['time']['system time text_START']
+            results['time_end']=data['time']['system time text_PAUSE']
         else:
             print(data['time'].keys())
+            print('non standard time stamp, check phone.analyse.py')
     else:
         results['time_start']='date 00:00:00.000'#data['time']['system_START']
         results['time_end']='date 00:00:00.000'#data['time']['system_PAUSE']
@@ -462,13 +476,22 @@ def Lambda(y,dt,twin=8,dist=50,fcut=0.001):
     print(p[0])
     return p[0] #damping coefficient in s$^{-1}$
 
-def time_spectrum(t,y):
+def time_spectrum(t,y,nt=300):
+    f,TF = time_spectrum_all(t,y,nt=nt)
+    TFmoy = np.mean(np.abs(TF),axis=0)#/np.sqrt(N)
+
+    #remove first 10 points to find the maximu
+    Amax = np.max(TFmoy[10:])
+    i = np.argmax(TFmoy[10:])+10
+    fmax = f[i]
+    return f,TFmoy,fmax,Amax
+
+def time_spectrum_all(t,y,nt=300):
 #    t = np.asarray(data['t'+var])
 #    y = np.asarray(data[var+coord])
     y = y-np.mean(y)
 
     n = y.shape[0]
-    nt = 50*60
     N = int(np.floor(n/nt))
 #    nt = int(np.floor(n/N))
     print("Number of samples : "+str(N))
@@ -484,35 +507,33 @@ def time_spectrum(t,y):
     dtmean = np.mean(np.diff(t))
     fe = 1/dtmean
     f = np.linspace(0,fe/2,int(Nt/2))
-    TF = np.abs(np.fft.fft(Ypad,axis=1))
+    TF = np.fft.fft(Ypad,axis=1)
     df = f[1]-f[0]
 
     TF = TF[:,:int(Nt/2)]/np.sqrt(df)/nt  #normalisation de la transformée de Fourier
-    TFmoy = np.mean(TF,axis=0)#/np.sqrt(N)
-
-    #remove first 10 points to find the maximu
-    Amax = np.max(TFmoy[10:])
-    i = np.argmax(TFmoy[10:])+10
-    fmax = f[i]
-    return f,TFmoy,fmax
+    return f,TF
 
 def main(args):
-    process(args.date,args.step,cut=args.cut)
+    process(args.date,args.step,cutting=args.cut)
     
-def process(date,step,cut=True,path=None):
+def process(date,step,cutting=True,path=None):
     base = df.find_path()#'/media/turbots/Hublot24/Share_hublot/Data/'
     #date = '0221'
     datafolder = base+date+'/Telephones/'
     folders1 = glob.glob(datafolder+'Bic24*/')
     folders2 = glob.glob(datafolder+'Sag24*/')
     folders = folders1+folders2
+
+    print(folders)
+    print('')
+    print('')
     for folder in folders:
         #func = locals()['step'+str(args.step)]
         #func(folder)
         if step==1:
             step1(folder)
         if step==2:
-            step2(folder,cut=cut)
+            step2(folder,cutting=cutting)
         if step==3:
             step3(folder)
         if step==4:

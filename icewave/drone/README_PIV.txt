@@ -8,8 +8,6 @@ Il ne décrit que les étapes permettant le traitement total des vidéos.
 --> convert_multivideo2tiff.py : 
 	Code Python, converti une série de vidéos en un seul dossier contenant l'ensemble des images au format : 'im_000.tiff'
 
-
-
 ## Traiter les images avec PIVlab : 
 
   ### Avant-propos : 
@@ -27,9 +25,10 @@ Il ne décrit que les étapes permettant le traitement total des vidéos.
   ### Déterminer le pas de temps Dt nécessaire entre deux images : 
   --> Ouvrir PIVlab, importer des images séparées de [0,1,2,3,4,5,6,7...] images. Exécuter l'analyse PIVlab avec les paramètres souhaités,
 	pre-processing des images, nombre de passage etc... 
-  --> Balayer les champs de vitesse obtenus, sélectionner le champ de vitesse permettant d'avoir un signal suffisamment fort dans la zone d'intérêt : u > 0.1 pix/frame. 
-	Cela permet de distinguer le signale du bruit environnant. 
-	Le champ de vitesse ne doit pas être trop élevé u < W/4, taille de fenêtre trop faible pour le Dt choisi... 
+  --> Balayer les champs de vitesse obtenus, sélectionner le champ de vitesse permettant d'avoir un signal suffisamment fort 
+	dans la zone d'intérêt : u > 0.1 pix/frame. 
+	Cela permet de distinguer le signal du bruit environnant. 
+	Le champ de vitesse ne doit pas être trop élevé u < W/4, sinon la taille de fenêtre est trop faible pour le pas de temps Dt choisi... 
   --> Idéal : choisir Dt le plus faible possible, permettant d'assurer u > 0.1 pix/frame pour l'ensemble de la zone étudiée. 
 
   --> Cette étape peut être répétée sur plusieurs séquences d'images !! 
@@ -38,28 +37,23 @@ Il ne décrit que les étapes permettant le traitement total des vidéos.
   --> PIV_processing/automaticcycle_banquise_drone.m
 	Permet de réaliser la PIV en utilisant PIVlab en parallel-computing
 	Bien prendre garde à sélectionner le fichier que l'on souhaite traiter. Donc exécuter la première cellule du code avant de passer à la suite. 
-	Le code créer un fichier .mat dans lequel le champ de vitesse (u,v) est sauvegardé ainsi que les paramètres utilisés lors de la PIV (paramètres s et p). 
+	Le code créer un fichier .mat contenant : le champ de vitesse (u,v), la position des boîtes de PIV en pixel ainsi que les tables de paramètres (s et p) utilisées 
+	pour effectuer la PIV .
 	Le code appelle la fonction PIVlab_commandline_parallel_stereo décrite ci-dessous
 
 
   --> PIVlab_commandline_parallel_stereo.m
 	Cette fonction prend plusieurs arguments :
 	 - directory = fichier où se trouve les images .tiff à traiter (le nom complet du fichier doit être renseigné)
-	 - reference = je ne sais pas trop à quoi cet argument sert ? Débuter à partir d'une certaine frame ? 
+	 - reference = image de référence si l'on souhaite effectuer la PIV à partir d'une même image de référence, si égal à '', alors on compare les images 
+		séparées de Dt deux à deux
 	 - N = nombre de frames à process, si N = 0 alors la fonction process l'ensemble des images se trouvant dans le directory 
 	 - i0 = première image à partir de laquelle on réalise la PIV
 	 - Dt = pas de temps décrit précédemment
 	 - b = décrit précédemment
-	 
-	 #######################################
-	 IMPORTANT :
-	 #######################################
-	 
-	 Les tables de paramètres p (pour le preprocess des images) et s (pour les paramètres de PIV) doivent être vérifiées et modifiées si besoin avant chaque traitement de PIV ! 
-	 Les tables p et s sont décrites dans le script de la fonction PIVlab_commandline_parallele_stereo.m 
+	 - s = table de paramètres utiles à la réalisation de la PIV
+	 - p = table de paramètres utiles au pre-processing des images 
 
-	 #######################################
-	 
 	 La fonction appelle piv_analysis.m 
 	 
 	 Puis on réalise une boucle sur l'ensemble des images, les images sont preprocess à l'aide de la fonction PIVlab_preproc qui prend en argument l'image et la table de paramètres p. 
@@ -73,14 +67,21 @@ Il ne décrit que les étapes permettant le traitement total des vidéos.
 	 
   --> piv_analysis.m 
 	Permet de réaliser la PIV sur une paire d'images (filename1, filename2). Les actions réalisées par la fonction sont entièrement décrites dans la fonction Matlab. 
-	A noter que si graph = 1 & nr_of_cores = 1, la corrélation entre les deux images n'est pas parallelisée, mais on peut plotter le champ de vitesse obtenu après corrélation entre les deux images. 
+	Cette fonction peut être utilisée à l'aide du script 'PIV_image_pair.m'
 	
 
   ### Post-processing des champs de vitesse brute 
-  --> test_Sebastien.m
-	Ce script permet de retraiter les données brutes obtenues à partir de PIVlab. Les données brutes sont traitées par la fonction 'PIV_banquise_postprocessing.m' décrite ci-dessous.
+  --> Main_data_structuration.m
+	Ce script permet de traiter et ordonner les données brutes obtenues à partir de PIVlab. Les données brutes sont traitées par la fonction 'PIV_banquise_postprocessing.m' 
+	décrite ci-dessous.
 	Les données traitées ainsi que les paramètres de PIV sont ensuite assemblés au sein d'une structure matlab, grâce à la fonction 'genere_structure_banquise.m'. 
-	Cette structure matlab est alors sauvegardée et prête à être utilisées pour tracer différents graphiques. 
+	Différents champs associés aux paramètres du drone, horaires et positions GPS sont ajoutés à cette structure, formant la structure '*_total_processed.mat'
+
+	A partir de cette première structure, il est possible de générer une nouvelle structure à l'aide des fonctions 'scaling_structure.m' et 'scaling_structure_oblique.m'
+	Ces fonctions permettent de mettre à l'échelle les champs de déplacement mesurés (y compris les champs de déplacement verticaux dans l'hypothèse où la surface filmée 
+	est plane). A l'issue de l'une de ces fonctions, une structure matlab '*_scaled.mat' est sauvegardée. 
+
+	Enfin l'ensemble des paramètres utilisés pour traiter les données est sauvegardé dans un fichier .txt à l'aide de la fonction 'saving_parameters.m'
 
 
   --> PIV_banquise_postprocessing.m
@@ -101,32 +102,23 @@ Il ne décrit que les étapes permettant le traitement total des vidéos.
 	Les arguments de cette fonction sont convenablement définis dans la fonction. 
 	
 	Elle retourne une structure Matlab contenant 
-	- le champ de vitesse (m.Vx , m.Vy) au cours du temps (troisième dimension de chaque table m.Vx et m.Vy)
-	Ces champs de vitesse sont correctement scalés en m/s ! 
-	- la grille spatiale utilisée pour la PIV (m.x , m.y), scalées en mètre
-	- un tableau de temps m.t, scalé en secondes
-	- les paramètres utilisés pour la PIV (m.p_param et m.s_param)
-	- m.fx et m.ft, les facteurs d'échelle en espace et en temps. Pour revenir aux données brutes, il faut diviser par fx ou ft
-	- m.scale_V, le facteur d'échelle utilisé pour scaler la vitesse
-	- m.w, la taille de box utilisée pour réaliser la PIV 
-	- d'autres paramètres comme m.i0, m.Dt, m.b, m.N, m.name, m.unitx, m.unity, etc... 
-
-###############################
- ATTENTION !!
- La fonction genere_strcuture_banquise.m supprime également tout le contour (selon x et y) du champ de vitesse. De sorte qu'il ne reste que des boîtes PIV de même taille
-##############################
-
+	- le champ de vitesse (m.Vx , m.Vy) dimensions [nx,ny,nt] (non scalés)
+	- la grille spatiale utilisée pour la PIV (m.x , m.y) 
+	- d'autres paramètres...
+	
+	Il est possible de supprimer les boîtes de PIV situées sur le contour de l'image étudiée en jouant sur le paramètre a. Si a = 1, alors toutes les boîts 
+	situées sur le contour sont supprimées. Si a = 2, le contour formé par les deux séries de boîtes de PIV les plus à l'extérieures sont supprimées. 
+	Cela peut être utile pour avoir toujours la même taille de boîte de PIV (en pixel). 
+	
 	
 ## Analyse des données après DIC/PIV
 
   ### Avant-propos 
-  --> Les champs de vitesse obtenus après la PIV peuvent être analysés de différentes façons, les fonctions permettant d'obtenir les principales caractéristiques du champ de vitesse
-  sont décrites ci-dessous et sont appelées à parti du script Matlab Drone_banquise_analysis/Results_analysis.m
+  --> Les champs de vitesse obtenus après la PIV peuvent être analysés de différentes façons, les fonctions permettant d'obtenir les principales caractéristiques 
+  du champ de vitesse sont décrites ci-dessous
 
-  ### Main fucntions
-  --> Results_analysis.m : 
-  Script Matlab permettant de loader les données de DIC scalées et post-processées. Puis d'appeler les différentes fonctions permettant d'obtenir de premiers résultats simples. 
-
+  
+  ### Main functions
   --> get_histogram_displacement.m :
   Fonction permettant d'obtenir l'histogram des déplacements moyen (moyenné en temps) pour chaque boîte de PIV. Donc de vérifier les critères de validation de la PIV
 
@@ -151,6 +143,14 @@ Il ne décrit que les étapes permettant le traitement total des vidéos.
   --> get_wave_vectors.m : 
   Calcul, pour chaque fréquence f, l'amplitude du vecteur d'onde k associé au champ démodulé à une fréquence f
 
+  --> space_time_spectrum_Efk.m : 
+  Calcul le spectre spatio-temporel E(f,k) (moyenné radialement dans l'espace des nombres d'onde) d'un champ de vitesse V
+
+  --> extract_branchs_from_Efk.m : 
+  Extraits les coordonnées (f,k) associées aux pics de plus hautes amplitudes dans le spectre spatio-temporel E(f,k)
+
+  --> attenuation_coeff_corrected_direction.m :
+  Calcul le coeffcient d'atténuation spatial pour différentes fréquences temporelles composantes d'un champ de vitesse V
 
 
 

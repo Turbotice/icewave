@@ -1,10 +1,11 @@
-function [E,f,k,shift] = space_time_spectrum_Efk(V,add_pow2,facq_t,facq_x)
+function [E,f,k,shift] = space_time_spectrum_Efk(V,add_pow2,facq_t,facq_x,padding_time)
 
 % Computes space-time amplitude spectrum of the 3D-array V
 % Inputs: - V : 3D-array, dimensions (nx,ny,nt)
 %         - add_pow2 : additional padding if needed, 1x3 array 
 %         - facq_x : acquisition frequency in box/meter
 %         - facq_t : acquisition frequency in frame/meter
+%         - padding_time : boolean to pad time or not 
 % Outputs : - E : space-time spectrum, order of dimensions (f,k)
 %           - f : frequency 1D-array 
 %           - k : wave vector 1D-array 
@@ -14,6 +15,11 @@ function [E,f,k,shift] = space_time_spectrum_Efk(V,add_pow2,facq_t,facq_x)
 % FFT 3D of the velocity field 
 N = size(V);
 padding = 2.^(nextpow2(N) + add_pow2); % padding for each dimension
+nopadding_time = ~padding_time;
+
+if nopadding_time % if we do not want to pad time 
+    padding(3) = N(3);
+end 
 
 disp('Computing FFT 3D')
 FFT = fftn(V,padding)/numel(V); % FFT 

@@ -46,14 +46,16 @@ function [S_disp] = extract_branchs_from_Efk(E,f,k,min_prominence,freq_range)
     end 
 
     % Creating a structure 
-    S_disp = struct('f',[],'k',[],'A',[]);
+    S_disp = struct('f',[],'k',[],'A',[],'width',[]);
     for i = 1 : size(M_peaks,2)
         current_f = M_peaks(i).f .* ones(1,length(M_peaks(i).k)); 
         current_k = M_peaks(i).k;
         current_A = M_peaks(i).A;
+        current_width = M_peaks(i).width;
         S_disp.f = cat(2,S_disp.f,current_f); % store frequency
         S_disp.k = cat(2,S_disp.k,current_k);
         S_disp.A = cat(2,S_disp.A,current_A);
+        S_disp.width = cat(2,S_disp.width,current_width);
     end 
     S_disp.omega = 2*pi*S_disp.f;  
 end 

@@ -80,7 +80,13 @@ def load(folder):
     data = {}
     for meta in metalist:
         key = os.path.basename(meta).split('.')[0]
-        data[key]  = read_meta(meta)
+        if key=='device':
+            data[key]  = read_meta_device(meta)
+        elif key=='time':
+            data[key]  = read_meta_time(meta)
+        else:
+            print(key)
+            print('meta csv file unrecognized')
 
     for datafile in datalist:
         key = os.path.basename(datafile).split('.')[0]
@@ -125,23 +131,83 @@ def sort(data):
     newdata['coords']=coords
     return newdata
 
+def split(data):
+    #split into several recordings multiple recordings that are stacked together
+    #test if multiple START times':
+    if 'system time_START_1' in data['time']:
+        print('multiple recordings in the same .csv files')
+        #find the number of recordings
+        found = True
+        c = 1
+        while found:
+            found = 'system time_START_'+str(c) in data['time']
+            c+=1
+            print(c)
+        c=c-1
+        print(f'Number of recordings : {c}')
+
+        datas = []
+        for i in range(c):
+            d = {}
+            d['device'] = data['device']
+            d['time']={}
+
+            for key in data['time'].keys():
+                if i==0:
+                    if key[-5:]=='PAUSE' or key[-5:]=='START':
+                        d['time'][key]=data['time'][key]
+                else:
+                    if f'_{i}' in key:
+                        k = '_'.join(key.split('_')[:-1])
+                        d['time'][k]=data['time'][key]
+
+            t0 = float(d['time']['experiment time_START'])
+            tf = float(d['time']['experiment time_PAUSE'])
+            print(t0,tf)
+
+            for key in data.keys():
+                if not key in ['device','time']:
+                    d[key]=data[key]
+            datas.append(d)
+    else:
+        print('no multiple recordings found')
+        return [data]
+    return datas
+
+def get_time_interval(data):
+    t0 = float(data['time']['experiment time_START'])
+    tf = float(data['time']['experiment time_PAUSE'])
+    return t0,tf
+    
 def get_time(data):
     if 'time' in data.keys():
-        print(data['time'].keys())
+        #print(data['time'].keys())
 
-        if 'system_START' in data['time'].keys():
-            t0 = data['time']['system_START']
-        else:
+        found = False
+        for key in ['system_START','system time_START']:
+            #print(key,data['time'].keys())
+            if key in data['time'].keys():
+                t0 = data['time'][key]
+                found = True
+        if not found:
             print('no t0 stamp for this phone')
             t0 = np.nan
-        if 'system_PAUSE' in data['time'].keys():
-            t1 = data['time']['system_PAUSE']
-        else:
+
+        for key in ['system_PAUSE','system time_PAUSE']:
+            if key in data['time'].keys():
+                t1 = data['time'][key]
+                found = True
+        if not found:
             print('no t1 stamp for this phone')
             t1 = np.nan
-        if 'experi_PAUSE' in data['time'].keys():
-            Dt = np.round(float(data['time']['experi_PAUSE']),decimals=2)
-        else:
+
+        found=False
+        for key1,key2 in zip(['experi_START','experiment time_START'],['experi_PAUSE','experiment time_PAUSE']):
+            if key1 in data['time'].keys():
+                Dt = np.round(float(data['time'][key2])-float(data['time'][key1]),decimals=2)
+                found = True
+        if not found:
+            print('no duration stamp for this phone')
             Dt = np.nan
         return t0,t1,Dt
     else:
@@ -159,19 +225,44 @@ def get_mean_position(data):
         return np.nan,np.nan
     return Lat,Lon
 
-def read_meta(csvfile):
+def read_meta_device(csvfile):
     d={}
     with open(csvfile) as f:
         csv_reader = csv.reader(f, delimiter=',')
         line=0
-        for row in csv_reader:
+        for j,row in enumerate(csv_reader):
             if line==0:
                 headers = row
             else:
                 #print(headers,row)
                 for i,header in enumerate(headers):
-                    d[header[:6]+'_'+row[0]]=row[i]
+                    key = header[:6]+'_'+row[0]
+                    if not key in d.keys():
+                        d[key]=row[i]
             line+=1
-
     return d
+
+def read_meta_time(csvfile):
+    d={}
+    with open(csvfile) as f:
+        csv_reader = csv.reader(f, delimiter=',')
+        line=0
+        for j,row in enumerate(csv_reader):
+            if line==0:
+                headers = row[1:]
+            else:
+                for i,header in enumerate(headers):
+                    #print(header) 
+                    key = header+'_'+row[0]#beware of back compatibility !!! header[:6] replaced by header
+                    if not key in d.keys():
+                        d[key]=row[i+1]
+                    else:
+                        num = int((j-1)/2)
+                        d[key+'_'+str(num)] = row[i+1]
+                        print('key already exist ! Multiple recordings, num = '+str(num+1))
+                
+            line+=1
+    return d
+
+
 
