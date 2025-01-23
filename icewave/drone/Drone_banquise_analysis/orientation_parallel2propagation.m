@@ -1,4 +1,4 @@
-function [field_star,x_star,y_star] = orientation_parallel2propagation(field,theta,fx,L0)
+function [field_star,x_star,y_star,X_line,Y_line] = orientation_parallel2propagation(field,theta,fx,L0)
     % Select a rectangular window aligned with the propagation direction 
     % Within this window, create an interpolated field, and associated
     % coordinates : x_star (direction of propagation), y_star (oriented
@@ -47,7 +47,7 @@ function [field_star,x_star,y_star] = orientation_parallel2propagation(field,the
         % Interpolate 
         F = griddedInterpolant({x,y},field); % Interpolate demodulated field 
         % interpolate along new grid 
-        field_star = F(X_line, y(end) - Y_line);
+        field_star = F(X_line, Y_line);
 
         x_star = s; 
         y_star = (0:ds:(y(end) - (L0*sin(abs(theta)) + y(1)))/cos(theta)-ds);
@@ -73,7 +73,7 @@ function [field_star,x_star,y_star] = orientation_parallel2propagation(field,the
         % Interpolate 
         F = griddedInterpolant({x,y},field); % Interpolate demodulated field 
         % interpolate along new grid 
-        field_star = F(X_line, y(end) - Y_line);
+        field_star = F(X_line, Y_line);
 
         x_star = s; 
         y_star = (0:ds:(y(end) - L0*sin(abs(theta)) - y(1))/cos(theta) - ds);
