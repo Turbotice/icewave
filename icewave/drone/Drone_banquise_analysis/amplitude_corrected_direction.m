@@ -1,4 +1,4 @@
-function [alpha,C,d] = attenuation_coeff_corrected_direction(FFT_t,f,x,y,facq_x,L0,xmin,f_cutoff,x_cutoff,fig_folder)
+function [S_A] = amplitude_corrected_direction(FFT_t,f,x,y,facq_x,L0,xmin,f_cutoff,x_cutoff,fig_folder)
 
 % Inputs : 
 %   - FFT_t : 3D array, time Fourier transform of velocity field [nx,ny,nf]
@@ -17,10 +17,9 @@ function [alpha,C,d] = attenuation_coeff_corrected_direction(FFT_t,f,x,y,facq_x,
 %   - fig_folder : str, name of directory where plots are saved 
 
 % Outputs :
-%   - alpha : 1D-array, nf x 1, exponential decaying coefficient of each frequency
-%   - C : 1D-array, nf x 1, pre-factor of exponential decay for each frequency
-%   - d : 1D-array, nf x 1, norm-2 distance of data points ot fitted
-%   exponential curve 
+%   - S_A : nf x 1 structure array containing for each frequency the
+%   amplitude profile A(x)
+
 
     % parameters used to compute space FFT and binarize space FFT 
     padding_bool = 1; % additional padding for space FFT computation
@@ -32,10 +31,7 @@ function [alpha,C,d] = attenuation_coeff_corrected_direction(FFT_t,f,x,y,facq_x,
 
     % create empty arrays 
     nf = length(f);
-    alpha = zeros(nf,1); % array of attenuation coefficients
-    C  = zeros(nf,1); % array of prefactor
-    d = zeros(nf,1); % array of distance to plot
-
+    S_A = struct('A',{},'x',{});
 
     for idx_freq = 1:nf
         current_freq = f(idx_freq);
@@ -120,23 +116,42 @@ function [alpha,C,d] = attenuation_coeff_corrected_direction(FFT_t,f,x,y,facq_x,
 
         if txt == 'y'
             % Compute field correctly oriented
-            [field_star,x_star,~] = orientation_parallel2propagation(field,theta,1/facq_x,L0);
-            hold on 
-            plot(x_line,y_line,'k-')
+            [field_star,x_star,y_star,X_line,Y_line] = orientation_parallel2propagation(field,theta,1/facq_x,L0);
+
+        reorientation_fig = figure(3); 
+        pcolor(x,y,real(field)')
+        shading interp
+        axis image
+        hold on 
+        for j = 1 : size(X_line,2)
+            plot(X_line(:,j),Y_line(:,j),'k--')
+        end 
+        xlabel('$x \: \rm (m)$')
+        ylabel('$y \: \rm (m)$')
+        ax = gca; 
+        ax.FontSize = 13;
+
+        figure(4)
+        pcolor(x_star,y_star,real(field_star)')
+        shading interp
+        axis image
+        xlabel('$x \: \rm (m)$')
+        ylabel('$y \: \rm (m)$')
+        ax = gca; 
+        ax.FontSize = 13;
+
         else
             field_star = field;
             x_star = x;
         end
 
-        hold off
-        figname = [fig_folder 'Real_field_f' freq_txt];
-        saveas(gcf,figname,'fig')
-        saveas(gcf,figname,'pdf')
+        % hold off
+        % figname = [fig_folder 'Real_field_f' freq_txt];
+        % saveas(gcf,figname,'fig')
+        % saveas(gcf,figname,'pdf')
 
-        % Exponential fit 
-        A = squeeze(mean(abs(field_star),2)); % amplitude along x-axis for each frequency
-
-        % indices used to fit the exponential decay
+        % Get averaged amplitude 
+        A = squeeze(mean(abs(field_star),2)); % amplitude along x-axis for current frequency
 
         if isempty(f_cutoff)
             i_max = length(A); % maximum index 
@@ -159,43 +174,26 @@ function [alpha,C,d] = attenuation_coeff_corrected_direction(FFT_t,f,x,y,facq_x,
             end 
         end 
 
-        decay_fig = figure(3);
+        decay_fig = figure(5);
         decay_fig.Color = [1,1,1];
 
         % restrict to the boundaries in order to fit
         x_fit = x_star(i_min:i_max); % in meter !!
         A_red = A(i_min:i_max); % restricted to the region of interest
-
-        log_A = log10(A_red); % take the log10 of the amplitude of freq i
-        A_fit = log_A; 
-        p = polyfit(x_fit,A_fit,1); % fit log_A by a degree 1 polynome
-        alpha(idx_freq) = log(10)*p(1); % get attenuation coefficient in m^-1
-        C(idx_freq) = 10.^p(2); % prefactor
-
-        disp(['alpha = ' num2str(alpha(idx_freq)) ' m-1'])
-        y_poly = 10.^polyval(p,x_fit);
-        plot(x_fit,A_red,'o');
-        hold on 
-        plot(x_fit,y_poly,'r');
+        
+        plot(x_fit,A_red,'o')
         xlabel('$x \: \rm (m)$','Interpreter','latex');
         ylabel('$\langle | \hat{V_x} | \rangle _y (x,f) \: \rm (m)$','Interpreter','latex');
-        grid on 
-        data_txt = 'Data';
-        fit_txt = ['$y(x) = ' sprintf('%0.2f',C(idx_freq)) ' e^{' sprintf('%0.3f',alpha(idx_freq)) 'x}$'];
-        legend(data_txt,fit_txt,'Interpreter','latex','location','northeast','FontSize',13);
-
-        d(idx_freq) = sum((y_poly - A_red').^2)/sum(A_red.^2); % distance to the fit
-        disp(['Distance to fit : ' num2str(d(idx_freq)) ''])
-
-        title(['$d = ' sprintf('%0.4f',d(idx_freq)) '$'],'Interpreter','latex')
-        ax = gca;
+                ax = gca;
         ax.FontSize = 13;
         set_Papermode(decay_fig);
-        hold off
 
-        figname = [fig_folder 'Attenuation' freq_txt];
+        figname = [fig_folder 'A_VS_x_f' freq_txt];
         saveas(decay_fig,figname,'fig')
         saveas(decay_fig,figname,'pdf')
+    
+        S_A(idx_freq).A = A_red;
+        S_A(idx_freq).x = x_fit;
 
     end 
 

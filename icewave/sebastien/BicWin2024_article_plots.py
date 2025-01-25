@@ -25,12 +25,15 @@ import icewave.tools.matlab2python as mat2py
 import icewave.tools.matlab_colormaps as matcmaps
 import icewave.tools.Fourier_tools as FT
 
+# import seb plotting package 
+import icewave.sebastien.set_graphs as set_graphs
+
 #%% Parameters for plots
 # picture on whole page width : fig_size = (8,6), font_size_medium = 22, font_size_small = 0.75*font_size_medium
 
 # picture on half page width : fig_size = (8,6), font_size_medium = 30, font_size_small  =  0.75*font_size_medium
 
-# quadrant of 4 figures : fig_size = (6.4,4.8), font_size_medium = 24 (or 20), font_size_small = 0.75*font_size_medium 
+# quadrant of 4 figures : fig_size = (12,9), font_size_medium = 20, font_size_small = 0.75*font_size_medium 
 
  
 font_size_medium = 20
@@ -210,6 +213,31 @@ ax.set_ylabel(r'$\omega \; \mathrm{(rad.s^{-1})}$', labelpad = 5)
 
 cbar = plt.colorbar(c,ax = ax)
 cbar.set_label(r'$|\hat{V}_x| (k,\omega) \; \mathrm{(u.a.)}$',labelpad = 5)
+
+#%% Plot Data using Seb plotting package
+
+k_list = np.linspace(0.08,5,100)
+h_w = 5.0 # water depth on field, in meter
+harmonic1 = bound_harmonicN(k_list, 1, h_w)
+
+set_graphs.set_matplotlib_param('single')
+fig, ax = plt.subplots()
+c = ax.imshow(Afk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = 3e-4, vmax = 1e-1,
+              origin = 'lower', interpolation = 'gaussian',
+              extent = (Afk['k'].min(),Afk['k'].max(),Afk['omega'].min(),Afk['omega'].max()))
+ax.plot(k_list,harmonic1,'--',color = 'white',lw = 2)
+ax.set_xscale('log')
+ax.set_yscale('log')
+ax.set_xlim(0.1,3.3)
+ax.set_ylim(2*np.pi*0.09,2*np.pi*1.3)
+
+ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$')
+ax.set_ylabel(r'$\omega \; \mathrm{(rad.s^{-1})}$')
+
+cbar = plt.colorbar(c,ax = ax)
+cbar.set_label(r'$|\hat{V}_x| (k,\omega) \; \mathrm{(u.a.)}$',labelpad = 5)
+
+
 
 #%% Load initial image 
 

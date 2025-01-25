@@ -3,7 +3,7 @@
 
 date = '0223';
 drone_name = 'bernache';
-exp_ID = '12-waves_010';
+exp_ID = 07-waves_007';
 % base where images are saved and where we want to save data 
 
 base_img = ['/media/turbots/DATA/thiou/labshared2/SagWin2024/Data/' date '/Drones/' drone_name '/'];
