@@ -36,13 +36,13 @@ def write_csv(filename,data):
             line = [data[key][i] for key in keys]
             spamwriter.writerow(line)
 
-def writedict_csv(filename,data):
+def writedict_csv(filename,data,symbol='#'):
     with open(filename, 'w') as csvfile:
         spamwriter = csv.writer(csvfile, delimiter=',',quotechar='|')#, quoting=csv.QUOTE_MINIMAL)
 
         keys = list(data.keys())
         print(keys)
-        header = ['#']+list(data[keys[0]].keys())
+        header = [symbol]+list(data[keys[0]].keys())
         spamwriter.writerow(header)
         for key in data.keys():
             row = [key]+[data[key][k] for k in data[key].keys()]

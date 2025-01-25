@@ -8,4 +8,4 @@ while read line; do id=`echo $line | awk -F ' ' '{print $2}'`; if [[ $id == $adr
 echo $num $adress
 adb -s $adress tcpip $((5500+$num))
 sleep 1
-adb -s $adress connect 192.168.2.$((100+$num)):$((5500+$num))
+adb -s $adress connect 192.168.1.$((100+$num)):$((5500+$num))
