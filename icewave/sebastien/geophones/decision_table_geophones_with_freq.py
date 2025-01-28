@@ -69,7 +69,7 @@ nu = 0.3  # Poisson's ratio
 c_w = 1480  # Speed of sound in water in m/s
 rho_w = 1000  # Density of water in kg/m³
 
-freq = [5]  # Frequencies in Hz
+freq = [5,50,100,500]  # Frequencies in Hz
 
 # E from 2 to 9 GPa by step of 1 GPa (convert to Pa)
 E_values = np.arange(2e9, 12e9, 2e9)
@@ -95,7 +95,7 @@ for i,h in enumerate(h_values):
 
 #%% Write data in a csv file. A single csv for each frequency 
 
-path = 'D:/PC Seb/These PMMH/Arctic_refuge_2024/Expedition_plan/Geophones/Decision_tables/'
+path = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2025/Protocoles/Geophones_table/'
 for k,freq_value in enumerate(freq) :
     csv_file = path + 'Decision_table_geophones_f'+ str(freq_value) +'.csv'
     
@@ -122,13 +122,13 @@ wavelength = np.zeros((np.size(h_values),np.size(E_values)))
 
 for i,h in enumerate(h_values):
     for j,E in enumerate (E_values):
-        freq = [limit_stein/h]
+        freq = [limit_stein/h] # compute maximum frequency for which Stein model is still valid  
         print(freq)
         k_value = wavenumbers_stein_squire(rho_ice, h, H, E, nu, freq, c_w, rho_w, 'stein')
         wavelength[i,j] = 2 * np.pi / k_value
         
 #%% Write data in a csv file 
-path = 'D:/PC Seb/These PMMH/Arctic_refuge_2024/Expedition_plan/Geophones/Decision_tables/'
+path = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2025/Protocoles/Geophones_table/'
 
 csv_file = path + 'Decision_table_geophones_limit_stein.csv'
 
@@ -159,14 +159,14 @@ QS0_wavelength = np.zeros((np.size(h_values),np.size(E_values)))
 
 for i,h in enumerate(h_values):
     for j,E in enumerate (E_values):
-        freq = limit_QS0/h
+        freq = limit_QS0/h # computation of maximum frequency of QS0 mode
         print(freq)
         k_value = QS0_nondispersive(rho_ice, E, nu, freq)
         QS0_wavelength[i,j] = 2 * np.pi / k_value
         
 
 #%% Write data in a csv file 
-path = 'D:/PC Seb/These PMMH/Arctic_refuge_2024/Expedition_plan/Geophones/Decision_tables/'
+path = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2025/Protocoles/Geophones_table/'
 
 csv_file = path + 'Decision_table_geophones_QS0_minimal_wavelength.csv'
 
