@@ -25,6 +25,11 @@ def read_csv(filename,delimiter=','):
     return rows
 
 def write_csv(filename,data):
+    folder = os.path.dirname(filename)
+    if not os.path.exists(folder):
+        print(f"Creating folder {folder}")
+        os.makedirs(folder)
+
     with open(filename, 'w', newline='') as csvfile:
         spamwriter = csv.writer(csvfile, delimiter=',',quotechar='|')
         
