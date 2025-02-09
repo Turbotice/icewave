@@ -15,8 +15,9 @@ import icewave.tools.datafolders as df
 #%%
 
 def main():
-    base = df.find_path('Hublot24')
-    datafolder = base + '0226/Drones/mesange/23-waves_012/'
+    # base = df.find_path('Hublot24')
+    base = 'E:/Data/'
+    datafolder = base + '0208/Drones/mesange/02-waypoints_001/'
 
     # datafolder = browse.find_path(datafolder)
     print(datafolder)
@@ -99,7 +100,8 @@ def later(filelist,directory_save,savename):
 
 if __name__=='__main__':
     filelist = main()
-    base = df.find_path('Hublot24')
-    directory_save = base[:-5] + '/PIV_images/0226/Drones/mesange/'
-    savename = '23-waves_012'
+    # base = df.find_path('Hublot24')
+    base = 'E:/Data/'
+    directory_save = base[:-5] + '/PIV_images/0208/Drones/mesange/'
+    savename = '02-waypoints_001'
     vid = later(filelist,directory_save,savename)
