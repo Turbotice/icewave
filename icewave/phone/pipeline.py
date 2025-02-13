@@ -45,6 +45,7 @@ def get_phonelist(date):
     folders = glob.glob(folder+'*')
 
     phonelist=[]
+    print(folder)
     for f in folders:
         try:
             num = int(f.split('/')[-1])
@@ -168,7 +169,7 @@ def moving_table(files,imin=1,imax=None):
             print(f'no accelerometer data for phone {phone}')
             n=0
         length.append(n)
-    imax = int(np.median(length))-3
+    imax = int(np.nanmedian(length))-3
     print(f'Median number of files : {imax}')
     
     indices = range(imin,imax)
