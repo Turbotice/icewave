@@ -45,10 +45,9 @@ def get_phonelist(date):
     folders = glob.glob(folder+'*')
 
     phonelist=[]
-    print(folder)
     for f in folders:
         try:
-            num = int(f.split('/')[-1])
+            num = int(os.path.basename(f))
         except:
             continue
         phonelist.append(num)
