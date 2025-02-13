@@ -32,7 +32,7 @@ def tmp_connect():
     t = tilemapbase.tiles.build_OSM()
     return t
 
-def project(Long,Lat):
+def project(Long,Lat,R=6378000,meter=False):
     """
     Naive local projection of Long & Lat coordinates on a plane 
     INPUT 
@@ -50,6 +50,11 @@ def project(Long,Lat):
     lat_rad = np.radians(Lat)
     
     ytile = (1.0 - np.log(np.tan(lat_rad) + (1 / np.cos(lat_rad))) / np.pi) / 2.0
+    if meter:
+        xtile = xtile*R
+        ytile = ytile*R
+        xtile = xtile-xtile[0]
+        ytile = ytile-ytile[0]
     return (xtile, ytile)
 
 def extent(BBox):
@@ -154,7 +159,7 @@ def display_dictwpts(filename,date,wpts,save=True):
 #graphes.save_figs(figs,savedir=savefolder,prefix='wpts_'+date+'_',suffix='summary',frmt='pdf')
 
 
-def map_traj(Long,Lat,save=False,scale=0.8,title=''):
+def map_traj(Long,Lat,save=False,scale=0.8,title='',ax=None):
     BBox = box_data(Long,Lat,scale=scale)
     print(BBox)
     X,Y = project(Long,Lat)
@@ -164,7 +169,8 @@ def map_traj(Long,Lat,save=False,scale=0.8,title=''):
 
     t = tmp_connect()
     
-    fig, ax = plt.subplots(figsize=(8, 8), dpi=200)
+    if ax==None:
+        fig, ax = plt.subplots(figsize=(8, 8), dpi=200)
     ax,figs = display_map(ext,t,ax=ax,width=600)
     ax.plot(X,Y,'k-')
 
@@ -173,7 +179,7 @@ def map_traj(Long,Lat,save=False,scale=0.8,title=''):
     if save:
         graphes.save_figs(figs,savedir=savefolder,frmt='png')
 
-    return ax,t,figs
+    return ax,t,ext,figs
 
 
 def box_data(Longs,Lats,scale=1.2,width=0.02,square=True):

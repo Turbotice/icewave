@@ -175,6 +175,7 @@ def timeline_legend():
 def convert_time(t):
     h,m,s = t.split(':')
     return int(h)*3600+int(m)*60+int(s)
+    
 
 def get_time_interval(record):
     times = [record[key]['time'] for key in record.keys()]

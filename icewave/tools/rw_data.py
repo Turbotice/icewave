@@ -68,9 +68,9 @@ def csv2dict(table,headerindex=0,symbol='#'):
     data = {}
     if table[0][0]==symbol:
         keys = table[0][1:]
-        print(keys)
+        #print(keys)
         for tab in table[1:]:
-            print(tab)
+            #print(tab)
             data[tab[0]]={}
             for (t,key) in zip(tab[1:],keys):
                 if '.' in t:
