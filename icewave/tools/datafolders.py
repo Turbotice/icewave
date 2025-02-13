@@ -49,7 +49,10 @@ def find_path(disk='Hublot24'):
         print('please specify the folder path')
     if 'Linux' in ostype:
         if 'oural' or 'saguenay' in osname:
-            base = '/media/turbots/'+base#home/turbots/Documents/'+base
+            if disk=='Shack25':
+                base = '/media/turbots/BlueDisk/Shack25_local/Data/'
+            else:
+                base = '/media/turbots/'+base#home/turbots/Documents/'+base
         else:
             print('computer unknown, define the path folder')
             base = ''
@@ -78,6 +81,8 @@ def find_path(disk='Hublot24'):
             base = '//192.168.1.70/Share/Data/'
         if disk=='Hublot24':
             base = 'K:/Share_hublot/Data/'
+        if disk=='Shack25':
+            base = 'E:/Data/'
 
     if 'macOS' in ostype:
         base = '/Volumes/'+base

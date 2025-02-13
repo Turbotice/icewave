@@ -262,7 +262,7 @@ def display_haha(ax,title=''):
     BBox = boxes('haha')
     ext = extent(BBox,ratio=2)
     t = tmp_connect()
-    display_map(ext,t,title=title,ax=ax,width=600)
-
+    ax,figs = display_map(ext,t,title=title,ax=ax,width=600)
+    return ax,figs
     
     

@@ -8,13 +8,34 @@ import scipy.signal as sig
 
 import icewave.tools.datafolders as df
 import icewave.gps.gps as gps
+import icewave.display.graphes as graphes
 import phonefleet.data as dataphone
 
+from matplotlib.colors import LinearSegmentedColormap as LSC
+
+
+import argparse
+
+def gen_parser():    
+    parser = argparse.ArgumentParser(description="Manipulate multi instruments data")
+    parser.add_argument('-date', dest='date', type=str,default='0211',help='select date to process data')
+    parser.add_argument('-step', dest='step', type=int,default=1,help='select Step to be performed')
+#    print(parser)   
+    args = parser.parse_args()
+    print(args)
+    return args
+
 global base
-base = f'/media/turbots/BlueDisk/Shack25_local/'
 
 def get_folder(date):
-    return base +f'Data/{date}/Phone/'
+    base = df.find_path(disk='Shack25')#f'/media/turbots/BlueDisk/Shack25_local/'
+    return base +f'{date}/Phone/'
+
+def get_savefolder(date):
+    folder = get_folder(date)+'Results/'
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    return folder
 
 def get_phonelist(date):
     folder = get_folder(date)
@@ -116,9 +137,10 @@ def display_position(r,ax=None,eps = 10**(-6)):
     sign = int((np.mod(phone,2)-0.5)*2)
     ax.text(X-eps/4,Y-eps*sign,str(phone),color='r',fontsize=20)
 
-def situation_map(files,phonelist,num):
+def situation_map(files,num):
+    phonelist = files.keys()
     fig,ax = plt.subplots(figsize=(20,10))
-    gps.display_haha(ax)
+    ax,figs = gps.display_haha(ax)
 
     for phone in phonelist:
         r = load_lvl_0(files,phone,num,keys=['gps'])
@@ -127,18 +149,77 @@ def situation_map(files,phonelist,num):
             #print(phone,move)
             if move==False:
                 display_position(r,ax=ax)
+    return fig,ax,figs
 
-def moving_map(phonelist,files):
+def moving_table(files,imin=1,imax=None):
+    phonelist = files.keys()
     nphone = len(phonelist)
-    nt = 40
+    imax=0
+    
+    length=[]
+    key = 'accelerometer'
+    for phone in phonelist:
+        if key in files[phone].keys():
+            n = len(files[phone][key].keys())
+        else:
+            print(f'no accelerometer data for phone {phone}')
+            n=0
+        length.append(n)
+    imax = int(np.median(length))-3
+    print(f'Median number of files : {imax}')
+    
+    indices = range(imin,imax)
+    nt = len(indices)
     moving = np.zeros((nphone,nt))
     for i,phone in enumerate(phonelist):
-        for j,num in enumerate(range(1,38)):
-            r = pl.load_lvl_0(files,phone,num,keys=['gps'])
+        for j,num in enumerate(indices):
+            r = load_lvl_0(files,phone,num,keys=['gps'])
             if r is not None:
-                move = pl.is_moving(r)
+                move = is_moving(r)
                 #print(phone,move)       
                 moving[i,j]=int(move)
             else:
                 moving[i,j]=np.nan
-    return moving
+    return moving,indices
+
+def moving_map(moving,indices,phonelist):
+    Indices,Phones = np.meshgrid(indices,phonelist)
+    fig,ax = plt.subplots(figsize=(15,10))
+
+    colors = [(0, 1, 0), (1, 0, 0)]# R -> G -> B
+    cmap_name = 'onoff'
+    n_bin = 2
+    cmap = LSC.from_list(cmap_name, colors, N=n_bin)
+
+    sc = ax.pcolormesh(Indices,Phones,moving,cmap=cmap)
+    #plt.colorbar()
+    cbar = fig.colorbar(sc, ax=ax,ticks=[0,1])
+    cbar.ax.set_yticklabels(['Immobile','Moving'])
+
+    figs = graphes.legende('number of recording','Phone number','')
+    ax.set_xticks(indices)
+    ax.set_yticks(phonelist)
+
+    return fig,ax,figs
+
+def N0_to_N1(date,imax=None,num=None,save=True):
+    files = get_filelist(date)
+    phonelist = list(files.keys())
+    savefolder = get_savefolder(date)
+
+    moving,indices = moving_table(files,imax=imax)
+    fig,ax,figs = moving_map(moving,indices,phonelist)
+    if save:
+        graphes.save_figs(figs,savedir=savefolder,prefix='Moving_map_',suffix='_'+date,overwrite=True)
+
+    if num is None:
+        num = int(np.mean(indices))
+    fig,ax,figs = situation_map(files,num)
+    if save:
+        graphes.save_figs(figs,savedir=savefolder,prefix='Situation_map',suffix='_'+date,overwrite=True)
+
+
+if __name__=='__main__':
+    args = gen_parser()
+    main(args)
+    N0_to_N1(args.date,num=args.num,save=True)
