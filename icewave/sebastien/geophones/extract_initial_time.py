@@ -40,23 +40,23 @@ import time
 import csv 
 
 #%% Set parameters 
-year = '2024'
-date = '0306' #date format, 'mmdd'
-acqu_numb = '0004' #acquisition number 
+year = '2025'
+date = '0206' #date format, 'mmdd'
+acqu_numb = '0002' #acquisition number 
 
-path2data = os.path.join('U:/Share_hublot/Data/',date,'Geophones/')
+path2data = os.path.join('E:/Data/',date,'Geophones/')
 
 fig_folder = path2data + 'Figures/'  # folder where figures are saved 
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
     
 geophones_table_path = 'C:/Users/sebas/git/icewave/sebastien/geophones/geophones_table'
-channel = 2  # 0 for E, 1 for N, 2 for Z. 
+channel = 0  # 0 for E, 1 for N, 2 for Z. 
 
 #files need to be organised as: data/0210/Geophones/0001/minised files
 
-geophones_spacing = 4 # space between geophones, in meter 
-signal_length = 0.3 # duration in seconds 
+geophones_spacing = 3 # space between geophones, in meter 
+signal_length = 1 # duration in seconds 
 channel_dic = {
     1: "N",
     2: "Z",
@@ -299,6 +299,65 @@ def extents(f):
     delta = f[1] - f[0]
     return [f[0] - delta/2, f[-1] + delta/2]
 
+#----------------------------------------------------------------------------------------------
+
+def wavenumbers_stein( rho_ice, h, E, nu,freq,c_w,rho_w):
+    """ This function computes the wave vectors associated to a given array of frequencies
+    It takes as arguments : 
+        - rho_ice : ice density 
+        - h : a given thickness of ice 
+        - E : Young modulus of ice
+        - nu : Poisson coefficient of ice
+        - freq : an array of frequencies, to which will correspond wave vectors 
+        - c_w : waves phase velocity
+        - rho_w : water density 
+        
+    The function returns : 
+        - k_QS : wave vectors of the flexural mode
+        - k_QS0 : wave vecotrs of the acoustic mode
+        - k_SH0 : wave vectors of the shear mode
+        - cphQS : phase velocity of the flexural mode"""
+    
+    
+    g = 9.81
+    G = E/(2*(1+nu))
+    cS0 = np.sqrt(E/(rho_ice*(1-nu**2))) # celerity of longitudinal wave
+    cSH0 = np.sqrt(G/rho_ice) # celerity of shear wave 
+    D = E*pow(h,3)/(12*(1-nu**2)) # flexural modulus
+
+    k = np.linspace(1e-6,5,1000)
+    
+    idx_zero = np.zeros(len(freq)) 
+    flag = 0
+    for kf in range(len(freq)):
+        omeg = 2*np.pi*freq[kf]
+        if omeg == 0:
+            flag = 1;
+            idx_flag = kf;
+        else:
+            cph = omeg/k # phase velocity
+            # Ludovic version
+            func = rho_w/D*(g-omeg/np.lib.scimath.sqrt((1/cph)**2 - (1/c_w)**2  )) - h*omeg**2*rho_w/D + pow(omeg/cph,4)
+            # Sebastien version (Stein 1998)
+            # func = rho_w/D*(g-omeg/np.lib.scimath.sqrt((1/cph)**2 - (1/c_w)**2  )) - h*omeg**2*rho_ice/D + pow(omeg/cph,4)
+            
+            func[func.imag != 0] = -1
+            func = func.real # keep only real part 
+            print(np.where(np.diff(np.signbit(func)))[0])
+            idx_zero[kf] = (np.where(np.diff(np.signbit(func)))[0]) # index of the array k at which func(k) = 0
+            
+    idx_zero = idx_zero.astype(int)        
+    k_QS =  k[idx_zero] # wave vector associated to flexural mode 
+    if flag:
+        k_QS[idx_flag] = 0
+        
+    k_QS0 = freq/cS0*2*np.pi # wave vector associated to longitudinal wave
+    k_SH0 = freq/cSH0*2*np.pi   # wave vector associated to shear wave
+    cphQS = freq/k_QS*2*np.pi # phase velocity of the flexural wave
+
+    
+    return k_QS, k_QS0, k_SH0, cphQS
+
 ###################################################################
 #%% -------------------- Loading geophones Data -------------------
 ###################################################################
@@ -434,7 +493,7 @@ plt.savefig(figname + '.png',dpi = img_quality,bbox_inches = 'tight')
 #%%----------------------- PLOTTING SELECTED CHANNEL FOR WHOLE RECORDING ------------------ 
 ##############################################################################################
  
-channel =  2 #0 for E, 1 for N, 2 for Z. 
+channel = 0 #0 for E, 1 for N, 2 for Z. 
 
 # selected indices of the corresponding channel
 # seismic_data_G16 = seismic_data_streams[45:]
@@ -454,6 +513,10 @@ for k, idx in enumerate(selected_indices):
     ax.plot(datetime_values, 
             current_stream[0].data / max(np.abs(current_stream[0].data) ) + geophones_spacing*k + geophones_spacing, 
             label=f"Stream {k}")
+    
+    # ax.plot(datetime_values, 
+    #         (current_stream[0].data-np.mean(current_stream[0].data))  + geophones_spacing*k + geophones_spacing, 
+    #         label=f"Stream {k}")
     
 
 #fig.suptitle(f"Seismic Data - {start_time_utc.strftime('%Y-%m-%d %H:%M:%S')}", fontsize=16)
@@ -488,7 +551,7 @@ plt.savefig(figname + '.png',dpi = img_quality ,bbox_inches = 'tight')
 
 
 # open .pkl file and load dictionnary 
-filename = 't1_to_time_' + date + '_' + year + '_short_length.pkl'
+filename = 't1_to_time_' + date + '_' + year + '.pkl'
 base = path2data
 file2save = base + filename
 if os.path.isfile(file2save):
@@ -499,23 +562,32 @@ else:
     print('No time dictionnary saved yet')
     time_dict = {}
 
-composante = 'Z' #Z , E or N -> direction de la source
+composante = 'N' #Z , E or N -> direction de la source
 
 # S101, S102, S103
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '101' + composante 
-time_dict[key] = UTCDateTime("2024-09-10T18:51:14.20")
+time_dict[key] = UTCDateTime("2025-02-06T17:52:00.80")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '102' + composante 
-time_dict[key] = UTCDateTime("2024-09-10T18:52:37.05")
+time_dict[key] = UTCDateTime("2025-02-06T17:52:58.20")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '103' + composante 
-time_dict[key] = UTCDateTime("2024-09-10T18:54:01.80")
+time_dict[key] = UTCDateTime("2025-02-06T17:53:46.35")
 
-# S104, S105, S106
+# # S104, S105, S106
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '104' + composante 
-time_dict[key] = UTCDateTime("2024-09-10T18:57:00.82")
+time_dict[key] = UTCDateTime("2025-02-06T17:55:40.05")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '105' + composante 
-time_dict[key] = UTCDateTime("2024-09-10T18:58:03.75")
+time_dict[key] = UTCDateTime("2025-02-06T17:56:32.30")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '106' + composante 
-time_dict[key] = UTCDateTime("2024-09-10T18:59:19.40")
+time_dict[key] = UTCDateTime("2025-02-06T17:57:34.70")
+
+# S107 , S108 , S109
+# key = 'd' + date + 'a' + acqu_numb + 'tS' + '107' + composante 
+# time_dict[key] = UTCDateTime("2025-02-03T16:01:15.70")
+# key = 'd' + date + 'a' + acqu_numb + 'tS' + '108' + composante 
+# time_dict[key] = UTCDateTime("2025-02-03T16:02:42.58")
+# key = 'd' + date + 'a' + acqu_numb + 'tS' + '109' + composante 
+# time_dict[key] = UTCDateTime("2025-02-03T16:03:54.90")
+
 
 #%% Save t0 dictionnary in pickle file 
 
@@ -528,7 +600,7 @@ print('Time dictionnary saved')
 #%% -------------- Compute FK data ----------------------
 ###########################################################
 
-signal_length = 0.3 # duration in seconds
+signal_length = 1 # duration in seconds
 
 # load data of intial times 
 composante = 'Z'
@@ -549,8 +621,8 @@ if direction == 2:
 
 # time dictionnary to be loaded
  
-base = 'C:/Users/sebas/Desktop/Amundsen_RA_2024/Data/2024/0910/Geophones/'
-pkl_path = base + 't1_to_time_' + date + '_' + year + '_short_length' + '.pkl'
+base = 'E:/Data/0206/Geophones/'
+pkl_path = base + 't1_to_time_' + date + '_' + year  + '.pkl'
 with open(pkl_path, 'rb') as f:
     loaded_data = pickle.load(f)
 
@@ -625,7 +697,7 @@ plt.show()
 #####################################
 
 rang = [0,1,2]
-geophones_spacing = 4 # in meters
+geophones_spacing = 3 # in meters
 signals = np.transpose(seismic_matrix, (0, 2, 1))
 
 f, k, FK = fn_svd(signals, fs, geophones_spacing , rang ,'ExampleName', 0, 'threshold',-90) #plot valeurs  singuliere/freq
@@ -862,8 +934,8 @@ if horizontal_wave:
         
     figname = fig_folder + 'Horizontal_FKplot_' + wave_type + '_acqu_' + acqu_numb + '_dir'  + str(direction) + '_sig_length_' + str(signal_length).replace('.','p')
 
-    plt.savefig(figname + '.pdf', dpi = 1000, bbox_inches = 'tight')
-    plt.savefig(figname + '.png', dpi = 1000, bbox_inches = 'tight')
+    plt.savefig(figname + '.pdf', dpi = 300, bbox_inches = 'tight')
+    plt.savefig(figname + '.png', dpi = 300, bbox_inches = 'tight')
     
     
 elif flexure_wave:
@@ -880,8 +952,8 @@ elif flexure_wave:
     wave_type = 'QS'
     figname = fig_folder + 'Flexural_FKplot_' + wave_type + '_acqu_' + acqu_numb + '_dir'  + str(direction)
 
-    plt.savefig(figname + '.pdf', dpi = 1000, bbox_inches = 'tight')
-    plt.savefig(figname + '.png', dpi = 1000, bbox_inches = 'tight')
+    plt.savefig(figname + '.pdf', dpi = 300, bbox_inches = 'tight')
+    plt.savefig(figname + '.png', dpi = 300, bbox_inches = 'tight')
     
 
 #%% Save data in a dictionnary  
@@ -925,7 +997,7 @@ with open (pkl_file,'wb') as pfile:
     
     
 #%% Load phase velocity data
-pkl_file = path2data + 'Phase_velocity_dictionnary_acqu_' + acqu_numb + '.pkl'
+pkl_file = path2data + 'Phase_velocity_dictionnary_acqu_' + acqu_numb + '_sig_length_' + str(signal_length).replace('.','p') + '.pkl'
 with open (pkl_file,'rb') as pfile:
     s = pickle.load(pfile)    
 
@@ -946,3 +1018,79 @@ with open(file2save, 'wb') as file:
 file2save = path2data + year + '_' + date + '_acq'+acqu_numb+ 'disp_QS_dir' + str(direction) +'.pkl'
 with open(file2save, 'wb') as file:
      pickle.dump([f_mode, k_mode], file)
+     
+     
+#%% Invert ice thickness by hand 
+if flexure_wave:
+    
+    print('Select 10 points on FK of flexural wave (QS mode)')
+    points = plt.ginput(10, timeout=-1)
+    
+    # Extract x and y coordinates of the selected points
+    f_mode, k_mode = zip(*points)
+    # Plot a line between the two selected points
+    plt.plot(f_mode, k_mode, linestyle='--', color='r', label='Line between points')
+    
+    file2save = path2data + year + '_' + date + '_acq'+acqu_numb+ 'disp_QS_dir' + str(direction) + '_hand_selection.pkl'
+    with open(file2save, 'wb') as file:
+         pickle.dump([f_mode, k_mode], file)
+     
+
+
+#%% --------- INVERT ICE THICKNESS USING FK MATRIX -------------------
+#######################################################################
+
+rho_ice = 917 
+E_fit = 3.6e9 # 2.43e9
+nu_fit = 0.2448
+
+c_w = 1450 # sound celerity in water 
+rho_w = 1027 # density of water 
+h_precision = 0.01 # precision on ice thickness (in meter)
+h = np.arange(0.1,1.0,h_precision) # array of height tested 
+#path2data = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/Data/0210/geophones' # path 2 data points saved from FK flexural
+# acqu_numb = '0002' # acquisition number 
+
+# load selected points on the FK plot 
+file2load = path2data +'/' +year +'_'+ date + '_acq' + acqu_numb + 'disp_QS_dir' + str(direction) + '.pkl'
+with open(file2load, "rb") as filename:
+    data = pickle.load(filename)
+f_mode1 = data[1] 
+k_mode1 = data[0] 
+fig, ax = plt.subplots()
+ax.plot(f_mode1, k_mode1, linestyle='--', color='r', label='Line between points')    
+    
+f_mode1 = f_mode1[1:]
+k_mode1 = k_mode1[1:]
+
+# file2load = path2data +'/' +acqu_numb+'/'+'dispersion_QS_dir2.pkl'
+# with open(file2load, "rb") as f:
+#     data = pickle.load(f)
+# f_mode2 = data[0] 
+# k_mode2 = data[1] 
+
+
+#plt.plot(f_mode2, k_mode2, linestyle='--', color='r', label='Line between points') 
+
+f_mode = f_mode1
+k_mode = k_mode1
+
+# find h_ice that minimzes distance to data points 
+l2_norm = np.zeros(len(h))
+for i in range(len(h)):
+    k_mode_synthetic, k_QS0, k_SH0, cphQS = wavenumbers_stein( rho_ice, h[i], E_fit, nu_fit,f_mode,c_w,rho_w)
+    error = np.sum(np.power((k_mode-k_mode_synthetic),2))
+    l2_norm[i] = np.sqrt(error)
+    #plt.plot(f_mode, k_mode_synthetic, color='b', label='Line between points')  
+h_ice = h[np.argmin(l2_norm)] # keep thickness of ice that minimizes the error
+   
+# computes wavevectors k 
+k_mode_synthetic, k_QS0, k_SH0, cphQS = wavenumbers_stein( rho_ice, h_ice, E_fit, nu_fit,f_mode,c_w,rho_w)
+
+ax.plot(k_mode_synthetic, f_mode, color='g', label='Line between points')    
+ax.plot(k_mode, f_mode, linestyle='--', color='r', label='Line between points') 
+
+ 
+ax.plot(h,l2_norm)
+
+print(f'Ice thickness : {h_ice} m')

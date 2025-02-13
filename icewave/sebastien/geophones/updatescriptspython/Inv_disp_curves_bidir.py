@@ -20,18 +20,18 @@ import seaborn as sns
 #%%-------------------------------LOADING DATA--------------------------------------------------------------------------
 plt.close('all')
 
-year = '2024'
-date = '0909' #date format, 'mmdd'
+year = '2025'
+date = '0206' #date format, 'mmdd'
 acqu_numb = '0001' #acquisition number 
 equation = 'stein'
 # path to dispersion relation data 
-path2data = os.path.join('C:/Users/sebas/Desktop/Amundsen_RA_2024/Data/',year,date,'Geophones/')
+path2data = os.path.join('E:/Data/',date,'Geophones/')
 # path2data = 'C:/Users/sebas/icewave/icewave/sebastien/geophones/updatescriptspython/0211/Geophones/'
 # path2data = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/' +year+'_BICWIN/'
 
 # Load (f,k) points of QS dispersion relation 
 direction = 1 # 1 ou 2 
-filename = year + '_' + date + '_acq'+acqu_numb+ 'disp_QS_dir' +str(direction) +'_filtered.pkl'
+filename = year + '_' + date + '_acq'+acqu_numb+ 'disp_QS_dir' +str(direction) +'.pkl'
 # file2load1 = path2data  + date + '/Geophones/' + filename
 file2load1  = os.path.join(path2data,filename)
 with open(file2load1, "rb") as f:
@@ -41,7 +41,7 @@ kQS1 = data[1]
 
 # Load (f,k) points of QS dispersion relation
 direction = 2 # 1 ou 2 
-filename = year + '_' + date + '_acq'+acqu_numb+ 'disp_QS_dir' +str(direction) +'_filtered.pkl'
+filename = year + '_' + date + '_acq'+acqu_numb+ 'disp_QS_dir' +str(direction) +'.pkl'
 # file2load1 = path2data  + date + '/Geophones/' + filename
 file2load1  = os.path.join(path2data,filename)
 with open(file2load1, "rb") as f:
@@ -85,8 +85,8 @@ fig_save_path = path2data + '/Figures_inversion_MCMC_T_0p25/'
 if not os.path.isdir(fig_save_path):
     os.mkdir(fig_save_path)
 
-file2load2 = path2data + year + '_' + date + '_acq'+acqu_numb+ '_cQS0_bidir_filtered.pkl'
-file2load3 = path2data + year + '_' + date + '_acq'+acqu_numb+ '_cSH0_bidir_filtered.pkl'
+file2load2 = path2data + year + '_' + date + '_acq'+acqu_numb+ '_cQS0_bidir.pkl'
+file2load3 = path2data + year + '_' + date + '_acq'+acqu_numb+ '_cSH0_bidir.pkl'
 
 
 # Load phase velocity of in-plane waves 
@@ -252,7 +252,7 @@ def simulated_annealing(delta_param0, T0, T0param, Tmin, Tminparam, X, MIN_param
         - misfit_accepted : error to experimental values of kQS, cQS0 and cQSH0 for each generated set of parameters
         """
         
-    H = 1.5 # water depth
+    H = 1 # water depth
     c_w = 1450 # sound waves velocity in water
     rho_w = 1027 # water density 
     freq = data['freq']
@@ -370,7 +370,7 @@ def simulated_annealing(delta_param0, T0, T0param, Tmin, Tminparam, X, MIN_param
 
 # simulated annealing schedule
 isave = 200 # save data every isave iterations
-N_SA = 20000 # maximum number of iterations # initial value = 30 000
+N_SA = 5000 # maximum number of iterations # initial value = 30 000
 T0 = 0.025; Tmin = 0.025 # range of temperature we are using 
 #T0param = 0.8; Tminparam = 0.05
 T0param = 0.25; Tminparam = 0.25 # minimal and maximal range of the step for Metropolis algorithm 
@@ -379,10 +379,10 @@ T0param = 0.25; Tminparam = 0.25 # minimal and maximal range of the step for Met
 
 
 # extremal values of the fitted parameters
-min_thickness = 1.0
-max_thickness = 5.0
-min_E = 2.5e9
-max_E = 9.0e9
+min_thickness = 0.2
+max_thickness = 1.5
+min_E = 1.5e9
+max_E = 8e9
 min_nu = 0.15
 max_nu = 0.45
 min_rho = 600
@@ -404,8 +404,8 @@ delta_param0 = (MAX_param0 - MIN_param0)
  
 # Initial values of the different parameters 
 X = np.zeros((4,N_SA))
-X[0,0] = 3.0 # ice thickness
-X[1,0] = 5.0e9 # Young modulus
+X[0,0] = 0.4 # ice thickness
+X[1,0] = 2.5e9 # Young modulus
 X[2,0] = 0.3 # Poisson coefficient 
 X[3,0] = 900 # ice density 
 
@@ -416,7 +416,8 @@ X[3,0] = 900 # ice density
 
 
 print('Start MCMC algorithm...')
-I,T_critic, it_critic, X, likelihood  ,misfit_accepted   = simulated_annealing(delta_param0,T0,T0param,Tmin,Tminparam,X,MIN_param0,MAX_param0,data,isave)
+I,T_critic, it_critic, X, likelihood  ,misfit_accepted   = simulated_annealing(delta_param0,T0,T0param,Tmin,Tminparam,X,MIN_param0,
+                                                                               MAX_param0,data,isave)
 
 toc()
 print('MCMC algorithm succeeded')

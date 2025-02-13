@@ -10,14 +10,14 @@
 %% Post-process raw datas from PIV analysis and create an associated structure 
 
 clear all;
-date = '0223';
+date = '0205';
 drone_name = 'mesange';
-exp_ID = '35-waves_014';
+exp_ID = '16-waves_007';
 ID = [date '_' drone_name '_' exp_ID];
 
-base = ['K:/Share_hublot/Data/' date '/Drones/' drone_name '/'];
-folder = [base 'matData/' exp_ID '_test_1211/'];% folder of raw datas
-filename = 'PIV_processed_i00_Dt4_b1_W32_xROI650_width3190_yROI1_height2159.mat';
+base = ['E:/Data/' date '/Drones/' drone_name '/'];
+folder = [base 'matData/' exp_ID '/'];% folder of raw datas
+filename = 'PIV_processed_i00_N0_Dt4_b1_W32_xROI211_width3629_yROI1_height2151.mat';
 fullname = [folder filename];
 
 
@@ -30,7 +30,7 @@ Lx = 3840; % size of the image in pixel, along larger axis (x-axis)
 Ly = 2160; % size of the image in pixel, along minor axis (y-axis)
 x_0 = (Lx + 1)/2; % camera sensor center
 y_0 = (Ly + 1)/2; % camera sensor center
-h_drone = 120.4; % height of the drone in meter
+h_drone = 139.9; % height of the drone in meter
 focale = 2700; %in pixels 
 theta_x = atan(Lx/focale/2); % semi AFOV of the drone, along x-axis, in °
 alpha_0 = 90*pi/180; % camera pitch angle to the horizontal 
@@ -40,17 +40,17 @@ ft = 1/facq_t ; % factor scaling for time in sec / frame
 % ##########################################
 
 % Longitude and latitude during flight 
-latitude = 48.32998 ;
-longitude = -68.85302;
+latitude = 48.34663 ;
+longitude = -68.82784 ;
 
 % Create t0_UTC (beginning of flight)
-Y = 2024;
+Y = 2025;
 M = 02;
-D = 23;
-H = 19;
-MIN = 44;
-S = 56;
-MS = 100;
+D = 05;
+H = 14; % local time of drone
+MIN = 57;
+S = 22;
+MS = 539;
 
 if strcmp(drone_name,'mesange')
     TimeZone = 'Europe/Paris'; % mesange 
@@ -176,7 +176,7 @@ disp('Unscaled structure saved');
 if alpha_0 == 90*pi/180
     m = scaling_structure(m,m.SCALE.scale_V,m.SCALE.fx,m.SCALE.ft); 
 else
-    m = scaling_structure_oblique(m,m.PIXEL.x_pix,m.PIXEL.y_pix,m.t,m.PIXEL.x0,m.PIXEL.y0,...
+    m = scaling_structure_oblique(m,double(m.PIXEL.x_pix),double(m.PIXEL.y_pix),m.t,m.PIXEL.x0,m.PIXEL.y0,...
         m.DRONE.h_drone,m.DRONE.alpha_0,m.DRONE.focale,m.SCALE.facq_t,m.PIV_param.Dt);
 end 
 disp('Data scaled')
