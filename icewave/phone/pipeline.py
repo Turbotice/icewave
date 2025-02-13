@@ -20,7 +20,10 @@ def gen_parser():
     parser = argparse.ArgumentParser(description="Manipulate multi instruments data")
     parser.add_argument('-date', dest='date', type=str,default='0211',help='select date to process data')
     parser.add_argument('-step', dest='step', type=int,default=1,help='select Step to be performed')
+    parser.add_argument('-num', dest='num', type=int,default=10,help='Select recording number for display phone map')
+
 #    print(parser)   
+
     args = parser.parse_args()
     print(args)
     return args
@@ -221,5 +224,4 @@ def N0_to_N1(date,imax=None,num=None,save=True):
 
 if __name__=='__main__':
     args = gen_parser()
-    main(args)
     N0_to_N1(args.date,num=args.num,save=True)
