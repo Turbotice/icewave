@@ -55,15 +55,16 @@ def project(Long,Lat,R=6378000,meter=False):
         ytile = ytile*R
         xtile = xtile-xtile[0]
         ytile = ytile-ytile[0]
+
     return (xtile, ytile)
 
-def extent(BBox):
+def extent(BBox,ratio=1.0):
     """
     #to be revised, weird projection system
     """
 
     ext = tilemapbase.Extent.from_lonlat(BBox[0],BBox[1],BBox[2],BBox[3])
-    ext = ext.to_aspect(1.0)
+    ext = ext.to_aspect(ratio)
 
     print(ext)
     return ext
@@ -256,6 +257,12 @@ def title_std(filename,Long,Lat):
     s = display_city(Long,Lat)
     title = date+', '+hour.replace('.','_')+', '+s
     return title
+
+def display_haha(ax,title=''):
+    BBox = boxes('haha')
+    ext = extent(BBox,ratio=2)
+    t = tmp_connect()
+    display_map(ext,t,title=title,ax=ax,width=600)
 
     
     
