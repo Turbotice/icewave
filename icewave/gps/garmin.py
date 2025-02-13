@@ -13,10 +13,10 @@ except:
 
 import icewave.tools.datafolders as df
 
-base = df.path_GPSdata()
-print('')
-print(base)
-
+#base = df.path_GPSdata()
+#print('')
+#print(base)
+base =''
 folderactivity = base+'GARMIN/Garmin/Activities/' # on macOS X
 folderwpts = base+'GARMIN/Garmin/GPX/' # on macOS X
 
