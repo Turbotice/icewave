@@ -102,7 +102,7 @@ def load_lvl_0(files,phone,num,keys=None):
     for k in keys:
         if num in files[phone][k]:
             filename = files[phone][k][num]
-            dic = dataphone.load_data(filename)
+            dic = dataphone.load_data(filename,phone)
             for key in dic.keys():
                 r[key] = dic[key]
         else:
