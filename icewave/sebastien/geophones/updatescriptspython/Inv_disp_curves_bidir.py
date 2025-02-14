@@ -21,8 +21,8 @@ import seaborn as sns
 plt.close('all')
 
 year = '2025'
-date = '0206' #date format, 'mmdd'
-acqu_numb = '0001' #acquisition number 
+date = '0210' #date format, 'mmdd'
+acqu_numb = '0002' #acquisition number 
 equation = 'stein'
 # path to dispersion relation data 
 path2data = os.path.join('E:/Data/',date,'Geophones/')
@@ -370,7 +370,7 @@ def simulated_annealing(delta_param0, T0, T0param, Tmin, Tminparam, X, MIN_param
 
 # simulated annealing schedule
 isave = 200 # save data every isave iterations
-N_SA = 5000 # maximum number of iterations # initial value = 30 000
+N_SA = 10000 # maximum number of iterations # initial value = 30 000
 T0 = 0.025; Tmin = 0.025 # range of temperature we are using 
 #T0param = 0.8; Tminparam = 0.05
 T0param = 0.25; Tminparam = 0.25 # minimal and maximal range of the step for Metropolis algorithm 
@@ -379,7 +379,7 @@ T0param = 0.25; Tminparam = 0.25 # minimal and maximal range of the step for Met
 
 
 # extremal values of the fitted parameters
-min_thickness = 0.2
+min_thickness = 0.1
 max_thickness = 1.5
 min_E = 1.5e9
 max_E = 8e9
@@ -405,7 +405,7 @@ delta_param0 = (MAX_param0 - MIN_param0)
 # Initial values of the different parameters 
 X = np.zeros((4,N_SA))
 X[0,0] = 0.4 # ice thickness
-X[1,0] = 2.5e9 # Young modulus
+X[1,0] = 4e9 # Young modulus
 X[2,0] = 0.3 # Poisson coefficient 
 X[3,0] = 900 # ice density 
 

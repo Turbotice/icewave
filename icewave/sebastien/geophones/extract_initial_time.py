@@ -41,17 +41,14 @@ import csv
 
 #%% Set parameters 
 year = '2025'
-date = '0206' #date format, 'mmdd'
+date = '0212' #date format, 'mmdd'
 acqu_numb = '0002' #acquisition number 
 
 path2data = os.path.join('E:/Data/',date,'Geophones/')
 
-fig_folder = path2data + 'Figures/'  # folder where figures are saved 
-if not os.path.isdir(fig_folder):
-    os.mkdir(fig_folder)
-    
+# set path to geophone correspondence table
 geophones_table_path = 'C:/Users/sebas/git/icewave/sebastien/geophones/geophones_table'
-channel = 0  # 0 for E, 1 for N, 2 for Z. 
+# channel = 0  # 0 for E, 1 for N, 2 for Z. 
 
 #files need to be organised as: data/0210/Geophones/0001/minised files
 
@@ -61,7 +58,7 @@ channel_dic = {
     1: "N",
     2: "Z",
     0: "E",}
-ch = channel_dic[channel]
+# ch = channel_dic[channel]
 
 #%% Set plotting parameters 
 
@@ -80,7 +77,7 @@ fig_size = (12,9)
 img_quality = 1000 # dpi to save images 
 
 plt.rcParams.update({
-    "text.usetex": True})
+    "text.usetex": True}) # use latex
 
 fig_folder = path2data + acqu_numb + '/' + 'Results/' # folder where figures are saved 
 
@@ -325,7 +322,7 @@ def wavenumbers_stein( rho_ice, h, E, nu,freq,c_w,rho_w):
     cSH0 = np.sqrt(G/rho_ice) # celerity of shear wave 
     D = E*pow(h,3)/(12*(1-nu**2)) # flexural modulus
 
-    k = np.linspace(1e-6,5,1000)
+    k = np.linspace(1e-6,10,200000)
     
     idx_zero = np.zeros(len(freq)) 
     flag = 0
@@ -386,6 +383,14 @@ for i, stream in enumerate(seismic_data_streams):
 # Sort the seismic_data_streams based on the custom sorting function
 seismic_data_streams = sorted(seismic_data_streams, key=sort_key)
 
+unsorted_seismic_data = seismic_data_streams.copy()
+streams_G11 = unsorted_seismic_data[33:36]
+streams_G12 = unsorted_seismic_data[30:33]
+unsorted_seismic_data[30:33] = streams_G11
+unsorted_seismic_data[33:36] = streams_G12
+
+seismic_data_streams = unsorted_seismic_data
+
 # Find the largest start time (tstart) and the smallest end time (tend) among all streams
 tstart = max([stream[0].stats.starttime for stream in seismic_data_streams])
 tend = min([stream[-1].stats.endtime for stream in seismic_data_streams])
@@ -410,9 +415,9 @@ start_time_utc = UTCDateTime(first_trace.stats.starttime)
 fs = first_trace.stats.sampling_rate # acquisition frequency (Hz) 
 
 
-#%% ---------------- Plot a single channel for a given geophone ----------------------
+#%% ---------------- Plot a single channel for a given geophone ---------------------- OPTIONAL
 
-idx_geophone = 2
+idx_geophone = 1
 chan = 0
 selected_stream = seismic_data_streams[(idx_geophone - 1)*3 + chan]
 print(selected_stream[0])
@@ -437,7 +442,7 @@ ax.plot(x_fft,np.abs(y_fft))
 
 
 ##############################################################################################
-#%% ---------------------- Plot all channels for a single geophone ---------------------------
+#%% ---------------------- Plot all channels for a single geophone --------------------------- OPTIONAL
 ##############################################################################################
 
 idx_geophone = 2 # index of the geophone to be plotted
@@ -490,7 +495,7 @@ plt.savefig(figname + '.png',dpi = img_quality,bbox_inches = 'tight')
 
 
 ##############################################################################################
-#%%----------------------- PLOTTING SELECTED CHANNEL FOR WHOLE RECORDING ------------------ 
+#%%----------------------- PLOTTING SELECTED CHANNEL FOR ALL GEOPHONES ------------------ 
 ##############################################################################################
  
 channel = 0 #0 for E, 1 for N, 2 for Z. 
@@ -566,19 +571,19 @@ composante = 'N' #Z , E or N -> direction de la source
 
 # S101, S102, S103
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '101' + composante 
-time_dict[key] = UTCDateTime("2025-02-06T17:52:00.80")
+time_dict[key] = UTCDateTime("2025-02-12T21:08:48.20")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '102' + composante 
-time_dict[key] = UTCDateTime("2025-02-06T17:52:58.20")
+time_dict[key] = UTCDateTime("2025-02-12T21:09:53.50")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '103' + composante 
-time_dict[key] = UTCDateTime("2025-02-06T17:53:46.35")
+time_dict[key] = UTCDateTime("2025-02-12T21:10:55.80")
 
 # # S104, S105, S106
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '104' + composante 
-time_dict[key] = UTCDateTime("2025-02-06T17:55:40.05")
+time_dict[key] = UTCDateTime("2025-02-12T21:13:12.50")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '105' + composante 
-time_dict[key] = UTCDateTime("2025-02-06T17:56:32.30")
+time_dict[key] = UTCDateTime("2025-02-12T21:14:08.40")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '106' + composante 
-time_dict[key] = UTCDateTime("2025-02-06T17:57:34.70")
+time_dict[key] = UTCDateTime("2025-02-12T21:15:08.85")
 
 # S107 , S108 , S109
 # key = 'd' + date + 'a' + acqu_numb + 'tS' + '107' + composante 
@@ -589,7 +594,7 @@ time_dict[key] = UTCDateTime("2025-02-06T17:57:34.70")
 # time_dict[key] = UTCDateTime("2025-02-03T16:03:54.90")
 
 
-#%% Save t0 dictionnary in pickle file 
+# Save t0 dictionnary in pickle file 
 
 with open(file2save, 'wb') as f:
     pickle.dump(time_dict, f)
@@ -605,10 +610,12 @@ signal_length = 1 # duration in seconds
 # load data of intial times 
 composante = 'Z'
 channel = 2
-# ch = channel_dic[channel]
+direction = 2 # 1 ou 2
+
+
 flexure_wave = composante == 'Z' # 1 to pick the dispersion curves of the flexure wave, 0 to pick those of the other 2 modes
 horizontal_wave = not flexure_wave
-direction = 2 # 1 ou 2 
+ 
 # assign a string to S values depending on the direction
 if direction == 1 :
     S1 = '101' 
@@ -621,7 +628,7 @@ if direction == 2:
 
 # time dictionnary to be loaded
  
-base = 'E:/Data/0206/Geophones/'
+base = f'E:/Data/{date}/Geophones/'
 pkl_path = base + 't1_to_time_' + date + '_' + year  + '.pkl'
 with open(pkl_path, 'rb') as f:
     loaded_data = pickle.load(f)
@@ -682,7 +689,7 @@ for k in range(seismic_matrix.shape[0]): # size of the array(nb of rows) = nb of
 # Visualization of the plot
 # Show time values for t1, t2, t3 ???
 ax.set_title(f"Seismic Data - {date}-{year}-{acqu_numb}\n" 
-             f"Channel: {ch}, Source: {composante}, Direction: {direction}", fontsize = font_size_medium)
+             f"Channel: {channel}, Source: {composante}, Direction: {direction}", fontsize = font_size_medium)
 ax.set_ylabel('Normalized Seismic Data', fontsize = font_size_small)
 ax.tick_params(axis='x',labelsize = font_size_small)
 ax.tick_params(axis='y',labelsize = font_size_small)
@@ -697,7 +704,6 @@ plt.show()
 #####################################
 
 rang = [0,1,2]
-geophones_spacing = 3 # in meters
 signals = np.transpose(seismic_matrix, (0, 2, 1))
 
 f, k, FK = fn_svd(signals, fs, geophones_spacing , rang ,'ExampleName', 0, 'threshold',-90) #plot valeurs  singuliere/freq
@@ -768,7 +774,7 @@ if flexure_wave:
     ax1.set_title('Spectrum with SVD filter')
     plt.colorbar(c1, ax=ax1, label='Spectrum Magnitude')
 
-    ax1.set_ylim([0, 400])
+    ax1.set_ylim([0, 100])
     print(f"Select {nb_points} points on the graph")
     points = plt.ginput(nb_points, timeout=-1)
 
@@ -989,7 +995,7 @@ if horizontal_wave :
 #         csvfile.write("%.3f"% s[key_direction][key] + ',')
 #     csvfile.write('\n')
 
-#%% Save phase velocity data 
+# Save phase velocity data 
 
 with open (pkl_file,'wb') as pfile:
     pickle.dump(s,pfile)
@@ -1041,8 +1047,8 @@ if flexure_wave:
 #######################################################################
 
 rho_ice = 917 
-E_fit = 3.6e9 # 2.43e9
-nu_fit = 0.2448
+E_fit = 4.7449e9 # 2.43e9
+nu_fit = 0.2821
 
 c_w = 1450 # sound celerity in water 
 rho_w = 1027 # density of water 
