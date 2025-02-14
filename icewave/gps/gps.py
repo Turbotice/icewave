@@ -216,8 +216,8 @@ def boxes(name):
     d['bic'] = [-68.8681,-68.7995,48.3181,48.3551]
     d['rimouski'] = [-68.5462,-68.5065,48.4374,48.4636]
     d['capelans'] = [ -68.857421,-68.849667,48.327819,48.332625]#[-68.8625,-68.8330,48.3185,48.3363]
-    
     return d[name]
+
 def check_box(Long,Lat,BBox):
     """
     check box dimensions. Return a boolean value
@@ -260,6 +260,7 @@ def title_std(filename,Long,Lat):
 
 def display_standard_map(ax,name,title=''):
     if name=='capelans':
+        print('Use capelans map')
         ax,figs = display_mercier(ax,title=title)
     elif name=='haha':
         ax,figs = display_haha(ax,title=title)
