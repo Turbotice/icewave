@@ -28,7 +28,8 @@ def wavenumbers_stein_squire(rho_ice, h, H, E, nu, freq, c_w, rho_w, equation):
         else:
             cph = omeg / k
             if equation == 'stein':
-                func = rho_w / D * (g - omeg / np.lib.scimath.sqrt((1 / cph) ** 2 - (1 / c_w) ** 2)) - h * omeg ** 2 * rho_ice / D + pow(omeg / cph, 4)
+                func = rho_w / D * (g - omeg / np.lib.scimath.sqrt((1 / cph) ** 2 - (1 / c_w) ** 2)) - h * omeg ** 2 * rho_ice / D + 
+                pow(omeg / cph, 4)
             elif equation == 'squire':
                 coth = 1 / np.tanh(k * H)
                 func = pow(omeg, 2) * (k * h * rho_ice / rho_w + coth) - D * pow(k, 5) / rho_w - g * k
@@ -54,13 +55,13 @@ def wavenumbers_stein_squire(rho_ice, h, H, E, nu, freq, c_w, rho_w, equation):
 
 # Parameters
 rho_ice = 917  # Density of ice in kg/m³
-H = 100  # Depth of water in meters
+H = 3  # Depth of water in meters
 nu = 0.3  # Poisson's ratio
 c_w = 1480  # Speed of sound in water in m/s
 rho_w = 1000  # Density of water in kg/m³
 
-E_values = 4.0e9
-h_values = 3.0
+E_values = 3.5e9
+h_values = 0.5
 
 Nb_pts = 100
 freq = np.linspace(2,300,Nb_pts)
