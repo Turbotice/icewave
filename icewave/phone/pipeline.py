@@ -58,10 +58,12 @@ def get_phonelist(date):
 def parse_filename(filename):
     name = filename.split('/')[-1]
     c0 = name.split('-')[-1]
-    c1 = name.split('-')[-2]
-    num = int(name.split('-')[-3])
-    typ = name.split('-')[-4]
-
+    if len(name.split('-'))>1:
+        c1 = name.split('-')[-2]
+        num = int(name.split('-')[-3])
+        typ = name.split('-')[-4]
+    else:
+        print(name)
     if '.' in typ:
         typ = typ.split('.')[-1]
 
