@@ -340,4 +340,4 @@ def situation(date,imax=None,num=None,save=True):
 if __name__=='__main__':
     args = gen_parser()
     situation(args.date,num=args.num,save=True)
-    from_N0_to_N1(date)
+    from_N0_to_N1(args.date)
