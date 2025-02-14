@@ -260,7 +260,7 @@ def title_std(filename,Long,Lat):
 
 def display_standard_map(ax,name,title=''):
     if name=='capelans':
-        print('Use capelans map')
+        print('Use Capelans map')
         ax,figs = display_mercier(ax,title=title)
     elif name=='haha':
         ax,figs = display_haha(ax,title=title)
