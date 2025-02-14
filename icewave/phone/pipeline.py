@@ -20,15 +20,11 @@ def gen_parser():
     parser = argparse.ArgumentParser(description="Manipulate multi instruments data")
     parser.add_argument('-date', dest='date', type=str,default='0211',help='select date to process data')
     parser.add_argument('-step', dest='step', type=int,default=1,help='select Step to be performed')
-    parser.add_argument('-num', dest='num', type=int,default=10,help='Select recording number for display phone map')
-
-#    print(parser)   
+    parser.add_argument('-num', dest='num', type=int,default=None,help='Select recording number for display phone map') 
 
     args = parser.parse_args()
     print(args)
     return args
-
-global base
 
 def get_folder(date):
     base = df.find_path(disk='Shack25')#f'/media/turbots/BlueDisk/Shack25_local/'
@@ -239,10 +235,13 @@ def N0_to_N1(date,imax=None,num=None,save=True):
         graphes.save_figs(figs,savedir=savefolder,prefix='Moving_map_',suffix='_'+date,overwrite=True)
 
     if num is None:
-        num = int(np.mean(indices))
+        s = input('Enter number to select :')
+        num = int(s)
+
     fig,ax,figs = situation_map(files,num,date)
     if save:
         graphes.save_figs(figs,savedir=savefolder,prefix='Situation_map',suffix='_'+date,overwrite=True)
+
 
 
 if __name__=='__main__':
