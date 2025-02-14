@@ -155,14 +155,14 @@ def find_relevant_map(r):
             return name
     return None
 
-def situation_map(files,num):
+def situation_map(files,num,date):
     phonelist = files.keys()
     fig,ax = plt.subplots(figsize=(20,10))
 
     phone = list(phonelist)[0]
     r = load_lvl_0(files,phone,num,keys=['gps'])
     name = find_relevant_map(r)
-    ax,figs = gps.display_standard_map(name,ax)
+    ax,figs = gps.display_standard_map(ax,name,title=date)
 
     for phone in phonelist:
         r = load_lvl_0(files,phone,num,keys=['gps'])
@@ -236,7 +236,7 @@ def N0_to_N1(date,imax=None,num=None,save=True):
 
     if num is None:
         num = int(np.mean(indices))
-    fig,ax,figs = situation_map(files,num)
+    fig,ax,figs = situation_map(files,num,date)
     if save:
         graphes.save_figs(figs,savedir=savefolder,prefix='Situation_map',suffix='_'+date,overwrite=True)
 
