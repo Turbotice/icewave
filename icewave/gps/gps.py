@@ -225,7 +225,7 @@ def check_box(Long,Lat,BBox):
 #    BBox = boxes(name)
     bLong = np.logical_and(Long>BBox[0],Long<BBox[1])
     bLat = np.logical_and(Lat>BBox[2],Lat<BBox[3])
-    b= np.logical_and(bLong,bLat)
+    b = np.logical_and(bLong,bLat)
     print('Box dimension :'+str(b))
     return b
 
@@ -258,11 +258,25 @@ def title_std(filename,Long,Lat):
     title = date+', '+hour.replace('.','_')+', '+s
     return title
 
+def display_standard_map(ax,name,title=''):
+    if name=='capelans':
+        ax,figs = display_mercier(ax,title=title)
+    elif name=='haha':
+        ax,figs = display_haha(ax,title=title)
+    else:
+        ax,figs = display_haha(ax,title=title)
+    return ax,figs
+
 def display_haha(ax,title=''):
     BBox = boxes('haha')
     ext = extent(BBox,ratio=2)
     t = tmp_connect()
     ax,figs = display_map(ext,t,title=title,ax=ax,width=600)
     return ax,figs
-    
-    
+
+def display_mercier(ax,title=''):
+    BBox = boxes('capelans')
+    ext = extent(BBox,ratio=1)
+    t = tmp_connect()
+    ax,figs = display_map(ext,t,title=title,ax=ax,width=600)
+    return ax,figs

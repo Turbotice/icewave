@@ -100,13 +100,18 @@ def load_lvl_0(files,phone,num,keys=None):
     if keys==None:
         keys = files[phone].keys()
     for k in keys:
-        if num in files[phone][k]:
-            filename = files[phone][k][num]
-            dic = dataphone.load_data(filename,phone)
-            for key in dic.keys():
-                r[key] = dic[key]
+        if k in files[phone].keys():
+            #print(files[phone][k])
+            if num in files[phone][k]:
+                filename = files[phone][k][num]
+                dic = dataphone.load_data(filename)
+                for key in dic.keys():
+                    r[key] = dic[key]
+            else:
+                print(f'No data for phone {phone}, num {num}')
+                return None
         else:
-            print(f'No data for phone {phone}, num {num}')
+            print(f'No GPS for phone {phone}')
             return None
     return r
 
@@ -140,10 +145,24 @@ def display_position(r,ax=None,eps = 10**(-6)):
     sign = int((np.mod(phone,2)-0.5)*2)
     ax.text(X-eps/4,Y-eps*sign,str(phone),color='r',fontsize=20)
 
+def find_relevant_map(r):
+    sites = ['haha','capelans']
+    Long = r['gpslon'][0]
+    Lat = r['gpslat'][0]
+    for name in sites:
+        b = gps.check_box(Long,Lat,gps.boxes(name))
+        if b:
+            return name
+    return None
+
 def situation_map(files,num):
     phonelist = files.keys()
     fig,ax = plt.subplots(figsize=(20,10))
-    ax,figs = gps.display_haha(ax)
+
+    phone = list(phonelist)[0]
+    r = load_lvl_0(files,phone,num,keys=['gps'])
+    name = find_relevant_map(r)
+    ax,figs = gps.display_standard_map(name,ax)
 
     for phone in phonelist:
         r = load_lvl_0(files,phone,num,keys=['gps'])
