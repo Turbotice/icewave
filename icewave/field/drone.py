@@ -10,7 +10,7 @@ import icewave.drone.drone_timeline as timeline
 import icewave.field.Save_extract_record as drone_save
 
 global base
-base = df.find_path(disk='Hublot24')
+base = df.find_path(year='2025')
 global drones
 drones = ['mesange','Bernache','Fulmar']
 

@@ -30,7 +30,7 @@ def gen_parser():
     return args
 
 def get_folder(date):
-    base = df.find_path(disk='Shack25')#f'/media/turbots/BlueDisk/Shack25_local/'
+    base = df.find_path(year='2025')#f'/media/turbots/BlueDisk/Shack25_local/'
     return base +f'{date}/Phone/'
 
 def get_savefolder(date):
@@ -128,11 +128,13 @@ def from_N0_to_N1(date,key='accelerometer'):
     for phone in phonelist:
         if key in files[phone].keys():
             for num in files[phone][key].keys():
+
                 r = load_lvl_0(files,phone,num)
                 if phone in synctime.keys():
                     t0 = synctime[phone]
-                    r['t_sync']=r['ta']+t0
-                    r['date']=timest.today_date(r['t_sync'][0])
+                    if 'ta' in r.keys():
+                        r['t_sync']=r['ta']+t0
+                        r['date']=timest.today_date(r['t_sync'][0])
                     r = check_status(r)
                     save_to_h5(r)
         else:
@@ -149,17 +151,25 @@ def check_status(r):
         r[key]=status[key]
     return r
 
+def on_field(files,phone,num,synctime,tstart,tend):
+    tmin = int(files[phone]['gps'][num].split('.')[-2].split('-')[-2])/10**6+synctime[phone]
+    tmax = int(files[phone]['gps'][num].split('.')[-2].split('-')[-1])/10**6+synctime[phone]
+    print(timest.display_time(timest.today_time([tmin,tmax])))
+    print(tmin,tmax)
+
 def attribute_tag(r):
     pass
 
 def save_to_h5(r):
     filename = r['folder']+f'/'+r['date'].replace('-','_')+'_L1_phone'+str(r['phone'])+'_num'+str(r['num'])+'.h5'
     print(filename)
-    hf = h5py.File(filename, 'w')
-    for key in r.keys():
-        hf.create_dataset(key, data=r[key])
-    hf.close()
-
+    if not os.path.exists(filename):        
+        hf = h5py.File(filename, 'w')
+        for key in r.keys():
+            hf.create_dataset(key, data=r[key])
+        hf.close()
+    else:
+        print(f'Filename {filename} already exists')
 def find_timetable(date):
     phone_to_sync = get_phonelist(date)
     folder = get_folder(date)
@@ -334,7 +344,6 @@ def situation(date,imax=None,num=None,save=True):
     fig,ax,figs = situation_map(files,num,date)
     if save:
         graphes.save_figs(figs,savedir=savefolder,prefix='Situation_map',suffix='_'+date,overwrite=True)
-
 
 
 if __name__=='__main__':

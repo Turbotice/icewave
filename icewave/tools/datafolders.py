@@ -37,7 +37,11 @@ osname = socket.gethostname()
 print(ostype)
 print(osname)
 
-def find_path(disk='Hublot24'):
+def find_path(year='2024',disk='Hublot24',smb=False):
+    if year=='2024':
+        disk = 'Hublot24'
+    elif year=='2025':
+        disk = 'Shack25'
     #print('OS type : '+str(ostype))
     #print('Computer name : '+str(osname))
 
@@ -51,6 +55,8 @@ def find_path(disk='Hublot24'):
         if 'oural' or 'saguenay' in osname:
             if disk=='Shack25':
                 base = '/media/turbots/BlueDisk/Shack25_local/Data/'
+                if smb:
+                    base = '/home/turbots/Documents/Bic25/Data/'
             else:
                 base = '/media/turbots/'+base#home/turbots/Documents/'+base
         else:
@@ -97,6 +103,7 @@ def find_path(disk='Hublot24'):
         #    base = '/Users/stephane/Documents/git/icewave/icewave/field/Bicwin2024/Data/2024/'#/Volumes/Share_hublot/Data/'
 
     #browse.create_folder(base)
+    print(base)
     return base
 
 def date_folder(date=''):

@@ -7,7 +7,9 @@ Created on Thu Mar 26 14:15:20 2015
 
 import os.path
 import numpy as np
+import h5py
 import csv
+
 #to use to read data files in ASCII formats (or others ?)
 #to use to write data files in ASCII formats (or others ?) with label on the top :
 # in particular to create a catalog of the parameters of all the existing data (!)
@@ -52,6 +54,16 @@ def writedict_csv(filename,data,symbol='#'):
         for key in data.keys():
             row = [key]+[data[key][k] for k in data[key].keys()]
             spamwriter.writerow(row)
+
+def write_h5(filename,data):
+    hf = h5py.File(filename, 'w')
+    for key in data.keys():
+        hf.create_dataset(key, data=data[key])
+    hf.close()
+
+def read_h5(filename):
+    hf = h5py.File('test.h5','r')
+    return hf
 
 def write_pkl(filename,data):
     import pickle

@@ -5,9 +5,9 @@ import glob
 from pprint import pprint
 
 global base
-base = df.find_path(disk='Hublot24')
+base = df.find_path(year='2025')
 
-def get_records(date,year='2024'):
+def get_records(date,year='2025'):
     files = glob.glob(base+date+'/Geophones/DigiSolo*.txt')#/*/*.srt')
     nbase = len(base)
     records = {}

@@ -7,10 +7,11 @@ from pprint import pprint
 import icewave.geometry.tables as tables
 
 global base
-base = df.find_path(disk='Hublot24')
 import gpxpy
 
-def get_records(date,year='2024'):
+def get_records(date,year='2025',smb=False):
+    base = df.find_path(year=year,smb=smb)
+
     folder = base+date+'/GPS/'
     filelist = glob.glob(folder+'*.gpx')
     if len(filelist)==0:
@@ -27,7 +28,6 @@ def get_records(date,year='2024'):
     records={}
     records['gps']={}
     records['gps']['garminSP']=record
-
     return records
 
 

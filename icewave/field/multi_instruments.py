@@ -33,12 +33,12 @@ def gen_parser():
     print(args)
     return args
 
-def get_records(date):
-    records = drone.get_records(date)
-    records.update(phone.get_records(date))
-    records.update(geophone.get_records(date))
-    records.update(buoys.get_records(date))
-    records.update(gps.get_records(date))
+def get_records(date,**kwargs):
+    records = drone.get_records(date,**kwargs)
+    records.update(phone.get_records(date,**kwargs))
+    records.update(geophone.get_records(date,**kwargs))
+    records.update(buoys.get_records(date,**kwargs))
+    records.update(gps.get_records(date,**kwargs))
     return records
 
 def save_records(date):
