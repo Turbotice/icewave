@@ -151,6 +151,7 @@ def find_relevant_map(r):
     Lat = r['gpslat'][0]
     for name in sites:
         b = gps.check_box(Long,Lat,gps.boxes(name))
+        print(b)
         if b:
             return name
     return None
@@ -162,6 +163,7 @@ def situation_map(files,num,date):
     phone = list(phonelist)[0]
     r = load_lvl_0(files,phone,num,keys=['gps'])
     name = find_relevant_map(r)
+    print(name)
     ax,figs = gps.display_standard_map(ax,name,title=date)
 
     for phone in phonelist:
