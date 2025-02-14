@@ -10,11 +10,14 @@ import icewave.tools.datafolders as df
 import icewave.gps.gps as gps
 import icewave.display.graphes as graphes
 import phonefleet.data as dataphone
+import icewave.tools.rw_data as rw
 
 from matplotlib.colors import LinearSegmentedColormap as LSC
-
+import icewave.field.time as timest
 
 import argparse
+import h5py
+
 
 def gen_parser():    
     parser = argparse.ArgumentParser(description="Manipulate multi instruments data")
@@ -105,6 +108,8 @@ def load_lvl_0(files,phone,num,keys=None):
                 dic = dataphone.load_data(filename)
                 for key in dic.keys():
                     r[key] = dic[key]
+                r['folder']=os.path.dirname(filename)
+                r['filename']=os.path.basename(filename)
             else:
                 print(f'No data for phone {phone}, num {num}')
                 return None
@@ -112,6 +117,94 @@ def load_lvl_0(files,phone,num,keys=None):
             print(f'No GPS for phone {phone}')
             return None
     return r
+
+def from_N0_to_N1(date,key='accelerometer'):
+    files = get_filelist(date)
+    phonelist = files.keys()
+
+    synctime = find_timetable(date)
+
+    keys = ['accelerometer', 'gyroscope', 'magnetic_field', 'gps']
+    for phone in phonelist:
+        if key in files[phone].keys():
+            for num in files[phone][key].keys():
+                r = load_lvl_0(files,phone,num)
+                if phone in synctime.keys():
+                    t0 = synctime[phone]
+                    r['t_sync']=r['ta']+t0
+                    r['date']=timest.today_date(r['t_sync'][0])
+                    r = check_status(r)
+                    save_to_h5(r)
+        else:
+            print(f'No acceleration data for phone {phone}')
+
+def check_status(r):
+    status = {}
+    status['oural_time']=('t_sync' in r.keys())
+    status['GPS_time']=('t_GPS' in r.keys())
+    status['position_GPS']=('gpslon' in r.keys())  
+    status['position_Garmin']=('gargps_lon' in r.keys())  
+    status['complete'] = np.sum([key in r.keys() for key in ['ta','tm','tg','tgps']])==4
+    for key in status.keys():
+        r[key]=status[key]
+    return r
+
+def attribute_tag(r):
+    pass
+
+def save_to_h5(r):
+    filename = r['folder']+f'/'+r['date'].replace('-','_')+'_L1_phone'+str(r['phone'])+'_num'+str(r['num'])+'.h5'
+    print(filename)
+    hf = h5py.File(filename, 'w')
+    for key in r.keys():
+        hf.create_dataset(key, data=r[key])
+    hf.close()
+
+def find_timetable(date):
+    phone_to_sync = get_phonelist(date)
+    folder = get_folder(date)
+    filelist = glob.glob(folder+'Tsync/*.txt')
+
+    timetable={}
+    synctime={}
+    for filename in filelist:
+        phonelist = []
+        synctable = rw.read_csv(filename,delimiter=',')
+        synctable = rw.csv2dict(synctable)
+
+        for key in synctable.keys():
+            phone,i = key.split('_')
+            phone = int(phone)
+            if (not phone in phonelist) and (phone in phone_to_sync):
+                phonelist.append(phone)
+                phone_to_sync.remove(phone)
+                timetable[phone]=[]
+            if phone in timetable.keys():
+                timetable[phone].append(synctable[key]['tlag'])
+
+        for phone in phonelist:
+            synctime[phone] = np.mean(timetable[phone])
+
+    print(f'Phones not sync : {phone_to_sync}')
+    return synctime
+
+def display_times(files,synctime,phone):
+    if phone in synctime.keys():
+        t0 = synctime[phone]
+    else:
+        print(f'No time sync for phone {phone}')
+    if 'gps' in files[phone].keys():
+        for num in files[phone]['gps'].keys():
+            r = load_lvl_0(files,phone,num,keys=['gps'])
+            tmin = r['tgps'][0]+t0
+            tmax = r['tgps'][-1]+t0
+
+            #times = timest.to_UTC([tmin,tmax])
+            times = timest.today_time(times)
+            times = timest.display_time(times)
+            print(num,times)
+    else:
+        print(f'No gps signal for phone {phone}!')
 
 def is_moving(r,maxmotion=10,meanmotion=3):
     t = r['tgps']
@@ -224,7 +317,7 @@ def moving_map(moving,indices,phonelist):
 
     return fig,ax,figs
 
-def N0_to_N1(date,imax=None,num=None,save=True):
+def situation(date,imax=None,num=None,save=True):
     files = get_filelist(date)
     phonelist = list(files.keys())
     savefolder = get_savefolder(date)
@@ -246,4 +339,5 @@ def N0_to_N1(date,imax=None,num=None,save=True):
 
 if __name__=='__main__':
     args = gen_parser()
-    N0_to_N1(args.date,num=args.num,save=True)
+    situation(args.date,num=args.num,save=True)
+    from_N0_to_N1(date)
