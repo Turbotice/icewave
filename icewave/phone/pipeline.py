@@ -63,7 +63,7 @@ def parse_filename(filename):
         num = int(name.split('-')[-3])
         typ = name.split('-')[-4]
     else:
-        print(name)
+        return None,None,False
     if '.' in typ:
         typ = typ.split('.')[-1]
 
