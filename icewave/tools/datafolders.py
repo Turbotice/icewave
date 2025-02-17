@@ -37,7 +37,9 @@ osname = socket.gethostname()
 print(ostype)
 print(osname)
 
-def find_path(disk='Shack25'):
+def find_path(disk='Shack25',year='2025',smb=False):
+    if year=='2025':
+        disk='Shack25'
     #print('OS type : '+str(ostype))
     #print('Computer name : '+str(osname))
     if disk=='BicWin2024':

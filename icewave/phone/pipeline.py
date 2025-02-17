@@ -15,6 +15,10 @@ import icewave.tools.rw_data as rw
 from matplotlib.colors import LinearSegmentedColormap as LSC
 import icewave.field.time as timest
 
+import icewave.phone.sismo as sismo
+import icewave.phone.waves as waves
+
+
 import argparse
 import h5py
 
@@ -155,7 +159,63 @@ def from_N0_to_N1(date,key='accelerometer'):
                     r = check_status(r)                    
                     save_to_h5(r)
         else:
-            print(f'No acceleration data for phone {phone}')
+            print(f'No acceleration data for phone {phone}')    
+
+def from_N1_to_N2(date):
+    folder = summary_folder(date)
+    filename = folder+'Phone_Table.txt'
+    params = parse_phone_table(filename)
+
+    for i,param in enumerate(params):
+        tag = param['tag']
+        if tag=='waves':
+            data = waves.load_data(param)#date,phonelist,nums,tmin,tmax,orientation)
+            data = waves.smooth(data)
+            waves.save_W2(data,param['tmin'],param['tmax'],i)
+        elif tag=='sismo_active':
+            data = sismo.load_data(param)
+            sismo.save_S2(data,param['tmin'],param['tmax'],i)
+
+        elif tag=='sismo_passive':
+            data = sismo.load_data(param)
+            sismo.save_S2(data,param['tmin'],param['tmax'],i)
+
+        else:
+            print('Tag key not recognized')
+
+def summary_folder(date):
+    base = f'/media/turbots/BlueDisk/Shack25_local/Data/'
+    basetest = df.find_path(year='2025')#
+    print(basetest)
+    return base +f'{date}/Phone/Summary/'
+
+
+def parse_list(string):
+    stringlist = string.split(',')
+    numlist = []
+    for elem in stringlist:
+        if ':' in elem:
+            imin,imax = stringlist[elem].split(':')
+            numlist = numlist+list(range(imin,imax+1))
+        else:
+            numlist.append(int(stringlist[elem]))
+    return numlist
+
+def parse_phone_table(filename):
+    data = rw.read_csv(filename,delimiter='\t')
+    dic = rw.csv2dict(data)
+
+    params = []
+    for i,tag in enumerate(dic['tag']):
+        param={}
+        param['tag']=tag
+        for key in ['phonelist','nums','orientation']:
+            param[key] = parse_list(dic[key][i])
+        param['tmin'] = dic['tstart'][i]
+        param['tmax'] = dic['tend'][i]
+        params[i]=param
+    return params
+
 
 def check_status(r):
     status = {}
@@ -188,6 +248,7 @@ def save_to_h5(r):
         hf.close()
     else:
         print(f'Filename {filename} already exists')
+
 def find_timetable(date):
     phone_to_sync = get_phonelist(date)
     folder = get_folder(date)

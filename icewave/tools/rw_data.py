@@ -58,7 +58,12 @@ def writedict_csv(filename,data,symbol='#'):
 def write_h5(filename,data):
     hf = h5py.File(filename, 'w')
     for key in data.keys():
-        hf.create_dataset(key, data=data[key])
+        if type(data[key])==dict:
+            hf.create_group(key)
+            for k in data[key].keys():
+                hf[key].create_dataset(k,data=data[key][k])
+        else:
+            hf.create_dataset(key, data=data[key])
     hf.close()
 
 def read_h5(filename):
