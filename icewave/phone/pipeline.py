@@ -30,7 +30,9 @@ def gen_parser():
     return args
 
 def get_folder(date):
-    base = df.find_path(year='2025')#f'/media/turbots/BlueDisk/Shack25_local/'
+    base = f'/media/turbots/BlueDisk/Shack25_local/Data/'
+    #df.find_path(year='2025')#
+    print(base)
     return base +f'{date}/Phone/'
 
 def get_savefolder(date):
@@ -118,24 +120,39 @@ def load_lvl_0(files,phone,num,keys=None):
             return None
     return r
 
+def load_lvl_1(date,phone,num,year='2025'):
+    folder = get_folder(date)
+    filename = glob.glob(folder+str(phone)+f'/*_phone{phone}_num{num}*.h5')[0]
+
+    print(filename)
+    hf = rw.read_h5(filename)
+#    f'{year}_'+date[:2]+'_'+date[2:]+f'_L1_phone{phone}_num{num}.h5'
+    return hf
+
 def from_N0_to_N1(date,key='accelerometer'):
     files = get_filelist(date)
-    phonelist = files.keys()
+    phonelist = list(files.keys())
 
     synctime = find_timetable(date)
 
     keys = ['accelerometer', 'gyroscope', 'magnetic_field', 'gps']
-    for phone in phonelist:
+    print(synctime.keys())
+    for phone in phonelist[7:]:
         if key in files[phone].keys():
             for num in files[phone][key].keys():
 
                 r = load_lvl_0(files,phone,num)
+                print(phone,num)
+                #print(r.keys())
+                if r is None:
+                    print(phone,num)
+                    continue
                 if phone in synctime.keys():
                     t0 = synctime[phone]
                     if 'ta' in r.keys():
                         r['t_sync']=r['ta']+t0
                         r['date']=timest.today_date(r['t_sync'][0])
-                    r = check_status(r)
+                    r = check_status(r)                    
                     save_to_h5(r)
         else:
             print(f'No acceleration data for phone {phone}')
@@ -166,6 +183,7 @@ def save_to_h5(r):
     if not os.path.exists(filename):        
         hf = h5py.File(filename, 'w')
         for key in r.keys():
+            print(key)
             hf.create_dataset(key, data=r[key])
         hf.close()
     else:

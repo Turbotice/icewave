@@ -62,7 +62,7 @@ def write_h5(filename,data):
     hf.close()
 
 def read_h5(filename):
-    hf = h5py.File('test.h5','r')
+    hf = h5py.File(filename,'r')
     return hf
 
 def write_pkl(filename,data):
