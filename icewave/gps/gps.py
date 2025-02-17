@@ -129,7 +129,7 @@ def display_gpx(filename,date,gpx,save=True):
     
     return ax,figs
 
-def display_dictwpts(filename,date,wpts,save=True):
+def display_dictwpts(filename,date,wpts,save=True,scale=0.75):
     Long,Lat = [],[]
     for key in wpts.keys():
         X,Y = [],[]
@@ -137,7 +137,7 @@ def display_dictwpts(filename,date,wpts,save=True):
             Long.append(waypoint.longitude)
             Lat.append(waypoint.latitude)
             
-    BBox = box_data(Long,Lat,scale=0.75)
+    BBox = box_data(Long,Lat,scale=scale)
     ext = extent(BBox)
     t = tmp_connect()
     fig, ax = plt.subplots(figsize=(8, 8), dpi=200)

@@ -27,18 +27,21 @@ import argparse
 def gen_parser():    
     parser = argparse.ArgumentParser(description="Manipulate multi instruments data")
     parser.add_argument('-date', dest='date', type=str,default='0226',help='select date to process data')
+    parser.add_argument('-year', dest='year', type=str,default='2025',help='select year to process data')
+
     #parser.add_argument('-step', dest='step', type=int,default=3,help='select Step to be performed')
+
 #    print(parser)   
     args = parser.parse_args()
     print(args)
     return args
 
-def get_records(date,**kwargs):
-    records = drone.get_records(date,**kwargs)
-    records.update(phone.get_records(date,**kwargs))
-    records.update(geophone.get_records(date,**kwargs))
-    records.update(buoys.get_records(date,**kwargs))
-    records.update(gps.get_records(date,**kwargs))
+def get_records(date,year='2025'):
+    records = gps.get_records(date,year)
+    #records.update(drone.get_records(date,year))
+    #records.update(phone.get_records(date,year))
+    #records.update(geophone.get_records(date,year))
+    #records.update(buoys.get_records(date,year))
     return records
 
 def save_records(date):

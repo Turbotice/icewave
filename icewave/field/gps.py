@@ -11,6 +11,10 @@ import gpxpy
 
 def get_records(date,year='2025',smb=False):
     base = df.find_path(year=year,smb=smb)
+import gpxpy
+
+def get_records(date,year='2024'):
+    base = df.find_path(year=year)
 
     folder = base+date+'/GPS/'
     filelist = glob.glob(folder+'*.gpx')
@@ -19,15 +23,21 @@ def get_records(date,year='2025',smb=False):
         return {}
     if len(filelist)>1:
         print('Warning : several gpx files found')
-    filename=filelist[0]
 
-    with open(filename,'r') as f:
-        gpx = gpxpy.parse(f)
-
-    record = get_record_fromgpx(gpx,folder)
     records={}
     records['gps']={}
-    records['gps']['garminSP']=record
+    for filename in filelist:
+        with open(filename,'r') as f:
+            gpx = gpxpy.parse(f)
+        record = get_record_fromgpx(gpx,folder)
+        if '_SP.gpx' in filename:
+            key = 'garminSP'
+        elif '_MS.gpx' in filename:
+            key = 'garminMS'
+        elif '_DD.gpx' in filename:
+            key = 'DD'
+        records['gps'][key]=record
+
     return records
 
 
