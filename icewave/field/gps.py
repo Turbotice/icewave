@@ -27,22 +27,28 @@ def get_records(date,year='2024'):
     records={}
     records['gps']={}
     for filename in filelist:
+        print(filename)
         with open(filename,'r') as f:
             gpx = gpxpy.parse(f)
-        record = get_record_fromgpx(gpx,folder)
-        if '_SP.gpx' in filename:
-            key = 'garminSP'
-        elif '_MS.gpx' in filename:
+        if '_MS.gpx' in filename:
             key = 'garminMS'
+            reg='MS'
         elif '_DD.gpx' in filename:
             key = 'DD'
+            reg='DD'
+        else:
+            key = 'garminSP'
+            reg=''
+            
+        record = get_record_fromgpx(gpx,folder,reg=reg)
+
         records['gps'][key]=record
 
     return records
 
 
-def get_record_fromgpx(gpx,folder):
-    record = tables.dict_from_gpx(gpx,folder)
+def get_record_fromgpx(gpx,folder,reg=''):
+    record = tables.dict_from_gpx(gpx,folder,reg=reg)
     #
     for key in record.keys():
         record[key]['name']=key

@@ -36,9 +36,11 @@ def read_norme(path):
             details[t][key] = table[i+1,j+1]    
     return dtable,details
 
-def dict_from_gpx(gpx,folder):
+def dict_from_gpx(gpx,folder,reg=''):
     data={}
-    table = read_table(folder)
+    table = read_table(folder,reg=reg)
+
+    print(table)
     tabledict = table_2dict(table)
 
     pprint(tabledict.keys())
@@ -194,10 +196,12 @@ def select(gpx,imin,imax):
     return indices
 
 def read_table(folder,reg=''):
-    filelist = glob.glob(folder+'map_table*'+reg+'.txt')
+    filelist = glob.glob(folder+'Map_Table*'+reg+'.txt')
+    print(filelist)
+    filename = filelist[0]
     if len(filelist)>1:
         print(f'Warning : several map tables found in {folder}')
-    filename = glob.glob(folder+'map_table.txt')[0]
+    #filename = glob.glob(folder+'Map_Table.txt')[0]
 
     #print(filename)
     with open(filename,'r') as f:

@@ -37,16 +37,16 @@ def gen_parser():
     return args
 
 def get_records(date,year='2025'):
-    records = gps.get_records(date,year)
-    #records.update(drone.get_records(date,year))
-    #records.update(phone.get_records(date,year))
-    #records.update(geophone.get_records(date,year))
+    records = gps.get_records(date,year=year)
+    records.update(drone.get_records(date,year=year))
+    records.update(phone.get_records(date,year=year))
+    records.update(geophone.get_records(date,year=year))
     #records.update(buoys.get_records(date,year))
     return records
 
-def save_records(date):
+def save_records(date,year):
     records = get_records(date)
-    base = df.find_path()
+    base = df.find_path(year)
     filename = base+date+'/Summary/records_'+date+'.pkl'
 
     folder = os.path.dirname(filename)
@@ -56,8 +56,8 @@ def save_records(date):
     rw_data.write_pkl(filename,records)
     return filename
 
-def compute_timeline(date,date_format='2024/02/03'):
-    filename = save_records(date)
+def compute_timeline(date,date_format='2024/02/03',year='2025'):
+    filename = save_records(date,year)
     records = rw_data.load_pkl(filename)
 
     savefolder= os.path.dirname(filename)
@@ -70,7 +70,7 @@ def compute_timeline(date,date_format='2024/02/03'):
     graphes.save_figs(figs,savedir=savefolder,overwrite=True,prefix=date+'_')
     #graphes.save_figs(figs,savedir=savefolder_local,overwrite=True,prefix=date+'_')
 
-def display_timeline(records,date,date_format='2024/02/23'):
+def display_timeline(records,date,date_format='2024/02/23',year='2025'):
     fig = plt.figure(figsize=(15,10))
     ax = fig.add_subplot(111)
 
@@ -178,7 +178,6 @@ def timeline_legend():
 def convert_time(t):
     h,m,s = t.split(':')
     return int(h)*3600+int(m)*60+int(s)
-    
 
 def get_time_interval(record):
     times = [record[key]['time'] for key in record.keys()]
@@ -208,9 +207,9 @@ def main(args):
     if args.date=='all':
         dates = ['0210','0211','0220','0221','0223','0226','0306']
         for date in dates:
-            save_records(date)
+            save_records(date,year=args.year)
     else:
-        save_records(args.date)
+        save_records(args.date,year=args.year)
     
 if __name__ =='__main__':
     args = gen_parser()

@@ -12,7 +12,7 @@ import icewave.field.Save_extract_record as drone_save
 global base
 base = df.find_path(year='2025')
 global drones
-drones = ['mesange','Bernache','Fulmar']
+drones = ['mesange','bernache','Fulmar']
 
 import argparse
 def gen_parser():    
@@ -35,7 +35,7 @@ def get_record(drone,srtfile):
     record['format']='mp4'
     return record,name
 
-def get_records(date,jpg=True):
+def get_records(date,jpg=True,year='2025'):
     srtfiles = get_srtfiles(date)
     
     records = {}

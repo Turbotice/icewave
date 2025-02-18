@@ -34,8 +34,8 @@ def gen_parser():
     return args
 
 def get_folder(date):
-    base = f'/media/turbots/BlueDisk/Shack25_local/Data/'
-    #df.find_path(year='2025')#
+    #base = f'/media/turbots/BlueDisk/Shack25_local/Data/'
+    df.find_path(year='2025')#
     print(base)
     return base +f'{date}/Phone/'
 
@@ -47,6 +47,7 @@ def get_savefolder(date):
 
 def get_phonelist(date):
     folder = get_folder(date)
+
     folders = glob.glob(folder+'*')
 
     phonelist=[]
@@ -184,9 +185,9 @@ def from_N1_to_N2(date):
             print('Tag key not recognized')
 
 def summary_folder(date):
-    base = f'/media/turbots/BlueDisk/Shack25_local/Data/'
-    basetest = df.find_path(year='2025')#
-    print(basetest)
+    #base = f'/media/turbots/BlueDisk/Shack25_local/Data/'
+    base = df.find_path(year='2025')#
+    print(base)
     return base +f'{date}/Phone/Summary/'
 
 
