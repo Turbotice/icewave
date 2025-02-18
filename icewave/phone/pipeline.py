@@ -35,7 +35,7 @@ def gen_parser():
 
 def get_folder(date):
     #base = f'/media/turbots/BlueDisk/Shack25_local/Data/'
-    df.find_path(year='2025')#
+    base = df.find_path(year='2025')#
     print(base)
     return base +f'{date}/Phone/'
 
