@@ -244,7 +244,7 @@ def save_to_h5(r):
     if not os.path.exists(filename):        
         hf = h5py.File(filename, 'w')
         for key in r.keys():
-            print(key)
+            #print(key)
             hf.create_dataset(key, data=r[key])
         hf.close()
     else:
