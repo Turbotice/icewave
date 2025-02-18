@@ -134,7 +134,7 @@ def load_lvl_1(date,phone,num,year='2025'):
 #    f'{year}_'+date[:2]+'_'+date[2:]+f'_L1_phone{phone}_num{num}.h5'
     return hf
 
-def from_N0_to_N1(date,key='accelerometer'):
+def from_N0_to_N1(date,key='accelerometer',imin=0):
     files = get_filelist(date)
     phonelist = list(files.keys())
 
@@ -142,7 +142,7 @@ def from_N0_to_N1(date,key='accelerometer'):
 
     keys = ['accelerometer', 'gyroscope', 'magnetic_field', 'gps']
     print(synctime.keys())
-    for phone in phonelist[7:]:
+    for phone in phonelist[imin:]:
         if key in files[phone].keys():
             for num in files[phone][key].keys():
 
