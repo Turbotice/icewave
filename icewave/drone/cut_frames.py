@@ -52,9 +52,9 @@ def frames_decimation(folder_images,destination_folder,fps,final_fps):
     
 if __name__ == '__main__':
     base = 'E:/'
-    date = '0208'
+    date = '0201'
     drone_ID = 'mesange'
-    exp_ID = '02-waypoints_001'
+    exp_ID = '01-waypoints_001'
     
     fps = 30 # intial movie fps
     final_fps = 0.5 # final fps after decimation

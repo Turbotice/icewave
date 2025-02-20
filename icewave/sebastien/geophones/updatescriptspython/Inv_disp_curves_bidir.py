@@ -22,7 +22,7 @@ plt.close('all')
 
 year = '2025'
 date = '0210' #date format, 'mmdd'
-acqu_numb = '0002' #acquisition number 
+acqu_numb = '0001' #acquisition number 
 equation = 'stein'
 # path to dispersion relation data 
 path2data = os.path.join('E:/Data/',date,'Geophones/')

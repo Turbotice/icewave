@@ -12,12 +12,12 @@
 clear all;
 date = '0205';
 drone_name = 'mesange';
-exp_ID = '16-waves_007';
+exp_ID = '07-waves_003';
 ID = [date '_' drone_name '_' exp_ID];
 
 base = ['E:/Data/' date '/Drones/' drone_name '/'];
 folder = [base 'matData/' exp_ID '/'];% folder of raw datas
-filename = 'PIV_processed_i00_N0_Dt4_b1_W32_xROI211_width3629_yROI1_height2151.mat';
+filename = 'PIV_processed_i01_N0_Dt4_b1_W32_xROI317_width3523_yROI1_height2159.mat'; % file to load
 fullname = [folder filename];
 
 
@@ -28,29 +28,32 @@ fullname = [folder filename];
 % ##########################################
 Lx = 3840; % size of the image in pixel, along larger axis (x-axis)
 Ly = 2160; % size of the image in pixel, along minor axis (y-axis)
+h_drone = 120.1; % height of the drone in meter
+alpha_0 = 90*pi/180; % camera pitch angle to the horizontal
+
 x_0 = (Lx + 1)/2; % camera sensor center
 y_0 = (Ly + 1)/2; % camera sensor center
-h_drone = 139.9; % height of the drone in meter
+
 focale = 2700; %in pixels 
 theta_x = atan(Lx/focale/2); % semi AFOV of the drone, along x-axis, in °
-alpha_0 = 90*pi/180; % camera pitch angle to the horizontal 
+ 
 facq_pix = Lx/(2*h_drone*tan(theta_x)); % scale in pixels / meter
 facq_t = 29.97; % Frame rate in Hz
 ft = 1/facq_t ; % factor scaling for time in sec / frame
 % ##########################################
 
 % Longitude and latitude during flight 
-latitude = 48.34663 ;
-longitude = -68.82784 ;
+latitude = 48.32711 ;
+longitude = -68.86078 ;
 
-% Create t0_UTC (beginning of flight)
+% Create t0 local (beginning of flight)
 Y = 2025;
 M = 02;
 D = 05;
-H = 14; % local time of drone
-MIN = 57;
-S = 22;
-MS = 539;
+H = 11; % local time of drone
+MIN = 20;
+S = 17;
+MS = 781;
 
 if strcmp(drone_name,'mesange')
     TimeZone = 'Europe/Paris'; % mesange 

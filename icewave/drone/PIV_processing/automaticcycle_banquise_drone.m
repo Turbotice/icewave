@@ -3,7 +3,7 @@
 
 date = '0205';
 drone_name = 'mesange';
-exp_ID = '16-waves_007';
+exp_ID = '07-waves_003';
 % base where images are saved and where we want to save data 
 
 base_img = ['E:/PIV_images/' date '/Drones/' drone_name '/'];
@@ -29,26 +29,32 @@ if exist(dirsave,'dir') ~= 7
 end
 
 % Define parameters to process PIV
-i0 = 0; %process starting from image i0
+i0 = 1; %process starting from image i0
 N = 0; %last frame to analyze
 Dt = 4; %ratio between the fps and the scanning frequency (number of image between image A and image B)
 b = 1; %number of images between image A and image A' (from one step to an other)
-ROI.x = 211 ;
-ROI.width = 3629;
+ROI.x = 317 ;
+ROI.width = 3523;
 ROI.y = 1;
-ROI.height = 2151;
-w = 32;
+ROI.height = 2159;
+w = 32; 
+
+if w == 32
+    nstep = 3;
+elseif w == 64
+    nstep = 2;
+end 
 
 % Standard PIV Settings
 s = cell(15,2); % To make it more readable, let's create a "settings table"
 %Parameter                          %Setting           %Options
 s{1,1}= 'Int. area 1';              s{1,2}=128;         % window size of first pass
-s{2,1}= 'Step size 1';              s{2,2}=64;         % step of first pass
+s{2,1}= 'Step size 1';              s{2,2}=32;         % step of first pass
 s{3,1}= 'Subpix. finder';           s{3,2}=2;          % 1 = 3point Gauss, 2 = 2D Gauss
 s{4,1}= 'Mask';                     s{4,2}=[];         % If needed, generate via: imagesc(image); [temp,Mask{1,1},Mask{1,2}]=roipoly;
 s{5,1}= 'ROI';                      s{5,2}=[ROI.x,ROI.y,ROI.width,ROI.height];         % Region of interest: [x,y,width,height] in pixels, may be left empty
 %s{5,1}= 'ROI';                      s{5,2}=[];         % Region of interest: [x,y,width,height] in pixels, may be left empty
-s{6,1}= 'Nr. of passes';            s{6,2}=3;          % 1-4 nr. of passes. Each path is achieved with a specific interrogation area
+s{6,1}= 'Nr. of passes';            s{6,2}= nstep;          % 1-4 nr. of passes. Each path is achieved with a specific interrogation area
 s{7,1}= 'Int. area 2';              s{7,2}=64;        % second pass window size
 s{8,1}= 'Int. area 3';              s{8,2}=32;         % third pass window size
 s{9,1}= 'Int. area 4';              s{9,2}=32;         % fourth pass window size
