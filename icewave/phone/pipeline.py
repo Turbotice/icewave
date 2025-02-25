@@ -169,6 +169,7 @@ def from_N0_to_N1(date,key='accelerometer',imin=0,overwrite=False):
         if key in files[phone].keys():
             for num in files[phone][key].keys():
                 r = load_lvl_0(files,phone,num,header_only=True)
+                r['date'] = date
                 if not h5_exist(r):
                     r = load_lvl_0(files,phone,num,header_only=False)
                 else:
