@@ -94,6 +94,8 @@ def find_path(disk='Shack25',year='2025',smb=False,date='0211'):
             base = 'K:/Share_hublot/Data/'
         if disk=='Shack25':
             base = 'E:/Data/'
+        if disk=='F':
+            base = 'F:/Data/'
 
     if 'macOS' in ostype:
         base = '/Volumes/'+base
