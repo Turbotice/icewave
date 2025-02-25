@@ -52,7 +52,7 @@ def find_path(disk='Shack25',year='2025',smb=False,date='0211'):
         base = disk+'/Share/Data/'
     elif disk=='Hublot24':
         base = disk+'/Share_hublot/Data/'
-    elif disk=='Shack25':
+    elif disk=='Shack25' or 'F':
         base = disk+'/Data/'
     else:
         print('please specify the folder path')
