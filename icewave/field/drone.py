@@ -9,6 +9,8 @@ import icewave.tools.rw_data as rw_data
 import icewave.drone.drone_timeline as timeline
 import icewave.field.Save_extract_record as drone_save
 
+from PIL import Image, ExifTags
+
 global base
 base = df.find_path(year='2025')
 global drones
@@ -35,6 +37,11 @@ def get_record(drone,srtfile):
     record['format']='mp4'
     return record,name
 
+def get_jpg_records(jpgfile,drone='')
+    img = Image.open(jpgfile)
+    record = { ExifTags.TAGS[k]: v for k, v in img._getexif().items() if k in ExifTags.TAGS }
+    return record
+
 def get_records(date,jpg=True,year='2025'):
     srtfiles = get_srtfiles(date)
     
@@ -58,12 +65,13 @@ def get_records(date,jpg=True,year='2025'):
             for i,jpgfile in enumerate(jpgfiles[key]):
                 name = jpgfile.split('/')[-2]#.split('.')[0]
                 print(i,jpgfile,name)
-                record = get_jpg_record(jpgfile,drone=key)
-                record['format']='jpg'
                 if not name in records['drones'][key]:
+                    record = get_jpg_record(jpgfile,drone=key)
+                    record['format']='jpg'
                     records['drones'][key][name]=[record]
                 else:
-                    records['drones'][key][name].append(record)
+                    print('Record already exist, skipping')
+#                    records['drones'][key][name].append(record)
     return records
     
 def get_srtfiles(date):
