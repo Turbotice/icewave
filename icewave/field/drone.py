@@ -11,8 +11,6 @@ import icewave.field.Save_extract_record as drone_save
 
 from PIL import Image, ExifTags
 
-global base
-base = df.find_path(year='2025')
 global drones
 drones = ['mesange','bernache','Fulmar']
 
@@ -28,7 +26,8 @@ def gen_parser():
     print(args)
     return args
 
-def get_record(drone,srtfile):
+def get_record(drone,srtfile,date='0211',year='2025'):
+    base = df.find_path(year=year,date=date)
     nbase = len(base)
     name = srtfile.split('/')[-2]#.split('.')[0]
     record = get_flighrecord(srtfile,drone=drone)
@@ -50,7 +49,7 @@ def get_records(date,jpg=True,year='2025'):
     for key in srtfiles.keys():
         records['drones'][key]={}
         for i,srtfile in enumerate(srtfiles[key]):
-            record,name = get_record(key,srtfile)
+            record,name = get_record(key,srtfile,date=date,year=year)
             print(i,srtfile,name)
             if not name in records['drones'][key]:
                 records['drones'][key][name]=[record]
@@ -75,8 +74,9 @@ def get_records(date,jpg=True,year='2025'):
 #                    records['drones'][key][name].append(record)
     return records
     
-def get_srtfiles(date):
+def get_srtfiles(date,year='2025'):
     srtfiles = {}
+    base = df.find_path(year=year,date=date)
     print(base)
     for key in drones:
         srt = glob.glob(base+date+'/Drones/'+key+'/*/*.SRT')#/*/*.srt')

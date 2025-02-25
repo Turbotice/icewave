@@ -4,10 +4,10 @@ import icewave.tools.rw_data as rw_data
 import glob
 from pprint import pprint
 
-global base
-base = df.find_path(year='2025')
+
 
 def get_records(date,year='2025'):
+    base = df.find_path(year='2025',date=date)
     files = glob.glob(base+date+'/Geophones/DigiSolo*.txt')#/*/*.srt')
     nbase = len(base)
     records = {}
