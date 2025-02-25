@@ -188,11 +188,11 @@ def cut_flightrecord(record,flight):# at that stage, all files should already by
 
 def get_flighrecord(srtfile,step=100,drone='mesange'):
     #convert all times to UTC
-    if drone=='mesange':
+    if drone=='Mesange' or drone=='mesange':
         h0 = -1
-    elif drone=='Bernache':
+    elif drone=='Bernache' or drone=='bernache':
         h0 = 5
-    elif drone=='Fulmar':
+    elif drone=='Fulmar' or drone=='fulmar':
         h0 = 5
     else:
         h0=0
@@ -228,8 +228,15 @@ def get_flighrecord(srtfile,step=100,drone='mesange'):
                 latitude = float(params.split('latitude : ')[1].split(']')[0])
                 longitude = float(params.split('longtitude : ')[1].split(']')[0])
             else:
-                latitude = float(params.split('latitude: ')[1].split(']')[0])
-                longitude = float(params.split('longitude: ')[1].split(']')[0])
+                try:
+                    latitude = float(params.split('latitude: ')[1].split(']')[0])
+                    longitude = float(params.split('longitude: ')[1].split(']')[0])
+                except:
+                    print('cannot read GPS position from SRT file')
+                    print(srtfile)
+                    print(params)
+                    latitude = np.nan
+                    longitude = np.nan
 
             #print(event[3],latitude,longitude)
             record['latitude'].append(latitude)
