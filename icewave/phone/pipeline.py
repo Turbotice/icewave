@@ -114,6 +114,9 @@ def load_lvl_0(files,phone,num,keys=None,header_only=False):
                 filename = files[phone][k][num]
                 r['folder']=os.path.dirname(filename)
                 r['filename']=os.path.basename(filename)
+
+                r['t0'] = '-'.join(r['filename'].split['T'][0].split('-')[:4])
+                print(r['t0'])
                 if not header_only:
                     dic = dataphone.load_data(filename)
                     for key in dic.keys():
@@ -171,7 +174,7 @@ def from_N0_to_N1(date,key='accelerometer',imin=0,overwrite=False):
         if key in files[phone].keys():
             for num in files[phone][key].keys():
                 r = load_lvl_0(files,phone,num,header_only=True)
-                r['date'] = date
+                r['date'] = timest.today_date(r['t0'])
                 if not h5_exist(r):
                     r = load_lvl_0(files,phone,num,header_only=False)
                 else:
