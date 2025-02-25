@@ -14,7 +14,7 @@ def get_records(date,year='2025'):
     records['geophones'] = {}
     for filename in files:
         record = read_digiSolo(filename)
-        num = filename.split('/DigiSolo_')[1].split('.txt')[0]
+        num = filename.split('DigiSolo_')[1].split('.txt')[0]
         #find only the data from this day
         select={}
         for key in record.keys():
