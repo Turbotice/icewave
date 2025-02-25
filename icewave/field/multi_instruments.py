@@ -46,7 +46,7 @@ def get_records(date,year='2025'):
 
 def save_records(date,year):
     records = get_records(date)
-    base = df.find_path(year)
+    base = df.find_path(year,date=date)
     filename = base+date+'/Summary/records_'+date+'.pkl'
 
     folder = os.path.dirname(filename)

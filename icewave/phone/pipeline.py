@@ -101,7 +101,7 @@ def get_filelist(date,keytest='accelerometer',display=False):
                 print(phone,f'{keytest} not found')
     return files
 
-def load_lvl_0(files,phone,num,keys=None):
+def load_lvl_0(files,phone,num,keys=None,header_only=False):
     r={}
     r['num']= num
     r['phone']=phone
@@ -112,11 +112,14 @@ def load_lvl_0(files,phone,num,keys=None):
             #print(files[phone][k])
             if num in files[phone][k]:
                 filename = files[phone][k][num]
-                dic = dataphone.load_data(filename)
-                for key in dic.keys():
-                    r[key] = dic[key]
                 r['folder']=os.path.dirname(filename)
                 r['filename']=os.path.basename(filename)
+                if not header_only:
+                    dic = dataphone.load_data(filename)
+                    for key in dic.keys():
+                        r[key] = dic[key]
+                else:
+                    print('Only loading header')
             else:
                 print(f'No data for phone {phone}, num {num}')
                 return None
@@ -134,7 +137,27 @@ def load_lvl_1(date,phone,num,year='2025'):
 #    f'{year}_'+date[:2]+'_'+date[2:]+f'_L1_phone{phone}_num{num}.h5'
     return hf
 
-def from_N0_to_N1(date,key='accelerometer',imin=0):
+def get_h5_filename_N1(folder,date,phone,num):
+    filename = folder+f'/'+date.replace('-','_')+'_L1_phone'+str(phone)+'_num'+str(num)+'.h5'
+    return filename
+
+def save_to_h5(r):
+    filename = get_h5_filename_N1(r['folder'],r['date'],r['phone'],r['num'])
+    print(filename)
+    if not os.path.exists(filename):        
+        hf = h5py.File(filename, 'w')
+        for key in r.keys():
+            #print(key)
+            hf.create_dataset(key, data=r[key])
+        hf.close()
+    else:
+        print(f'Filename {filename} already exists')
+        
+def h5_exist(r):
+    filename = get_h5_filename_N1(r['folder'],r['date'],r['phone'],r['num'])
+    return os.path.exist(filename)
+
+def from_N0_to_N1(date,key='accelerometer',imin=0,overwrite=False):
     files = get_filelist(date)
     phonelist = list(files.keys())
 
@@ -145,8 +168,11 @@ def from_N0_to_N1(date,key='accelerometer',imin=0):
     for phone in phonelist[imin:]:
         if key in files[phone].keys():
             for num in files[phone][key].keys():
-
-                r = load_lvl_0(files,phone,num)
+                r = load_lvl_0(files,phone,num,header_only=True)
+                if not h5_exist(r):
+                    r = load_lvl_0(files,phone,num,header_only=False)
+                else:
+                    print('File already exist, skipping')
                 print(phone,num)
                 #print(r.keys())
                 if r is None:
@@ -238,17 +264,6 @@ def on_field(files,phone,num,synctime,tstart,tend):
 def attribute_tag(r):
     pass
 
-def save_to_h5(r):
-    filename = r['folder']+f'/'+r['date'].replace('-','_')+'_L1_phone'+str(r['phone'])+'_num'+str(r['num'])+'.h5'
-    print(filename)
-    if not os.path.exists(filename):        
-        hf = h5py.File(filename, 'w')
-        for key in r.keys():
-            #print(key)
-            hf.create_dataset(key, data=r[key])
-        hf.close()
-    else:
-        print(f'Filename {filename} already exists')
 
 def find_timetable(date):
     phone_to_sync = get_phonelist(date)
