@@ -37,7 +37,7 @@ def get_record(drone,srtfile):
     record['format']='mp4'
     return record,name
 
-def get_jpg_records(jpgfile,drone='')
+def get_jpg_records(jpgfile,drone=''):
     img = Image.open(jpgfile)
     record = { ExifTags.TAGS[k]: v for k, v in img._getexif().items() if k in ExifTags.TAGS }
     return record
