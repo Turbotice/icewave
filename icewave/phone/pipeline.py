@@ -115,7 +115,7 @@ def load_lvl_0(files,phone,num,keys=None,header_only=False):
                 r['folder']=os.path.dirname(filename)
                 r['filename']=os.path.basename(filename)
 
-                r['t0'] = '-'.join(r['filename'].split['T'][0].split('-')[:4])
+                r['t0'] = '-'.join(r['filename'].split('T')[0].split('-')[:4])
                 print(r['t0'])
                 if not header_only:
                     dic = dataphone.load_data(filename)
