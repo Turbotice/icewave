@@ -155,7 +155,8 @@ def save_to_h5(r):
         
 def h5_exist(r):
     filename = get_h5_filename_N1(r['folder'],r['date'],r['phone'],r['num'])
-    return os.path.exist(filename)
+    
+    return os.path.exists(filename)
 
 def from_N0_to_N1(date,key='accelerometer',imin=0,overwrite=False):
     files = get_filelist(date)
