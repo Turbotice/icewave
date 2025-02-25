@@ -155,7 +155,8 @@ def save_to_h5(r):
         
 def h5_exist(r):
     filename = get_h5_filename_N1(r['folder'],r['date'],r['phone'],r['num'])
-    
+    print(filename)
+    print(os.path.exists(filename))
     return os.path.exists(filename)
 
 def from_N0_to_N1(date,key='accelerometer',imin=0,overwrite=False):
@@ -175,6 +176,7 @@ def from_N0_to_N1(date,key='accelerometer',imin=0,overwrite=False):
                     r = load_lvl_0(files,phone,num,header_only=False)
                 else:
                     print('File already exist, skipping')
+                    continue
                 print(phone,num)
                 #print(r.keys())
                 if r is None:
