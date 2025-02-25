@@ -116,7 +116,6 @@ def load_lvl_0(files,phone,num,keys=None,header_only=False):
                 r['filename']=os.path.basename(filename)
 
                 r['date'] = '-'.join(r['filename'].split('T')[0].split('-')[1:4])
-                print(r['date'])
                 if not header_only:
                     dic = dataphone.load_data(filename)
                     for key in dic.keys():
@@ -134,8 +133,6 @@ def load_lvl_0(files,phone,num,keys=None,header_only=False):
 def load_lvl_1(date,phone,num,year='2025'):
     folder = get_folder(date)
     filename = glob.glob(folder+str(phone)+f'/*_phone{phone}_num{num}*.h5')[0]
-
-    print(filename)
     hf = rw.read_h5(filename)
 #    f'{year}_'+date[:2]+'_'+date[2:]+f'_L1_phone{phone}_num{num}.h5'
     return hf
@@ -157,9 +154,9 @@ def save_to_h5(r):
         print(f'Filename {filename} already exists')
         
 def h5_exist(r):
+    if r is None:
+        return False
     filename = get_h5_filename_N1(r['folder'],r['date'],r['phone'],r['num'])
-    print(filename)
-    print(os.path.exists(filename))
     return os.path.exists(filename)
 
 def from_N0_to_N1(date,key='accelerometer',imin=0,overwrite=False):
@@ -183,7 +180,7 @@ def from_N0_to_N1(date,key='accelerometer',imin=0,overwrite=False):
                 print(phone,num)
                 #print(r.keys())
                 if r is None:
-                    print(phone,num)
+                    print(f'No data found for {phone}, {num}')
                     continue
                 if phone in synctime.keys():
                     t0 = synctime[phone]
