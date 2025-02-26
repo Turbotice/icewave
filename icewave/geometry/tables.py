@@ -57,7 +57,7 @@ def dict_from_gpx(gpx,folder,reg=''):
             #name = waypoint.name
             number = get_number(waypoint)
             #print(number,key)
-            if number==key:
+            if int(number)==int(key):
                 print(number)
                 found=True
                 tag = tabledict[key]['tag']

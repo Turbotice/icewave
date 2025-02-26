@@ -41,7 +41,6 @@ def get_records(date,year='2025'):
         record = get_record_fromgpx(gpx,folder,reg=reg)
 
         records['gps'][key]=record
-
     return records
 
 
