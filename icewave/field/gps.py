@@ -9,11 +9,9 @@ import icewave.geometry.tables as tables
 global base
 import gpxpy
 
-def get_records(date,year='2025',smb=False):
-    base = df.find_path(year=year,smb=smb)
 import gpxpy
 
-def get_records(date,year='2024'):
+def get_records(date,year='2025'):
     base = df.find_path(year=year)
 
     folder = base+date+'/GPS/'
