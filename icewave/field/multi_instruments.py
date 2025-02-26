@@ -212,7 +212,10 @@ def main(args):
             for i in range(10,26):
                 dates.append('02'+str(i))
         for date in dates:
-            save_records(date,year=args.year)
+            try:
+                save_records(date,year=args.year)
+            except:
+                print(f'Cannot generate the record for the {date}')
     else:
         save_records(args.date,year=args.year)
     
