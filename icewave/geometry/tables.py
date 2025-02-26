@@ -56,7 +56,7 @@ def dict_from_gpx(gpx,folder,reg=''):
         for waypoint in waypoints:
             #name = waypoint.name
             number = get_number(waypoint)
-            #print(number,key)
+            print(number,key)
             if int(number)==int(key):
                 print(number)
                 found=True
