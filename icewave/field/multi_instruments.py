@@ -205,7 +205,12 @@ def read_BA_timeline(date):
 
 def main(args):
     if args.date=='all':
-        dates = ['0210','0211','0220','0221','0223','0226','0306']
+        if year=='2024':
+            dates = ['0210','0211','0220','0221','0223','0226','0306']
+        if year=='2025':
+            dates = ['0131','0201','0203','0204','0205','0206','0207','0208','0209']
+            for i in range(10,26):
+                dates.append('02'+str(i))
         for date in dates:
             save_records(date,year=args.year)
     else:
