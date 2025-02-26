@@ -59,6 +59,7 @@ def dict_from_gpx(gpx,folder,reg=''):
             print(number,key)
             if int(number)==int(key):
                 print(number)
+                print('found!')
                 found=True
                 tag = tabledict[key]['tag']
                 data[tag]={}
