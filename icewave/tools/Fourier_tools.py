@@ -9,6 +9,7 @@ Created on Mon Dec 23 10:01:39 2024
 
 import math
 import numpy as np
+from scipy.fftpack import fft, ifft
 
 
 #----------------------------------------------------------------------------------------------------
@@ -23,6 +24,25 @@ def nextpow2(x):
     else:
         p = math.ceil(math.log2(x))
     return p
+
+#---------------------------------------------------------------------------------------------------
+
+def fft_1D(s,N,fs):
+    """ Compute FFT of a 1D signal 
+    Inputs : 
+        - s : 1D array,
+        - N : size of the array after padding,
+        - fs : sampling frequency """
+        
+    original_length = len(s)
+    FFT = fft(s - np.mean(s),n = N)
+    FFT = FFT[:N//2]/original_length
+    FFT[1:-1] = 2*FFT[1:-1]
+    
+    freq = fs*np.arange(0,(N//2))/N
+    
+    return FFT,freq
+
 
 #---------------------------------------------------------------------------------------------------
 
