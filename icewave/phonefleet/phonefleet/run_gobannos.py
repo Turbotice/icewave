@@ -22,7 +22,7 @@ import os
 
 import phonefleet.connect as connect
 
-import aiohttp
+#import aiohttp
 import asyncio
 import re
 

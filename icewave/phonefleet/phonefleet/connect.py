@@ -8,18 +8,18 @@ import urllib
 global local
 local = '192.168'
 global network
-network = 2
+network = 1
 global port
 port = 8080
 
-def ipbase():
+def ipbase(network=network):
     return f'{local}.{network}.'
 
 def basefolder():
     return 'Bic25/'
 
-def get_adress(phone):
-    return ipbase()+str(100+phone)
+def get_adress(phone,network=network):
+    return ipbase(network=network)+str(100+phone)
 
 def get_adresslist(phonelist):
     adresslist = []

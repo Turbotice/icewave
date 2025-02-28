@@ -52,8 +52,7 @@ def run(phonelist,n=10000,iter=10):
     #print(results)
     return results
 
-def time_sync(phone,n=1000,timeout=0.1):
-    ip = connect.get_adress(phone)
+def time_sync_ip(ip,n=1000,timeout=0.1):
     port = 8080
     
     do_nothing = 0
@@ -117,8 +116,11 @@ def time_sync(phone,n=1000,timeout=0.1):
     for key in Dt.keys():
         Dt[key] = np.asarray(Dt[key])
     Dt['duration']=duration
-
     return Dt
+
+def time_sync(phone,n=1000,timeout=0.1):
+    ip = connect.get_adress(phone)
+    time_sync_ip(ip,n=1000,timeout=0.1)
 
 def get_lag(Dt):
     duration = Dt['duration']
