@@ -469,6 +469,7 @@ def generate_N1_selective():
     tokeep = rw.load_pkl(filename)
 
     for date in tokeep.keys():
+        print('new date')
         print(f'date : {date}')
         files = get_filelist(date,keytest='accelerometer',display=False)
 
