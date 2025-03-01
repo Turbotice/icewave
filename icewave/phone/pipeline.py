@@ -211,18 +211,30 @@ def from_N1_to_N2(date):
     for i,param in enumerate(params):
         tag = param['tag']
         if tag=='waves' or tag=='wave':
-            data = waves.load_data(param)#date,phonelist,nums,tmin,tmax,orientation)
+            data = load_data_N1(param,typ='waves')#date,phonelist,nums,tmin,tmax,orientation)
             data = waves.smooth(data)
             waves.save_W2(data,param['tmin'],param['tmax'],i)
         elif tag=='sismo_active':
-            data = sismo.load_data(param)
+            data = load_data_N1(param,typ='sismo')#date,phonelist,nums,tmin,tmax,orientation)
             sismo.save_S2(data,param['tmin'],param['tmax'],i)
         elif tag=='sismo_passive':
-            data = sismo.load_data(param)
+            data = load_data_N1(param,typ='sismo')#date,phonelist,nums,tmin,tmax,orientation)
             sismo.save_S2(data,param['tmin'],param['tmax'],i)
-
         else:
             print('Tag key not recognized')
+
+def load_data_N1(param,typ='waves'):
+    date = param['date']
+    phonelist = param['phonelist']
+    nums = param['nums']
+    tmin = param['tmin']
+    tmax = param['tmax']
+    orientation = param['orientation']
+    if typ=='waves':
+        data = waves.load_data(date,phonelist,nums,tmin,tmax,orientation)
+    if typ=='sismo':
+        data = sismo.load_data(date,phonelist,nums,tmin,tmax,orientation)
+    return data
 
 def summary_folder(date):
     #base = f'/media/turbots/BlueDisk/Shack25_local/Data/'
