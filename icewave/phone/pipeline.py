@@ -210,6 +210,7 @@ def from_N1_to_N2(date):
 
     for i,param in enumerate(params):
         tag = param['tag']
+        param['date']=date
         if tag=='waves' or tag=='wave':
             data = load_data_N1(param,typ='waves')#date,phonelist,nums,tmin,tmax,orientation)
             data = waves.smooth(data)
