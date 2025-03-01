@@ -114,6 +114,7 @@ def load_lvl_0(files,phone,num,keys=None,header_only=False):
             #print(files[phone][k])
             if num in files[phone][k]:
                 filename = files[phone][k][num]
+                print(filename)
                 r['folder']=os.path.dirname(filename)
                 r['filename']=os.path.basename(filename)
 
