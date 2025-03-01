@@ -210,14 +210,13 @@ def from_N1_to_N2(date):
 
     for i,param in enumerate(params):
         tag = param['tag']
-        if tag=='waves':
+        if tag=='waves' or tag=='wave':
             data = waves.load_data(param)#date,phonelist,nums,tmin,tmax,orientation)
             data = waves.smooth(data)
             waves.save_W2(data,param['tmin'],param['tmax'],i)
         elif tag=='sismo_active':
             data = sismo.load_data(param)
             sismo.save_S2(data,param['tmin'],param['tmax'],i)
-
         elif tag=='sismo_passive':
             data = sismo.load_data(param)
             sismo.save_S2(data,param['tmin'],param['tmax'],i)
@@ -484,6 +483,7 @@ def generate_N1_selective():
 
 if __name__=='__main__':
     args = gen_parser()
-    generate_N1_selective()
+    #generate_N1_selective()
     #situation(args.date,num=args.num,save=True)
     #from_N0_to_N1(args.date)
+    from_N1_to_N2(args.date)

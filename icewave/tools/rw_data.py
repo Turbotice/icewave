@@ -34,7 +34,6 @@ def write_csv(filename,data):
 
     with open(filename, 'w', newline='') as csvfile:
         spamwriter = csv.writer(csvfile, delimiter=',',quotechar='|')
-        
         keys = list(data.keys())
         spamwriter.writerow(keys)
         n = len(data[keys[0]])
