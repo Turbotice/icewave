@@ -56,7 +56,6 @@ def load_data(date,phonelist,nums,tmin,tmax,orientation,dt=0.02):
             for c,name in zip(orientation,names):
                 data[phone][var+'i_'+name] = np.asarray(data[phone][var+'i_'+name])[indices]
         save_W2_phone(data,phone,timest.display_time(tmin),timest.display(tmax))
-        
     return data
 
 def save_W2_phone(data,phone,tmin,tmax,index):
@@ -69,15 +68,14 @@ def save_W2_phone(data,phone,tmin,tmax,index):
     print(f'Writing S2 file for phone {phone}: ')
     print(filesave)
 
-
 def save_W2(data,tmin,tmax,index):
     tmintag = tmin.replace(':','_')
     tmaxtag = tmax.replace(':','_')
 
     folder = summary_folder(date)
-    filesave = folder+f'Sismo_{index}_{tmintag}_{tmaxtag}.h5'
+    filesave = folder+f'Waves_{index}_{tmintag}_{tmaxtag}.h5'
     rw.write_h5(filesave,data)
-    print('Writing S2 file : ')
+    print('Writing W2 file : ')
     print(filesave)
 
 def filtering(y,fc=0.01,flow=0.0001):
@@ -99,10 +97,14 @@ def filtering(y,fc=0.01,flow=0.0001):
     err = np.std(y-y_high-y_wave-y_trend)/sigma
     return y_high,y_wave,y_trend,err
 
-
 def summary_folder(date):
-    base = f'/media/turbots/BlueDisk/Shack25_local/Data/'
-    basetest = df.find_path(year='2025')#
-    print(basetest)
-    return base +f'{date}/Phone/Summary/'
+    #base = f'/media/turbots/BlueDisk/Shack25_local/Data/'
+    base = df.find_path(year='2025')#
+    print(base)
+    folder = base +f'{date}/Phone/Summary/'
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    return folder
+
+
 

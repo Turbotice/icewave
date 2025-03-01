@@ -8,6 +8,7 @@ import icewave.field.multi_instruments as multi
 import icewave.field.time as timest
 
 import numpy as np
+import os
 
 def load_data(date,phonelist,nums,tmin,tmax,orientation):
     tmin = multi.convert_time(tmin)
@@ -42,10 +43,20 @@ def save_S2(data,tmin,tmax,index):
     tmintag = tmin.replace(':','_')
     tmaxtag = tmax.replace(':','_')
 
-    folder = summary_folder(date)
+    folder = summary_folder(date)        
     filesave = folder+f'Sismo_{index}_{tmintag}_{tmaxtag}.h5'
     rw.write_h5(filesave,data)
     print('Writing S2 file : ')
     print(filesave)
+
+def summary_folder(date):
+    #base = f'/media/turbots/BlueDisk/Shack25_local/Data/'
+    base = df.find_path(year='2025')#
+    print(base)
+    folder = base +f'{date}/Phone/Summary/'
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    return folder
+
 
 
