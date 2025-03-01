@@ -1,3 +1,6 @@
+
+
+
 import numpy as np
 import pylab as plt
 import glob
@@ -47,7 +50,6 @@ def get_savefolder(date):
 
 def get_phonelist(date):
     folder = get_folder(date)
-
     folders = glob.glob(folder+'*')
 
     phonelist=[]
@@ -467,10 +469,11 @@ def generate_N1_selective():
     tokeep = rw.load_pkl(filename)
 
     for date in tokeep.keys():
+        print(f'date : {date}')
         files = get_filelist(date,keytest='accelerometer',display=False)
 
         if date=='0204':      
-            print(files[1]['accelerometer'][5])
+            print(f'file :{files[1]['accelerometer'][5]}')
             
         synctime = find_timetable(date)
         print(date)
