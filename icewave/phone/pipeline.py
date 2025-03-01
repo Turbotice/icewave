@@ -141,11 +141,11 @@ def load_lvl_1(date,phone,num,year='2025'):
 #    f'{year}_'+date[:2]+'_'+date[2:]+f'_L1_phone{phone}_num{num}.h5'
     return hf
 
-def get_h5_filename_N1(folder,date,phone,num):
+def get_h5_filename_N1(folder,date,phone,num,index=0):
     filename = folder+f'/'+date.replace('-','_')+'_L1_phone'+str(phone)+'_num'+str(num)+'.h5'
     return filename
 
-def save_to_h5(r):
+def save_to_h5(r,index=0):
     print(r['folder'])
     print(r['date'])
     filename = get_h5_filename_N1(r['folder'],r['date'],r['phone'],r['num'])
@@ -165,7 +165,7 @@ def h5_exist(r):
     filename = get_h5_filename_N1(r['folder'],r['date'],r['phone'],r['num'])
     return os.path.exists(filename)
 
-def N0_to_N1(files,synctime,phone,num):
+def N0_to_N1(files,synctime,phone,num,index=0):
     r = load_lvl_0(files,phone,num,header_only=True)
     #r['date'] = timest.today_date(r['t0'])
     if not h5_exist(r):
@@ -186,7 +186,7 @@ def N0_to_N1(files,synctime,phone,num):
         print(r.keys())
         print(r['date'])
         r = check_status(r)                    
-        save_to_h5(r)
+        save_to_h5(r,index=index)
                 
 def from_N0_to_N1(date,key='accelerometer',imin=0,overwrite=False):
     files = get_filelist(date)
@@ -473,15 +473,14 @@ def generate_N1_selective():
         print(f'date : {date}')
         files = get_filelist(date,keytest='accelerometer',display=False)
 
-        if date=='0204':      
-            print(f'file :{files[1]['accelerometer'][5]}')
+#        if date=='0204':      
+            #print(f'file :{files[1]['accelerometer'][5]}')
             
         synctime = find_timetable(date)
-        print(date)
-        for k in tokeep[date]:
+        for i,k in enumerate(tokeep[date]):
             for phone in k['files'].keys():
                 for num in k['files'][phone]:
-                    N0_to_N1(files,synctime,phone,num)
+                    N0_to_N1(files,synctime,phone,num,index=i)
 
 if __name__=='__main__':
     args = gen_parser()
