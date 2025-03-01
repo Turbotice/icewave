@@ -39,7 +39,7 @@ def load_data(date,phonelist,nums,tmin,tmax,orientation):
             data[phone]['a_'+name] = np.asarray(data[phone]['a_'+name])[indices]
     return data
 
-def save_S2(data,tmin,tmax,index):
+def save_S2(data,date,tmin,tmax,index):
     tmintag = tmin.replace(':','_')
     tmaxtag = tmax.replace(':','_')
 

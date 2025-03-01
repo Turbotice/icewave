@@ -38,7 +38,7 @@ def gen_parser():
 
 def get_folder(date):
     #base = f'/media/turbots/BlueDisk/Shack25_local/Data/'
-    base = df.find_path(year='2025')#
+    base = df.find_path(year='2025',date=date)#
     print(base)
     return base +f'{date}/Phone/'
 
@@ -214,13 +214,13 @@ def from_N1_to_N2(date):
         if tag=='waves' or tag=='wave':
             data = load_data_N1(param,typ='waves')#date,phonelist,nums,tmin,tmax,orientation)
             data = waves.smooth(data)
-            waves.save_W2(data,param['tmin'],param['tmax'],i)
+            waves.save_W2(data,date,param['tmin'],param['tmax'],i)
         elif tag=='sismo_active':
             data = load_data_N1(param,typ='sismo')#date,phonelist,nums,tmin,tmax,orientation)
-            sismo.save_S2(data,param['tmin'],param['tmax'],i)
+            sismo.save_S2(data,date,param['tmin'],param['tmax'],i)
         elif tag=='sismo_passive':
             data = load_data_N1(param,typ='sismo')#date,phonelist,nums,tmin,tmax,orientation)
-            sismo.save_S2(data,param['tmin'],param['tmax'],i)
+            sismo.save_S2(data,date,param['tmin'],param['tmax'],i)
         else:
             print('Tag key not recognized')
 
@@ -496,7 +496,9 @@ def generate_N1_selective():
 
 if __name__=='__main__':
     args = gen_parser()
-    #generate_N1_selective()
+    if args.step==1:
+        generate_N1_selective()
+    if args.step==2:
     #situation(args.date,num=args.num,save=True)
     #from_N0_to_N1(args.date)
-    from_N1_to_N2(args.date)
+        from_N1_to_N2(args.date)

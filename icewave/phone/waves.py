@@ -68,7 +68,7 @@ def save_W2_phone(data,phone,tmin,tmax,index):
     print(f'Writing S2 file for phone {phone}: ')
     print(filesave)
 
-def save_W2(data,tmin,tmax,index):
+def save_W2(data,date,tmin,tmax,index):
     tmintag = tmin.replace(':','_')
     tmaxtag = tmax.replace(':','_')
 
