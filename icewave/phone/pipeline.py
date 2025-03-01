@@ -144,6 +144,8 @@ def get_h5_filename_N1(folder,date,phone,num):
     return filename
 
 def save_to_h5(r):
+    print(r['folder'])
+    print(r['date'])
     filename = get_h5_filename_N1(r['folder'],r['date'],r['phone'],r['num'])
     print(filename)
     if not os.path.exists(filename):        
