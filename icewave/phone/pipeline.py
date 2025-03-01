@@ -80,7 +80,6 @@ def get_filelist(date,keytest='accelerometer',display=False):
     phonelist = get_phonelist(date)
     folder = get_folder(date)
 
-    folder 
     files = {}
     for phone in phonelist:
         files[phone]={}
@@ -469,6 +468,8 @@ def generate_N1_selective():
 
     for date in tokeep.keys():
         files = get_filelist(date,keytest='accelerometer',display=False)
+        print(files[1]['accelerometer'][5])
+        toto
         synctime = find_timetable(date)
         print(date)
         for k in tokeep[date]:
