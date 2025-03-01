@@ -179,6 +179,8 @@ def N0_to_N1(files,synctime,phone,num):
         if 'ta' in r.keys():
             r['t_sync']=r['ta']+t0
             r['date']=timest.today_date(r['t_sync'][0])
+        print(r.keys())
+        print(r['date'])
         r = check_status(r)                    
         save_to_h5(r)
                 
