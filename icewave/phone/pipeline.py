@@ -468,8 +468,10 @@ def generate_N1_selective():
 
     for date in tokeep.keys():
         files = get_filelist(date,keytest='accelerometer',display=False)
-        print(files[1]['accelerometer'][5])
-        toto
+
+        if date=='0204':      
+            print(files[1]['accelerometer'][5])
+            
         synctime = find_timetable(date)
         print(date)
         for k in tokeep[date]:
