@@ -6,15 +6,15 @@ from pprint import pprint
 import scipy.interpolate as interp
 import scipy.signal as sig
 
-import icewave.tools.datafolders as df
 import icewave.gps.gps as gps
 import icewave.display.graphes as graphes
 import phonefleet.data as dataphone
+
 import icewave.tools.rw_data as rw
+import icewave.tools.datafolders as df
 
 from matplotlib.colors import LinearSegmentedColormap as LSC
 import icewave.field.time as timest
-
 import icewave.phone.sismo as sismo
 import icewave.phone.waves as waves
 
@@ -99,6 +99,8 @@ def get_filelist(date,keytest='accelerometer',display=False):
                 print(phone,len(files[phone][keytest].keys()))
             else:
                 print(phone,f'{keytest} not found')
+    filelist = glob.glob(folder+'Tsync/*.txt')
+    files['Tsync']=filelist
     return files
 
 def load_lvl_0(files,phone,num,keys=None,header_only=False):
@@ -159,6 +161,27 @@ def h5_exist(r):
     filename = get_h5_filename_N1(r['folder'],r['date'],r['phone'],r['num'])
     return os.path.exists(filename)
 
+def N0_to_N1(files,synctime,phone,num):
+    r = load_lvl_0(files,phone,num,header_only=True)
+    #r['date'] = timest.today_date(r['t0'])
+    if not h5_exist(r):
+        r = load_lvl_0(files,phone,num,header_only=False)
+    else:
+        print('File already exist, skipping')
+        return None
+    print(phone,num)
+    #print(r.keys())
+    if r is None:
+        print(f'No data found for {phone}, {num}')
+        return None
+    if phone in synctime.keys():
+        t0 = synctime[phone]
+        if 'ta' in r.keys():
+            r['t_sync']=r['ta']+t0
+            r['date']=timest.today_date(r['t_sync'][0])
+        r = check_status(r)                    
+        save_to_h5(r)
+                
 def from_N0_to_N1(date,key='accelerometer',imin=0,overwrite=False):
     files = get_filelist(date)
     phonelist = list(files.keys())
@@ -170,25 +193,7 @@ def from_N0_to_N1(date,key='accelerometer',imin=0,overwrite=False):
     for phone in phonelist[imin:]:
         if key in files[phone].keys():
             for num in files[phone][key].keys():
-                r = load_lvl_0(files,phone,num,header_only=True)
-                #r['date'] = timest.today_date(r['t0'])
-                if not h5_exist(r):
-                    r = load_lvl_0(files,phone,num,header_only=False)
-                else:
-                    print('File already exist, skipping')
-                    continue
-                print(phone,num)
-                #print(r.keys())
-                if r is None:
-                    print(f'No data found for {phone}, {num}')
-                    continue
-                if phone in synctime.keys():
-                    t0 = synctime[phone]
-                    if 'ta' in r.keys():
-                        r['t_sync']=r['ta']+t0
-                        r['date']=timest.today_date(r['t_sync'][0])
-                    r = check_status(r)                    
-                    save_to_h5(r)
+                N0_to_N1(files,synctime,phone,num)
         else:
             print(f'No acceleration data for phone {phone}')    
 
@@ -226,27 +231,35 @@ def parse_list(string):
     numlist = []
     for elem in stringlist:
         if ':' in elem:
-            imin,imax = stringlist[elem].split(':')
-            numlist = numlist+list(range(imin,imax+1))
+            imin,imax = elem.split(':')
+            numlist = numlist+list(range(int(imin),int(imax)+1))
         else:
-            numlist.append(int(stringlist[elem]))
+            numlist.append(int(elem))
+    #print(numlist)
     return numlist
 
 def parse_phone_table(filename):
     data = rw.read_csv(filename,delimiter='\t')
+    print(data)
     dic = rw.csv2dict(data)
 
     params = []
     for i,tag in enumerate(dic['tag']):
         param={}
         param['tag']=tag
-        for key in ['phonelist','nums','orientation']:
+        for key in ['phonelist','nums']:
+            print(key,dic[key][i])
             param[key] = parse_list(dic[key][i])
+        param['orientation']=dic['orientation'][i].split(',')
         param['tmin'] = dic['tstart'][i]
         param['tmax'] = dic['tend'][i]
-        params[i]=param
+        params.append(param)
     return params
 
+def select_data(param):
+    #select the phonelist,
+    date = param['date']
+    #get_filelist(date,keytest='accelerometer',display=False)
 
 def check_status(r):
     status = {}
@@ -444,8 +457,22 @@ def situation(date,imax=None,num=None,save=True):
     if save:
         graphes.save_figs(figs,savedir=savefolder,prefix='Situation_map',suffix='_'+date,overwrite=True)
 
+def generate_N1_selective():
+    base = df.find_path(year='2025')#
+    filename = base + 'Summary/Phone/Phone_Indexes_to_keep.pkl'
+    tokeep = rw.load_pkl(filename)
+
+    for date in tokeep.keys():
+        files = get_filelist(date,keytest='accelerometer',display=False)
+        synctime = find_timetable(date)
+        print(date)
+        for k in tokeep[date]:
+            for phone in k['files'].keys():
+                for num in k['files'][phone]:
+                    N0_to_N1(files,synctime,phone,num)
 
 if __name__=='__main__':
     args = gen_parser()
-    situation(args.date,num=args.num,save=True)
-    from_N0_to_N1(args.date)
+    generate_N1_selective()
+    #situation(args.date,num=args.num,save=True)
+    #from_N0_to_N1(args.date)
