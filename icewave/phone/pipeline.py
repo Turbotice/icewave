@@ -50,8 +50,9 @@ def get_savefolder(date):
 
 def get_phonelist(date):
     folder = get_folder(date)
+    print(folder)
     folders = glob.glob(folder+'*')
-
+    print(folders)
     phonelist=[]
     for f in folders:
         try:

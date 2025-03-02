@@ -39,15 +39,18 @@ print(osname)
 
 def find_path(disk='Shack25',year='2025',smb=False,date='0211'):
     if year=='2025':
-        disk='Shack25'
+        if 'macOS' in ostype:
+            disk='F-1'
+        else:
+            disk='F'#Shack25'
     #print('OS type : '+str(ostype))
     #print('Computer name : '+str(osname))
-    if year=='2025':
-        dateday = (int(date[:2])-1)*31+int(date[2:])
-        if dateday>(31+18):
-            disk = 'F'
-        else:
-            disk = 'Shack25'
+    #if year=='2025':
+    #    dateday = (int(date[:2])-1)*31+int(date[2:])
+    #    if dateday>(31+18):
+    #        disk = 'F'
+    #    else:
+    #        disk = 'Shack25'
     if disk=='BicWin2024':
         base = disk+'/Share/Data/'
     elif disk=='Hublot24':
@@ -93,7 +96,7 @@ def find_path(disk='Shack25',year='2025',smb=False,date='0211'):
         if disk=='Hublot24':
             base = 'K:/Share_hublot/Data/'
         if disk=='Shack25':
-            base = 'E:/Data/'
+            base = 'F:/Data/'
         if disk=='F':
             base = 'F:/Data/'
 
