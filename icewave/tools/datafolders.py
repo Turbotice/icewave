@@ -113,7 +113,7 @@ def find_path(disk='Shack25',year='2025',smb=False,date='0211'):
         #    base = '/Users/stephane/Documents/git/icewave/icewave/field/Bicwin2024/Data/2024/'#/Volumes/Share_hublot/Data/'
 
     #browse.create_folder(base)
-    print(base)
+    #print(base)
     return base
 
 def date_folder(date=''):

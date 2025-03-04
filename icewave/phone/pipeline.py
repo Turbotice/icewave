@@ -39,7 +39,7 @@ def gen_parser():
 def get_folder(date):
     #base = f'/media/turbots/BlueDisk/Shack25_local/Data/'
     base = df.find_path(year='2025',date=date)#
-    print(base)
+    #print(base)
     return base +f'{date}/Phone/'
 
 def get_savefolder(date):
@@ -50,9 +50,9 @@ def get_savefolder(date):
 
 def get_phonelist(date):
     folder = get_folder(date)
-    print(folder)
+    #print(folder)
     folders = glob.glob(folder+'*')
-    print(folders)
+    #print(folders)
     phonelist=[]
     for f in folders:
         try:
@@ -137,7 +137,12 @@ def load_lvl_0(files,phone,num,keys=None,header_only=False):
 
 def load_lvl_1(date,phone,num,year='2025'):
     folder = get_folder(date)
-    filename = glob.glob(folder+str(phone)+f'/*_phone{phone}_num{num}*.h5')[0]
+    matching_files = glob.glob(folder+str(phone)+f'/*_phone{phone}_num{num}*.h5')
+    if len(matching_files)==0:
+        return None
+    elif len(matching_files)>1:
+        print(f'More than one file matching ! check {date}, {phone}, {num}')
+    filename =matching_files[0]
     hf = rw.read_h5(filename)
 #    f'{year}_'+date[:2]+'_'+date[2:]+f'_L1_phone{phone}_num{num}.h5'
     return hf

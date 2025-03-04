@@ -8,8 +8,10 @@ import icewave.tools.datafolders as df
 
 import icewave.field.multi_instruments as multi
 import icewave.field.time as timest
+import scipy.signal as sig
 
 import numpy as np
+import os
 
 
 def smooth(data):
@@ -21,52 +23,66 @@ def load_data(date,phonelist,nums,tmin,tmax,orientation,dt=0.02):
     tmax = multi.convert_time(tmax)
 
     data = {}
-    vars = ['a','g','m']
-    names = ['z','y','x'] #z : vertical direction, y: transverse direction to the line, x: longitudinal direction of the line
     keylist = []
     for phone in phonelist:
-        print(f'Load data N1 for phone {phone}')
-        data[phone]={}
-        ts = []
-        for var in vars:
-            for c,name in zip(orientation,names):
-                data[phone][var+'i_'+name]=[]
-        
-        for num in nums:
-            hf = pl.load_lvl_1(date,phone,num)
-            t = list(hf['t_sync'])
-            t = timest.today_time(t)
-
-            for var in vars:
-                for c,name in zip(orientation,names):
-                    y_high,y_wave,y_trend,err = filtering(hf['a'+c])
-                    f = interp.interp1d(t,y_wave)
-                    tinit = t[0]
-                    tend = t[-1]
-                    ti = np.arange(tinit,tend,dt)
-                    yi = f(ti)
-                    data[phone][var+'i_'+name] = data[phone][var+'i_'+name] + list(yi)
-
-            ts = ts+t
-        ts = np.asarray(ts)
-        indices = np.logical_and(ts>=tmin,ts<tmax)
-        data[phone]['ts'] =  ts[indices]
-
-        for var in vars:
-            for c,name in zip(orientation,names):
-                data[phone][var+'i_'+name] = np.asarray(data[phone][var+'i_'+name])[indices]
-        save_W2_phone(data,phone,timest.display_time(tmin),timest.display(tmax))
+        data[phone]=load_data_phone(date,phone,nums,tmin,tmax,orientation,dt=dt)
+        #save_W2_phone(data,date,phone,tmin,tmax,nums[0])
     return data
 
-def save_W2_phone(data,phone,tmin,tmax,index):
+def load_data_phone(date,phone,nums,tmin,tmax,orientation,dt=0.02):
+    print(f'Load data N1 for phone {phone}')
+    variables = ['a','g','m']
+    names = orientation #z : vertical direction, y: transverse direction to the line, x: longitudinal direction of the line
+
+    data={}
+    buffer = {}
+    for var in variables:
+        buffer['t'+var]=[]
+        for c,name in zip(orientation,names):
+            buffer[var+name]=[]
+        
+    for num in nums:
+        hf = pl.load_lvl_1(date,phone,num)
+        if hf is not None:
+            t = list(hf['t_sync'])
+            t = timest.today_time(t)
+            tlag = hf['t_sync'][0]-hf['ta'][0]
+                
+            for var in variables:
+                tvar = np.asarray(hf['t'+var])+tlag
+                tinit = tvar[0]
+                tend = tvar[-1]
+                ti = np.arange(tinit,tend,dt)
+                buffer['t'+var] = buffer['t'+var] + list(ti)
+                for c,name in zip(orientation,names):
+                    y_high,y_wave,y_trend,err = filtering(hf[var+c])    
+                    f = interp.interp1d(tvar,y_wave)
+                    yi = f(ti)
+                    buffer[var+name] = list(buffer[var+name]) + list(yi)
+    for var in variables:
+        tsi = np.asarray(buffer['t'+var])
+        tsi = np.asarray(timest.today_time(tsi))
+        print(tsi)
+        indices = np.logical_and(tsi>=tmin,tsi<tmax)
+        data['ti'+var] =  tsi[indices]
+        for c,name in zip(orientation,names):
+            data[var+'i_'+name] = np.asarray(buffer[var+name])[indices]
+    return data
+
+def save_W2_phone(data,date,phone,tmin,tmax,index):
+    tmin,tmax = timest.display_time([tmin,tmax])
     tmintag = tmin.replace(':','_')
     tmaxtag = tmax.replace(':','_')
 
-    folder = dataphone.phone_folder(date,phone)
-    filesave = folder+f'Waves_{index}_{tmintag}_{tmaxtag}.h5'
-    rw.write_h5(filesave,data)
+    folder = pl.get_folder(date)+'Waves/'
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    filesave = folder+f'Waves_{phone}_{index}_{tmintag}_{tmaxtag}.h5'
+    
     print(f'Writing S2 file for phone {phone}: ')
     print(filesave)
+    rw.write_h5(filesave,data)
+
 
 def save_W2(data,date,tmin,tmax,index):
     tmintag = tmin.replace(':','_')

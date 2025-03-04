@@ -62,7 +62,7 @@ def write_h5(filename,data):
             for k in data[key].keys():
                 hf[key].create_dataset(k,data=data[key][k])
         else:
-            hf.create_dataset(key, data=data[key])
+            hf.create_dataset(key, data=np.asarray(data[key]))
     hf.close()
 
 def read_h5(filename):
