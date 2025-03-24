@@ -110,47 +110,21 @@ Il ne décrit que les étapes permettant le traitement total des vidéos.
 	situées sur le contour sont supprimées. Si a = 2, le contour formé par les deux séries de boîtes de PIV les plus à l'extérieures sont supprimées. 
 	Cela peut être utile pour avoir toujours la même taille de boîte de PIV (en pixel). 
 	
+  --> scaling_structure.m / scaling_structure_oblique.m
 	
-## Analyse des données après DIC/PIV
+	Ces fonctions permettent de mettre à l'échelle les champs de déplacement mesurés (y compris les champs de déplacement verticaux dans l'hypothèse où la surface filmée 
+	est plane). Elles ajoutent des champs à une structure pré-existante contenant : les coordonnées spatiales x,y en mètres, le temps t et le temps international t_UTC,
+	ainsi que les vitesses de déplacement mesurées par la PIV. 
 
-  ### Avant-propos 
-  --> Les champs de vitesse obtenus après la PIV peuvent être analysés de différentes façons, les fonctions permettant d'obtenir les principales caractéristiques 
-  du champ de vitesse sont décrites ci-dessous
+	Dans le cas d'une vidéo verticale, les champs horizontaux Vx et Vy sont mis à l'échelle. Dans le cas d'une vue oblique, seul le champ de déplacement vertical Vz
+	est mis à l'échelle
 
-  
-  ### Main functions
-  --> get_histogram_displacement.m :
-  Fonction permettant d'obtenir l'histogram des déplacements moyen (moyenné en temps) pour chaque boîte de PIV. Donc de vérifier les critères de validation de la PIV
 
-  --> plot_located_profile.m : 
-  Permet d'obtenir le signal temporel d'une boîte PIV au cours du temps
 
-  --> supress_quadratic_noise.m : 
-  Supprime les variations quadratiques du champ de vitesse, associées aux variations de position du drone
 
-  --> plot_velocity_features.m : 
-  Plot le champ moyen, et écart-type du champ de vitesse pour Vx et Vy
 
-  --> movie_velocity_field.m :
-  Crée un film du champ de vitesse, en fixant la colorbar avec caxis_amp[0] et caxis_amp[1], affiche le film  avec un frame rate contrôllé par la variable 'fps'
 
-  --> temporal_FFT.m : 
-  Calcul la transformée de Fourier temporelle du champ de vitesse 
 
-  --> plot_demodulated_field.m : 
-  Plot le champ démodulé à différentes fréquences. Possible de créer un film et de sauvegarder les champs démodulés. 
-
-  --> get_wave_vectors.m : 
-  Calcul, pour chaque fréquence f, l'amplitude du vecteur d'onde k associé au champ démodulé à une fréquence f
-
-  --> space_time_spectrum_Efk.m : 
-  Calcul le spectre spatio-temporel E(f,k) (moyenné radialement dans l'espace des nombres d'onde) d'un champ de vitesse V
-
-  --> extract_branchs_from_Efk.m : 
-  Extraits les coordonnées (f,k) associées aux pics de plus hautes amplitudes dans le spectre spatio-temporel E(f,k)
-
-  --> attenuation_coeff_corrected_direction.m :
-  Calcul le coeffcient d'atténuation spatial pour différentes fréquences temporelles composantes d'un champ de vitesse V
 
 
 
