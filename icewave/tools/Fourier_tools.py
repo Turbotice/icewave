@@ -43,7 +43,23 @@ def fft_1D(s,N,fs):
     
     return FFT,freq
 
+def fft_2D(M,facq,add_pow2 = [0,0]):
+    """ Compute 2D FFT of a 2D numpy array
+        Inputs : - M,2D numpy array
+                 - facq, array containing acquisition frequency of each dimension of the array M
+                 - add_pow2, optional argument used to padd each dimension, default is 0"""
 
+    padding = [2**(nextpow2(np.shape(M)[d]) + add_pow2[d]) for d in range(len(np.shape(M)))]
+    print(padding)
+    FFT = np.fft.fft2(M,s = padding)/np.size(M)
+    
+    # compute array of frequencies and wave vectors 
+    kx = 2*np.pi*facq[1]*np.arange(-padding[1]/2,padding[1]/2-1)/padding[1]
+    ky = 2*np.pi*facq[0]*np.arange(-padding[0]/2,padding[0]/2-1)/padding[0]
+    
+    shift = np.fft.fftshift(FFT)
+    return shift,ky,kx
+    
 #---------------------------------------------------------------------------------------------------
 
 def temporal_FFT(H,fps,padding_bool = 1,add_pow2 = 0,output_FFT = False):
@@ -85,6 +101,57 @@ def temporal_FFT(H,fps,padding_bool = 1,add_pow2 = 0,output_FFT = False):
         FFT_t[:,:,1:-1] = 2*FFT_t[:,:,1:-1]
     
         return TF_spectrum,freq,FFT_t
+    
+#------------------------------------------------------------------------------------------------------------------------
+    
+def temporal_FFT_spatio(H,fps,padding_bool = 1,add_pow2 = 0,output_FFT = False):
+    """ Compute FFT along time for a 3D numpy array 
+       Inputs : - H, 3D numpy array, #dim0 : space, #dim1 : space, #dim2 : time
+                - fps , float, acquisition frequency for time
+                - padding_bool, optional argument, boolean to decide if we padd signal or not. Default = 1
+                - add_pow2, optional argument, additional power of 2 used to padd signal, used only
+                if padding_bool = 1. Default = 0
+                - output_FFT, optional argument, if True the complex time FFT is also returned Default = False
+                
+       Outputs : - TF_spectrum, numpy array, amplitude of TF spectrum for a given frequency
+                 - f, numpy array, frequencies
+                 - FFT_t, numpy array, same dimensions as input array H, returned only if output_FFT = True"""          
+   
+    original_length = np.size(H,1) # original length of the signal
+    padding_length = 2**(nextpow2(original_length) + add_pow2)
+    
+    # averaging over time 
+    H_mean = np.mean(H,1)
+    H_mean = np.tile(H_mean,(np.size(H,1),1))
+    H_mean = np.transpose(H_mean,(1,0))
+    H = H - H_mean
+    
+    if padding_bool :
+        FFT_t = np.fft.fft(H,n = padding_length,axis = -1)
+        N = padding_length 
+        print('Padding used')
+    else :
+        FFT_t = np.fft.fft(H,n = N,axis = -1)
+        N = original_length
+        print('No padding')
+    
+    
+    FFT_t = FFT_t/original_length # normalization of the FFT
+    TF_inter = np.mean(abs(FFT_t),0)
+    
+    TF_spectrum = TF_inter[:N//2]
+    TF_spectrum[1:-1] = 2*TF_spectrum[1:-1] # multiply by 2 for peaks that are both in positive an negative frequencies
+    freq = fps*np.arange(0,(N/2))/N
+    
+    if not output_FFT :
+        return TF_spectrum,freq
+    
+    else : 
+    # keep only one half of the spectrum
+        FFT_t = FFT_t[:,:N//2]
+        FFT_t[:,1:-1] = 2*FFT_t[:,1:-1]
+    
+        return TF_spectrum,freq,FFT_t
 
 #----------------------------------------------------------------------------------------------------
 
@@ -102,6 +169,45 @@ def subpix_precision(profile, idx_max):
     max_subpix = p + 0.5*(2*p - p_right - p_left)*delta**2 # max value at the subpixel idx_max
     
     return i_subpix,max_subpix
+
+#------------------------------------------------------------------------------------------------------
+
+def get_demodulated_main_freq(H,t,facq_t,padding_bool = 1,add_pow2 = 0,output_FFT = False,f_demod = ''):
+    """ Compute frequency containing maximum energy (amplitude) and perform demodulation of the signal at this frequency. 
+    An alternative frequency input can be chosen for demodulation. 
+    Inputs : - H : numpy array 2D or 3D, signal array
+             - t : numpy array, time array
+             - facq_t : temporal acquisition frequency
+             - padding_bool : boolean, optional argument to choose padding or not
+             - add_pow2 : int, optional argument to choose amount of padding
+             - output_FFT : boolean, optional argument if we want to get FFT
+             - f_demod : float, optional argument to perform demodulation at this frequency 
+             
+    Outputs : - demod_profile : numpy array, containing profile or surface """
+    
+    
+    if len(np.shape(H)) == 2:
+        TF_spectrum,freq = temporal_FFT_spatio(H,facq_t,padding_bool = padding_bool,
+                                                     add_pow2 = add_pow2,output_FFT = output_FFT)
+        
+    else : 
+        TF_spectrum,freq = temporal_FFT(H,facq_t,padding_bool = padding_bool,
+                                              add_pow2 = add_pow2,output_FFT = output_FFT)
+        
+    # keep demodulated profile
+    idx_demod = np.argmax(TF_spectrum)
+    i_subpix,max_subpix = subpix_precision(TF_spectrum,idx_demod)
+    f_max = freq[idx_demod] + (i_subpix - idx_demod)*(freq[idx_demod + 1] - freq[idx_demod])
+
+    # perform demodulation 
+    if f_demod == '':
+        demod_profile = np.mean(H*np.exp(1j*2*np.pi*f_max*t),axis = -1)
+        return demod_profile,f_max
+    else :
+        demod_profile = np.mean(H*np.exp(1j*2*np.pi*f_demod*t),axis = -1)
+        return demod_profile,f_demod
+    
+
 
 
 #--------------------------------------------------------------------------------------------------------

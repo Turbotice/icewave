@@ -46,7 +46,7 @@ plt.rc('ytick', labelsize=font_size_small)    # fontsize of the tick labels
 plt.rc('legend', fontsize=font_size_medium)    # legend fontsize
 plt.rc('figure', titlesize=font_size_medium)  # fontsize of the figure title
 
-fig_size = (6.4,4.8)
+fig_size = (12,9)
 img_quality = 100 # dpi to save images 
 
 plt.rc('text', usetex=True)
@@ -141,7 +141,7 @@ fps = S['SCALE']['facq_t']
 
 result = FT.space_time_spectrum(Vs, facq_x, fps) 
 
-#%% Sho space FFT for a given frequency
+#%% Show space FFT for a given frequency
 
 f_demod = 0.25
 idx = np.argmin(abs(result['freq'] - f_demod))
@@ -286,6 +286,7 @@ hw_min = scipy.optimize.curve_fit(lambda x,h_w : bound_harmonicN(x,N,h_w),Harm['
                                    Harm['omega'][Harm['closest_harmonic'] == 1])
 
 print(f'Best fit : hw = {hw_min[0]} +- {2*np.sqrt(hw_min[1])}')
+
 #%% Create quadrant figure for article 
 
 fig, ax = plt.subplots(2,2,figsize = (12,9),height_ratios= [1,0.6], width_ratios= [1,1],
@@ -358,6 +359,12 @@ ax[harmonic_window].set_ylim(0,4.4)
 
 
 #%% Create a figure using gridspec
+use_omega = 0
+if use_omega :
+    factor_2pi = 1
+else:
+    factor_2pi = 2*np.pi 
+
 fig = plt.figure(figsize = (12,9),layout = 'constrained')
 
 # Define a GridSpec layout
@@ -395,24 +402,24 @@ ax2.set_ylabel(r'$y \; \mathrm{(m)}$',labelpad = 5)
 
 k_list = np.linspace(0,5,100)
 h_w = 5.0 # water depth on field, in meter
-harmonic1 = bound_harmonicN(k_list, 1, hw_min[0])
+harmonic1 = bound_harmonicN(k_list, 1, hw_min[0])/factor_2pi
 
 ax3 = fig.add_subplot(gs[1,0])
-c = ax3.imshow(Afk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = 6e-4, vmax = 1e-1,
+c = ax3.imshow(Afk['E'].T, cmap = parula_map , aspect = 'auto', norm = 'log', vmin = 6e-4, vmax = 1e-1,
               origin = 'lower', interpolation = 'gaussian',
-              extent = (Afk['k'].min(),Afk['k'].max(),Afk['omega'].min(),Afk['omega'].max()))
-ax3.plot(k_list,harmonic1,'--',color = 'white',lw = 2)
+              extent = (Afk['omega'].min()/factor_2pi,Afk['omega'].max()/factor_2pi,Afk['k'].min(),Afk['k'].max()))
+ax3.plot(harmonic1,k_list,'--',color = 'white',lw = 2)
 ax3.set_xscale('log')
 ax3.set_yscale('log')
-ax3.set_xlim(0.07,2.2)
-ax3.set_ylim(0.5,6)
+ax3.set_ylim(0.07,2.2)
+ax3.set_xlim(0.5/factor_2pi,6/factor_2pi)
 
 
-ax3.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$', labelpad = 5)
-ax3.set_ylabel(r'$\omega \; \mathrm{(rad.s^{-1})}$', labelpad = 5)
+ax3.set_ylabel(r'$k \; \mathrm{(rad.m^{-1})}$', labelpad = 5)
+ax3.set_xlabel(r'$f \; \mathrm{(Hz)}$', labelpad = 5)
 
 cbar = plt.colorbar(c,ax = ax3)
-cbar.set_label(r'$|\hat{V}_x| (k,\omega) \; \mathrm{(u.a.)}$',labelpad = 5)
+cbar.set_label(r'$|\hat{V}_x| (k,f) \; \mathrm{(u.a.)}$',labelpad = 5)
 
 # get axis position 
 # pos3 = ax3.get_position().bounds
@@ -421,26 +428,26 @@ cbar.set_label(r'$|\hat{V}_x| (k,\omega) \; \mathrm{(u.a.)}$',labelpad = 5)
 # add detected harmonics
 
 k_th = np.linspace(0,5,100)
-omega1 = bound_harmonicN(k_th, N = 1, h_w = hw_min[0])
+omega1 = bound_harmonicN(k_th, N = 1, h_w = hw_min[0])/factor_2pi
 
 ax4 = fig.add_subplot(gs[1,1])
-scatter = ax4.scatter(Harm['k'][Harm['closest_harmonic'] == 1], Harm['omega'][Harm['closest_harmonic'] == 1],
+scatter = ax4.scatter(Harm['omega'][Harm['closest_harmonic'] == 1]/factor_2pi, Harm['k'][Harm['closest_harmonic'] == 1],
                      c = Harm['A'][Harm['closest_harmonic'] == 1], s = 70, cmap = new_blues,
                      edgecolors = 'k',zorder = 1)
 
-ax4.plot(k_th,omega1,'--', color = 'red',lw = 2,zorder = 2)
+ax4.plot(omega1,k_th,'--', color = 'red',lw = 2,zorder = 2)
 
 cbar = plt.colorbar(scatter,ax = ax4)
-cbar.set_label(r'$|\hat{V}_x| (k,\omega) \; \mathrm{(u.a.)}$',labelpad = 5)
-ax4.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$', labelpad = 5)
-ax4.set_ylabel(r'$\omega \; \mathrm{(rad.s^{-1})}$', labelpad = 5)
+cbar.set_label(r'$|\hat{V}_x| (k,f) \; \mathrm{(u.a.)}$',labelpad = 5)
+ax4.set_ylabel(r'$k \; \mathrm{(rad.m^{-1})}$', labelpad = 5)
+ax4.set_xlabel(r'$f \; \mathrm{(Hz)}$', labelpad = 5)
 
-ax4.set_xlim(0.07,2.3)
-ax4.set_ylim(0.5,6)
+ax4.set_ylim(0.07,2.3)
+ax4.set_xlim(0.5/factor_2pi,6/factor_2pi)
 ax4.set_xscale('log')
 ax4.set_yscale('log')
 
-figname = fig_folder + 'Subplot_Drone_wave_field'
+figname = fig_folder + 'Subplot_Drone_wave_field_kf'
 plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.svg', bbox_inches='tight')
 
