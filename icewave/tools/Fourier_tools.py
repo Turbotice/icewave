@@ -431,3 +431,41 @@ def space_time_spectrum(V,facq_x,facq_t,add_pow2 = [0,0,0]):
     result = {'E':E,'shift':shift,'k':k,'freq':freq,'kx':kx,'ky':ky}
     
     return result
+
+#--------------------------------------------------------------------------------------------------
+
+def procrustes_alignement(points_project,points_ref,output_rescaling = 0):
+    """ Align two set of corresponding points, using a rotation and a translation. 
+    Inputs : - point_project, numpy array, set of points to be projected
+            Points coordinates should be the last dimension
+             - points_ref, numpy array, set of points to used as reference
+    Outputs : - R, rotation matrix to apply to points_project
+              - t, translation vector to apply to points_project """
+              
+    # Compute centers
+    c_proj = np.nanmean(points_project,axis = 0)
+    c_ref = np.nanmean(points_ref,axis = 0)
+    # reduce center position
+    centered_proj = points_project - c_proj
+    centered_ref = points_ref - c_ref
+    
+    # compute rescaling factor if output_rescaling = 1
+    if output_rescaling :
+        scale_factor = np.sum(centered_ref**2)/np.sum(centered_proj**2)
+    else :
+        scale_factor = 1
+    
+    # Compute best rotation
+    H = centered_proj.T @ centered_ref # Cross-covariance matrix
+    U,S,Vt = np.linalg.svd(H) # SVD
+    R = Vt.T @ U.T # Compute optimal rotation
+
+    # Ensure a proper rotation (no reflection)
+    if np.linalg.det(R) < 0:
+        Vt[-1,:] *= -1
+        R = Vt.T @ U.T  
+        
+    # Compute best translation 
+    t = c_ref - scale_factor * R @ c_proj
+        
+    return scale_factor,R,t 

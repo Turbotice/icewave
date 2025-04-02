@@ -209,6 +209,44 @@ def pol2cart(rho,phi):
     y = rho * np.sin(phi)
     return (x,y)
 
+
+def XY2GPS(X,Y,Lat0,Long0,azimuth):
+    """ Convert cartesian coordinates X,Y to GPS coordinates
+    Inputs : - X,Y : numpy array, containing cartesian (X,Y) coordinates with respect to a reference point O 
+             - Lat0,Long0 : GPS coordinates of reference point (in degrees)
+             - azimuth : orientation of the cartesian system with respect to the geographic north (in degrees, between 
+                                                                                                   0 and 360)
+             This azimuth angle is measured between geographic north direction and axis Y of cartesian system
+    Outputs : - Lat,Long : numpy array, GPS coordinates of the selected points"""
+    
+    # convert cartesian to polar coordinates
+    rho,theta = cart2pol(X,Y)
+    theta = theta*180/np.pi
+    # compute azimuth of all selected points
+    local_azimuth = azimuth + 90 - theta
+    Lat,Long = LatLong_coords_from_referencepoint(Lat0,Long0,
+                                                    local_azimuth,rho)
+    return Lat,Long
+
+def GPS2XY(lat,long,Lat0,Long0,azimuth,R_earth = 6371e3):
+    """Compute cartesian coordinates (X,Y) from GPS coordinates
+    Inputs : - lat,long : numpy array, GPS coordinates (in degrees)
+             - Lat0,Long0 : GPS coordinates of the point chosen as a reference for the cartesian coordinates system (in degrees)
+             - azimuth : angle with respect to geopgraphic north with which the cartesian system will be oriented (in degrees,
+                                                                                                            between 0 and 360)
+             This azimuth angle is measured between geographic north direction and axis Y of cartesian system
+    Outputs : - X,Y : numpy array, cartesian coordinates (in meter) """
+    
+    rho = R_earth*np.sqrt(((lat - Lat0)*np.pi/180)**2 + np.cos(Lat0*np.pi/180)**2 * ((long - Long0)*np.pi/180)**2)
+
+    psi = 360 + np.arctan2(np.cos(Lat0*np.pi/180)*(long - Long0)*np.pi/180,(lat - Lat0)*np.pi/180)*180/np.pi
+
+    theta = azimuth - psi + 90
+    # compute euclidean coordinates
+    X,Y = pol2cart(rho,theta*np.pi/180)
+    
+    return X,Y
+
 def backward_projection(fun,points,y0,h,alpha_0,focale,fps,Dt):
     """ Computation of vertical velocity field from the pixel displacement along vertical of the camera. 
     
@@ -274,3 +312,62 @@ def vertical_velocity_from_pixel_displacement(Vy,x_pix,y_pix,t,y0,h,alpha_0,foca
     print('Elapsed time : ',elapsed_time, ' s')
     
     return Vz
+
+
+#--------------------------------------------------------------------------------------------------------------------------------
+
+def change_XY_reference_system(X,Y,param_projected,param_ref,R,translation,scaling):
+    """ Return metric coordinates (X_proj,Y_proj) in a new reference system associated
+    to an other drone (ref_drone). Metric coordinates are converted to GPS coordinates, then rotation, translation
+    and scaling operations are perfomed (these operations are based on tracking of buoys). 
+    
+    Inputs : - X,Y : numpy array, metric coordinates
+             - param_projected : dictionnary, contain parameters of the drone to be projected
+             - param_ref : dictionnary, containe parameters of the drone chosen as a reference
+             These parameters must contain following keys : 
+                     + h : drone height
+                     + alpha_0 : pitch angle (radian)
+                     + latitude : drone latitude (deg)
+                     + longitude : drone longitude (deg)
+                     + azimuth : drone azimuth (deg), between 0 and 360
+                 
+             - R : numpy array, rotation matrix shape (2,2)
+             - translation : numpy array, translation vector (Lat,Long), shape (2,)
+             - scaling : scalar, scaling factor 
+    Outputs : - X_proj,Y_proj : numpy array, metric coodrinates in the new reference system """
+    
+    # get GPS coordinates 
+    # coordinates of central point in projected_drone coordinates system
+    dist2drone = param_projected['h']/np.tan(param_projected['alpha_0'])
+    LatD = param_projected['latitude']
+    LongD = param_projected['longitude']
+    azimuth_drone = param_projected['azimuth']
+    Lat0,Long0 = LatLong_coords_from_referencepoint(LatD,LongD,
+                                                    azimuth_drone,dist2drone)
+
+    Lat,Long = XY2GPS(X,Y,Lat0,Long0,azimuth_drone)
+    latlong = np.stack([Lat,Long],axis = -1)
+
+    # reshape matrix
+    reshape_latlong = np.reshape(latlong,(-1,2))
+
+    # apply procruste operations to Lat,Long
+    rotated = R @ reshape_latlong.T
+    latlong_transfo = scaling * rotated.T + translation[None,...]
+
+    # reshape matrix 
+    latlong_transfo = np.reshape(latlong_transfo,(X.shape[0],X.shape[1],2))
+
+    # get GPS coordinates of reference drone
+    # coordinates of central point in ref_drone coordinates system
+    dist2drone = param_ref['h']/np.tan(param_ref['alpha_0'])
+    Lat_ref = param_ref['latitude']
+    Long_ref = param_ref['longitude']
+    azimuth_ref = param_ref['azimuth']
+    Lat0,Long0 = LatLong_coords_from_referencepoint(Lat_ref,Long_ref,
+                                                    azimuth_ref,dist2drone)
+
+    X_proj,Y_proj = GPS2XY(latlong_transfo[:,:,0],latlong_transfo[:,:,1],Lat0,Long0,azimuth_ref)
+    
+    return X_proj,Y_proj    
+
