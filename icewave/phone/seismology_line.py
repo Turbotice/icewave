@@ -283,7 +283,7 @@ for key_phone in data.keys():
 
 #%% Plot selected channel for all phones 
 
-channel = 'a_E'
+channel = 'a_Z'
 
 fig, ax = plt.subplots()
 for i,phone_key in enumerate(data.keys()):
@@ -332,6 +332,17 @@ with open(file2save, 'wb') as f:
     pickle.dump(time_dict, f)
 
 print('Time dictionnary saved')
+
+#%% Load time table
+
+path2table = 'C:/Users/sebas/OneDrive/Bureau/'
+path2file = f'{path2table}Datat0_time_0211.pkl'
+
+with open(path2file,'rb') as pf:
+    loaded_data2 = pickle.load(pf)
+
+
+
 
 #%% Create a seismic matrix 
 
