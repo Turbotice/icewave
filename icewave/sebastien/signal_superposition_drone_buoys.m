@@ -35,7 +35,7 @@ m_mesange = load(filename);
 %% Load single buoy data and extract synchronized vertical velocity 
 key = 'B5';
 table_buoy = struct('B1',1,'B4',2,'B5',3);
-base = ['F:/Rimouski_2024/Data/2024/0211/BoueeVague/' key '/mat/'];
+base = ['F:/Rimouski_2024/Data/0211/BoueeVague/' key '/mat/'];
 
 buoy_filename = [base 'buoy' key(2) '_sbg_20240211_2000.mat'];
 
