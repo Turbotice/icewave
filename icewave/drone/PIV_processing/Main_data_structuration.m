@@ -89,8 +89,7 @@ disp(['Interrogation window size = ' num2str(w) ''])
 % define space scaling for PIV boxes
 facq_x = facq_pix*2/w; % scale in box / meter
 fx = 1/facq_x; % factor scaling in meter / box
-scale_V = (facq_t/Dt) / facq_x; % scale of the velocity in m/s
-
+scale_V = (facq_t/Dt) / facq_pix; % scale of the velocity in m/s
 
 % post-processing
 [u_filt,v_filt] = PIV_banquise_postprocessing(u,v,w,N);

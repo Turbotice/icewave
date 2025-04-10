@@ -194,6 +194,9 @@ plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
 fig, ax = plt.subplots()
 ax.plot(procruste_op['scaling'])
 
+######################################################################
+################## COMPARISON WITH BUOYS #############################
+######################################################################
 
 #%% Load buoys position dictionnary 
 
@@ -343,7 +346,7 @@ for key_drone in UTC0_drone.keys():
     
 # compute UTC_t for drones, based on UTC0 of bernache
 ref_time = 'bernache'
-t_drone = np.arange(0,Vz.shape[2])/fps
+t_drone = np.arange(0,Vz[ref_time].shape[2])/fps
 UTC_drone = []
 for t in t_drone:
     t_epoch = UTC0_drone['bernache'].timestamp() + t
@@ -362,7 +365,6 @@ UTC_drone = UTC_drone + synchro_buoy_drone['shift_timedelta']
 
 #%% Plot superposition interpolated Vz and Vz measured by buoy
 
-key_buoy = 'B5'
 type_signal = 'filtered'
 
 ylim = {'B5' : [-0.6,0.6],'B4': [-0.9,0.9], 'B1': [-1.5,1.5]}
@@ -386,42 +388,6 @@ for key_buoy in Vz_buoy_traj.keys():
     figname = f'{fig_folder}{key_buoy}_interpolated_Vz_ref_{ref_drone}_projected_{projected_drone}'
     plt.savefig(f'{figname}.png', bbox_inches = 'tight')
     plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
-
-
-# # stack coordinates of grid
-# points_ref = np.column_stack((X_ref.ravel(),Y_ref.ravel())) # shape (M*N,2)
-# points_proj = np.column_stack((X_proj.ravel(),Y_proj.ravel())) # shape (M*N,2)
-
-# interp_Vz[ref_drone] = np.zeros((Vz_ref.shape[2]))
-# interp_Vz[projected_drone] = np.zeros((Vz_ref.shape[2]))
-# for i in range(Vz_ref.shape[2]):
-#     print(i)
-#     # create interpolator
-#     interpolator_ref = LinearNDInterpolator(points_ref, Vz_ref[:,:,i].ravel())
-#     interp_Vz[ref_drone][i] = interpolator_ref(Xbuoy[i],Ybuoy[i])
-
-#     interpolator_proj = LinearNDInterpolator(points_proj, Vz[:,:,i].ravel())
-#     interp_Vz[projected_drone][i] = interpolator_proj(Xbuoy[i],Ybuoy[i])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -483,62 +449,20 @@ for key_drone in UTC0_drone.keys():
 # compute UTC_t for drones, based on UTC0 of bernache
 ref_time = 'bernache'
 fps = 30
-t_drone = np.arange(0,Vz.shape[2])/fps
+t_drone = np.arange(0,Vz[ref_time].shape[2])/fps
 UTC_t['drone'] = []
 for t in t_drone:
     t_epoch = UTC0_drone['bernache'].timestamp() + t
     UTC_t['drone'].append(datetime.utcfromtimestamp(t_epoch).replace(tzinfo = pytz.utc))
     
-#%% Compute vertical velocity from vertical acceleration 
-fs = 50 # sampling frequency
-fc = 0.1 # cutoff frequency
 
-order_filter = 4
-b,a = signal.butter(order_filter,fc,'high',fs = fs)
-f_array,h = signal.freqz(b,a,fs = fs)
-
-fig,ax = plt.subplots()
-ax.semilogx(f_array,20*np.log10(abs(h)))
-ax.set_xlabel(r'$f \; \mathrm{(Hz)}$')
-ax.set_ylabel(r'Amplitude (dB)')
-ax.grid(which = 'both',axis = 'both')
-ax.axvline(fc,color = 'green')
-
-# Apply filter to signal 
-filtered_az = signal.filtfilt(b,a,az)
-
-# Compute vertical velocity
-Vz_buoy = np.cumsum(filtered_az - np.mean(filtered_az))/fs
-
-#%% Superpose vertical velocities
-
-# filter drone signal
-fs = 30 # sampling frequency
-fc = 1 # cutoff frequency
-
-order_filter = 4
-b,a = signal.butter(order_filter,fc,'low',fs = fs)
-f_array,h = signal.freqz(b,a,fs = fs)
-
-fig,ax = plt.subplots()
-ax.semilogx(f_array,20*np.log10(abs(h)))
-ax.set_xlabel(r'$f \; \mathrm{(Hz)}$')
-ax.set_ylabel(r'Amplitude (dB)')
-ax.grid(which = 'both',axis = 'both')
-ax.axvline(fc,color = 'green')
-
-# Apply filter to signal 
-filtered_Vz = {}
-for key in interp_Vz.keys():
-    filtered_Vz[key] = signal.filtfilt(b,a,interp_Vz[key])
-
-
+    
 #%%
 fig, ax = plt.subplots()
 
-ax.plot(UTC_t['drone'],filtered_Vz[ref_drone])
-ax.plot(UTC_t['drone'],filtered_Vz[projected_drone])
-ax.plot(UTC_t['buoy'],Vz_buoy,'k')
+ax.plot(UTC_t['drone'],Vz_buoy_traj[key_buoy]['filtered'][ref_drone])
+ax.plot(UTC_t['drone'],Vz_buoy_traj[key_buoy]['filtered'][projected_drone])
+ax.plot(UTC_t['buoy'],Vz_buoy[key_buoy],'k')
 
 #%%
 
@@ -547,7 +471,7 @@ tstart = datetime(2024,2,11,20,34,50).replace(tzinfo = pytz.utc)
 tend = datetime(2024,2,11,20,37,26).replace(tzinfo = pytz.utc)
 
 mask = [np.logical_and(t > tstart,t < tend) for t in UTC_t['buoy']]
-Vz_ROI = Vz_buoy[mask]
+Vz_ROI = Vz_buoy[key_buoy][mask]
 UTC_ROI = np.array(UTC_t['buoy'])[mask]
 
 delta_t0 = UTC_t['drone'][0] - UTC_ROI[0]
@@ -555,8 +479,8 @@ add_dt = timedelta(seconds = 18)
 shifted_UTC_drone = np.array(UTC_t['drone']) - delta_t0 + add_dt
 
 fig, ax = plt.subplots()
-ax.plot(shifted_UTC_drone,filtered_Vz[ref_drone])
-ax.plot(shifted_UTC_drone,filtered_Vz[projected_drone])
+ax.plot(shifted_UTC_drone,Vz_buoy_traj[key_buoy]['filtered'][ref_drone])
+ax.plot(shifted_UTC_drone,Vz_buoy_traj[key_buoy]['filtered'][projected_drone])
 ax.plot(UTC_ROI,Vz_ROI,'k')
 
 #%%
@@ -578,7 +502,7 @@ for i in range(len(shift)):
     mask_drone = [np.logical_and(t > tmin,t < tmax) for t in x]
     short_UTC['drone'] = x[mask_drone]
     for key in filtered_Vz.keys():
-        short_Vz[key] = filtered_Vz[key][mask_drone]
+        short_Vz[key] = Vz_buoy_traj[key_buoy]['filtered'][key][mask_drone]
     
     x = np.array([t.timestamp() for t in short_UTC['drone']])
     xp = np.array([t.timestamp() for t in short_UTC['buoy']])
@@ -600,8 +524,8 @@ time_precision = np.diff([shift[idx_min[key]] for key in idx_min.keys()])[0]
 x = shifted_UTC_drone + timedelta(milliseconds = int(time_precision/2))
 mask_drone = [np.logical_and(t > tmin,t < tmax) for t in x]
 short_UTC['drone'] = x[mask_drone]
-for key in filtered_Vz.keys():
-    short_Vz[key] = filtered_Vz[key][mask_drone]
+for key in Vz_buoy_traj[key_buoy]['filtered'].keys():
+    short_Vz[key] = Vz_buoy_traj[key_buoy]['filtered'][key][mask_drone]
 
 x = np.array([t.timestamp() for t in short_UTC['drone']])
 xp = np.array([t.timestamp() for t in short_UTC['buoy']])
@@ -630,9 +554,9 @@ total_shift =  add_dt + timedelta(milliseconds = int(time_precision/2)) - delta_
 
 fig, ax = plt.subplots()
 new_UTC_drone = np.array(UTC_t['drone']) + total_shift
-ax.plot(new_UTC_drone,filtered_Vz[ref_drone])
-ax.plot(new_UTC_drone,filtered_Vz[projected_drone])
-ax.plot(UTC_t['buoy'],Vz_buoy,'k')
+ax.plot(new_UTC_drone,Vz_buoy_traj[key_buoy]['filtered'][ref_drone])
+ax.plot(new_UTC_drone,Vz_buoy_traj[key_buoy]['filtered'][projected_drone])
+ax.plot(UTC_t['buoy'],Vz_buoy[key_buoy],'k')
 
 synchro_buoy_drone = {'shift_timedelta':total_shift,'shift_seconds':total_shift.total_seconds(),
                       'to_be_applied':'drone','initial_frame_drone':520}
