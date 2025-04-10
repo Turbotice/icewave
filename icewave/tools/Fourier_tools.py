@@ -10,7 +10,7 @@ Created on Mon Dec 23 10:01:39 2024
 import math
 import numpy as np
 from scipy.fftpack import fft, ifft
-
+from scipy.fft import fftn,fftshift
 
 #----------------------------------------------------------------------------------------------------
 
@@ -272,11 +272,11 @@ def polyfit2d(x, y, z, n=3, m=3, order=None):
 def supress_quadratic_noise(V,x,y):
     """ Supress noise associated to drone motion. Drone motion is supposed to introduce a quadratic field to 
     the wave field measured using DIC. 
-    Inputs : - V, velocity field, np.ndarray 3D [nx,ny,nt]
+    Inputs : - V, velocity field, np.ndarray 3D [ny,nx,nt]
              - x, x-coordinates, np.ndarray 1D
              - y, y-coordinates, np.ndarray 1D
              
-    Outputs : - Vs, velocity field corrected from quadratic noise, np.ndarray 3D [nx,ny,nt] """
+    Outputs : - Vs, velocity field corrected from quadratic noise, np.ndarray 3D [ny,nx,nt] """
     
     Vs = np.zeros(np.shape(V))
     nx = 2
@@ -400,7 +400,8 @@ def space_time_spectrum(V,facq_x,facq_t,add_pow2 = [0,0,0]):
               - ky, list of wave vectors y-coordinate """
 
     padding = [2**(nextpow2(np.shape(V)[d]) + add_pow2[d]) for d in range(3)]
-    FFT = np.fft.fftn(V,s = padding ,axes = (0,1,2))/np.size(V)
+    print(f'Dimensions of array after padding : {padding}')
+    FFT = fftn(V,s = padding ,axes = (0,1,2))/np.size(V)
     
     # compute array of frequencies and wave vectors 
     freq = facq_t*np.arange(0,(padding[2]/2))/padding[2]
@@ -412,7 +413,7 @@ def space_time_spectrum(V,facq_x,facq_t,add_pow2 = [0,0,0]):
     FFT_positive = FFT[:,:,:padding[2]//2]
     FFT_positive[:,:,1:-1] = 2*FFT_positive[:,:,1:-1]
     
-    shift = np.fft.fftshift(FFT_positive,axes = (0,1))
+    shift = fftshift(FFT_positive,axes = (0,1))
     
     # center of the FFT 
     x0 = padding[1]//2
@@ -428,7 +429,7 @@ def space_time_spectrum(V,facq_x,facq_t,add_pow2 = [0,0,0]):
     k = 2*np.pi*R_tics*facq_x/padding[0]
     E = np.array(E)
     
-    result = {'E':E,'shift':shift,'k':k,'freq':freq,'kx':kx,'ky':ky}
+    result = {'E':E,'shift':shift,'k':k,'f':freq,'kx':kx,'ky':ky}
     
     return result
 
