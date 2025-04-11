@@ -151,8 +151,9 @@ function [S_A] = amplitude_corrected_direction(FFT_t,f,x,y,facq_x,L0,xmin,f_cuto
         % saveas(gcf,figname,'pdf')
 
         % Get averaged amplitude 
-        A = squeeze(mean(abs(field_star),2)); % amplitude along x-axis for current frequency
-
+        A_real = real(mean(field_star,2)); % real field averaged over y-axis 
+        A = squeeze(abs(mean(field_star,2))); % amplitude along x-axis for current frequency
+        
         if isempty(f_cutoff)
             i_max = length(A); % maximum index 
         else 
@@ -180,11 +181,15 @@ function [S_A] = amplitude_corrected_direction(FFT_t,f,x,y,facq_x,L0,xmin,f_cuto
         % restrict to the boundaries in order to fit
         x_fit = x_star(i_min:i_max); % in meter !!
         A_red = A(i_min:i_max); % restricted to the region of interest
-        
+        real_red = A_real(i_min:i_max);
+
         plot(x_fit,A_red,'o')
+        hold on 
+        plot(x_fit,real_red)
+        hold off
         xlabel('$x \: \rm (m)$','Interpreter','latex');
         ylabel('$\langle | \hat{V_x} | \rangle _y (x,f) \: \rm (m)$','Interpreter','latex');
-                ax = gca;
+        ax = gca;
         ax.FontSize = 13;
         set_Papermode(decay_fig);
 

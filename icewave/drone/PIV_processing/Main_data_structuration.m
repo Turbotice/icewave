@@ -10,14 +10,14 @@
 %% Post-process raw datas from PIV analysis and create an associated structure 
 
 clear all;
-date = '0205';
+date = '0226';
 drone_name = 'mesange';
-exp_ID = '07-waves_003';
+exp_ID = '23-waves_012';
 ID = [date '_' drone_name '_' exp_ID];
 
-base = ['E:/Data/' date '/Drones/' drone_name '/'];
+base = ['/media/turbots/Elements/Share_hublot/Data/' date '/Drones/' drone_name '/'];
 folder = [base 'matData/' exp_ID '/'];% folder of raw datas
-filename = 'PIV_processed_i01_N0_Dt4_b1_W32_xROI317_width3523_yROI1_height2159.mat'; % file to load
+filename = 'PIV_processed_i00_N0_Dt6_b1_W32_xROI1_width3839_yROI1_height2159.mat'; % file to load
 fullname = [folder filename];
 
 
@@ -28,7 +28,7 @@ fullname = [folder filename];
 % ##########################################
 Lx = 3840; % size of the image in pixel, along larger axis (x-axis)
 Ly = 2160; % size of the image in pixel, along minor axis (y-axis)
-h_drone = 120.1; % height of the drone in meter
+h_drone = 165.7; % height of the drone in meter
 alpha_0 = 90*pi/180; % camera pitch angle to the horizontal
 
 x_0 = (Lx + 1)/2; % camera sensor center
@@ -38,22 +38,22 @@ focale = 2700; %in pixels
 theta_x = atan(Lx/focale/2); % semi AFOV of the drone, along x-axis, in °
  
 facq_pix = Lx/(2*h_drone*tan(theta_x)); % scale in pixels / meter
-facq_t = 29.97; % Frame rate in Hz
+facq_t = 30; % Frame rate in Hz
 ft = 1/facq_t ; % factor scaling for time in sec / frame
 % ##########################################
 
 % Longitude and latitude during flight 
-latitude = 48.32711 ;
-longitude = -68.86078 ;
+latitude = 48.34951 ;
+longitude = -68.81569 ;
 
 % Create t0 local (beginning of flight)
-Y = 2025;
+Y = 2024;
 M = 02;
-D = 05;
-H = 11; % local time of drone
-MIN = 20;
-S = 17;
-MS = 781;
+D = 26;
+H = 21; % local time of drone
+MIN = 35;
+S = 59;
+MS = 647;
 
 if strcmp(drone_name,'mesange')
     TimeZone = 'Europe/Paris'; % mesange 
@@ -89,7 +89,7 @@ disp(['Interrogation window size = ' num2str(w) ''])
 % define space scaling for PIV boxes
 facq_x = facq_pix*2/w; % scale in box / meter
 fx = 1/facq_x; % factor scaling in meter / box
-scale_V = (facq_t/Dt) / facq_pix; % scale of the velocity in m/s
+scale_V = (facq_t/Dt) / facq_pix; % scale of the velocity in m.frame/pixel/s
 
 % post-processing
 [u_filt,v_filt] = PIV_banquise_postprocessing(u,v,w,N);
