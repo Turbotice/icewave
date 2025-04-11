@@ -63,7 +63,13 @@ def fft_2D(M,facq,add_pow2 = [0,0]):
 #---------------------------------------------------------------------------------------------------
 
 def temporal_FFT(H,fps,padding_bool = 1,add_pow2 = 0,output_FFT = False):
-    
+    """ Compute time FFT and FFT spectrum of array H
+    Inputs : - H, numpy.ndarray, time should be last dimension 
+             - fps, float, acquisition frequency
+             - padding_bool, boolean, to pad or not along time dimension
+             - add_pow2, integer, additional power of 2 for padding
+             - output_FFT, boolean, if we want to return array with FFT along time of not"""
+             
     original_length = np.size(H,2) # original length of the signal
     padding_length = 2**(nextpow2(original_length) + add_pow2)
 
