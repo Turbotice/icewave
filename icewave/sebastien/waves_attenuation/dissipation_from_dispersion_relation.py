@@ -16,7 +16,6 @@ import scipy
 import math
 # from skimage.filters import meijering, sato, frangi, hessian
 
-
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors 
@@ -238,7 +237,7 @@ if not os.path.isdir(save_folder):
 Vs = FT.supress_quadratic_noise(np.transpose(data['Vx'],(1,0,2)),data['x'],data['y'])
 
 #%% Compute FFT spectrum 
-TF_spectrum,freq = FT.temporal_FFT(Vs,data['SCALE']['facq_t'],padding_bool = 1,add_pow2 = 1)
+TF_spectrum,freq = FT.temporal_FFT(Vs,data['SCALE']['facq_t'],padding_bool = 1,add_pow2 = 0)
 
 #%%
 set_graphs.set_matplotlib_param('single')
@@ -249,7 +248,7 @@ ax.set_ylabel(r'$\langle |\hat{V}_x| \rangle _{x,y}(f) \; \mathrm{(u.a.)}$',labe
 ax.set_xscale('log')
 ax.set_yscale('log')
 
-ax.set_ylim([1e-3,1e1])
+ax.set_ylim([1e-5,1e0])
 
 figname = f'{fig_folder}TF_spectrum_{date}_{drone_ID}_{exp_ID}'
 plt.savefig(figname + '.pdf', bbox_inches='tight')
@@ -261,7 +260,7 @@ FFT_spectrum = {}
 FFT_spectrum['TF_spectrum'] = TF_spectrum
 FFT_spectrum['f'] = freq
 
-#%% Compute 
+#%% Compute space time spectrum 
 Vs = np.transpose(Vs,(1,0,2))
 Efk = FT.space_time_spectrum(Vs,1/data['SCALE']['fx'],data['SCALE']['facq_t'],add_pow2 = [0,0,0])
 
@@ -269,7 +268,7 @@ Efk = FT.space_time_spectrum(Vs,1/data['SCALE']['fx'],data['SCALE']['facq_t'],ad
 
 set_graphs.set_matplotlib_param('single')
 fig, ax = plt.subplots()
-c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = 3e-4, vmax = 1e-1,
+c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = 1e-5,vmax = 1e-2,
               origin = 'lower', interpolation = 'gaussian',
               extent = (Efk['k'].min(),Efk['k'].max(),Efk['f'].min(),Efk['f'].max()))
 
@@ -303,7 +302,7 @@ N = 8
 gaussian = scipy.signal.windows.gaussian(M = gaussian_width * N,std = gaussian_width)
 detec_param = {'prominence':1e-2,'rel_height':0.6}
 wavevector_range = [0.05,2.0]
-frequency_range = [0,1.2]
+frequency_range = [0,1.5]
 
 S = matrix_peak_correlation_detection(Afk['E'], Afk['k'], Afk['f'], wavevector_range, frequency_range, gaussian, detec_param)
 # change key name
@@ -319,14 +318,14 @@ filtered_x,filtered_y,filtered_properties = scatter_filter.interactive_scatter_f
 
 fig, ax = plt.subplots()
 ax.plot(filtered_properties['k'],filtered_properties['f'],'o')
-c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = 3e-4, vmax = 1e-1,
+c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = 2e-5,vmax = 1e-3,
               origin = 'lower', interpolation = 'gaussian',
               extent = (Efk['k'].min(),Efk['k'].max(),Efk['f'].min(),Efk['f'].max()))
 
 # ax.set_xscale('log')
 # ax.set_yscale('log')
-ax.set_xlim(0.1,3.3)
-ax.set_ylim(0.09,1.3)
+ax.set_xlim(0.05,3.3)
+ax.set_ylim(0.05,1.3)
 
 ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$', labelpad = 5)
 ax.set_ylabel(r'$f \; \mathrm{(Hz)}$', labelpad = 5)
@@ -341,13 +340,27 @@ with open(file2save,'wb') as pf:
     
 #%% Select a peak and cascade down to compute width over which we perform fitting
 
+# load filtered properties 
+file2load = f'{fig_folder}Filtered_peaks_respectto_f_fixed_k.pkl'
+with open(file2load,'rb') as pf:
+   filtered_properties = pickle.load(pf)
+    
 rel_height = detec_param['rel_height']
 
 m = {'A':[],'f':[],'k':[],'lambda':[],'err_f':[],'err_lambda':[],'d':[]}
 
-indices = np.where(np.logical_and(Afk['k'] > wavevector_range[0],Afk['k'] < wavevector_range[1]))[0]
-selected_k = Afk['k'][indices]
+mask_f = np.where(np.logical_and(Efk['f'] < frequency_range[1],Efk['f'] > frequency_range[0]))[0]
+Afk['f'] = Efk['f'][mask_f]
+Afk['E'] = Efk['E'][mask_f,:]
+
+indices = np.where(np.logical_and(Efk['k'] > wavevector_range[0],Efk['k'] < wavevector_range[1]))[0]
 fig, ax = plt.subplots()
+# fig,ax1 = plt.subplots()
+
+sub_folder = f'{fig_folder}Lorentzian_fit/'
+if not os.path.isdir(sub_folder):
+    os.mkdir(sub_folder)
+
 for idx in indices:
 
     ax.clear()
@@ -366,10 +379,12 @@ for idx in indices:
     norm_correlated = correlated/correlated.max()
     
     ax.plot(Afk['f'],norm,'-o',label = label_k)
-    ax.plot(Afk['f'],norm_correlated,'-o')
+    ax.plot(Afk['f'],norm_correlated)
     
     for p in peaks:
 
+        # ax1.clear()
+        
         points2fit = indices2fit(norm_correlated,Afk['f'],p,rel_height)
         # plot points
         ax.plot(Afk['f'][p],norm_correlated[p],'s')
@@ -381,14 +396,19 @@ for idx in indices:
             
             # gaussian fit 
             popt,pcov = scipy.optimize.curve_fit(lambda x,x0,sigma : lorentzian(x, x0, sigma),x,y_exp,
-                                                 bounds = ([x[0],1e-5],[x[-1],10]))
-            xfit = np.linspace(x[0],x[-1],len(x))
-            yth = lorentzian(xfit, popt[0], popt[1])
-            yth = yth*(section[points2fit].max() - section[points2fit].min()) + section[points2fit].min()
+                                                 bounds = ([x[0],1e-3],[x[-1],1]))
             err_coeff = np.sqrt(np.diag(pcov))
             print(f'f0 = {popt[0]:.2f} ± {err_coeff[0]:.2f} and alpha = {popt[1]:.2e} ± {err_coeff[1]:.2e}')
-
-            ax.plot(xfit,yth,'r-')  
+            
+            xfit = np.linspace(x[0],x[-1],len(x))
+            yth = lorentzian(xfit, popt[0], popt[1])
+            
+            # ax1.plot(x,y_exp,'o')
+            # ax1.plot(xfit,yth)
+            
+            yplot = yth*(section[points2fit].max() - section[points2fit].min()) + section[points2fit].min()
+            yplot = yplot/section.max()
+            ax.plot(xfit,yplot,'r-')  
             
             # compute distance to fit
             dist2fit = np.sum((y_exp - yth)**2)/np.sum(y_exp**2)
@@ -400,7 +420,18 @@ for idx in indices:
             m['err_f'].append(err_coeff[0])
             m['err_lambda'].append(err_coeff[1])
         
-    plt.pause(1.0)
+    # fancy plot and save it 
+    ax.set_xlabel(r'$f \; \mathrm{(Hz)}$',labelpad = 5)
+    ax.set_ylabel(r'$A_{norm}$',labelpad = 5)
+    ax.legend()
+    
+    k_txt = f'{detected_k:.2f}'.replace('.','p')
+    figname = f'{sub_folder}Lorentzian_fit_respectto_f_fixed_k_{k_txt}'
+    
+    plt.savefig(figname + '.pdf', bbox_inches='tight')
+    plt.savefig(figname + '.png', bbox_inches='tight')
+        
+    plt.pause(0.5)
         
 for key in m.keys():
     m[key] = np.array(m[key])    
@@ -412,7 +443,7 @@ y_exp = bound_harmonicN(m['k'], 1, popt[0])/2/np.pi
 set_graphs.set_matplotlib_param('single')
 fig, ax = plt.subplots()
 ax.plot(m['k'],m['f'],'.w')
-c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = 3e-4, vmax = 1e-1,
+c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = 2e-5,vmax = 1e-3,
               origin = 'lower', interpolation = 'gaussian',
               extent = (Efk['k'].min(),Efk['k'].max(),Efk['f'].min(),Efk['f'].max()))
 
@@ -484,6 +515,8 @@ m['power_law']['err_beta'] = err_coeff[0]
 file2save = f'{save_folder}attenuation_from_Efk_respect2f_{date}_{drone_ID}_{exp_ID}.pkl'
 with open(file2save,'wb') as pf :
     pickle.dump(m,pf)
+    
+    
 #%% Create main_results structure and save it 
 
 main_results = {}
@@ -497,23 +530,218 @@ main_results['t0_UTC'] = data['t0_UTC']
 main_results['FFT_spectrum'] = FFT_spectrum
 main_results['attenuation'] = m
 
+main_results['disp_relation'] = {}
+main_results['disp_relation']['hw'] = hw
+main_results['disp_relation']['err_hw'] = err_hw
+
+
 file2save = f'{save_folder}main_results_{date}_{drone_ID}_{exp_ID}.pkl'
 with open(file2save,'wb') as pf :
-    pickle.dump(m,pf)
+    pickle.dump(main_results,pf)
 
 
 
 
 
+###############################################################################################################
+###############################################################################################################
+
+#%% Detect harmonics for a given frequency and perform peak detection
+# Build Gaussian to be convoluted
+gaussian_width = 2
+N = 6
+gaussian = scipy.signal.windows.gaussian(M = gaussian_width * N,std = gaussian_width)
+detec_param = {'prominence':1e-2,'rel_height':0.4}
+frequency_range = [0,1.5]
+wavevector_range = [0.05,2.0]
 
 
+S = matrix_peak_correlation_detection(Afk['E'], Afk['k'], Afk['f'], wavevector_range, frequency_range, gaussian, detec_param)
+# change key name
+S['k'] = S['x']
+S['f'] = S['y']
+del S['x']
+del S['y']
 
 
+#%% Select a profile for a given frequency and perform peak detection with gaussian fit
+
+Afk = Efk.copy()
+delta_k = np.diff(Efk['k'])[0]
+
+frequencies = [0.05,1.2]
+idx_min = np.argmin(np.abs(frequencies[0] - Afk['f']))
+idx_max = np.argmin(np.abs(frequencies[1] - Afk['f']))
+indices = np.arange(idx_min,idx_max,step = 1)
+
+# Build Gaussian to be convoluted
+gaussian_width = 2
+N = 6
+gaussian = scipy.signal.windows.gaussian(M = gaussian_width * N,std = gaussian_width)
+
+# parameters to find peaks on correlation curve
+min_prominence = 1e-2
+S = {'idx':[],'peaks':[],'A':[],'f':[],'k':[]}
+# create dictionnary in which results are saved 
+
+fig, ax = plt.subplots()
+for i in range(len(indices)):
+    ax.clear()
+    
+    idx = indices[i]
+    
+    detected_f = Afk['f'][idx]
+    print(detected_f)
+    section = Afk['E'][idx,:]
+    label_freq = f'{detected_f:.2f}'
+    norm = section/section.max()
+    
+    ax.plot(Afk['k'],norm,'-o',label = label_freq)
+    # x_gauss = np.arange(0,gaussian_width*N,step = 1)*delta_k
+    # ax.plot(x_gauss,gaussian,'-k')
+    
+    # Apply gaussian filter 
+    correlated = scipy.signal.fftconvolve(norm,gaussian,mode = 'same')
+    norm_correlated = correlated/correlated.max()
+    ax.plot(Afk['k'],norm_correlated)
+    # find peaks of correlation
+    peaks,properties = scipy.signal.find_peaks(norm_correlated,prominence = min_prominence)
+    ax.plot(Afk['k'][peaks],norm_correlated[peaks],'d')
+    
+    ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$')
+    ax.set_ylabel(r'$A_{norm}$')
+    ax.legend()
+
+    # save parameters in dictionnary
+    for i,p in enumerate(peaks) :
+        # compute subpixel precision
+        y_max,x_max = FT.subpix_precision_array(section,Afk['k'],p)
+        
+        S['idx'].append(idx)
+        S['peaks'].append(p)
+        S['A'].append(y_max)
+        S['f'].append(detected_f)
+        S['k'].append(x_max)
+    
+    ax.plot(x_max,y_max/section.max(),'*')
+    
+    plt.pause(1.0)
+    # f_txt = f'{detected_f:.2f}'.replace('.','p')
+    # figname = f'{fig_folder}Section_f{f_txt}_corr_gaussian_sigma{gaussian_width}'
+    # plt.savefig(figname + '.pdf', bbox_inches='tight')
+    # plt.savefig(figname + '.png', bbox_inches='tight')
+
+for key in S.keys():
+    S[key] = np.array(S[key])
+    
+    
+#%% Show detected peaks superposed with space-time spectrum
+
+set_graphs.set_matplotlib_param('single')
+filtered_x,filtered_y,filtered_properties = scatter_filter.interactive_scatter_filter(S['k'], S['f'],S)
 
 
+#%%
+fig, ax = plt.subplots()
+ax.plot(filtered_properties['k'],filtered_properties['f'],'.w')
+c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = 1e-5,vmax = 1e-2,
+              origin = 'lower', interpolation = 'gaussian',
+              extent = (Efk['k'].min(),Efk['k'].max(),Efk['f'].min(),Efk['f'].max()))
+
+# ax.set_xscale('log')
+# ax.set_yscale('log')
+ax.set_xlim(0.05,3.3)
+ax.set_ylim(0.05,1.3)
+
+ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$', labelpad = 5)
+ax.set_ylabel(r'$f \; \mathrm{(Hz)}$', labelpad = 5)
+
+cbar = plt.colorbar(c,ax = ax)
+cbar.set_label(r'$|\hat{V}_x| (k,\omega) \; \mathrm{(u.a.)}$',labelpad = 5)
 
 
+#%% DISCRIMINATE DIFFERENT HARMONICS
+N = np.arange(1,4)
+hw = 5
+nb_points = len(filtered_properties['k'])
+k_list = np.linspace(filtered_properties['k'].min(),filtered_properties['k'].max(),nb_points)
+harmonics = np.zeros((k_list.shape[0],N.shape[0]))
+for i in range(len(N)):
+    harmonics[:,i] = bound_harmonicN(k_list, N[i], hw)
 
+fig, ax = plt.subplots()
+ax.plot(filtered_properties['k'],filtered_properties['f'],'o')
+for i in range(len(N)):
+    ax.plot(k_list,harmonics[:,i]/2/np.pi)
+
+# build a distance to each harmonic
+D = np.zeros((nb_points,len(N)))
+for i in range(len(N)):
+    D[:,i] = np.abs(filtered_properties['f'] - bound_harmonicN(filtered_properties['k'], N[i], hw)/2/np.pi)
+
+closest_harmonic = np.argmin(D,axis = 1) + 1
+
+# correct closestharmonic
+closest_harmonic[np.where(filtered_properties['k']<0.4)] = 1
+
+mask = np.where(np.logical_and(closest_harmonic == 3,filtered_properties['k'] < 0.63))
+closest_harmonic[mask] = 2
+
+filtered_properties['closest_harmonic'] = closest_harmonic
+
+#%% Load detected points for fixed k
+file2load = f'{save_folder}attenuation_from_Efk_respect2f_{date}_{drone_ID}_{exp_ID}.pkl'
+with open(file2load,'rb') as pf :
+    m = pickle.load(pf)
+
+
+#%% 
+
+# fit hw over harmonic 1
+mask_fit = filtered_properties['closest_harmonic'] == 1
+ktofit = filtered_properties['k'][mask_fit]
+ftofit = filtered_properties['f'][mask_fit]
+
+popt,pcov = scipy.optimize.curve_fit(lambda k,hw : bound_harmonicN(k, 1, hw)/2/np.pi,ktofit,ftofit)
+y_exp = bound_harmonicN(ktofit, 1, popt[0])/2/np.pi
+set_graphs.set_matplotlib_param('single')
+fig, ax = plt.subplots()
+ax.plot(filtered_properties['k'],filtered_properties['f'],'.w')
+c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = 1e-5,vmax = 1e-2,
+              origin = 'lower', interpolation = 'gaussian',
+              extent = (Efk['k'].min(),Efk['k'].max(),Efk['f'].min(),Efk['f'].max()))
+
+# ax.set_xscale('log')
+# ax.set_yscale('log')
+ax.set_xlim(0.05,3.3)
+ax.set_ylim(0.05,1.3)
+
+ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$', labelpad = 5)
+ax.set_ylabel(r'$f \; \mathrm{(Hz)}$', labelpad = 5)
+
+cbar = plt.colorbar(c,ax = ax)
+cbar.set_label(r'$|\hat{V}_x| (k,\omega) \; \mathrm{(u.a.)}$',labelpad = 5)
+
+hw = popt[0]
+err_hw = np.sqrt(np.diag(pcov)[0])
+title = r'$H = ' + f'{hw:.2f}' + '\pm' + f' {err_hw:.2f}' +'$'
+ax.plot(ktofit,y_exp,'r',label = title)
+ax.plot(m['k'],m['f'],'gd')
+ax.legend()
+
+print(f'H = {hw:.2f} ± {err_hw:.2f}')
+
+
+# Compute hw using detected points from fixed wavevector
+
+popt,pcov = scipy.optimize.curve_fit(lambda k,hw : bound_harmonicN(k, 1, hw)/2/np.pi,m['k'],m['f'])
+y_exp2 = bound_harmonicN(m['k'], 1, popt[0])/2/np.pi
+hw2 = popt[0]
+err_hw2 = np.sqrt(np.diag(pcov)[0])
+title = r'$H = ' + f'{hw2:.2f}' + '\pm' + f' {err_hw2:.2f}' +'$'
+ax.plot(m['k'],y_exp2,'b',label = title)
+
+print(f'H = {hw2:.2f} ± {err_hw2:.2f}')
 
 
 
