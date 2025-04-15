@@ -11,7 +11,7 @@ import math
 import numpy as np
 from scipy.fftpack import fft, ifft
 from scipy.fft import fftn,fftshift
-
+import matplotlib.pyplot as plt
 #----------------------------------------------------------------------------------------------------
 
 def nextpow2(x):
@@ -159,6 +159,28 @@ def temporal_FFT_spatio(H,fps,padding_bool = 1,add_pow2 = 0,output_FFT = False):
     
         return TF_spectrum,freq,FFT_t
 
+#-----------------------------------------------------------------------------------------------------
+
+def subpix_precision_array(y,x,j0):
+    """Computes subpixel precision using 2nd Order fitting
+        Arguments : - y : amplitude array 
+                    - x : abscisse array 
+                    - j0 : closest indices to local maxima
+
+        Returns : - y_max : maximum of the fitted curve (unit of y)
+                  - x_max : subpixel value of x for which y_max is reached (unit of x) """
+
+    p0 = y[j0]
+    p_right = y[j0 + 1]
+    p_left = y[j0 - 1]
+    
+    delta = (p_right - p_left)/(2*(2*p0 - p_right - p_left))
+    x_max = x[j0] + (x[j0 + 1] - x[j0])*delta
+    y_max = p0 + 0.5*(2*p0 - p_right - p_left)*delta**2
+    
+    return y_max,x_max
+
+
 #----------------------------------------------------------------------------------------------------
 
 def subpix_precision(profile, idx_max):
@@ -213,7 +235,31 @@ def get_demodulated_main_freq(H,t,facq_t,padding_bool = 1,add_pow2 = 0,output_FF
         demod_profile = np.mean(H*np.exp(1j*2*np.pi*f_demod*t),axis = -1)
         return demod_profile,f_demod
     
+#-------------------------------------------------------------------------------------------------------
 
+def histogram_PIV(V,W,figname):
+    """ Make an histogram of velocity, averaged over time, enable to verify PIV criteria
+    Inputs: - V, numpy.ndarray, velocity field, time should be last dimension
+            - W, float, PIV box size
+            - figname, string, name under which the figure will be saved
+    """
+    V_moy = np.nanmean(abs(V),axis = 2)
+    low_bound = np.log10(0.1)
+    up_bound = np.log10(W/4)
+    
+    x = np.log10(V_moy)
+    fig, ax = plt.subplots()
+    ax.hist(x.ravel(),bins = 50,edgecolor = 'k')
+    
+    ax.axvline(low_bound,color = 'r')
+    ax.axvline(up_bound,color = 'r')
+    
+    ax.set_xlabel(r'$\log10(\langle |V| \rangle _{t})$')
+    ax.set_ylabel(r'$N_{counts}$')
+    
+    plt.savefig(figname + '.pdf', bbox_inches='tight')
+    plt.savefig(figname + '.svg', bbox_inches='tight')
+    plt.savefig(figname + '.png', bbox_inches='tight')
 
 
 #--------------------------------------------------------------------------------------------------------

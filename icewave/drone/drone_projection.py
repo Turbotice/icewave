@@ -45,11 +45,15 @@ def get_projected_image(drone,key,num,frame):
 
     return Lats,Lons,im
 
+#----------------------------------------------------------------------------------------
+
 def get_exemple_image(record):
     base = df.find_path()
     filename = base+record['path']+'_exemple.tiff'
     im = plt.imread(filename)
     return im
+
+#-----------------------------------------------------------------------------------------
 
 def project_image(record,flight,im,frame,focale=2700):
     # warning ! only work for frame=0 now.
@@ -84,6 +88,8 @@ def project_image(record,flight,im,frame,focale=2700):
     Lats,Lons = LatLong_coords_from_referencepoint(Lat0, Long0, azimuths,ds)
     return Lats,Lons
 
+#-----------------------------------------------------------------------------------------------------
+
 def projection_real_space(x,y,x0,y0,h,alpha_0,focale):
     """Definition of x and y in real framework, camera sensor center is taken as a reference 
        Inputs : 
@@ -106,7 +112,7 @@ def projection_real_space(x,y,x0,y0,h,alpha_0,focale):
     
     return xreal,yreal
 
-
+#---------------------------------------------------------------------------------------------
 
 def projection_pixel_space(xreal,yreal,x_0,y_0,h,alpha_0,f):
 
@@ -128,6 +134,36 @@ def projection_pixel_space(xreal,yreal,x_0,y_0,h,alpha_0,f):
     x = xreal/h*(f*np.sin(alpha_0) + (y - y_0)*np.cos(alpha_0))+x_0
 
     return x, y
+
+#----------------------------------------------------------------------------------------------------------------------------
+
+def georectify_image(img,H,alpha_0,focale):
+    """Georectify image taken from a camera with a focal f, 
+    at a height H from the filmed plane, with an angle alpha_0 to the horizontal 
+    Inputs : - img, numpy.ndarray : image [nx,ny,nc]
+             - H, float : height of the camera to the filmed horizontal plane (in meter)
+             - alpha_0, float : angle to the horizontal (in rad)
+             - focale, float : camera focal length 
+    Outputs : - Xreal,Yreal, numpy.ndarray meshgrids : coordinates of each pixel edges to be used by the function plt.pcolormesh
+    """
+    
+    [ny,nx,nc] = np.shape(img) 
+
+    x_edges = np.arange(0,nx + 1)
+    y_edges = np.arange(0,ny + 1)
+
+    x0 = (nx + 1) / 2
+    y0 = (ny + 1) / 2
+
+    Yedges,Xedges = np.meshgrid(y_edges,x_edges,indexing = 'ij')
+
+    # compute real coordinates for each pixels of the image 
+    Xreal,Yreal = projection_real_space(Xedges,Yedges,x0,y0,H,alpha_0,focale)
+    
+    return Xreal,Yreal
+    
+
+#--------------------------------------------------------------------------------------------------------------------------
 
 def get_FOV_vertices(Lx,Ly,h,alpha_0,focale):
     """ Return coordinates of the 4 vertices of a given image. Coordinates are given in the local coordinate system of the drone, 
@@ -158,6 +194,8 @@ def get_FOV_vertices(Lx,Ly,h,alpha_0,focale):
     
     return vertices_real
 
+#-----------------------------------------------------------------------------------------------------------------------------------------
+
 def closest_time(strtime_list,t0,dt_format,full_date,tz = pytz.timezone('UTC')):
     time_string = full_date + '-' + strtime_list[0]
     time_object = datetime.strptime(time_string,dt_format)
@@ -175,6 +213,8 @@ def closest_time(strtime_list,t0,dt_format,full_date,tz = pytz.timezone('UTC')):
             idx_min = idx
             
     return idx_min 
+
+#-------------------------------------------------------------------------------------------------------------------------
 
 def LatLong_coords_from_referencepoint(Lat0,Long0,azimuth,d,R_earth = 6371e3):
     """" Compute GPS coordinates using distance and orientation from a point of known GPS coordinates
@@ -198,17 +238,21 @@ def LatLong_coords_from_referencepoint(Lat0,Long0,azimuth,d,R_earth = 6371e3):
 
     return Lat,Long
 
+#----------------------------------------------------------------------------------------------------------------------------
 
 def cart2pol(x,y):
     rho = np.sqrt(x**2 + y**2)
     phi = np.arctan2(y,x)
     return (rho,phi)
 
+#------------------------------------------------------------------------------------------------------------------------------
+
 def pol2cart(rho,phi):
     x = rho * np.cos(phi)
     y = rho * np.sin(phi)
     return (x,y)
 
+#------------------------------------------------------------------------------------------------------------------------
 
 def XY2GPS(X,Y,Lat0,Long0,azimuth):
     """ Convert cartesian coordinates X,Y to GPS coordinates
@@ -228,6 +272,8 @@ def XY2GPS(X,Y,Lat0,Long0,azimuth):
                                                     local_azimuth,rho)
     return Lat,Long
 
+#-----------------------------------------------------------------------------------------------------------------------------
+
 def GPS2XY(lat,long,Lat0,Long0,azimuth,R_earth = 6371e3):
     """Compute cartesian coordinates (X,Y) from GPS coordinates
     Inputs : - lat,long : numpy array, GPS coordinates (in degrees)
@@ -246,6 +292,8 @@ def GPS2XY(lat,long,Lat0,Long0,azimuth,R_earth = 6371e3):
     X,Y = pol2cart(rho,theta*np.pi/180)
     
     return X,Y
+
+#-------------------------------------------------------------------------------------------------------------------------------
 
 def backward_projection(fun,points,y0,h,alpha_0,focale,fps,Dt):
     """ Computation of vertical velocity field from the pixel displacement along vertical of the camera. 
@@ -268,6 +316,7 @@ def backward_projection(fun,points,y0,h,alpha_0,focale,fps,Dt):
     
     return Fp 
 
+#------------------------------------------------------------------------------------------------------------------------------
 
 def vertical_velocity_from_pixel_displacement(Vy,x_pix,y_pix,t,y0,h,alpha_0,focale,fps,Dt):
     """ Compute vertical velocity field from velocity field of pixel displacement on the camera sensor. 
