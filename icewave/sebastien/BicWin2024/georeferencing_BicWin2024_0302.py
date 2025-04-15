@@ -93,7 +93,7 @@ figname = fig_folder + 'Pixel_coord_' + img_name
 plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.svg', bbox_inches='tight')
 
-#%% Georeference image and compute object position
+#%% Georectify image and compute object position
     
 focale = 2700
 [ny,nx,nc] = np.shape(img) 
@@ -106,7 +106,7 @@ y0 = (ny + 1) / 2
 
 Yedges,Xedges = np.meshgrid(y_edges,x_edges,indexing = 'ij')
 
-# compute real coordinates 
+# compute real coordinates for each pixels of the image 
 Xreal,Yreal = dp.projection_real_space(Xedges,Yedges,x0,y0,param_dict['H'],param_dict['alpha_0']*np.pi/180,focale)
 
 # compute object position
@@ -114,7 +114,7 @@ POS_realx,POS_realy = dp.projection_real_space(POS[:,1],POS[:,2],x0,y0,
                                                param_dict['H'],param_dict['alpha_0']*np.pi/180,focale)
 
 
-#%% Display georeferenced image 
+#%% Display georectified image 
 
 fig, ax = plt.subplots(figsize = fig_size)
 c = ax.pcolormesh(Xreal,Yreal,img[:,:,0],shading = 'auto', cmap = 'gray')
