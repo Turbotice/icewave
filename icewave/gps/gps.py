@@ -53,8 +53,8 @@ def project(Long,Lat,R=6378000,meter=False):
     if meter:
         xtile = xtile*R
         ytile = ytile*R
-        xtile = xtile-xtile[0]
-        ytile = ytile-ytile[0]
+#        xtile = xtile-xtile[0]
+#        ytile = ytile-ytile[0]
 
     return (xtile, ytile)
 

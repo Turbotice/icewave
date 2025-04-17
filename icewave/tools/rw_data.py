@@ -65,6 +65,21 @@ def write_h5(filename,data):
             hf.create_dataset(key, data=np.asarray(data[key]))
     hf.close()
 
+def save_h5_rec(filename,data):
+    with h5py.File(filename, 'w') as hf:
+        hf =  write_h5_rec(hf,data)
+    
+def write_h5_rec(hf,data):
+    for key in data.keys():
+        if type(data[key])==dict:
+            hf.create_group(key)
+            print(key)
+            hf = write_h5_rec(hf[key],data[key])
+        else:
+            print(data[key])
+            hf.create_dataset(key, data=np.asarray(data[key]))
+    return hf
+
 def read_h5(filename):
     hf = h5py.File(filename,'r')
     return hf

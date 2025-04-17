@@ -53,7 +53,7 @@ def find_path(disk='Shack25',year='2025',smb=False,date='0211'):
     #        disk = 'Shack25'
     if disk=='BicWin2024':
         base = disk+'/Share/Data/'
-    elif disk=='Hublot24':
+    elif disk=='Hublot24' or disk=='Elements':
         base = disk+'/Share_hublot/Data/'
     elif disk=='Shack25' or 'F':
         base = disk+'/Data/'

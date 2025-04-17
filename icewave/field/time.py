@@ -15,7 +15,10 @@ def gps_get_times(gpx):
 
 def convert_time(t):
     h,m,s = t.split(':')
-    return int(h)*3600+int(m)*60+int(s)
+    if '.' in s:
+        return int(h)*3600+int(m)*60+float(s)
+    else:
+        return int(h)*3600+int(m)*60+int(s)
 
 def today_date(t0):
     tstr = str(datetime.datetime.fromtimestamp(t0))

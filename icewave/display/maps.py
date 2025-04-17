@@ -54,10 +54,12 @@ def display_map(measures,remote=True,w=10,h=10,ax=None):
             ax.text(m['longitude'][0],m['latitude'][0]+latshiftlabel,text,color='k')
         else:
             print(f'No GPS coordinates for {key}')
+
+            
     [Lonmin,Lonmax] = ax.get_xlim()
     [Latmin,Latmax] = ax.get_ylim()
 
-
+    print(Lonmin,Lonmax,Latmin,Latmax)
     deg,minute,sec = get_range(Lonmax,Lonmin)
     lon_display = get_range_display(deg,minute,sec)    
     lon_ticks = coord2angle(deg,minute,sec,sign=-1)
@@ -69,7 +71,7 @@ def display_map(measures,remote=True,w=10,h=10,ax=None):
     
     ax.set_xticks(lon_ticks,lon_display)
     ax.set_yticks(lat_ticks,lat_display)
-    plt.axis('equal')
+    #plt.axis('equal')
     figs = graphes.legende('Longitude','Latitude','')
     return figs
 
@@ -170,6 +172,14 @@ def convert_latitude(lat):
     s = s+' '+str(minute)+'\''+' '+str(sec)+'\"'
     return s
 
+def str2angle(s):
+    if s[-1]=='S' or s[-1]=='W':
+        sign=-1
+    else:
+        sign=1
+    deg,minute,sec = np.asarray(s[:-1].split('-')).astype(float)
+    return coord2angle(deg,minute,sec,sign=sign)
+    
 def coord2angle(deg,minute,sec,sign=1):
     return sign*(np.abs(deg)*3600+minute*60+sec)/3600
     

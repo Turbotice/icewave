@@ -175,11 +175,11 @@ def parse_csv_flightrecord(csvfile,drone='mesange'):
         record[key]= [bool(d) for d in data[key]]
     return record
 
-def cut_flightrecord(record,flight):# at that stage, all files should already by in UTC time
+def cut_flightrecord(record,flight,h0=0):# at that stage, all files should already by in UTC time
     import icewave.field.time as fieldtime
 
-    tinit = timeline.to_UTC(record['time'][0],h0=0)
-    tend = timeline.to_UTC(record['time'][-1],h0=0)
+    tinit = timeline.to_UTC(record['time'][0],h0=h0)
+    tend = timeline.to_UTC(record['time'][-1],h0=h0)
 
     times = np.asarray([timeline.to_UTC(s,h0=0) for s in flight['CUSTOM.updateTime [local]']])
     iinit = np.argmin(np.abs(times-tinit))
