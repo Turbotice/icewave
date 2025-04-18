@@ -8,20 +8,24 @@ import numpy as np
 import icewave.tools.datafolders as df
 import icewave.tools.rw_data as rw_data
 
+def get_base(disk='Elements',year='2024'):
+    return df.find_path(disk=disk,year=year)
+
+def get_record(year='2024'):
+    base = get_base(year=year)
+    filename =  base+f'{date}/Summary/records_{date}.pkl'
+    return rw_data.load_pkl(filename)
+
 def make_result(date,typ,instrument,name,var,value,index=0,time=None,records=None,year='2024',comments=''):
     results={}
-    
-
     if records==None:
         print('retrieve associated records')
-        base = df.find_path(disk='Elements',year=year)
-        filename =  base+f'{date}/Summary/records_{date}.pkl'
-        records = rw_data.load_pkl(filename)
-        print(records.keys())
+        records = get_record(year=year)
     try:
         record = records[typ][instrument][name]
         if type(record)==dict:
-            print(record.keys())
+            pass
+            #print(record.keys())
         elif type(record)==list:
             record = record[index]
     except:
@@ -34,7 +38,6 @@ def make_result(date,typ,instrument,name,var,value,index=0,time=None,records=Non
         
     tstamp = year+'_'+date+'T'+str(time)
     key = '_'.join([tstamp,typ,instrument,name,var,str(index)])
-    print(key)
 
     results[key] = {}
     results[key]['year']=year
@@ -45,7 +48,7 @@ def make_result(date,typ,instrument,name,var,value,index=0,time=None,records=Non
 
     if value=='auto':
         #try:
-        print(record.keys())
+        #print(record.keys())
         results[key][var]=float(record['params'][var])
         #except:
         #    print('key var does not exist in record')
@@ -58,10 +61,22 @@ def make_result(date,typ,instrument,name,var,value,index=0,time=None,records=Non
     if 'path' in record.keys():
         results[key]['path']=record['path']
     else:
-        print('No path available')
+        print(f'No path available for {key}')
     results[key]['comments']=comments    
     #results[key]['path']=None
 
 #    record = records[typ][instrument][name]
 
     return results
+
+def save_result(result):
+    key = list(result.keys())[0]
+
+    typ = result[key]['type_instrument']
+    year = result[key]['year']
+    date = result[key]['date']
+    
+    base = get_base(year=year)
+    filename =  base+f'{date}/Summary/results_{typ}_{date}.pkl'
+
+    rw_data.write_pkl(filename,result)
