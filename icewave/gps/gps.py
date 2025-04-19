@@ -83,7 +83,7 @@ def display_map(ext,t,title='',ax=None,width=600):
     plotter.plot(ax, t)
 
     figs = {}
-    figs.update(graphes.legende('Longitude','Latitude',title,cplot=True))
+    figs.update(graphes.legende('Longitude','Latitude',title,cplot=True,ax=ax))
     return ax,figs
 
 def get_wpts(filename,display=True):

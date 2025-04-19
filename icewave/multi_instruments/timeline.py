@@ -8,9 +8,10 @@ import icewave.display.graphes as graphes
 global colors
 colors = display.colors
 
-def display_records(records,date,date_format='2024/02/26'):
-    fig = plt.figure(figsize=(15,10))
-    ax = fig.add_subplot(111)
+def display_records(records,date,date_format='2024/02/26',ax=None):
+    if ax==None:
+        fig = plt.figure(figsize=(15,10))
+        ax = fig.add_subplot(111)
 
     positions = {'Fulmar':1,'mesange':1,'Bernache':2,'geophones':2.6,'buoys':3.8,'phones':4.5}
         
@@ -76,7 +77,7 @@ def display_records(records,date,date_format='2024/02/26'):
                 X[i] = np.asarray([multi.convert_time(x[0]),multi.convert_time(x[1])])
                 #np.asarray([convert(t0)-3600*6,convert(t1)-3600*6])
 
-                print(i,X[i][0]/3600)
+                #print(i,X[i][0]/3600)
                 if (X[i][0]/3600)<16:
                     if i>0:
                         X[i]=X[i-1]
@@ -106,7 +107,7 @@ def display_records(records,date,date_format='2024/02/26'):
     # add manual symbols to auto legend
     handles.extend(legends)
 
-    plt.legend(handles=handles,fontsize=20)
-    figs = graphes.legende('UTC time','Instruments',date)
+    ax.legend(handles=handles,fontsize=20)
+    figs = graphes.legende('UTC time','Instruments',date,ax=ax)
     #plt.show()
-    return fig,ax,figs
+    return figs
