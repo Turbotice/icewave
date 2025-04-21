@@ -206,6 +206,14 @@ def box_data(Longs,Lats,scale=1.2,width=0.02,square=True):
     BBox[3] = np.min([BBox[3],89.9])    
     return BBox
 
+def box_data_tight(Longs,Lats):
+    BBox = np.zeros(4)
+    BBox[0] = np.min(Longs)
+    BBox[1] = np.max(Longs)
+    BBox[2] = np.min(Lats)
+    BBox[3] = np.max(Lats)  
+    return BBox
+
 def boxes(name):
     """"
     Return a dictionnary of typical boxes coordinates (for scaled display maps)
