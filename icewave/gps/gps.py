@@ -227,7 +227,7 @@ def check_box(Long,Lat,BBox):
     bLong = np.logical_and(Long>BBox[0],Long<BBox[1])
     bLat = np.logical_and(Lat>BBox[2],Lat<BBox[3])
     b = np.logical_and(bLong,bLat)
-    print('Box dimension :'+str(b))
+    #print('Box dimension :'+str(b))
     return b
 
 def get_city(Long,Lat):
@@ -269,9 +269,12 @@ def display_standard_map(ax,name,title=''):
         ax,figs = display_haha(ax,title=title)
     return ax,figs
 
-def display_haha(ax,title=''):
-    BBox = boxes('haha')
-    ext = extent(BBox,ratio=2)
+def display_haha(ax,title='',BBox=None,ratio=1):
+    if BBox==None:
+        BBox = boxes('haha')
+        ext = extent(BBox,ratio=2)
+    else:
+        ext = extent(BBox,ratio=ratio)
     t = tmp_connect()
     ax,figs = display_map(ext,t,title=title,ax=ax,width=600)
     return ax,figs

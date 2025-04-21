@@ -293,8 +293,9 @@ def GPS2XY(lat,long,Lat0,Long0,azimuth,R_earth = 6371e3):
     
     return X,Y
 
-def get_height_from_record(record,indice=0):
-    s = record['params'][indice].split('rel_alt: ')[1].split(' ')[0]
+def get_height_from_record(record,indice=0,typ='elev'):
+    if typ=='elev':
+        s = record['params'][indice].split('rel_alt: ')[1].split(' ')[0]
     return float(s)
 
 def georeference(key,record,image,flight):
@@ -319,7 +320,7 @@ def georeference(key,record,image,flight):
         
     im = image[key]
     H = get_height_from_record(rec)
-    print(f'Hauteur : {H}')
+    print(f'Hauteur : {H}m')
     alpha_0 = np.pi/2
     focale = 2700 #sama focale for everybody
     im = image[key]
@@ -330,9 +331,14 @@ def georeference(key,record,image,flight):
 
     azimuth = flight[key]['GIMBAL.yaw [360]']
     print(f'Azimuth : {azimuth}°')
+    pitch = float(flight[key]['GIMBAL.pitch'])
+    print(f'Pitch : {pitch}°')
 
-    Lat,Long = XY2GPS(Xr,Yr,Lat0,Long0,azimuth)
-
+    if pitch<-85:
+        Lat,Long = XY2GPS(Xr,Yr,Lat0,Long0,azimuth)
+    else:
+        return None,None,im
+    
     return Lat,Long,im
 #-------------------------------------------------------------------------------------------------------------------------------
 

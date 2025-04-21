@@ -19,11 +19,21 @@ def get_record(year='2024'):
     return rw_data.load_pkl(filename)
 
 
-def display_map(records,ax=None):
+def plot(lon,lat,BBox=None,text=None,ax=None,marker='ko'):
+    X,Y = gps.project(lon,lat)
+    if BBox is not None:
+        b = gps.check_box(lon,lat,BBox)
+    else:
+        b = np.ones(len(lon),dtype=bool)
+    ax.plot(X[b],Y[b],marker)
+    if text is not None and np.sum(b)>0:
+        ax.text(X[b],Y[b],text)
 
+def display_map(records,ax=None,BBox=None):
     if ax==None:
         fig,ax = plt.subplots(figsize=(10,10))
-        gps.display_haha(ax)
+        gps.display_haha(ax,BBox=BBox)
+        #print('display')
         
     for drone in records['drones'].keys():
         rec = records['drones'][drone]
@@ -31,11 +41,7 @@ def display_map(records,ax=None):
             #print(name)
             lat = rec[name][0]['latitude'][0]
             lon = rec[name][0]['longitude'][0]
-
-            X,Y = gps.project(lon,lat)
-            ax.plot(X,Y,'ko')
-
-            ax.text(X,Y,name)
+            plot(lon,lat,BBox=BBox,text=name,ax=ax,marker='ko')
             
     markers = {'geophones':'gv','phones':'rs','buoys':'mo'}
     for instru in markers.keys():
@@ -48,9 +54,7 @@ def display_map(records,ax=None):
                 lat = rec[name]['latitude']
                 lon = rec[name]['longitude']
 
-                X,Y = gps.project(lon,lat)
-                ax.plot(X,Y,marker)
-            
-                      
+                plot(lon,lat,BBox=BBox,text=None,ax=ax,marker=marker)            
+    return ax            
 
             
