@@ -293,6 +293,47 @@ def GPS2XY(lat,long,Lat0,Long0,azimuth,R_earth = 6371e3):
     
     return X,Y
 
+def get_height_from_record(record,indice=0):
+    s = record['params'][indice].split('rel_alt: ')[1].split(' ')[0]
+    return float(s)
+
+def georeference(key,record,image,flight):
+    """ Computation of vertical velocity field from the pixel displacement along vertical of the camera. 
+    
+    INPUTS : - key : identification key common to record, flight and image 
+             - record : dictionnary with parameters extracted from the data folder
+             - 
+             - y0 : float, y-coordinate of the middle of the camera sensor
+             - alpha_0 : float, angle (in rad) of the camera axis to the horizontal 
+             - focale : float, camera focal length (pixels)
+             - fps : float, frame rate used (frame/s)
+             - Dt : float, time step between two image compared to computer pixel displacement field 
+             
+    OUTPUT : - Fp : function of a tuple of pixel coordinates (x,y,t), or a list of tuples, which computes the vertical velocity
+                associated to a given tuple
+    """
+    if type(record[key])==list:
+        rec=record[key][0]
+    else:
+        rec = record[key]
+        
+    im = image[key]
+    H = get_height_from_record(rec)
+    print(f'Hauteur : {H}')
+    alpha_0 = np.pi/2
+    focale = 2700 #sama focale for everybody
+    im = image[key]
+    Xr,Yr = georectify_image(im,H,alpha_0,focale)
+
+    Lat0=rec['latitude'][0]
+    Long0=rec['longitude'][0]
+
+    azimuth = flight[key]['GIMBAL.yaw [360]']
+    print(f'Azimuth : {azimuth}°')
+
+    Lat,Long = XY2GPS(Xr,Yr,Lat0,Long0,azimuth)
+
+    return Lat,Long,im
 #-------------------------------------------------------------------------------------------------------------------------------
 
 def backward_projection(fun,points,y0,h,alpha_0,focale,fps,Dt):
