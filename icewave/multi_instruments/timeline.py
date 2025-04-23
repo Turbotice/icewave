@@ -107,7 +107,7 @@ def display_records(records,date,date_format='2024/02/26',ax=None):
     # add manual symbols to auto legend
     handles.extend(legends)
 
-    ax.legend(handles=handles,fontsize=20)
+    #ax.legend(handles=handles,fontsize=20)
     figs = graphes.legende('UTC time','Instruments',date,ax=ax)
     #plt.show()
     return figs

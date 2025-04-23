@@ -11,20 +11,23 @@ import icewave.tools.rw_data as rw_data
 import icewave.display.graphes as graphes
 import icewave.gps.gps as gps
 
+import timeline
+
+
 def get_base(disk='Elements',year='2024'):
     return df.find_path(disk=disk,year=year)
 
-def get_record(year='2024'):
-    base = get_base(year=year)
+def get_record(date,year='2024',disk='Elements'):
+    base = get_base(year=year,disk=disk)
     filename =  base+f'{date}/Summary/records_{date}.pkl'
     return rw_data.load_pkl(filename)
 
-
 def plot(lon,lat,BBox=None,text=None,ax=None,marker='ko',project=True):
     if BBox is not None:
-        b = gps.check_box(lon,lat,BBox)
+        b = gps.check_box(np.asarray(lon),np.asarray(lat),BBox)
     else:
-        b = np.ones(len(lon),dtype=bool)
+        #print(np.asarray(lon).shape)
+        b = np.ones(np.asarray(lon).shape,dtype=bool)
         
     if project:
         X,Y = gps.project(lon,lat)
@@ -86,6 +89,29 @@ def portfolio(date,images,drone):
     fig.subplots_adjust(wspace=0.01)
     #prefix = f'{drone}_portfolio_{date}'
     return figs,ax
+
+def synthesis(records,date='0226',project=False):
+    #manual BBox, to be improved
+    BBox = [-68.8238994794379, -68.80561255147802, 48.33896404326063, 48.35725097122051]
+    fig = plt.figure(figsize=(15,8))
+    nx = 3
+    ny = 3
+
+    axmap = plt.subplot2grid((nx, ny), (0, 0),colspan=3,rowspan=2)
+
+    #gps.display_haha(axmap,BBox=BBox,ratio=1.5)
+    display_map(records,BBox=BBox,ax=axmap,project=project)
+
+    #selection = ['08_waves_003','14-waves_007','22-waves_011']#,'20-waves_010','24-waves_013']
+    axtime = plt.subplot2grid((nx, ny), (nx-1, 0),colspan=ny)
+#axim.append(plt.subplot2grid((nx, ny), (1, 0),colspan=2))
+#axim.append(plt.subplot2grid((nx, ny), (1, 2),colspan=2))
+    figs = timeline.display_records(records,date,ax=axtime)
+
+    axmap.axis(BBox)
+    axmap.axis('equal')
+#graphes.save_figs(figs,savedir=savefolder_local,prefix=f'{date}_situationmap_overview_2',overwrite=True,frmt='png')
+    return fig,axmap,axtime
 
 def exemple_portfolio():
     date = '0226'
