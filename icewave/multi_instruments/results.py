@@ -11,16 +11,39 @@ import icewave.tools.rw_data as rw_data
 def get_base(disk='Elements',year='2024'):
     return df.find_path(disk=disk,year=year)
 
-def get_record(year='2024'):
+def get_record(date,year='2024'):
     base = get_base(year=year)
     filename =  base+f'{date}/Summary/records_{date}.pkl'
     return rw_data.load_pkl(filename)
 
 def make_result(date,typ,instrument,name,var,value,index=0,time=None,records=None,year='2024',comments=''):
+    """ Create a dictionnary of results, where each result is associated to a single key build as followed :
+        key = year_dateTtime_typ_instrument_name_var_index
+        
+        Inputs : - date : str, date of experiment, exemple : '0226' for 26th February
+                 - typ : str, type of instrument, exemple : drone, gps, phone, buoy, etc...
+                 - instrument : str, name of instrument, exemple : bernache, mesange, garmin_SP, etc...
+                 - name : str, name of sampling, exemple : H_01, 10-waves_12, etc...
+                 - var : str, name of variable measured : H, A, f0, etc...
+        
+        Optional inputs : - index : int, index of measurement of the corresponding variable
+                          - time : str, time of measurement, can be extracted from records files. 
+                                   Should be at the format : hh:mm:ss
+                          - records : dictionnary, table of records parameters 
+                          - year : str
+                          - comments : str, additional comments to this variable 
+                          
+        Outputs : - results : a dictionnary containing a single key (described above) and several 'sub_keys' which are :
+                    + year, date, time, 
+                    + latitude, longitude, 
+                    + var, value of the measured variable, can also be an array 
+                    + path, path to raw data 
+                    + name_instrument, type_instrument and comments """
+    
     results={}
     if records==None:
         print('retrieve associated records')
-        records = get_record(year=year)
+        records = get_record(date,year=year)
     try:
         record = records[typ][instrument][name]
         if type(record)==dict:

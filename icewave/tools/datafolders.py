@@ -93,7 +93,7 @@ def find_path(disk='Shack25',year='2025',smb=False,date='0211'):
             base = 'Z:/'+base
         if disk=='BicWin2024':
             base = '//192.168.1.70/Share/Data/'
-        if disk=='Hublot24':
+        if disk=='Hublot24' or disk == 'Elements':
             base = 'K:/Share_hublot/Data/'
         if disk=='Shack25':
             base = 'F:/Data/'
