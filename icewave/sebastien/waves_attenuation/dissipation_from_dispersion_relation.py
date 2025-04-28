@@ -7,26 +7,27 @@ Created on Fri Apr  4 13:36:48 2025
 
 import numpy as np
 import os
-import glob 
-import pandas as pd 
+import glob  
 import h5py
 import pickle
-import cv2 as cv
 import scipy
 import math
+import cv2 as cv
 # from skimage.filters import meijering, sato, frangi, hessian
 
 import matplotlib as mpl
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors 
 from matplotlib.path import Path
+import matplotlib.animation as animation
 
 import icewave.tools.matlab2python as mat2py
 import icewave.tools.matlab_colormaps as matcmaps
 import icewave.sebastien.set_graphs as set_graphs
-import icewave.drone.drone_projection as dp
 import icewave.tools.Fourier_tools as FT
 import icewave.tools.interactive_scatter_filter as scatter_filter
+import icewave.tools.datafolders as df
 
 # PARULA COLORMAP 
 parula_map = matcmaps.parula()
@@ -71,7 +72,7 @@ def unnormed_gaussian(x,x0,alpha):
     return y
 
 def lorentzian(x,x0,alpha):
-    y = 1/(1 + ((x - x0)/alpha)**2)
+    y = 1/np.sqrt(1 + ((x - x0)/alpha)**2)
     return y
 
 def phase_velocity_shallow(k,hw,g = 9.81):
@@ -111,11 +112,63 @@ def time2space_attenuation(time_att,k,water_depth,error_bar = 1):
         err_khw = k*err_hw
         c_phi = phase_velocity_shallow(k, hw)
         error_c_phi = c_phi*err_khw/np.sinh(2*k*hw)
-        error_c_g = np.sqrt((0.5*np.sinh(2*k*hw) + 2*k*hw)**2 * error_c_phi**2 + 
+        error_c_g = np.sqrt((0.5*np.sinh(2*k*hw) + k*hw)**2 * error_c_phi**2 + 
                             c_phi**2 * (1 - 2*k*hw/np.tanh(2*k*hw))**2 * err_khw**2)/np.sinh(2*k*hw)
         err_alpha = np.sqrt(err_lambda**2 + lambda_time**2 * (error_c_g/c_g)**2)/c_g   
     
     return alpha,err_alpha
+
+
+def animation_demodulated_field(selected_FFT,freq,colormap,cmax,time_interval = 1e3):
+    
+    """ Create animation of real demodulated fields for successive frequencies 
+    Inputs : - selected_FFT, numpy array, [nx,ny,nf] Time Fourier transform of a 2D field
+             - freq, numpy array, 1D, array of frequencies
+             - colormap, cmap object, colormap used to plot real fields
+             - cmax, float, value used to scale colorbar from -cmax to +cmax
+             
+    Outputs : - ani, matplotlib animation which can be saved in a .mp4 format
+        """
+    nb_frames = len(freq) # total number of frames of animation
+    fig, ax = plt.subplots(figsize = (12,9))
+    
+    selected_freq = freq[0]
+    print(f'frequency = {selected_freq}')
+    
+    field = selected_FFT[0]
+    real_field = np.real(field)
+    # show initial matrix 
+    c = ax.imshow(real_field.T,cmap = colormap,aspect = 'equal', origin = 'lower', interpolation = 'gaussian',
+              vmin = -cmax,vmax = cmax,extent = (data['x'].min(),data['x'].max(),data['y'].min(),data['y'].max()))
+    
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="2%", pad=0.1)
+    
+    cbar = plt.colorbar(c,cax = cax)
+    cbar.set_label(r'$|\hat{V}_x| (x,y) \; \mathrm{(u.a.)}$',labelpad = 5)
+    
+    ax.set_xlabel(r'$x \; \mathrm{(m)}$', labelpad = 5)
+    ax.set_ylabel(r'$y \; \mathrm{(m)}$', labelpad = 5)
+    
+    def update(frame) : 
+        selected_freq = freq[frame]
+        print(f'frequency = {selected_freq}')
+        
+        field = selected_FFT[:,:,frame]
+        real_field = np.real(field)
+        c.set_data(real_field.T)
+        ax.set_title('$f = '+ f'{selected_freq:.3f}'+ '\; \mathrm{(Hz)}$')
+        
+        return c
+    
+    # create an animation 
+    ani = animation.FuncAnimation(fig=fig, func=update, frames=nb_frames, interval=time_interval)
+    # plt.show()
+    print('Animation computed')
+    return ani
+
+
+
 
 def indices2fit(y,x,p,rel_height):
     """ Compute indices of points to be fitted, based on index of a peak p and the y-values to fit
@@ -239,35 +292,65 @@ def matrix_peak_correlation_detection(M,x,y,x_range,y_range,model_signal,detec_p
 
     return S
 
-#%% 
+#%% Load data for a given date and experiment
 date = '0226'
 drone_ID = 'mesange'
-exp_ID = '23-waves_012'
+exp_ID = '14-waves_007'
 
-path2data = f'K:/Share_hublot/Data/{date}/Drones/{drone_ID}/matData/{exp_ID}/'
+main_path = df.find_path(disk = 'Elements',year = '2024')
+path2data = f'{main_path}{date}/Drones/{drone_ID}/matData/{exp_ID}/'
 
-file2load = glob.glob(f'{path2data}*scaled.mat')[0]
+filelist = glob.glob(f'{path2data}*scaled.mat')
+print(f'Files available : {filelist}')
+file2load = filelist[0]
 with h5py.File(file2load,'r') as fmat:
     print('Top-level keys : ', list(fmat.keys()))
     data = mat2py.mat_to_dict(fmat['m'],fmat['m'])
 
 data = mat2py.transpose_PIVmat_fields(data)
 
-#%% Define fig_folder and save folder
-
-fig_folder = f'{path2data}Plots/attenuation_from_disp_relation/'
-if not os.path.isdir(fig_folder):
-    os.mkdir(fig_folder)
-
-save_folder =f'{path2data}Results/'
-if not os.path.isdir(save_folder):
-    os.mkdir(save_folder)
     
 #%% Reduce drone noise and compute FFT spectrum 
 Vs = FT.supress_quadratic_noise(np.transpose(data['Vx'],(1,0,2)),data['x'],data['y'])
+Vs = np.transpose(Vs,(1,0,2))
+
+#%% Load image associated to this movie
+img_list = glob.glob(f'{main_path}{date}/Drones/{drone_ID}/{exp_ID}/*exemple.tiff')
+file2load = img_list[0]
+
+img = cv.imread(file2load)
+img = cv.cvtColor(img,cv.COLOR_BGR2RGB)
+
+fig, ax = plt.subplots()
+ax.imshow(img)
+
+xmin = 0
+xmax = img.shape[1] - 1
+
+crop = img[:,xmin:xmax,:]
+fig, ax = plt.subplots()
+ax.imshow(crop)
+
+frasil_boxes = np.where(np.logical_and(data['PIXEL']['x_pix'] < xmax,data['PIXEL']['x_pix'] > xmin))[0]
+idx_start = frasil_boxes[0]
+idx_end = frasil_boxes[-1]  
+  
+#%% Define fig_folder and save folder
+Dt = int(data['PIV_param']['Dt'])
+fig_folder = f'{path2data}Plots/attenuation_from_disp_relation_Dt{Dt}/split_study_{xmin}to{xmax}/'
+if not os.path.isdir(fig_folder):
+    os.mkdir(fig_folder)
+
+save_folder =f'{path2data}Results/pix_{xmin}to{xmax}/'
+if not os.path.isdir(save_folder):
+    os.mkdir(save_folder)
+
+#%% Compute histogram
+figname = f'{fig_folder}Histogram_{date}_{drone_ID}_{exp_ID}'
+FT.histogram_PIV(Vs[idx_start:idx_end,:,:],data['PIV_param']['w'],figname)
 
 #%% Compute FFT spectrum 
-TF_spectrum,freq = FT.temporal_FFT(Vs,data['SCALE']['facq_t'],padding_bool = 1,add_pow2 = 0)
+TF_spectrum,freq,FFT_t = FT.temporal_FFT(Vs,data['SCALE']['facq_t'],padding_bool = 1,add_pow2 = 0,output_FFT = True)
 
 # save data in a structure
 FFT_spectrum = {}
@@ -290,14 +373,17 @@ plt.savefig(figname + '.svg', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')
 
 #%% Compute space time spectrum 
-Vs = np.transpose(Vs,(1,0,2))
-Efk = FT.space_time_spectrum(Vs,1/data['SCALE']['fx'],data['SCALE']['facq_t'],add_pow2 = [0,0,0])
+
+N = Vs.shape[2]
+Efk = FT.space_time_spectrum(Vs[idx_start:idx_end,:,:],1/data['SCALE']['fx'],data['SCALE']['facq_t'],add_pow2 = [1,1,0])
 
 #%% Plot Afk 
 
 set_graphs.set_matplotlib_param('single')
 fig, ax = plt.subplots()
-c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = 1e-5,vmax = 1e-2,
+Amin = 5e-5 # change to adjust colormap
+Amax = 1e-2 # change to adjust colormap
+c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = Amin,vmax = Amax,
               origin = 'lower', interpolation = 'gaussian',
               extent = (Efk['k'].min(),Efk['k'].max(),Efk['f'].min(),Efk['f'].max()))
 
@@ -319,6 +405,27 @@ plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.svg', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')
 
+#%% Look at demodulated fields
+
+aspect_ratio = data
+
+frequency_range = [0.1,0.8]
+indices_freq = np.where(np.logical_and(Efk['f'] > frequency_range[0],Efk['f'] < frequency_range[1]))[0]
+
+# create array of frequencies and amplitude 
+freq = Efk['f'][indices_freq]
+selected_FFT = FFT_t[:,:,indices_freq]
+
+ani = animation_demodulated_field(selected_FFT, freq, parula_map, 4e-1)
+
+# Save the created animation
+file2save = f'animation_real_field_fmin_{frequency_range[0]}_fmax_{frequency_range[1]}'
+file2save = file2save.replace('.','p')
+file2save = f'{fig_folder}{file2save}.mp4'
+ani.save(file2save)
+print('Animation saved')
+
+
 #%% Method for peaks detection
 # step 1 - find peaks using gaussian convolution
 # step 2 - filter and keep only relevant peaks
@@ -327,12 +434,12 @@ plt.savefig(figname + '.png', bbox_inches='tight')
 
 #%% Select a profile for a given wavevector and perform peak detection with gaussian fit over frequency 
 Afk = Efk.copy()
-# Build Gaussian to be convoluted
-gaussian_width = 10
+# Build Gaussian to be convoluted (can change gaussian width to detect more or less peaks)
+gaussian_width = 6
 N = 8
 gaussian = scipy.signal.windows.gaussian(M = gaussian_width * N,std = gaussian_width)
 detec_param = {'prominence':1e-2,'rel_height':0.6} # parameters for find_peaks
-wavevector_range = [0.05,2.0] # range of wavevector spanned
+wavevector_range = [0.01,2.5] # range of wavevector spanned
 frequency_range = [0,1.5] # range of frequency over which we look for peaks
 
 S = matrix_peak_correlation_detection(Afk['E'], Afk['k'], Afk['f'], wavevector_range, frequency_range, gaussian, detec_param)
@@ -349,7 +456,7 @@ filtered_x,filtered_y,filtered_properties = scatter_filter.interactive_scatter_f
 
 fig, ax = plt.subplots()
 ax.plot(filtered_properties['k'],filtered_properties['f'],'o')
-c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = 2e-5,vmax = 1e-3,
+c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = Amin,vmax = Amax,
               origin = 'lower', interpolation = 'gaussian',
               extent = (Efk['k'].min(),Efk['k'].max(),Efk['f'].min(),Efk['f'].max()))
 
@@ -371,6 +478,7 @@ with open(file2save,'wb') as pf:
 
 print('DONE.')
 #%% Select a peak and cascade down to compute width over which we perform fitting
+Afk = Efk.copy()
 
 # load filtered properties 
 file2load = f'{fig_folder}Filtered_peaks_respectto_f_fixed_k.pkl'
@@ -429,7 +537,7 @@ for idx in indices:
             
             # gaussian fit 
             popt,pcov = scipy.optimize.curve_fit(lambda x,x0,sigma : lorentzian(x, x0, sigma),x,y_exp,
-                                                 bounds = ([x[0],1e-3],[x[-1],1]))
+                                                 bounds = ([x[0],1e-4],[x[-1],1]))
             err_coeff = np.sqrt(np.diag(pcov))
             print(f'f0 = {popt[0]:.2f} ± {err_coeff[0]:.2f} and alpha = {popt[1]:.2e} ± {err_coeff[1]:.2e}')
             
@@ -477,7 +585,7 @@ popt,pcov = scipy.optimize.curve_fit(lambda k,hw : bound_harmonicN(k, 1, hw)/2/n
 set_graphs.set_matplotlib_param('single')
 fig, ax = plt.subplots()
 ax.errorbar(m['k'],m['f'],yerr = m['err_f'],fmt = '.',color = 'w')
-c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = 1e-5,vmax = 1e-2,
+c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = Amin,vmax = Amax,
               origin = 'lower', interpolation = 'gaussian',
               extent = (Efk['k'].min(),Efk['k'].max(),Efk['f'].min(),Efk['f'].max()))
 
@@ -521,7 +629,7 @@ water_depth = [hw , err_hw] # water depth and standard deviation
 alpha,err_alpha = time2space_attenuation(time_att, m['k'], water_depth) # compute spatial attenuation
 
 xbounds = [0.1,1]
-ybounds = [1e-2,1e0]
+ybounds = [1e-3,1e0]
 x_fit = np.linspace(xbounds[0],xbounds[1],100)
 
 # fit by a powerlaw
@@ -578,7 +686,7 @@ file2save = f'{save_folder}main_results_{date}_{drone_ID}_{exp_ID}.pkl'
 with open(file2save,'wb') as pf :
     pickle.dump(main_results,pf)
 
-
+print('Main results file saved !')
 
 
 
@@ -592,7 +700,7 @@ with open(file2save,'wb') as pf :
 
 #%% Detect harmonics for a given frequency and perform peak detection
 # Build Gaussian to be convoluted
-gaussian_width = 3
+gaussian_width = 2
 N = 6
 gaussian = scipy.signal.windows.gaussian(M = gaussian_width * N,std = gaussian_width)
 detec_param = {'prominence':1e-2,'rel_height':0.4} # parameters for find peaks function
@@ -621,7 +729,7 @@ with open(file2save,'wb') as pf:
 #%%
 fig, ax = plt.subplots()
 ax.plot(filtered_properties['k'],filtered_properties['f'],'.w')
-c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = 1e-5,vmax = 1e-2,
+c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = Amin,vmax = Amax,
               origin = 'lower', interpolation = 'gaussian',
               extent = (Efk['k'].min(),Efk['k'].max(),Efk['f'].min(),Efk['f'].max()))
 
@@ -653,11 +761,11 @@ rel_height = detec_param['rel_height']
 # build a dictionnary for peaks detected at fixed frequency
 dict_f = {'A':[],'f':[],'k':[],'alpha':[],'err_k':[],'err_alpha':[],'d':[]}
 
-mask_k = np.where(np.logical_and(Efk['k'] < wavevector_range[1],Efk['k'] > wavevector_range[0]))[0]
+mask_k = np.where(np.logical_and(Afk['k'] < wavevector_range[1],Afk['k'] > wavevector_range[0]))[0]
 Afk['k'] = Efk['k'][mask_k]
 Afk['E'] = Efk['E'][:,mask_k]
 
-indices = np.where(np.logical_and(Efk['f'] > frequency_range[0],Efk['f'] < frequency_range[1]))[0]
+indices = np.where(np.logical_and(Afk['f'] > frequency_range[0],Afk['f'] < frequency_range[1]))[0]
 fig, ax = plt.subplots()
 # fig,ax1 = plt.subplots()
 
@@ -669,7 +777,7 @@ for idx in indices:
 
     ax.clear()
     
-    detected_f = Efk['f'][idx]
+    detected_f = Afk['f'][idx]
     print(f'k  = {detected_f:.2f}')
     label_k = f'{detected_f:.2f}'
     
@@ -677,13 +785,13 @@ for idx in indices:
     mask = np.where(filtered_properties['idx'] == idx)[0]
     peaks = filtered_properties['peaks'][mask]
     
-    section = Efk['E'][idx,:]
+    section = Afk['E'][idx,:]
     norm = section/section.max()
     correlated = scipy.signal.fftconvolve(norm,gaussian,mode = 'same')
     norm_correlated = correlated/correlated.max()
     
-    ax.plot(Efk['k'],norm,'-o',label = label_k)
-    ax.plot(Efk['k'],norm_correlated)
+    ax.plot(Afk['k'],norm,'-o',label = label_k)
+    ax.plot(Afk['k'],norm_correlated)
     
     for p in peaks:
 
@@ -691,38 +799,43 @@ for idx in indices:
         
         points2fit = indices2fit(norm_correlated,Afk['k'],p,rel_height)
         # plot points
-        ax.plot(Efk['k'][p],norm_correlated[p],'s')
-        ax.plot(Efk['k'][points2fit],norm[points2fit],'d')  
-        if section[p] > section[points2fit].min():
-            
-            x = Efk['k'][points2fit]
-            y_exp = (section[points2fit] - section[points2fit].min())/(section[points2fit].max() - section[points2fit].min())
-            
-            # gaussian fit 
-            popt,pcov = scipy.optimize.curve_fit(lambda x,x0,sigma : lorentzian(x, x0, sigma),x,y_exp,
-                                                 bounds = ([x[0],1e-3],[x[-1],1]))
-            err_coeff = np.sqrt(np.diag(pcov))
-            print(f'f0 = {popt[0]:.2f} ± {err_coeff[0]:.2f} and alpha = {popt[1]:.2e} ± {err_coeff[1]:.2e}')
-            
-            xfit = np.linspace(x[0],x[-1],len(x))
-            yth = lorentzian(xfit, popt[0], popt[1])
-            
-            # ax1.plot(x,y_exp,'o')
-            # ax1.plot(xfit,yth)
-            
-            yplot = yth*(section[points2fit].max() - section[points2fit].min()) + section[points2fit].min()
-            yplot = yplot/section.max()
-            ax.plot(xfit,yplot,'r-')  
-            
-            # compute distance to fit
-            dist2fit = np.sum((y_exp - yth)**2)/np.sum(y_exp**2)
-            dict_f['d'].append(dist2fit)
-            dict_f['A'].append(Afk['E'][idx,p])
-            dict_f['k'].append(popt[0])
-            dict_f['f'].append(detected_f)
-            dict_f['alpha'].append(popt[1])
-            dict_f['err_k'].append(err_coeff[0])
-            dict_f['err_alpha'].append(err_coeff[1])
+        ax.plot(Afk['k'][p],norm_correlated[p],'s')
+        ax.plot(Afk['k'][points2fit],norm[points2fit],'d')  
+        if points2fit.size > 0 :
+            if section[p] > section[points2fit].min():
+                
+                x = Afk['k'][points2fit]
+                y_exp = (section[points2fit] - section[points2fit].min())/(section[points2fit].max() - section[points2fit].min())
+                
+                try : 
+                    # gaussian fit 
+                    popt,pcov = scipy.optimize.curve_fit(lambda x,x0,sigma : lorentzian(x, x0, sigma),x,y_exp,
+                                                         bounds = ([x[0],1e-4],[x[-1],1]))
+                    err_coeff = np.sqrt(np.diag(pcov))
+                    print(f'f0 = {popt[0]:.2f} ± {err_coeff[0]:.2f} and alpha = {popt[1]:.2e} ± {err_coeff[1]:.2e}')
+                    
+                    xfit = np.linspace(x[0],x[-1],len(x))
+                    yth = lorentzian(xfit, popt[0], popt[1])
+                    
+                    # ax1.plot(x,y_exp,'o')
+                    # ax1.plot(xfit,yth)
+                    
+                    yplot = yth*(section[points2fit].max() - section[points2fit].min()) + section[points2fit].min()
+                    yplot = yplot/section.max()
+                    ax.plot(xfit,yplot,'r-')  
+                    
+                    # compute distance to fit
+                    dist2fit = np.sum((y_exp - yth)**2)/np.sum(y_exp**2)
+                    dict_f['d'].append(dist2fit)
+                    dict_f['A'].append(Afk['E'][idx,p])
+                    dict_f['k'].append(popt[0])
+                    dict_f['f'].append(detected_f)
+                    dict_f['alpha'].append(popt[1])
+                    dict_f['err_k'].append(err_coeff[0])
+                    dict_f['err_alpha'].append(err_coeff[1])
+                    
+                except RuntimeError :
+                    print(f'Fit did not work for frequency f = {detected_f} Hz')
         
     # fancy plot and save it 
     ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$',labelpad = 5)
@@ -742,12 +855,23 @@ for key in dict_f.keys():
     
 #%% 
 fig, ax = plt.subplots()
+c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = Amin,vmax = Amax,
+              origin = 'lower', interpolation = 'gaussian',
+              extent = (Efk['k'].min(),Efk['k'].max(),Efk['f'].min(),Efk['f'].max()))
+
 ax.errorbar(dict_f['k'],dict_f['f'],xerr = dict_f['err_k'],fmt = 'o')
 ax.plot(filtered_properties['k'],filtered_properties['f'],'o')    
+ax.set_xlim(kbounds)
+ax.set_ylim(fbounds)
 
+ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$', labelpad = 5)
+ax.set_ylabel(r'$f \; \mathrm{(Hz)}$', labelpad = 5)
+
+cbar = plt.colorbar(c,ax = ax)
+cbar.set_label(r'$|\hat{V}_x| (k,\omega) \; \mathrm{(u.a.)}$',labelpad = 5)
 #%% DISCRIMINATE DIFFERENT HARMONICS
-N = np.arange(1,4)
-hw = 5
+N = np.arange(1,5)
+hw = 4
 nb_points = len(dict_f['k'])
 k_list = np.linspace(dict_f['k'].min(),dict_f['k'].max(),nb_points)
 harmonics = np.zeros((k_list.shape[0],N.shape[0]))
@@ -767,10 +891,13 @@ for i in range(len(N)):
 closest_harmonic = np.argmin(D,axis = 1) + 1
 
 # correct closestharmonic
-closest_harmonic[np.where(dict_f['k']<0.45)] = 1
+closest_harmonic[np.where(dict_f['k']<0.5)] = 1
 
-mask = np.where(np.logical_and(closest_harmonic == 3,dict_f['k'] < 0.65))
+mask = np.where(np.logical_and(closest_harmonic == 3,dict_f['k'] < 0.7))
 closest_harmonic[mask] = 2
+
+mask = np.where(np.logical_and(closest_harmonic == 4,dict_f['k'] < 1.03))
+closest_harmonic[mask] = 3
 
 dict_f['closest_harmonic'] = closest_harmonic
 
@@ -785,6 +912,9 @@ mask = dict_f['closest_harmonic'] == 1
 for key in dict_f.keys():
     dict_harm_1[key] = dict_f[key][mask]
 
+# get rid off wrong points 
+filtered_x,filtered_y,dict_harm_1 = scatter_filter.interactive_scatter_filter(dict_harm_1['k'], dict_harm_1['f'],dict_harm_1)
+
 
 #%% Find water depth using detection at fixed frequency
 # fit hw over harmonic 1
@@ -793,13 +923,13 @@ ftofit = dict_harm_1['f']
 
 popt,pcov = scipy.optimize.curve_fit(lambda k,hw : bound_harmonicN(k, 1, hw)/2/np.pi,ktofit,ftofit)
 k_fit = np.linspace(kbounds[0],kbounds[1],100)
-y_exp = bound_harmonicN(k_fit, 1, popt[0])/2/np.pi
+
 set_graphs.set_matplotlib_param('single')
 
 fig, ax = plt.subplots(figsize = (12,9))
 ax.plot(ktofit,ftofit,'.w')
-c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = 1e-5,vmax = 1e-2,
-              origin = 'lower',
+c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = Amin,vmax = Amax,
+              origin = 'lower',interpolation = 'gaussian',
               extent = (Efk['k'].min(),Efk['k'].max(),Efk['f'].min(),Efk['f'].max()))
 
 # ax.set_xscale('log')
@@ -816,6 +946,7 @@ cbar.set_label(r'$|\hat{V}_x| (k,\omega) \; \mathrm{(u.a.)}$',labelpad = 5)
 hw = popt[0]
 err_hw = np.sqrt(np.diag(pcov)[0])
 title = r'$H = ' + f'{hw:.2f}' + '\pm' + f' {err_hw:.2f}' +'$'
+y_exp = bound_harmonicN(k_fit, 1, hw)/2/np.pi
 ax.plot(k_fit,y_exp,'r',label = title)
 print(f'H = {hw:.2f} ± {err_hw:.2f}')
 ax.legend()
@@ -835,10 +966,6 @@ filtered_x,filtered_y,filtered_properties = scatter_filter.interactive_scatter_f
 for key in filtered_properties.keys():
     dict_harm_1[key] = filtered_properties[key]
 
-# store hw in dict_f
-dict_harm_1['hw'] = hw
-dict_harm_1['err_hw'] = err_hw
-
 #%% Compute spatial attenuation for harmonic 1
 
 x = dict_harm_1['f']
@@ -847,7 +974,7 @@ err_y = dict_harm_1['err_alpha']
 
 # bounds for plot
 xbounds = [0.1,1]
-ybounds = [1e-2,1e0]
+ybounds = [1e-3,1e0]
 x_fit = np.linspace(xbounds[0],xbounds[1],100)
 
 # power law fit taking into account uncertainties over y 
@@ -867,17 +994,24 @@ ax.set_xlim(xbounds)
 ax.set_ylim(ybounds)
 ax.legend()
 
+figname = f'{fig_folder}Spatial_attenuation_from_fixed_f_{date}_{drone_ID}_{exp_ID}'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.svg', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')  
 
+#%%
+# store hw in dict_f
+dict_harm_1['hw'] = hw
+dict_harm_1['err_hw'] = err_hw
+
+# store power law parameters 
 dict_harm_1['power_law'] = {}
 dict_harm_1['power_law']['B'] = coeffs[1]
 dict_harm_1['power_law']['err_B'] = err_coeffs[1]
 dict_harm_1['power_law']['beta'] = coeffs[0]
 dict_harm_1['power_law']['err_beta'] = err_coeffs[0]
 
-figname = f'{fig_folder}Spatial_attenuation_from_fixed_f_{date}_{drone_ID}_{exp_ID}'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')  
+
 
 
 #%% Save data in main_results 
@@ -926,7 +1060,7 @@ x_fit = np.linspace(x_bounds[0],x_bounds[1],100)
 
 fig, ax = plt.subplots(figsize = (12,9))
 # plot space-time spectrum
-c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = 1e-5,vmax = 1e-2,
+c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = Amin,vmax = Amax,
               origin = 'lower',interpolation = 'gaussian',
               extent = (Efk['k'].min(),Efk['k'].max(),Efk['f'].min(),Efk['f'].max()))
 cbar = plt.colorbar(c,ax = ax)
@@ -966,7 +1100,7 @@ plt.savefig(figname + '.png', bbox_inches='tight')
 
 set_graphs.set_matplotlib_param('single')
 x_bounds = [1e-1,1e0]
-y_bounds = [1e-2,1e0]
+y_bounds = [1e-3,1e0]
 x_fit = np.linspace(x_bounds[0],x_bounds[1],100)
 
 fig, ax = plt.subplots(figsize = (12,9))
