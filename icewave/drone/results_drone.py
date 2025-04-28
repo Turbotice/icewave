@@ -8,23 +8,29 @@ This script aims at gathering all results collected from drones Data
 
 """
 
-#%% Import modules
+# Import modules
 
 import numpy as np
 import os
 import glob
 import pickle
 
-import matplotlib.pyplot as plt
-
-import icewave.tools.matlab2python as mat2py
-import icewave.sebastien.set_graphs as set_graphs
-import icewave.drone.drone_projection as dp
 import icewave.tools.Fourier_tools as FT
 import icewave.multi_instruments.results as res
 import icewave.tools.datafolders as df
+import argparse
 
-#%% Function section 
+
+# Function section 
+def gen_parser():
+    """ Generate parser to use this script in command line (see doc of argparse module for more details) 
+    Output : - args, object containing a single attribute 'date', which is the date for which we want to gather all results """
+    parser = argparse.ArgumentParser(description="Gather Drone results data")
+    parser.add_argument('-date', dest='date', type=str,default='0226',help='select date for which drone results are gathered')
+    
+    args = parser.parse_args()
+    print(args)
+    return args
 
 def get_amp_freq_from_drone_results(drone_results):
     TF_spectrum = drone_results['FFT_spectrum']['TF_spectrum']
@@ -35,77 +41,64 @@ def get_amp_freq_from_drone_results(drone_results):
     
     return Amax,f0
 
-#%% Load an exemple of results file 
-
-
-date = '0226'
-typ = 'phones'
-main_path = 'K:/Share_hublot/Data/'
-path2results = f'{main_path}{date}/Summary/results_{typ}_{date}.pkl'
-
-with open(path2results,'rb') as pf:
-    results = pickle.load(pf)
+def get_drone_results_from_dict(drone_results):
     
-#%% Load results associated to a single drone movie
-date = '0226'
-typ = 'Drones'
-drone_ID = 'mesange'
-exp_ID = '23-waves_012'
-path2drone_results = f'{main_path}{date}/{typ}/{drone_ID}/matData/{exp_ID}/Results/'
+    date = drone_results['date']
+    drone_ID = drone_results['drone_ID']
+    exp_ID = drone_results['exp_ID']
 
-file2load = f'{path2drone_results}main_results_{date}_{drone_ID}_{exp_ID}.pkl'
-with open(file2load,'rb') as pf:
-    drone_results = pickle.load(pf)
-
-#%% Detect maximum amplitude and associated frequency of TF spectrum 
-
-Amax,f0 = get_amp_freq_from_drone_results(drone_results)
-
-#%% Load records for corresponding date 
-
-file2load = f'{main_path}{date}/Summary/records_{date}.pkl'
-with open(file2load,'rb') as pf:
-    records = pickle.load(pf)
+    main_results = {}
     
-#%%
-# write Amax and f0 in a results dictionnary
-main_results = {}
-result = res.make_result(date, 'drones', drone_ID, exp_ID, 'f0', f0, comments = 'unit : Hz')
-main_results.update(result)
-result = res.make_result(date, 'drones', drone_ID, exp_ID, 'Amax', Amax)
-main_results.update(result)
+    # Detect maximum amplitude and associated frequency of TF spectrum
+    Amax,f0 = get_amp_freq_from_drone_results(drone_results)
 
-# write A,f,k,alpha 
-keys2write = ['A','f','k','alpha','hw']
-for key in keys2write:
-    value = drone_results['attenuation'][key]
-    result = res.make_result(date, 'drones', drone_ID, exp_ID, key, value)
+    # write Amax and f0 in a results dictionnary
+    result = res.make_result(date, 'drones', drone_ID, exp_ID, 'f0', f0)
+    main_results.update(result)
+    result = res.make_result(date, 'drones', drone_ID, exp_ID, 'Amax', Amax)
     main_results.update(result)
 
-# write powerlaw attenuation alpha = B*f**beta
-keys2write = ['B','beta']
-for key in keys2write:
-    value = drone_results['attenuation']['power_law'][key]
-    result = res.make_result(date, 'drones', drone_ID, exp_ID, key, value)
-    main_results.update(result)
+    # write A,f,k,alpha 
+    attenuation_dict = drone_results['attenuation']
+    keys2write = ['A','f','k','alpha','hw']
+    for key in keys2write:
+        value = attenuation_dict[key]
+        result = res.make_result(date, 'drones', drone_ID, exp_ID, key, value)
+        main_results.update(result)
 
+    # write powerlaw attenuation alpha = B*f**beta
+    keys2write = ['B','beta']
+    for key in keys2write:
+        value = attenuation_dict['power_law'][key]
+        result = res.make_result(date, 'drones', drone_ID, exp_ID, key, value)
+        main_results.update(result)
+    
+    return main_results
 
+def collect_drone_results(date,disk = 'Elements',year = '2024'):
+    
+    # search all results files for given date
+    main_path = df.find_path(disk,year)
+    path2drone = f'{main_path}{date}/Drones/'
+    filelist = glob.glob(path2drone + '**/Results/main_results*.pkl',recursive = True)
+    print(filelist)
+    
+    main_results = {}
+    
+    for file2load in filelist:
+        with open(file2load,'rb') as pf:
+            drone_results = pickle.load(pf)
+        
+        current_results = get_drone_results_from_dict(drone_results)
+        main_results.update(current_results)
+        
+        print(f'Drone results updated with file {file2load}')
+    
+        res.save_result(main_results)
+        print('Drone results saved')
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# if code is used a main script from command line 
+if __name__ == '__main__':
+    args = gen_parser()
+    collect_drone_results(args.date)
 
