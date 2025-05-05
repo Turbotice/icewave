@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Apr  4 13:36:48 2025
+Created on Tue Apr 29 16:39:25 2025
 
 @author: sebas
 """
@@ -34,10 +34,6 @@ parula_map = matcmaps.parula()
 
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif', serif='Computer Modern')
-
-full_blues = mpl.colormaps['Blues'].resampled(256)
-new_blues = mcolors.ListedColormap(full_blues(np.linspace(0.2,1,256)))
-
 #%% FUNCTION SECTION 
 
 def affine(x,a,b):
@@ -292,11 +288,12 @@ def matrix_peak_correlation_detection(M,x,y,x_range,y_range,model_signal,detec_p
     return S
 
 #%% Load data for a given date and experiment
-date = '0226'
+date = '0205'
 drone_ID = 'mesange'
-exp_ID = '14-waves_007'
+exp_ID = '16-waves_007'
 
-main_path = df.find_path(disk = 'Elements',year = '2024')
+# main_path = df.find_path(disk = 'Backup25',year = '2025')
+main_path = 'U:/Data/'
 path2data = f'{main_path}{date}/Drones/{drone_ID}/matData/{exp_ID}/'
 
 filelist = glob.glob(f'{path2data}*scaled.mat')
@@ -336,17 +333,18 @@ idx_end = frasil_boxes[-1]
   
 #%% Define fig_folder and save folder
 Dt = int(data['PIV_param']['Dt'])
-fig_folder = f'{path2data}Plots/attenuation_from_disp_relation_Dt{Dt}/split_study_{xmin}to{xmax}/'
+fig_folder = f'{path2data}Plots/attenuation_from_disp_relation_Dt{Dt}/'# '/split_study_{xmin}to{xmax}/'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
 
-save_folder =f'{path2data}Results/pix_{xmin}to{xmax}/'
+save_folder =f'{path2data}Results/'# 'pix_{xmin}to{xmax}/'
 if not os.path.isdir(save_folder):
     os.mkdir(save_folder)
 
 #%% Compute histogram
-figname = f'{fig_folder}Histogram_{date}_{drone_ID}_{exp_ID}'
-FT.histogram_PIV(Vs[idx_start:idx_end,:,:],data['PIV_param']['w'],figname)
+figname = f'{fig_folder}Histogram_{date}_{drone_ID}_{exp_ID}_raw_V'
+# FT.histogram_PIV(Vs[idx_start:idx_end,:,:],data['PIV_param']['w'],figname)
+FT.histogram_PIV(data['Vx'],data['PIV_param']['w'],figname)
 
 #%% Compute FFT spectrum 
 TF_spectrum,freq,FFT_t = FT.temporal_FFT(Vs,data['SCALE']['facq_t'],padding_bool = 1,add_pow2 = 0,output_FFT = True)
@@ -374,13 +372,13 @@ plt.savefig(figname + '.png', bbox_inches='tight')
 #%% Compute space time spectrum 
 
 N = Vs.shape[2]
-Efk = FT.space_time_spectrum(Vs[idx_start:idx_end,:,:],1/data['SCALE']['fx'],data['SCALE']['facq_t'],add_pow2 = [1,1,0])
+Efk = FT.space_time_spectrum(Vs[idx_start:idx_end,:,:],1/data['SCALE']['fx'],data['SCALE']['facq_t'],add_pow2 = [0,0,0])
 
 #%% Plot Afk 
 
 set_graphs.set_matplotlib_param('single')
 fig, ax = plt.subplots()
-Amin = 5e-5 # change to adjust colormap
+Amin = 2e-5 # change to adjust colormap
 Amax = 1e-2 # change to adjust colormap
 c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = Amin,vmax = Amax,
               origin = 'lower', interpolation = 'gaussian',
@@ -408,14 +406,15 @@ plt.savefig(figname + '.png', bbox_inches='tight')
 
 aspect_ratio = data
 
-frequency_range = [0.1,0.8]
+frequency_range = [0.1,1.0]
+cmax = 1e-1
 indices_freq = np.where(np.logical_and(Efk['f'] > frequency_range[0],Efk['f'] < frequency_range[1]))[0]
 
 # create array of frequencies and amplitude 
 freq = Efk['f'][indices_freq]
 selected_FFT = FFT_t[:,:,indices_freq]
 
-ani = animation_demodulated_field(selected_FFT, freq, data['x'], data['y'],parula_map, 4e-1)
+ani = animation_demodulated_field(selected_FFT, freq, data['x'], data['y'],parula_map, cmax)
 
 # Save the created animation
 file2save = f'animation_real_field_fmin_{frequency_range[0]}_fmax_{frequency_range[1]}'
@@ -869,8 +868,8 @@ ax.set_ylabel(r'$f \; \mathrm{(Hz)}$', labelpad = 5)
 cbar = plt.colorbar(c,ax = ax)
 cbar.set_label(r'$|\hat{V}_x| (k,\omega) \; \mathrm{(u.a.)}$',labelpad = 5)
 #%% DISCRIMINATE DIFFERENT HARMONICS
-N = np.arange(1,5)
-hw = 4
+N = np.arange(1,6)
+hw = 4.7
 nb_points = len(dict_f['k'])
 k_list = np.linspace(dict_f['k'].min(),dict_f['k'].max(),nb_points)
 harmonics = np.zeros((k_list.shape[0],N.shape[0]))
@@ -890,13 +889,16 @@ for i in range(len(N)):
 closest_harmonic = np.argmin(D,axis = 1) + 1
 
 # correct closestharmonic
-closest_harmonic[np.where(dict_f['k']<0.5)] = 1
+closest_harmonic[np.where(dict_f['k']<0.4)] = 1
 
-mask = np.where(np.logical_and(closest_harmonic == 3,dict_f['k'] < 0.7))
+mask = np.where(np.logical_and(closest_harmonic > 2,dict_f['k'] < 0.56))
 closest_harmonic[mask] = 2
 
-mask = np.where(np.logical_and(closest_harmonic == 4,dict_f['k'] < 1.03))
+mask = np.where(np.logical_and(closest_harmonic > 3,dict_f['k'] < 0.73))
 closest_harmonic[mask] = 3
+
+mask = np.where(np.logical_and(closest_harmonic > 4,dict_f['k'] < 0.97))
+closest_harmonic[mask] = 4
 
 dict_f['closest_harmonic'] = closest_harmonic
 
@@ -1133,19 +1135,4 @@ ax.legend()
 figname = f'{fig_folder}Comparison_spatial_attenuation_space_detection_VS_time_detection'
 plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

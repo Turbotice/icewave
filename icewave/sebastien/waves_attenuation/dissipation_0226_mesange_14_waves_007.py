@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Apr  4 13:36:48 2025
+Created on Mon Apr 28 15:28:19 2025
 
 @author: sebas
 """
@@ -118,6 +118,7 @@ def time2space_attenuation(time_att,k,water_depth,error_bar = 1):
     
     return alpha,err_alpha
 
+
 def animation_demodulated_field(selected_FFT,freq,x,y,colormap,cmax,time_interval = 1e3):
     
     """ Create animation of real demodulated fields for successive frequencies 
@@ -167,6 +168,8 @@ def animation_demodulated_field(selected_FFT,freq,x,y,colormap,cmax,time_interva
     # plt.show()
     print('Animation computed')
     return ani
+
+
 
 
 def indices2fit(y,x,p,rel_height):
@@ -323,10 +326,12 @@ img = cv.cvtColor(img,cv.COLOR_BGR2RGB)
 fig, ax = plt.subplots()
 ax.imshow(img)
 
-xmin = 0
-xmax = img.shape[1] - 1
+xmin = 2000
+# xmax = img.shape[1] - 1
+xmax = 3840
 
 crop = img[:,xmin:xmax,:]
+crop = np.flip(crop,axis = 1)
 fig, ax = plt.subplots()
 ax.imshow(crop)
 
@@ -380,8 +385,8 @@ Efk = FT.space_time_spectrum(Vs[idx_start:idx_end,:,:],1/data['SCALE']['fx'],dat
 
 set_graphs.set_matplotlib_param('single')
 fig, ax = plt.subplots()
-Amin = 5e-5 # change to adjust colormap
-Amax = 1e-2 # change to adjust colormap
+Amin = 7e-5 # change to adjust colormap
+Amax = 3e-2 # change to adjust colormap
 c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = Amin,vmax = Amax,
               origin = 'lower', interpolation = 'gaussian',
               extent = (Efk['k'].min(),Efk['k'].max(),Efk['f'].min(),Efk['f'].max()))
@@ -408,14 +413,14 @@ plt.savefig(figname + '.png', bbox_inches='tight')
 
 aspect_ratio = data
 
-frequency_range = [0.1,0.8]
+frequency_range = [0.1,0.7]
 indices_freq = np.where(np.logical_and(Efk['f'] > frequency_range[0],Efk['f'] < frequency_range[1]))[0]
 
 # create array of frequencies and amplitude 
 freq = Efk['f'][indices_freq]
-selected_FFT = FFT_t[:,:,indices_freq]
+selected_FFT = FFT_t[idx_start:idx_end,:,indices_freq]
 
-ani = animation_demodulated_field(selected_FFT, freq, data['x'], data['y'],parula_map, 4e-1)
+ani = animation_demodulated_field(np.flip(selected_FFT,0), freq, data['x'][idx_start:idx_end], data['y'], parula_map, 2e-1)
 
 # Save the created animation
 file2save = f'animation_real_field_fmin_{frequency_range[0]}_fmax_{frequency_range[1]}'
@@ -1133,19 +1138,3 @@ ax.legend()
 figname = f'{fig_folder}Comparison_spatial_attenuation_space_detection_VS_time_detection'
 plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
