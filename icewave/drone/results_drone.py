@@ -22,15 +22,15 @@ import argparse
 
 
 # Function section 
-def gen_parser():
-    """ Generate parser to use this script in command line (see doc of argparse module for more details) 
-    Output : - args, object containing a single attribute 'date', which is the date for which we want to gather all results """
-    parser = argparse.ArgumentParser(description="Gather Drone results data")
-    parser.add_argument('-date', dest='date', type=str,default='0226',help='select date for which drone results are gathered')
+# def gen_parser():
+#     """ Generate parser to use this script in command line (see doc of argparse module for more details) 
+#     Output : - args, object containing a single attribute 'date', which is the date for which we want to gather all results """
+#     parser = argparse.ArgumentParser(description="Gather Drone results data")
+#     parser.add_argument('-date', dest='date', type=str, default='0226',help='select date for which drone results are gathered')
     
-    args = parser.parse_args()
-    print(args)
-    return args
+#     args = parser.parse_args()
+#     print(args)
+#     return args
 
 def get_amp_freq_from_drone_results(drone_results):
     TF_spectrum = drone_results['FFT_spectrum']['TF_spectrum']
@@ -99,6 +99,7 @@ def collect_drone_results(date,disk = 'Elements',year = '2024'):
 
 # if code is used a main script from command line 
 if __name__ == '__main__':
-    args = gen_parser()
-    collect_drone_results(args.date)
+    # args = gen_parser()
+    date = '0226'
+    collect_drone_results(date)
 

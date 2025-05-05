@@ -45,7 +45,10 @@ def make_result(date,typ,instrument,name,var,value,index=0,time=None,records=Non
         print('retrieve associated records')
         records = get_record(date,year=year)
     try:
-        record = records[typ][instrument][name]
+        if instrument == 'bernache':
+            record = records[typ]['Bernache'][name]
+        else:
+            record = records[typ][instrument][name]
         if type(record)==dict:
             pass
             #print(record.keys())
@@ -69,12 +72,13 @@ def make_result(date,typ,instrument,name,var,value,index=0,time=None,records=Non
     results[key]['latitude']=record['latitude'][index]
     results[key]['longitude']=record['longitude'][index]
 
-    if value=='auto':
-        #try:
-        #print(record.keys())
-        results[key][var]=float(record['params'][var])
-        #except:
-        #    print('key var does not exist in record')
+    if type(value) == str:
+        if value=='auto':
+            #try:
+            #print(record.keys())
+            results[key][var]=float(record['params'][var])
+            #except:
+            #    print('key var does not exist in record')
     else:
         results[key][var]=value
 
