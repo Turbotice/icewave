@@ -45,17 +45,18 @@ def fft_1D(s,N,fs):
 
 def fft_2D(M,facq,add_pow2 = [0,0]):
     """ Compute 2D FFT of a 2D numpy array
-        Inputs : - M,2D numpy array
-                 - facq, array containing acquisition frequency of each dimension of the array M
+        Inputs : - M, 2D numpy array,
+                 - facq, array containing acquisition frequency of each dimension of the array M 
                  - add_pow2, optional argument used to padd each dimension, default is 0"""
 
     padding = [2**(nextpow2(np.shape(M)[d]) + add_pow2[d]) for d in range(len(np.shape(M)))]
     print(padding)
+
     FFT = np.fft.fft2(M,s = padding)/np.size(M)
     
     # compute array of frequencies and wave vectors 
-    kx = 2*np.pi*facq[1]*np.arange(-padding[1]/2,padding[1]/2-1)/padding[1]
-    ky = 2*np.pi*facq[0]*np.arange(-padding[0]/2,padding[0]/2-1)/padding[0]
+    kx = 2*np.pi*facq[1]*np.arange(-padding[1]/2,padding[1]/2)/padding[1]
+    ky = 2*np.pi*facq[0]*np.arange(-padding[0]/2,padding[0]/2)/padding[0]
     
     shift = np.fft.fftshift(FFT)
     return shift,ky,kx
