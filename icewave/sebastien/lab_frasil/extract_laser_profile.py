@@ -19,16 +19,24 @@ import cv2 as cv
 
 from concurrent.futures import ProcessPoolExecutor
 
-import icewave.tools.matlab_colormaps as matcmaps
-import icewave.tools.Fourier_tools as FT
-
-# PARULA COLORMAP 
-parula_map = matcmaps.parula()
-
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif', serif='Computer Modern')
 
 #%% FUNCTION SECTION 
+def subpix_precision(profile, idx_max):
+    """ Computes the subpixel precision of a position in the convolution product 
+    cf thesis manuscript Antonin Marchand """
+    
+    p = profile[idx_max]
+    p_right = profile[idx_max + 1]
+    p_left = profile[idx_max - 1]
+
+    delta = (p_right - p_left)/(2*(2*p - p_right - p_left))
+    i_subpix = idx_max + delta # subpixel index 
+    
+    max_subpix = p + 0.5*(2*p - p_right - p_left)*delta**2 # max value at the subpixel idx_max
+    
+    return i_subpix,max_subpix
 
 def img_correlation_along_axis(M,analysis,axis = 0):
     """ Compute correlation between each column of a 2D matrix and an analysis function. 
@@ -60,7 +68,7 @@ def extract_laser_frame(M,analysis):
     for j in range(correlated.shape[1]):
         # compute sub-pixel position 
         idx_max = np.argmax(correlated[:,j])
-        idx_subpix,max_subpix = FT.subpix_precision(correlated[:,j],idx_max)
+        idx_subpix,max_subpix = subpix_precision(correlated[:,j],idx_max)
         laser_profile[j] = idx_subpix
         
     return laser_profile
@@ -97,7 +105,7 @@ def scale_spatio(laser_spatio,theta_rad,facq_pix,facq_t,idx_start,idx_end):
                   + t, 1D numpy array, time coordinate """
 
     # scaling 
-    spatio_scaled = laser_spatio/np.tan(theta_rad)/facq_pix # deformation in meter 
+    spatio_scaled = (laser_spatio - np.mean(laser_spatio))/np.tan(theta_rad)/facq_pix # deformation in meter 
     x = np.arange(spatio_scaled.shape[0])/facq_pix # x coordinate in meter
     t = np.arange(spatio_scaled.shape[1])/facq_t # time array in seconds 
     
@@ -188,6 +196,10 @@ def single_experiment_extraction(path2img,theta_rad,facq_pix,facq_t,results_fold
         
     data = scale_spatio(laser_spatio,theta_rad,facq_pix,facq_t,idx_start,idx_end)
 
+    data['h'] = h
+    data['f_ex'] = f_ex    
+    data['amplitude'] = amplitude
+
     file2save = f'{results_folder}scaled_laser_structure_{suffixe}.pkl'
     with open(file2save,'wb') as pf:
         pickle.dump(data,pf)
@@ -230,5 +242,18 @@ def main():
     
 if __name__ == '__main__':
     main()
+
+#%% Import images for laser extration 
+
+path = 'F:/Aurore_frasil/2024_07_11_e_10mm_laser/3.8Hz_15mm/'
+filename = 'Basler_a2A1920-160ucBAS__40232065__20240711_191719518_0001.tiff'
+file2load = f'{path}{filename}'
+
+img = cv.imread(file2load)
+img = cv.cvtColor(img,cv.COLOR_BGR2RGB)
+
+fig, ax = plt.subplots()
+ax.imshow(img)
+ax.set_xlabel('$x_p$')
 
 
