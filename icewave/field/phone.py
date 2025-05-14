@@ -6,10 +6,14 @@ from pprint import pprint
 import datetime
 
 global base
-base = df.find_path(disk='Hublot24')
+base = df.find_path(year='2025')
 
-def get_records(date):
-    files = glob.glob(base+date+'/Telephones/*/averages_Summary.csv')
+def get_records(date,year='2025'):
+    base = df.find_path(year=year)
+
+    files1 = glob.glob(base+date+'/Telephones/*/averages_Summary.csv')
+    files2 = glob.glob(base+date+'/Phones/*/averages_Summary.csv')
+    files = files1+files2
     records = {}
     records['phones'] = {}
     for filename in files:

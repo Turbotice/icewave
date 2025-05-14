@@ -1,6 +1,7 @@
 
 
 import datetime
+import numpy as np
 
 def gps_time(waypoint):
     time = str(waypoint.time).replace('-','').replace(' ','T').split('+')[0].replace(':','')+'Z'
@@ -14,7 +15,16 @@ def gps_get_times(gpx):
 
 def convert_time(t):
     h,m,s = t.split(':')
-    return int(h)*3600+int(m)*60+int(s)
+    if '.' in s:
+        return int(h)*3600+int(m)*60+float(s)
+    else:
+        return int(h)*3600+int(m)*60+int(s)
+
+def today_date(t0):
+    tstr = str(datetime.datetime.fromtimestamp(t0))
+    tref = tstr.split(' ')[0]
+    print(tref)
+    return tref
 
 def today_time(times):
     t0 = times[0]
@@ -29,6 +39,9 @@ def today_time(times):
         t =  datetime.datetime.fromtimestamp(t)#datetime_object = datetime.strptime(datetime_str, '%m/%d/%y %H:%M:%S')
         tdtimes.append((t - tref).total_seconds())
     return tdtimes
+
+def to_UTC(times,hours=-5):
+    return np.asarray(times)-hours*3600
 
 def display_time(times):    
     timestamps=[]

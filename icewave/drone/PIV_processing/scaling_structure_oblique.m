@@ -10,8 +10,11 @@ function m = scaling_structure_oblique(S,x_pix,y_pix,t,x0,y0,H,alpha_0,focale,fp
 
     [X_pix,Y_pix,T] = meshgrid(x_pix,y_pix,t);
     % Compute Vz 
+    X_pix = permute(X_pix, [2,1,3]);
+    Y_pix = permute(Y_pix, [2,1,3]);
+    T = permute(T, [2,1,3]);
     Vz = Fz(X_pix,Y_pix,T);
-    Vz = permute(Vz,[2,1,3]);
+%     Vz = permute(Vz,[2,1,3]);
     Vz = - Vz;
     m.Vz = Vz;
     

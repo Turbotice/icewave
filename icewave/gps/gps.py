@@ -32,7 +32,7 @@ def tmp_connect():
     t = tilemapbase.tiles.build_OSM()
     return t
 
-def project(Long,Lat):
+def project(Long,Lat,R=6378000,meter=False):
     """
     Naive local projection of Long & Lat coordinates on a plane 
     INPUT 
@@ -50,15 +50,21 @@ def project(Long,Lat):
     lat_rad = np.radians(Lat)
     
     ytile = (1.0 - np.log(np.tan(lat_rad) + (1 / np.cos(lat_rad))) / np.pi) / 2.0
+    if meter:
+        xtile = xtile*R
+        ytile = ytile*R
+#        xtile = xtile-xtile[0]
+#        ytile = ytile-ytile[0]
+
     return (xtile, ytile)
 
-def extent(BBox):
+def extent(BBox,ratio=1.0):
     """
     #to be revised, weird projection system
     """
 
     ext = tilemapbase.Extent.from_lonlat(BBox[0],BBox[1],BBox[2],BBox[3])
-    ext = ext.to_aspect(1.0)
+    ext = ext.to_aspect(ratio)
 
     print(ext)
     return ext
@@ -77,7 +83,7 @@ def display_map(ext,t,title='',ax=None,width=600):
     plotter.plot(ax, t)
 
     figs = {}
-    figs.update(graphes.legende('Longitude','Latitude',title,cplot=True))
+    figs.update(graphes.legende('Longitude','Latitude',title,cplot=True,ax=ax))
     return ax,figs
 
 def get_wpts(filename,display=True):
@@ -123,7 +129,7 @@ def display_gpx(filename,date,gpx,save=True):
     
     return ax,figs
 
-def display_dictwpts(filename,date,wpts,save=True):
+def display_dictwpts(filename,date,wpts,save=True,scale=0.75):
     Long,Lat = [],[]
     for key in wpts.keys():
         X,Y = [],[]
@@ -131,7 +137,7 @@ def display_dictwpts(filename,date,wpts,save=True):
             Long.append(waypoint.longitude)
             Lat.append(waypoint.latitude)
             
-    BBox = box_data(Long,Lat,scale=0.75)
+    BBox = box_data(Long,Lat,scale=scale)
     ext = extent(BBox)
     t = tmp_connect()
     fig, ax = plt.subplots(figsize=(8, 8), dpi=200)
@@ -154,7 +160,7 @@ def display_dictwpts(filename,date,wpts,save=True):
 #graphes.save_figs(figs,savedir=savefolder,prefix='wpts_'+date+'_',suffix='summary',frmt='pdf')
 
 
-def map_traj(Long,Lat,save=False,scale=0.8,title=''):
+def map_traj(Long,Lat,save=False,scale=0.8,title='',ax=None):
     BBox = box_data(Long,Lat,scale=scale)
     print(BBox)
     X,Y = project(Long,Lat)
@@ -164,7 +170,8 @@ def map_traj(Long,Lat,save=False,scale=0.8,title=''):
 
     t = tmp_connect()
     
-    fig, ax = plt.subplots(figsize=(8, 8), dpi=200)
+    if ax==None:
+        fig, ax = plt.subplots(figsize=(8, 8), dpi=200)
     ax,figs = display_map(ext,t,ax=ax,width=600)
     ax.plot(X,Y,'k-')
 
@@ -173,7 +180,7 @@ def map_traj(Long,Lat,save=False,scale=0.8,title=''):
     if save:
         graphes.save_figs(figs,savedir=savefolder,frmt='png')
 
-    return ax,t,figs
+    return ax,t,ext,figs
 
 
 def box_data(Longs,Lats,scale=1.2,width=0.02,square=True):
@@ -199,6 +206,14 @@ def box_data(Longs,Lats,scale=1.2,width=0.02,square=True):
     BBox[3] = np.min([BBox[3],89.9])    
     return BBox
 
+def box_data_tight(Longs,Lats):
+    BBox = np.zeros(4)
+    BBox[0] = np.min(Longs)
+    BBox[1] = np.max(Longs)
+    BBox[2] = np.min(Lats)
+    BBox[3] = np.max(Lats)  
+    return BBox
+
 def boxes(name):
     """"
     Return a dictionnary of typical boxes coordinates (for scaled display maps)
@@ -209,8 +224,9 @@ def boxes(name):
     d['bic'] = [-68.8681,-68.7995,48.3181,48.3551]
     d['rimouski'] = [-68.5462,-68.5065,48.4374,48.4636]
     d['capelans'] = [ -68.857421,-68.849667,48.327819,48.332625]#[-68.8625,-68.8330,48.3185,48.3363]
-    
+
     return d[name]
+
 def check_box(Long,Lat,BBox):
     """
     check box dimensions. Return a boolean value
@@ -218,8 +234,8 @@ def check_box(Long,Lat,BBox):
 #    BBox = boxes(name)
     bLong = np.logical_and(Long>BBox[0],Long<BBox[1])
     bLat = np.logical_and(Lat>BBox[2],Lat<BBox[3])
-    b= np.logical_and(bLong,bLat)
-    print('Box dimension :'+str(b))
+    b = np.logical_and(bLong,bLat)
+    #print('Box dimension :'+str(b))
     return b
 
 def get_city(Long,Lat):
@@ -251,5 +267,29 @@ def title_std(filename,Long,Lat):
     title = date+', '+hour.replace('.','_')+', '+s
     return title
 
-    
-    
+def display_standard_map(ax,name,title=''):
+    if name=='capelans':
+        print('Use Capelans map')
+        ax,figs = display_mercier(ax,title=title)
+    elif name=='haha':
+        ax,figs = display_haha(ax,title=title)
+    else:
+        ax,figs = display_haha(ax,title=title)
+    return ax,figs
+
+def display_haha(ax,title='',BBox=None,ratio=1):
+    if BBox==None:
+        BBox = boxes('haha')
+        ext = extent(BBox,ratio=2)
+    else:
+        ext = extent(BBox,ratio=ratio)
+    t = tmp_connect()
+    ax,figs = display_map(ext,t,title=title,ax=ax,width=600)
+    return ax,figs
+
+def display_mercier(ax,title=''):
+    BBox = boxes('capelans')
+    ext = extent(BBox,ratio=1)
+    t = tmp_connect()
+    ax,figs = display_map(ext,t,title=title,ax=ax,width=600)
+    return ax,figs

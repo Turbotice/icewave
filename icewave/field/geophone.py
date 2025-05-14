@@ -4,17 +4,17 @@ import icewave.tools.rw_data as rw_data
 import glob
 from pprint import pprint
 
-global base
-base = df.find_path(disk='Hublot24')
 
-def get_records(date,year='2024'):
+
+def get_records(date,year='2025'):
+    base = df.find_path(year='2025',date=date)
     files = glob.glob(base+date+'/Geophones/DigiSolo*.txt')#/*/*.srt')
     nbase = len(base)
     records = {}
     records['geophones'] = {}
     for filename in files:
         record = read_digiSolo(filename)
-        num = filename.split('/DigiSolo_')[1].split('.txt')[0]
+        num = filename.split('DigiSolo_')[1].split('.txt')[0]
         #find only the data from this day
         select={}
         for key in record.keys():

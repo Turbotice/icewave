@@ -27,23 +27,26 @@ import argparse
 def gen_parser():    
     parser = argparse.ArgumentParser(description="Manipulate multi instruments data")
     parser.add_argument('-date', dest='date', type=str,default='0226',help='select date to process data')
+    parser.add_argument('-year', dest='year', type=str,default='2025',help='select year to process data')
+
     #parser.add_argument('-step', dest='step', type=int,default=3,help='select Step to be performed')
+
 #    print(parser)   
     args = parser.parse_args()
     print(args)
     return args
 
-def get_records(date):
-    records = drone.get_records(date)
-    records.update(phone.get_records(date))
-    records.update(geophone.get_records(date))
-    records.update(buoys.get_records(date))
-    records.update(gps.get_records(date))
+def get_records(date,year='2025'):
+    records = gps.get_records(date,year=year)
+    records.update(drone.get_records(date,year=year))
+    records.update(phone.get_records(date,year=year))
+    records.update(geophone.get_records(date,year=year))
+    #records.update(buoys.get_records(date,year))
     return records
 
-def save_records(date):
+def save_records(date,year):
     records = get_records(date)
-    base = df.find_path()
+    base = df.find_path(year,date=date)
     filename = base+date+'/Summary/records_'+date+'.pkl'
 
     folder = os.path.dirname(filename)
@@ -53,8 +56,8 @@ def save_records(date):
     rw_data.write_pkl(filename,records)
     return filename
 
-def compute_timeline(date,date_format='2024/02/03'):
-    filename = save_records(date)
+def compute_timeline(date,date_format='2024/02/03',year='2025'):
+    filename = save_records(date,year)
     records = rw_data.load_pkl(filename)
 
     savefolder= os.path.dirname(filename)
@@ -67,7 +70,7 @@ def compute_timeline(date,date_format='2024/02/03'):
     graphes.save_figs(figs,savedir=savefolder,overwrite=True,prefix=date+'_')
     #graphes.save_figs(figs,savedir=savefolder_local,overwrite=True,prefix=date+'_')
 
-def display_timeline(records,date,date_format='2024/02/23'):
+def display_timeline(records,date,date_format='2024/02/23',year='2025'):
     fig = plt.figure(figsize=(15,10))
     ax = fig.add_subplot(111)
 
@@ -202,11 +205,19 @@ def read_BA_timeline(date):
 
 def main(args):
     if args.date=='all':
-        dates = ['0210','0211','0220','0221','0223','0226','0306']
+        if args.year=='2024':
+            dates = ['0210','0211','0220','0221','0223','0226','0306']
+        if args.year=='2025':
+            dates = ['0131','0201','0203','0204','0205','0206','0207','0208','0209']
+            for i in range(10,26):
+                dates.append('02'+str(i))
         for date in dates:
-            save_records(date)
+            try:
+                save_records(date,year=args.year)
+            except:
+                print(f'Cannot generate the record for the {date}')
     else:
-        save_records(args.date)
+        save_records(args.date,year=args.year)
     
 if __name__ =='__main__':
     args = gen_parser()

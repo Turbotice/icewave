@@ -20,7 +20,7 @@ code ordinateur : ISTerre
 Il faut bien relancer le code move_data.py tous les 3 géophones !!
 #########
 
-- Téléverser les fichiers log file dans /Canada_2024/ : Par exemple : DigiSolo_4075.txt 
+- Téléverser les fichiers log file dans /Canada_2025/ : Par exemple : DigiSolo_4075.txt 
 
 - Disconnect IGU (sur l'application Sololite, icone USB bleu)
 
@@ -38,7 +38,7 @@ Il faut bien relancer le code move_data.py tous les 3 géophones !!
 
 - Les données téléversées se trouvent alors dans 'C:/SOLODATA/BicWin2024_12dB/BicWin2024_12dB/
 
-- Utiliser le code prepare_solo.py afin de transformer les données, en utilisant la table de correspondance
+- Utiliser le code prepare_smartsolo_seb.py afin de transformer les données, en utilisant la table de correspondance
 
 #### Formattage des données 
 

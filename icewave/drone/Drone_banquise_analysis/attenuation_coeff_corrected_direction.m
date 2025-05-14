@@ -44,6 +44,7 @@ function [alpha,C,d] = attenuation_coeff_corrected_direction(FFT_t,f,x,y,facq_x,
 
         % 2D-FFT of complex field
         field = FFT_t(:,:,idx_freq);
+        field = flip(field,2);
         [shifted_fft,~,kx,ky] = spatial_FFT(field,padding_bool,add_pow2,facq_x);
 
         % Normalize 2D-FFT
@@ -78,7 +79,7 @@ function [alpha,C,d] = attenuation_coeff_corrected_direction(FFT_t,f,x,y,facq_x,
         if theta < 0
             % Build several segments for theta < 0
             % initial line 
-            x0 = x(1); % minimal value along x axis
+            x0 = xmin; % minimal value along x axis
             y0 = L0*sin(abs(theta)) + y(1);
             ds = 1/facq_x; % step of curvilinear coordinate
             s = (0:ds:L0); % curvilinear coordinate

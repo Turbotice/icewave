@@ -37,19 +37,36 @@ osname = socket.gethostname()
 print(ostype)
 print(osname)
 
-def find_path(disk='Hublot24'):
+def find_path(disk='Shack25',year='2025',smb=False,date='0211'):
+    if year=='2025':
+        if 'macOS' in ostype:
+            disk='F-1'
+        else:
+            disk='F'#Shack25'
     #print('OS type : '+str(ostype))
     #print('Computer name : '+str(osname))
-
+    #if year=='2025':
+    #    dateday = (int(date[:2])-1)*31+int(date[2:])
+    #    if dateday>(31+18):
+    #        disk = 'F'
+    #    else:
+    #        disk = 'Shack25'
     if disk=='BicWin2024':
         base = disk+'/Share/Data/'
-    elif disk=='Hublot24':
+    elif disk=='Hublot24' or disk=='Elements':
         base = disk+'/Share_hublot/Data/'
+    elif disk=='Shack25' or 'F':
+        base = disk+'/Data/'
     else:
         print('please specify the folder path')
     if 'Linux' in ostype:
         if 'oural' or 'saguenay' in osname:
-            base = '/media/turbots/'+base#home/turbots/Documents/'+base
+            if disk=='Shack25':
+                base = '/media/turbots/BlueDisk/Shack25_local/Data/'
+                if smb:
+                    base = '/home/turbots/Documents/Bic25/Data/'
+            else:
+                base = '/media/turbots/'+base#home/turbots/Documents/'+base
         else:
             print('computer unknown, define the path folder')
             base = ''
@@ -76,8 +93,14 @@ def find_path(disk='Hublot24'):
             base = 'Z:/'+base
         if disk=='BicWin2024':
             base = '//192.168.1.70/Share/Data/'
-        if disk=='Hublot24':
+        if disk=='Hublot24' or disk == 'Elements':
             base = 'K:/Share_hublot/Data/'
+        if disk=='Shack25':
+            base = 'F:/Data/'
+        if disk == 'Backup25':
+            base = 'U:/Data/'
+        if disk=='F':
+            base = 'F:/Data/'
 
     if 'macOS' in ostype:
         base = '/Volumes/'+base
@@ -92,6 +115,7 @@ def find_path(disk='Hublot24'):
         #    base = '/Users/stephane/Documents/git/icewave/icewave/field/Bicwin2024/Data/2024/'#/Volumes/Share_hublot/Data/'
 
     #browse.create_folder(base)
+    #print(base)
     return base
 
 def date_folder(date=''):

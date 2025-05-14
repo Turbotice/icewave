@@ -9,10 +9,10 @@ import icewave.tools.rw_data as rw_data
 import icewave.drone.drone_timeline as timeline
 import icewave.field.Save_extract_record as drone_save
 
-global base
-base = df.find_path(disk='Hublot24')
+from PIL import Image, ExifTags
+
 global drones
-drones = ['mesange','Bernache','Fulmar']
+drones = ['mesange','bernache','Fulmar']
 
 import argparse
 def gen_parser():    
@@ -26,7 +26,8 @@ def gen_parser():
     print(args)
     return args
 
-def get_record(drone,srtfile):
+def get_record(drone,srtfile,date='0211',year='2025'):
+    base = df.find_path(year=year,date=date)
     nbase = len(base)
     name = srtfile.split('/')[-2]#.split('.')[0]
     record = get_flighrecord(srtfile,drone=drone)
@@ -35,7 +36,12 @@ def get_record(drone,srtfile):
     record['format']='mp4'
     return record,name
 
-def get_records(date,jpg=True):
+def get_jpg_record(jpgfile,drone=''):
+    img = Image.open(jpgfile)
+    record = { ExifTags.TAGS[k]: v for k, v in img._getexif().items() if k in ExifTags.TAGS }
+    return record
+
+def get_records(date,jpg=True,year='2025'):
     srtfiles = get_srtfiles(date)
     
     records = {}
@@ -43,7 +49,7 @@ def get_records(date,jpg=True):
     for key in srtfiles.keys():
         records['drones'][key]={}
         for i,srtfile in enumerate(srtfiles[key]):
-            record,name = get_record(key,srtfile)
+            record,name = get_record(key,srtfile,date=date,year=year)
             print(i,srtfile,name)
             if not name in records['drones'][key]:
                 records['drones'][key][name]=[record]
@@ -55,19 +61,22 @@ def get_records(date,jpg=True):
         print(jpgfiles)
         #for now, it does not find any jpg files
         for key in jpgfiles.keys():
+            records['drones'][key]={}
             for i,jpgfile in enumerate(jpgfiles[key]):
                 name = jpgfile.split('/')[-2]#.split('.')[0]
                 print(i,jpgfile,name)
-                record = get_jpg_record(jpgfile,drone=key)
-                record['format']='jpg'
                 if not name in records['drones'][key]:
+                    record = get_jpg_record(jpgfile,drone=key)
+                    record['format']='jpg'
                     records['drones'][key][name]=[record]
                 else:
-                    records['drones'][key][name].append(record)
+                    print('Record already exist, skipping')
+#                    records['drones'][key][name].append(record)
     return records
     
-def get_srtfiles(date):
+def get_srtfiles(date,year='2025'):
     srtfiles = {}
+    base = df.find_path(year=year,date=date)
     print(base)
     for key in drones:
         srt = glob.glob(base+date+'/Drones/'+key+'/*/*.SRT')#/*/*.srt')
@@ -166,11 +175,11 @@ def parse_csv_flightrecord(csvfile,drone='mesange'):
         record[key]= [bool(d) for d in data[key]]
     return record
 
-def cut_flightrecord(record,flight):# at that stage, all files should already by in UTC time
+def cut_flightrecord(record,flight,h0=0):# at that stage, all files should already by in UTC time
     import icewave.field.time as fieldtime
 
-    tinit = timeline.to_UTC(record['time'][0],h0=0)
-    tend = timeline.to_UTC(record['time'][-1],h0=0)
+    tinit = timeline.to_UTC(record['time'][0],h0=h0)
+    tend = timeline.to_UTC(record['time'][-1],h0=h0)
 
     times = np.asarray([timeline.to_UTC(s,h0=0) for s in flight['CUSTOM.updateTime [local]']])
     iinit = np.argmin(np.abs(times-tinit))
@@ -188,11 +197,11 @@ def cut_flightrecord(record,flight):# at that stage, all files should already by
 
 def get_flighrecord(srtfile,step=100,drone='mesange'):
     #convert all times to UTC
-    if drone=='mesange':
+    if drone=='Mesange' or drone=='mesange':
         h0 = -1
-    elif drone=='Bernache':
+    elif drone=='Bernache' or drone=='bernache':
         h0 = 5
-    elif drone=='Fulmar':
+    elif drone=='Fulmar' or drone=='fulmar':
         h0 = 5
     else:
         h0=0
@@ -228,8 +237,15 @@ def get_flighrecord(srtfile,step=100,drone='mesange'):
                 latitude = float(params.split('latitude : ')[1].split(']')[0])
                 longitude = float(params.split('longtitude : ')[1].split(']')[0])
             else:
-                latitude = float(params.split('latitude: ')[1].split(']')[0])
-                longitude = float(params.split('longitude: ')[1].split(']')[0])
+                try:
+                    latitude = float(params.split('latitude: ')[1].split(']')[0])
+                    longitude = float(params.split('longitude: ')[1].split(']')[0])
+                except:
+                    print('cannot read GPS position from SRT file')
+                    print(srtfile)
+                    print(params)
+                    latitude = np.nan
+                    longitude = np.nan
 
             #print(event[3],latitude,longitude)
             record['latitude'].append(latitude)

@@ -55,6 +55,19 @@ def mat_to_dict(mat_object,ref_matobj):
     else:
         raise TypeError(f"Unsupported type {type(mat_object)}")
 
+#----------------------------------------------------------------------------------------------------------------
+
+def transpose_PIVmat_fields(m):
+    """ Change dimensions of different fields computed using PIVlab """
+    key_fields = ['Vx','Vy','Vz','X','Y']
+
+    for key in key_fields:
+        m[key] = np.transpose(m[key])
+        
+    return m
+
+#-----------------------------------------------------------------------------------------------------------------
+
 def matcell2dict_PIV(matcell,dim_keys = 0):
     """ Create a dictionnary for a 2xN matlab cell array 
     

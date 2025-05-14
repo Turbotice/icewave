@@ -315,7 +315,7 @@ def wavenumbers_stein( rho_ice, h, E, nu,freq,c_w,rho_w):
     cSH0 = np.sqrt(G/rho_ice) # celerity of shear wave 
     D = E*pow(h,3)/(12*(1-nu**2)) # flexural modulus
 
-    k = np.linspace(1e-12,10,100000)
+    k = np.linspace(1e-6,20,200000)
     
     idx_zero = np.zeros(len(freq)) 
     flag = 0
@@ -850,18 +850,18 @@ with open(file2save,'wb') as file:
 #######################################################################
 
 rho_ice = 917 
-E_fit = 5.408e9 # 2.43e9
-nu_fit = 0.36
+E_fit = 2.51e9 # 2.43e9
+nu_fit = 0.17
 
 c_w = 1450 # sound celerity in water 
 rho_w = 1027 # density of water 
 h_precision = 0.01 # precision on ice thickness (in meter)
-h = np.arange(1.0,5.0,h_precision) # array of height tested 
+h = np.arange(0.1,1.0,h_precision) # array of height tested 
 #path2data = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/Data/0210/geophones' # path 2 data points saved from FK flexural
 # acqu_numb = '0002' # acquisition number 
 
 # load selected points on the FK plot 
-file2load = path2data +'/' +'dispersion_QS_acq_'+ acq_number + '_dir' + str(direction) + '.pkl'
+file2load = path2data +'/' +year +'_'+ date + '_acq' + acq_number + 'disp_QS_dir' + str(direction) + '.pkl'
 with open(file2load, "rb") as filename:
     data = pickle.load(filename)
 f_mode1 = data[1] 

@@ -45,11 +45,15 @@ def get_projected_image(drone,key,num,frame):
 
     return Lats,Lons,im
 
+#----------------------------------------------------------------------------------------
+
 def get_exemple_image(record):
     base = df.find_path()
     filename = base+record['path']+'_exemple.tiff'
     im = plt.imread(filename)
     return im
+
+#-----------------------------------------------------------------------------------------
 
 def project_image(record,flight,im,frame,focale=2700):
     # warning ! only work for frame=0 now.
@@ -68,7 +72,7 @@ def project_image(record,flight,im,frame,focale=2700):
 
     # get GPS coordinates of camera center
     distance_todrone = h/np.tan(alpha_0)
-    Lat0,Long0 = proj.LatLong_coords_from_referencepoint(Lat_drone, Long_drone, yaw, distance_todrone)
+    Lat0,Long0 = LatLong_coords_from_referencepoint(Lat_drone, Long_drone, yaw, distance_todrone)
 
     Ly,Lx,nc = im.shape
     x = np.linspace(0,Lx-1,Lx)
@@ -83,6 +87,8 @@ def project_image(record,flight,im,frame,focale=2700):
 
     Lats,Lons = LatLong_coords_from_referencepoint(Lat0, Long0, azimuths,ds)
     return Lats,Lons
+
+#-----------------------------------------------------------------------------------------------------
 
 def projection_real_space(x,y,x0,y0,h,alpha_0,focale):
     """Definition of x and y in real framework, camera sensor center is taken as a reference 
@@ -106,11 +112,11 @@ def projection_real_space(x,y,x0,y0,h,alpha_0,focale):
     
     return xreal,yreal
 
-
+#---------------------------------------------------------------------------------------------
 
 def projection_pixel_space(xreal,yreal,x_0,y_0,h,alpha_0,f):
 
-    # Definition of x and y in pixel framework
+    """ Definition of x and y in pixel framework
 
     # Inputs : 
     # - xreal: array of x-coordinates in metric system
@@ -119,7 +125,7 @@ def projection_pixel_space(xreal,yreal,x_0,y_0,h,alpha_0,f):
     # - y_0 : y-coordinate of camera sensor center (pixel system)
     # - h : drone altitude in meter (above sea level)
     # - alpha_0 : inclination angle of the camera, angle to the horizontal 
-    # - f : camera focal length
+    # - f : camera focal length """
 
     xreal = xreal
     yreal = -yreal
@@ -128,6 +134,36 @@ def projection_pixel_space(xreal,yreal,x_0,y_0,h,alpha_0,f):
     x = xreal/h*(f*np.sin(alpha_0) + (y - y_0)*np.cos(alpha_0))+x_0
 
     return x, y
+
+#----------------------------------------------------------------------------------------------------------------------------
+
+def georectify_image(img,H,alpha_0,focale):
+    """Georectify image taken from a camera with a focal f, 
+    at a height H from the filmed plane, with an angle alpha_0 to the horizontal 
+    Inputs : - img, numpy.ndarray : image [nx,ny,nc]
+             - H, float : height of the camera to the filmed horizontal plane (in meter)
+             - alpha_0, float : angle to the horizontal (in rad)
+             - focale, float : camera focal length 
+    Outputs : - Xreal,Yreal, numpy.ndarray meshgrids : coordinates of each pixel edges to be used by the function plt.pcolormesh
+    """
+    
+    [ny,nx,nc] = np.shape(img) 
+
+    x_edges = np.arange(0,nx + 1)
+    y_edges = np.arange(0,ny + 1)
+
+    x0 = (nx + 1) / 2
+    y0 = (ny + 1) / 2
+
+    Yedges,Xedges = np.meshgrid(y_edges,x_edges,indexing = 'ij')
+
+    # compute real coordinates for each pixels of the image 
+    Xreal,Yreal = projection_real_space(Xedges,Yedges,x0,y0,H,alpha_0,focale)
+    
+    return Xreal,Yreal
+    
+
+#--------------------------------------------------------------------------------------------------------------------------
 
 def get_FOV_vertices(Lx,Ly,h,alpha_0,focale):
     """ Return coordinates of the 4 vertices of a given image. Coordinates are given in the local coordinate system of the drone, 
@@ -158,6 +194,8 @@ def get_FOV_vertices(Lx,Ly,h,alpha_0,focale):
     
     return vertices_real
 
+#-----------------------------------------------------------------------------------------------------------------------------------------
+
 def closest_time(strtime_list,t0,dt_format,full_date,tz = pytz.timezone('UTC')):
     time_string = full_date + '-' + strtime_list[0]
     time_object = datetime.strptime(time_string,dt_format)
@@ -175,6 +213,8 @@ def closest_time(strtime_list,t0,dt_format,full_date,tz = pytz.timezone('UTC')):
             idx_min = idx
             
     return idx_min 
+
+#-------------------------------------------------------------------------------------------------------------------------
 
 def LatLong_coords_from_referencepoint(Lat0,Long0,azimuth,d,R_earth = 6371e3):
     """" Compute GPS coordinates using distance and orientation from a point of known GPS coordinates
@@ -198,16 +238,109 @@ def LatLong_coords_from_referencepoint(Lat0,Long0,azimuth,d,R_earth = 6371e3):
 
     return Lat,Long
 
+#----------------------------------------------------------------------------------------------------------------------------
 
 def cart2pol(x,y):
     rho = np.sqrt(x**2 + y**2)
     phi = np.arctan2(y,x)
     return (rho,phi)
 
+#------------------------------------------------------------------------------------------------------------------------------
+
 def pol2cart(rho,phi):
     x = rho * np.cos(phi)
     y = rho * np.sin(phi)
     return (x,y)
+
+#------------------------------------------------------------------------------------------------------------------------
+
+def XY2GPS(X,Y,Lat0,Long0,azimuth):
+    """ Convert cartesian coordinates X,Y to GPS coordinates
+    Inputs : - X,Y : numpy array, containing cartesian (X,Y) coordinates with respect to a reference point O 
+             - Lat0,Long0 : GPS coordinates of reference point (in degrees)
+             - azimuth : orientation of the cartesian system with respect to the geographic north (in degrees, between 
+                                                                                                   0 and 360)
+             This azimuth angle is measured between geographic north direction and axis Y of cartesian system
+    Outputs : - Lat,Long : numpy array, GPS coordinates of the selected points"""
+    
+    # convert cartesian to polar coordinates
+    rho,theta = cart2pol(X,Y)
+    theta = theta*180/np.pi
+    # compute azimuth of all selected points
+    local_azimuth = azimuth + 90 - theta
+    Lat,Long = LatLong_coords_from_referencepoint(Lat0,Long0,
+                                                    local_azimuth,rho)
+    return Lat,Long
+
+#-----------------------------------------------------------------------------------------------------------------------------
+
+def GPS2XY(lat,long,Lat0,Long0,azimuth,R_earth = 6371e3):
+    """Compute cartesian coordinates (X,Y) from GPS coordinates
+    Inputs : - lat,long : numpy array, GPS coordinates (in degrees)
+             - Lat0,Long0 : GPS coordinates of the point chosen as a reference for the cartesian coordinates system (in degrees)
+             - azimuth : angle with respect to geopgraphic north with which the cartesian system will be oriented (in degrees,
+                                                                                                            between 0 and 360)
+             This azimuth angle is measured between geographic north direction and axis Y of cartesian system
+    Outputs : - X,Y : numpy array, cartesian coordinates (in meter) """
+    
+    rho = R_earth*np.sqrt(((lat - Lat0)*np.pi/180)**2 + np.cos(Lat0*np.pi/180)**2 * ((long - Long0)*np.pi/180)**2)
+
+    psi = 360 + np.arctan2(np.cos(Lat0*np.pi/180)*(long - Long0)*np.pi/180,(lat - Lat0)*np.pi/180)*180/np.pi
+
+    theta = azimuth - psi + 90
+    # compute euclidean coordinates
+    X,Y = pol2cart(rho,theta*np.pi/180)
+    
+    return X,Y
+
+def get_height_from_record(record,indice=0,typ='elev'):
+    if typ=='elev':
+        s = record['params'][indice].split('rel_alt: ')[1].split(' ')[0]
+    return float(s)
+
+def georeference(key,record,image,flight):
+    """ Computation of vertical velocity field from the pixel displacement along vertical of the camera. 
+    
+    INPUTS : - key : identification key common to record, flight and image 
+             - record : dictionnary with parameters extracted from the data folder
+             - 
+             - y0 : float, y-coordinate of the middle of the camera sensor
+             - alpha_0 : float, angle (in rad) of the camera axis to the horizontal 
+             - focale : float, camera focal length (pixels)
+             - fps : float, frame rate used (frame/s)
+             - Dt : float, time step between two image compared to computer pixel displacement field 
+             
+    OUTPUT : - Fp : function of a tuple of pixel coordinates (x,y,t), or a list of tuples, which computes the vertical velocity
+                associated to a given tuple
+    """
+    if type(record[key])==list:
+        rec=record[key][0]
+    else:
+        rec = record[key]
+        
+    im = image[key]
+    H = get_height_from_record(rec)
+    print(f'Hauteur : {H}m')
+    alpha_0 = np.pi/2
+    focale = 2700 #sama focale for everybody
+    im = image[key]
+    Xr,Yr = georectify_image(im,H,alpha_0,focale)
+
+    Lat0=rec['latitude'][0]
+    Long0=rec['longitude'][0]
+
+    azimuth = flight[key]['GIMBAL.yaw [360]']
+    print(f'Azimuth : {azimuth}°')
+    pitch = float(flight[key]['GIMBAL.pitch'])
+    print(f'Pitch : {pitch}°')
+
+    if pitch<-85:
+        Lat,Long = XY2GPS(Xr,Yr,Lat0,Long0,azimuth)
+    else:
+        return None,None,im
+    
+    return Lat,Long,im
+#-------------------------------------------------------------------------------------------------------------------------------
 
 def backward_projection(fun,points,y0,h,alpha_0,focale,fps,Dt):
     """ Computation of vertical velocity field from the pixel displacement along vertical of the camera. 
@@ -230,6 +363,7 @@ def backward_projection(fun,points,y0,h,alpha_0,focale,fps,Dt):
     
     return Fp 
 
+#------------------------------------------------------------------------------------------------------------------------------
 
 def vertical_velocity_from_pixel_displacement(Vy,x_pix,y_pix,t,y0,h,alpha_0,focale,fps,Dt):
     """ Compute vertical velocity field from velocity field of pixel displacement on the camera sensor. 
@@ -274,3 +408,62 @@ def vertical_velocity_from_pixel_displacement(Vy,x_pix,y_pix,t,y0,h,alpha_0,foca
     print('Elapsed time : ',elapsed_time, ' s')
     
     return Vz
+
+
+#--------------------------------------------------------------------------------------------------------------------------------
+
+def change_XY_reference_system(X,Y,param_projected,param_ref,R,translation,scaling):
+    """ Return metric coordinates (X_proj,Y_proj) in a new reference system associated
+    to an other drone (ref_drone). Metric coordinates are converted to GPS coordinates, then rotation, translation
+    and scaling operations are perfomed (these operations are based on tracking of buoys). 
+    
+    Inputs : - X,Y : numpy array, metric coordinates
+             - param_projected : dictionnary, contain parameters of the drone to be projected
+             - param_ref : dictionnary, containe parameters of the drone chosen as a reference
+             These parameters must contain following keys : 
+                     + h : drone height
+                     + alpha_0 : pitch angle (radian)
+                     + latitude : drone latitude (deg)
+                     + longitude : drone longitude (deg)
+                     + azimuth : drone azimuth (deg), between 0 and 360
+                 
+             - R : numpy array, rotation matrix shape (2,2)
+             - translation : numpy array, translation vector (Lat,Long), shape (2,)
+             - scaling : scalar, scaling factor 
+    Outputs : - X_proj,Y_proj : numpy array, metric coodrinates in the new reference system """
+    
+    # get GPS coordinates 
+    # coordinates of central point in projected_drone coordinates system
+    dist2drone = param_projected['h']/np.tan(param_projected['alpha_0'])
+    LatD = param_projected['latitude']
+    LongD = param_projected['longitude']
+    azimuth_drone = param_projected['azimuth']
+    Lat0,Long0 = LatLong_coords_from_referencepoint(LatD,LongD,
+                                                    azimuth_drone,dist2drone)
+
+    Lat,Long = XY2GPS(X,Y,Lat0,Long0,azimuth_drone)
+    latlong = np.stack([Lat,Long],axis = -1)
+
+    # reshape matrix
+    reshape_latlong = np.reshape(latlong,(-1,2))
+
+    # apply procruste operations to Lat,Long
+    rotated = R @ reshape_latlong.T
+    latlong_transfo = scaling * rotated.T + translation[None,...]
+
+    # reshape matrix 
+    latlong_transfo = np.reshape(latlong_transfo,(X.shape[0],X.shape[1],2))
+
+    # get GPS coordinates of reference drone
+    # coordinates of central point in ref_drone coordinates system
+    dist2drone = param_ref['h']/np.tan(param_ref['alpha_0'])
+    Lat_ref = param_ref['latitude']
+    Long_ref = param_ref['longitude']
+    azimuth_ref = param_ref['azimuth']
+    Lat0,Long0 = LatLong_coords_from_referencepoint(Lat_ref,Long_ref,
+                                                    azimuth_ref,dist2drone)
+
+    X_proj,Y_proj = GPS2XY(latlong_transfo[:,:,0],latlong_transfo[:,:,1],Lat0,Long0,azimuth_ref)
+    
+    return X_proj,Y_proj    
+

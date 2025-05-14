@@ -1,15 +1,15 @@
 
 %% Definition of the folder to process and where to save the results
 
-date = '0223';
-drone_name = 'bernache';
-exp_ID = '12-waves_010';
+date = '0205';
+drone_name = 'mesange';
+exp_ID = '07-waves_003';
 % base where images are saved and where we want to save data 
 
-base_img = ['/media/turbots/DATA/thiou/labshared2/SagWin2024/Data/' date '/Drones/' drone_name '/'];
-base_save = ['/media/turbots/Hublot24/Share_hublot/Data/' date '/Drones/' drone_name '/'];
+base_img = ['E:/PIV_images/' date '/Drones/' drone_name '/'];
+base_save = ['E:/Data/' date '/Drones/' drone_name '/'];
 
-folder_img = [base_img exp_ID '/' exp_ID '/']; % folder where images are saved 
+folder_img = [base_img  exp_ID '/']; % folder where images are saved 
 filelist = dir([folder_img 'im*.tiff']); dirnames={};
 % sort images 
 [dirnames{1:length(filelist),1}] = deal(filelist.name);
@@ -17,7 +17,7 @@ dirnames = sortrows(dirnames);
 amount = length(dirnames);
 disp(amount)
 
-dirsave = [base_save 'matData/' exp_ID '_test_0711/'];
+dirsave = [base_save 'matData/' exp_ID '/'];
 for i=1:length(filelist)
     disp([num2str(i) ' : ' filelist(i).name])
 end
@@ -29,34 +29,40 @@ if exist(dirsave,'dir') ~= 7
 end
 
 % Define parameters to process PIV
-i0 = 0; %process starting from image i0
-N = 0; %number of frames to analyze
+i0 = 1; %process starting from image i0
+N = 0; %last frame to analyze
 Dt = 4; %ratio between the fps and the scanning frequency (number of image between image A and image B)
 b = 1; %number of images between image A and image A' (from one step to an other)
-ROI.x = 1 ;
-ROI.width = 3388;
+ROI.x = 317 ;
+ROI.width = 3523;
 ROI.y = 1;
 ROI.height = 2159;
-w = 32;
+w = 32; 
+
+if w == 32
+    nstep = 3;
+elseif w == 64
+    nstep = 2;
+end 
 
 % Standard PIV Settings
 s = cell(15,2); % To make it more readable, let's create a "settings table"
 %Parameter                          %Setting           %Options
-s{1,1}= 'Int. area 1';              s{1,2}=256;         % window size of first pass
-s{2,1}= 'Step size 1';              s{2,2}=128;         % step of first pass
+s{1,1}= 'Int. area 1';              s{1,2}=128;         % window size of first pass
+s{2,1}= 'Step size 1';              s{2,2}=32;         % step of first pass
 s{3,1}= 'Subpix. finder';           s{3,2}=2;          % 1 = 3point Gauss, 2 = 2D Gauss
 s{4,1}= 'Mask';                     s{4,2}=[];         % If needed, generate via: imagesc(image); [temp,Mask{1,1},Mask{1,2}]=roipoly;
 s{5,1}= 'ROI';                      s{5,2}=[ROI.x,ROI.y,ROI.width,ROI.height];         % Region of interest: [x,y,width,height] in pixels, may be left empty
 %s{5,1}= 'ROI';                      s{5,2}=[];         % Region of interest: [x,y,width,height] in pixels, may be left empty
-s{6,1}= 'Nr. of passes';            s{6,2}=4;          % 1-4 nr. of passes. Each path is achieved with a specific interrogation area
-s{7,1}= 'Int. area 2';              s{7,2}=128;        % second pass window size
-s{8,1}= 'Int. area 3';              s{8,2}=64;         % third pass window size
+s{6,1}= 'Nr. of passes';            s{6,2}= nstep;          % 1-4 nr. of passes. Each path is achieved with a specific interrogation area
+s{7,1}= 'Int. area 2';              s{7,2}=64;        % second pass window size
+s{8,1}= 'Int. area 3';              s{8,2}=32;         % third pass window size
 s{9,1}= 'Int. area 4';              s{9,2}=32;         % fourth pass window size
 s{10,1}='Window deformation';       s{10,2}='*spline'; % '*spline' is more accurate, but slower
 s{11,1}='Repeated Correlation';     s{11,2}=0;         % 0 or 1 : Repeat the correlation four times and multiply the correlation matrices.
 s{12,1}='Disable Autocorrelation';  s{12,2}=0;         % 0 or 1 : Disable Autocorrelation in the first pass.
 s{13,1}='Correlation style';        s{13,2}=0;         % 0 or 1 : Use circular correlation (0) or linear correlation (1).
-s{14,1}='Repeat last pass';   s{14,2}=0; % 0 or 1 : Repeat the last pass of a multipass analyis
+s{14,1}='Repeat last pass';         s{14,2}=0; % 0 or 1 : Repeat the last pass of a multipass analyis
 s{15,1}='Last pass quality slope';   s{15,2}=0.025; % Repetitions of last pass will stop when the average difference to the previous pass is less than this number.
 
 % Standard image preprocessing settings
@@ -87,7 +93,7 @@ for i=1:1%amount
 
     namesave = dirnames{i,1};
     
-    prefix = ['PIV_processed_i0' num2str(i0) '_Dt' num2str(Dt) '_b' num2str(b) '_W' num2str(w) ...
+    prefix = ['PIV_processed_i0' num2str(i0) '_N' num2str(N) '_Dt' num2str(Dt) '_b' num2str(b) '_W' num2str(w) ...
         '_xROI' num2str(ROI.x) '_width' num2str(ROI.width) '_yROI' ...
         num2str(ROI.y) '_height' num2str(ROI.height)];
     matname = string(strcat(dirsave,prefix,'.mat'));
