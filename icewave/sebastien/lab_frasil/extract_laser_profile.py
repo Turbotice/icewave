@@ -88,7 +88,7 @@ def get_laser_indices(img,threshold,channel_color):
     # compute sum along raws
     sum_mask = np.sum(mask,axis = 0)
     # get minimal and maximal index between which we perform correlation 
-    laser_indices = np.where(sum_mask > 0)[0]
+    laser_indices = np.where(sum_mask > 4)[0]
     idx_start = laser_indices[0]
     idx_end = laser_indices[-1]
     return idx_start,idx_end
