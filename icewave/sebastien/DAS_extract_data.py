@@ -7,6 +7,7 @@ Created on Mon Feb 10 19:41:26 2025
 
 import numpy as np 
 import matplotlib.pyplot as plt 
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import h5py 
 import glob
 import os 
@@ -20,7 +21,11 @@ from scipy.linalg import svd
 
 
 import icewave.tools.matlab2python as mat2py
+import icewave.tools.matlab_colormaps as matcmaps
 import icewave.tools.Fourier_tools as FT
+
+# PARULA COLORMAP 
+parula_map = matcmaps.parula()
 
 plt.rcParams.update({
     "text.usetex": True}) # use latex
@@ -288,13 +293,17 @@ spatio_long,s,t_sec = time_stacking(strain_rate,Nb_seconds,fiber_length)
 
 normalization = 'linear'
 fig,ax = plt.subplots(figsize = (12,9))
-imsh = ax.imshow(spatio_long.T,origin = 'lower',aspect = 'auto',norm = normalization,
-          extent = extents(t_sec) + extents(s),vmin = 1, vmax = 1e5)
+imsh = ax.imshow(spatio_long.T,origin = 'lower',aspect = 'auto',norm = normalization, cmap = parula_map,
+          extent = extents(t_sec) + extents(s),vmin = 1, vmax = 0.6e4)
 ax.set_ylim([0,700])
-cbar = plt.colorbar(imsh)
 
-ax.set_xlabel(r'$t \; \mathrm{(s)}$')
-ax.set_ylabel(r'$s \; \mathrm{(m)}$')
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="2%", pad=0.1)
+cbar = plt.colorbar(imsh,cax = cax)
+
+ax.set_xlabel(r'$t \; \mathrm{(s)}$',labelpad = 5)
+ax.set_ylabel(r'$s \; \mathrm{(m)}$',labelpad = 5)
+
 
 figname = f'{fig_folder}spatio_{date}_norm_{normalization}_Nbmin_{Nb_minutes}'
 plt.savefig(f'{figname}.pdf',bbox_inches = 'tight')
@@ -334,7 +343,7 @@ for domain in space_domains.keys():
     space_domains[domain]['k'] = k
 
 #%%
-dom = '1'
+dom = '2'
 FFT_2D = space_domains[dom]['FFT_2D']
 omega = space_domains[dom]['omega']
 k = space_domains[dom]['k']
@@ -344,20 +353,20 @@ rho_w = 1027 # water density
 rho_ice = 917 # ice density 
 E = 3.0e9 # Young modulus
 nu = 0.3 # Poisson coefficient
-H = 3.5 # water depth 
+H = 5.0 # water depth 
 c_w = 1450 # sound celerity in water  
 
-h = 0.35 # ice thickness
+h = 0.5 # ice thickness
 freq = np.linspace(0,1,100)
 k_QS = wavenumbers_hydro(freq, rho_w, rho_ice, E, h, nu,H,c_w,'Squire_shallow')
 
 # Create figure
 fig, ax = plt.subplots(figsize = (12,9))
-imsh = ax.imshow(abs(FFT_2D),origin = 'lower',aspect = 'auto',norm = normalization,interpolation = 'gaussian',
-          extent = extents(k) + extents(omega))
+imsh = ax.imshow(abs(FFT_2D),origin = 'lower',aspect = 'auto',norm = 'log',interpolation = 'gaussian',
+          extent = extents(k) + extents(omega),cmap = parula_map,vmin = 2,vmax = 2e2)
 cbar = plt.colorbar(imsh)
 
-label_theory = f'E = {E:.1e}, h = {h:.2f}, H = {H:.2f}'
+label_theory = f'E = {E:.1e} Pa, h = {h:.2f} m, H = {H:.2f} m'
 ax.plot(k_QS,2*np.pi*freq,'r-',label = label_theory)
 ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$')
 ax.set_ylabel(r'$\omega \; \mathrm{(rad.s^{-1})}$')
