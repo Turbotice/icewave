@@ -294,9 +294,10 @@ def matrix_peak_correlation_detection(M,x,y,x_range,y_range,model_signal,detec_p
 #%% Load data for a given date and experiment
 date = '0226'
 drone_ID = 'mesange'
-exp_ID = '14-waves_007'
+exp_ID = '23-waves_012'
 
-main_path = df.find_path(disk = 'Elements',year = '2024')
+# main_path = df.find_path(disk = 'Elements',year = '2024')
+main_path = 'F:/Rimouski_2024/Data/'
 path2data = f'{main_path}{date}/Drones/{drone_ID}/matData/{exp_ID}/'
 
 filelist = glob.glob(f'{path2data}*scaled.mat')
@@ -336,17 +337,41 @@ idx_end = frasil_boxes[-1]
   
 #%% Define fig_folder and save folder
 Dt = int(data['PIV_param']['Dt'])
-fig_folder = f'{path2data}Plots/attenuation_from_disp_relation_Dt{Dt}/split_study_{xmin}to{xmax}/'
+fig_folder = f'{path2data}Plots/attenuation_from_disp_relation_Dt{Dt}/'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
 
-save_folder =f'{path2data}Results/pix_{xmin}to{xmax}/'
+save_folder =f'{path2data}Results/'
 if not os.path.isdir(save_folder):
     os.mkdir(save_folder)
 
 #%% Compute histogram
 figname = f'{fig_folder}Histogram_{date}_{drone_ID}_{exp_ID}'
 FT.histogram_PIV(Vs[idx_start:idx_end,:,:],data['PIV_param']['w'],figname)
+
+#%% Plot first frame
+set_graphs.set_matplotlib_param('single')
+fig, ax = plt.subplots()
+Amin = -1
+Amax = 1
+c = ax.imshow(Vs[:,:,1].T, cmap = parula_map , aspect = 'equal', norm = 'linear', vmin = Amin,vmax = Amax,
+              origin = 'lower', interpolation = 'gaussian',
+              extent = (data['x'].min(),data['x'].max(),data['y'].min(),data['y'].max()))
+
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="2%", pad=0.1)
+
+cbar = plt.colorbar(c,cax = cax)
+cbar.set_label(r'$V_x (x,y) \; \mathrm{(u.a.)}$',labelpad = 5)
+
+ax.set_xlabel(r'$x \; \mathrm{(m)}$',labelpad = 5)
+ax.set_ylabel(r'$y \; \mathrm{(m)}$',labelpad = 5)
+
+figname = f'{fig_folder}frame_0_{date}_{drone_ID}_{exp_ID}'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.svg', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
+
 
 #%% Compute FFT spectrum 
 TF_spectrum,freq,FFT_t = FT.temporal_FFT(Vs,data['SCALE']['facq_t'],padding_bool = 1,add_pow2 = 0,output_FFT = True)
