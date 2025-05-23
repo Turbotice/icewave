@@ -18,9 +18,12 @@ import re
 import cv2 as cv 
 
 from concurrent.futures import ProcessPoolExecutor
+from tqdm import tqdm
 
-plt.rc('text', usetex=True)
-plt.rc('font', family='serif', serif='Computer Modern')
+# import icewave.tools.datafolders as df
+
+# plt.rc('text', usetex=True)
+# plt.rc('font', family='serif', serif='Computer Modern')
 
 #%% FUNCTION SECTION 
 def subpix_precision(profile, idx_max):
@@ -127,18 +130,25 @@ def scale_spatio(laser_spatio,theta_rad,facq_pix,facq_t,idx_start,idx_end):
     
     return data 
 
-def single_experiment_extraction(path2img,theta_rad,facq_pix,facq_t,results_folder):
+def single_experiment_extraction(path2img,table_param,results_folder):
     """ perform laser extraction for all frames of a single movie 
     Inputs :- path2img, string, path to all frames 
-            - theta, float, laser angle to the vertical, in radians
-            - facq_pix, float, spatial acquisition frequency, in pix/meter
-            - facq_t, float, temporal acquisition frequency, in frame/seconds
+            - table_param, dictionnary containing all experimental parameters
             - results_folder, string, folder where results will be saved """
             
     # generate a suffixe for saving data 
     h = float(re.findall(r'e_(\d+\.\d+)mm',path2img)[0]) # frasil thickness
     f_ex = float(re.findall(r'(\d+\.\d+)Hz',path2img)[0]) # excitation_frequency 
     amplitude = float(re.findall(r'Hz_(\d+)mm',path2img)[0])
+    
+    # collect parameters for this experiment
+    key = f'h_{h}mm_fex_{f_ex}Hz'
+    theta = table_param[key]['theta']
+    theta_rad = theta*np.pi/180
+    facq_t = table_param[key]['facq_t']
+    facq_pix = table_param[key]['facq_pix']
+    
+    
     suffixe = f'h_{h}_fex_{f_ex}_amp_{amplitude}mm'
     suffixe = suffixe.replace('.','p')
     
@@ -167,14 +177,14 @@ def single_experiment_extraction(path2img,theta_rad,facq_pix,facq_t,results_fold
     ####### Loop over all images 
     laser_spatio = np.zeros((idx_end - idx_start,len(img_list)))
     
-    gaussian_width = 20
+    gaussian_width = 15
     N = 10
     gaussian = scipy.signal.windows.gaussian(M = gaussian_width * N,std = gaussian_width)
     
     for idx_img in range(len(img_list)):
         
         file2load = img_list[idx_img]
-        print(f'{file2load} loaded !')
+
         img = cv.imread(file2load)
         img = cv.cvtColor(img,cv.COLOR_BGR2RGB)
             
@@ -188,7 +198,6 @@ def single_experiment_extraction(path2img,theta_rad,facq_pix,facq_t,results_fold
     with open(file2save,'wb') as pf:
         pickle.dump(laser_spatio,pf)
         
-    print('Unscaled data saved !')
 
     file2save = f'{results_folder}unscaled_laser_{suffixe}.pkl'
     with open(file2save,'rb') as pf:
@@ -204,56 +213,50 @@ def single_experiment_extraction(path2img,theta_rad,facq_pix,facq_t,results_fold
     with open(file2save,'wb') as pf:
         pickle.dump(data,pf)
         
-    print('Scaled data saved !')
-    
     return 
 
+def process_folder(args):
+    folder, table_param, results_folder = args
+    path2img = f'{folder}/'
+    single_experiment_extraction(path2img, table_param, results_folder)
+    print(f'Laser extraction performed for {path2img}')
 
 #%% Load image
 def main():
     
-    h = 7.5 # frasil thickness 
+    h = 10.0 # frasil thickness 
     date = '2024_07_11'
-    path2data = f'U:/Aurore_frasil/{date}_e_{h}mm_laser/'
+    # base = df.find_path(disk='Backup25',year='2024')
+    base = '/media/turbots/Backup25/'
+    path2data = f'{base}Aurore_frasil/{date}_e_{h}mm_laser/'
     
     folderlist = glob.glob(f'{path2data}*mm')
     
+    print(folderlist)
     # create results folder 
     results_folder = f'{path2data}Laser_extraction/'
     if not os.path.isdir(results_folder) :
         os.mkdir(results_folder)
         
-    # create spatial scaling 
-    scale = 0.337 # scale in mm/pix
-    facq_pix = 1/(scale*1e-3) # scale in pixels / meter
-
-    theta = 44.17 # laser angle to the vertical 
-    theta_rad = theta*np.pi/180 # angle in rad  
-    
-    # temporal scaling
-    facq_t =  37.215
-    
+    # load experimental parameters dictionnary
+    path2table = f'{base}Aurore_frasil/table_experimental_parameters.pkl'
+    with open(path2table,'rb') as pf :
+        table_param = pickle.load(pf)
+           
     # select an experiment (an excitation frequency)
-    for idx_folder in range(len(folderlist)):
-        path2img = f'{folderlist[idx_folder]}/'
-        
-        single_experiment_extraction(path2img,theta_rad,facq_pix,facq_t,results_folder)
-        print(f'Laser extraction performed for {path2img}')
+    # for folder in tqdm(folderlist):
+    #     process_folder(folder)
     
+    # create a list of arguments
+    args_list = [(folder, table_param, results_folder) for folder in folderlist]
+
+    with ProcessPoolExecutor(max_workers=30) as executor:
+        list(tqdm(executor.map(process_folder, args_list), total=len(args_list)))
+
 if __name__ == '__main__':
     main()
 
-#%% Import images for laser extration 
 
-path = 'F:/Aurore_frasil/2024_07_11_e_10mm_laser/3.8Hz_15mm/'
-filename = 'Basler_a2A1920-160ucBAS__40232065__20240711_191719518_0001.tiff'
-file2load = f'{path}{filename}'
 
-img = cv.imread(file2load)
-img = cv.cvtColor(img,cv.COLOR_BGR2RGB)
-
-fig, ax = plt.subplots()
-ax.imshow(img)
-ax.set_xlabel('$x_p$')
 
 
