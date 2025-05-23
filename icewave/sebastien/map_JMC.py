@@ -19,27 +19,31 @@ import contextily as ctx
 import pyproj
 #%%
 
-fig_folder = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Présentations/Environnement_Arctic_Refuge/'
+fig_folder = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Conferences/CNFRAA_2025/'
 img_quality = 800 #image quality in dpi 
 #%% 
 
 # set of latitudes longitudes points that I would like to emphasize on the map 
 my_dict = {}
-key_sites = ['Haha','Saguenay','AR20240909','AR20240914']
+# key_sites = ['Haha','Saguenay','AR20240909','AR20240914']
+key_sites = ['Haha','Quebec']
 for key in key_sites:
     my_dict[key] = {}
     
 my_dict['Haha']['lat'] = 48.350538
 my_dict['Haha']['long'] = -68.808609
 
-my_dict['Saguenay']['lat'] = 48.251353
-my_dict['Saguenay']['long'] = -70.124327
+my_dict['Quebec']['lat'] = 46.813878
+my_dict['Quebec']['long'] = -71.207981
 
-my_dict['AR20240909']['lat'] = 80.8260668
-my_dict['AR20240909']['long'] = -66.7653705
+# my_dict['Saguenay']['lat'] = 48.251353
+# my_dict['Saguenay']['long'] = -70.124327
 
-my_dict['AR20240914']['lat'] = 79.8690422
-my_dict['AR20240914']['long'] = -69.9443962
+# my_dict['AR20240909']['lat'] = 80.8260668
+# my_dict['AR20240909']['long'] = -66.7653705
+
+# my_dict['AR20240914']['lat'] = 79.8690422
+# my_dict['AR20240914']['long'] = -69.9443962
 
 
 latitudes = np.zeros(len(my_dict))
@@ -68,8 +72,8 @@ m.save(figfile)
 
 #%% Create a map using geopandas 
 # Define a custom latitude/longitude range
-lat_min, lat_max = 30, 85  # Custom latitude range (e.g., between 30°N and 55°N)
-lon_min, lon_max = -100, +20  # Custom longitude range (e.g., between 130°W and 10°E)
+lat_min, lat_max = 42, 52  # Custom latitude range (e.g., between 30°N and 55°N)
+lon_min, lon_max = -74, -62  # Custom longitude range (e.g., between 130°W and 10°E)
 
 # Convert the list of coordinates to a GeoPandas GeoDataFrame
 geometry = [Point(long,lat) for lat, long in coordinates]
@@ -90,7 +94,7 @@ x_max, y_max = proj_4326_to_3857(lon_max, lat_max)
 
 # Create a plot
 fig, ax = plt.subplots(figsize=(10, 10))
-gdf_web_mercator.plot(ax=ax, marker='o', color='red', markersize=60, label='Locations', edgecolor = 'k')
+gdf_web_mercator.plot(ax=ax, marker='o', color='red', markersize=120, label='Locations', edgecolor = 'k')
 
 # Set custom x and y axis limits (bounding box in EPSG:3857)
 ax.set_xlim(x_min, x_max)
@@ -115,7 +119,7 @@ ax.set_yticks(y_ticks)
 ax.set_yticklabels([f"{lat:.2f}°" for lat in y_tick_labels])
 
 # Save figure 
-figfile = fig_folder + 'map_JMC_geophone_deployments'
+figfile = fig_folder + 'map_CNFRAA_BicWin'
 print('Saving figure..')
 plt.savefig(figfile + '.pdf', dpi = img_quality, bbox_inches = 'tight')
 plt.savefig(figfile + '.png', dpi = img_quality, bbox_inches = 'tight')
