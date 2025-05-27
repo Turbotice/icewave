@@ -19,6 +19,9 @@ import re
 import cv2 as cv 
 
 from concurrent.futures import ProcessPoolExecutor
+from tqdm import tqdm
+import sys
+sys.path.append('C:/Users/sebas/git')
 
 import icewave.tools.matlab_colormaps as matcmaps
 import icewave.tools.Fourier_tools as FT
@@ -112,7 +115,8 @@ def lorentzian_fit(cut,k,k0_idx,bounds_alpha):
     bounds_kx0 = (k[k0_idx - 10],k[k0_idx + 10])
     bounds_curvefit = ([bounds_kx0[0],bounds_alpha[0]],[bounds_kx0[1],bounds_alpha[1]])
     # fit by a lorentzian
-    popt,pcov = scipy.optimize.curve_fit(lambda x,x0,sigma : lorentzian(x, x0, sigma),k,y_exp,bounds = bounds_curvefit)
+    popt,pcov = scipy.optimize.curve_fit(lambda x,x0,sigma : lorentzian(x, x0, sigma),k,y_exp,
+                                         bounds = bounds_curvefit)
     err_coeff = np.sqrt(np.diag(pcov))
     
     return popt,err_coeff
@@ -196,7 +200,16 @@ def process_single_experiment(data,main_results_folder):
     print(f'Attenuation data saved under name : {file2save}')
     return 
 
-def main(h = 12.5,date = '2024_07_11'):
+def process_file(args):
+    
+    file2load,main_results_folder = args
+    with open(file2load,'rb') as pf:
+        data = pickle.load(pf)
+        
+    process_single_experiment(data, main_results_folder)
+    return 
+
+def main(h = 7.5,date = '2024_07_11'):
     main_path = f'U:/Aurore_frasil/{date}_e_{h}mm_laser/'
     path2data = f'{main_path}Laser_extraction/'
     filelist = glob.glob(f'{path2data}scaled_laser_structure*')
@@ -205,14 +218,13 @@ def main(h = 12.5,date = '2024_07_11'):
     if not os.path.isdir(main_results_folder):
         os.mkdir(main_results_folder)
     
-    for idx in range(len(filelist)):
-        file2load = filelist[idx]
-        with open(file2load,'rb') as pf:
-            data = pickle.load(pf)
-            
-        print(f'File {file2load} loaded !')
+    args_list = [(file2load,main_results_folder) for file2load in filelist]
+    
+    with ProcessPoolExecutor(max_workers=2) as executor:
+        list(tqdm(executor.map(process_file, args_list), total=len(args_list)))
         
-        process_single_experiment(data, main_results_folder)
+    # for args in args_list:
+    #     process_file(args)
         
     return 
     
