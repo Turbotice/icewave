@@ -63,18 +63,17 @@ def save_first_frame(data,results_folder):
     plt.savefig(figname + '.png', bbox_inches='tight')
     plt.close(fig)
     
-def FFT2D_positive_freq(data):
+def FFT2D_positive_freq(spatio,facq):
     """ Compute FFT2 of spatio-temporal signal, and keep only part with positive frequency
     """
-
-    facq = [data['SCALE']['facq_pix'],data['SCALE']['facq_t']]
-    shift,k,omega = FT.fft_2D(data['spatio'],facq)
+    shift,k,omega = FT.fft_2D(spatio,facq)
     freq = omega/2/np.pi
     
     positive_shift = shift[:,shift.shape[1]//2:]
     positive_freq = freq[len(freq)//2:]
     
     return positive_shift,k,positive_freq
+
 
 def save_FFT2D_with_max(positive_shift,k,positive_freq,unravel_coords,figname):
     
@@ -158,7 +157,14 @@ def process_single_experiment(data,main_results_folder):
     save_first_frame(data,results_folder)
     
     # Compute FFT2D
-    positive_shift,k,positive_freq = FFT2D_positive_freq(data)
+    facq = [data['SCALE']['facq_pix'],data['SCALE']['facq_t']]
+    shift,k,freq = FFT2D_positive_freq(data['spatio'],facq)
+    
+    # keep frequencies higher than threshold
+    threshold_freq = 0.5
+    mask = freq > threshold_freq
+    positive_freq = freq[mask]
+    positive_shift = shift[:,mask]
     
     # find maximum
     idx_max = np.argmax(abs(positive_shift).flatten())

@@ -109,8 +109,8 @@ def process_file(args):
 
 #%%
 def main():
-    h = 10.0 # frasil thickness 
-    date = '2024_07_11'
+    h = 5.0 # frasil thickness 
+    date = '2024_07_10'
     base = '/media/turbots/Backup25/'
     path2data = f'{base}Aurore_frasil/{date}_e_{h}mm_laser/'
     

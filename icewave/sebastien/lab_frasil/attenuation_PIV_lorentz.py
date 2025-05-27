@@ -63,6 +63,7 @@ def show_velocity_field(V,x,y,colormap,figname):
     
     plt.savefig(figname + '.pdf', bbox_inches='tight')
     plt.savefig(figname + '.png', bbox_inches='tight')
+    plt.close(fig)
     
 def save_TF_spectrum(TF_spectrum,freq,figname):
 
@@ -79,6 +80,7 @@ def save_TF_spectrum(TF_spectrum,freq,figname):
     plt.savefig(figname + '.pdf', bbox_inches='tight')
     plt.savefig(figname + '.svg', bbox_inches='tight')
     plt.savefig(figname + '.png', bbox_inches='tight')
+    plt.close(fig)
     return 
     
 
@@ -116,6 +118,7 @@ def plot_FFT2D_and_max_peak(shift,kx,ky,peak_coords,limits,figname):
     
     plt.savefig(figname + '.pdf', bbox_inches='tight')
     plt.savefig(figname + '.png', bbox_inches='tight')
+    plt.close(fig)
     
 def interpolate_zeros(cut,kx):
     """ Set data around kx = 0 to zeros, than replace these values by interpolated values from extracted profile 
@@ -276,7 +279,7 @@ def process_folder(folder):
     return 
 
 
-def main(h = 7.5,date = '2024_07_11'):
+def main(h = 5.0,date = '2024_07_10'):
     path2data = f'U:/Aurore_frasil/{date}_e_{h}mm_laser/matData/'
     folderlist = glob.glob(f'{path2data}*')
     

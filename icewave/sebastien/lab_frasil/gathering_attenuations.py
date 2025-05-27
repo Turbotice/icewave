@@ -60,8 +60,8 @@ def powerlaw_fit(x,y,err_y):
     return coeffs,err_coeffs
 
 #%% Load data 
-h = 7.5
-date = '2024_07_11'
+h = 5.0
+date = '2024_07_10'
 main_path = f'U:/Aurore_frasil/{date}_e_{h}mm_laser/'
 
 # data from laser 
@@ -69,7 +69,7 @@ path2data_laser = f'{main_path}Laser_attenuation/'
 filelist = glob.glob(f'{path2data_laser}**/laser_attenuation*.pkl')
 # data from PIV
 path2data_PIV = f'{main_path}matData/'
-filelist_PIV = glob.glob(f'{path2data_PIV}**/PIV_attenuation_results*.pkl')
+filelist_PIV = glob.glob(f'{path2data_PIV}**/PIV_attenuation_results_h*.pkl')
 
 data_laser = collect_all_experiments(filelist)
 data_PIV = collect_all_experiments(filelist_PIV)
@@ -84,7 +84,7 @@ for key in keys:
     main_dict['laser'][key] = np.array([data[key] for data in data_laser ])
 
 main_dict['PIV'] = {}
-keys = ['alpha','err_alpha','k','f_demod','f_ex']
+keys = ['alpha','err_alpha','k0','f_demod','f_ex']
 for key in keys:
     main_dict['PIV'][key] = np.array([data[key] for data in data_PIV ])
 
@@ -124,7 +124,9 @@ ax.set_yscale('log')
 ax.set_xlim([2e0,8e0])
 ax.set_ylim([1e0,1e2])
 
-
+figname = f'{main_path}Attenuation_law_PIV_laser_h{h:.2f}'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
 
 
 

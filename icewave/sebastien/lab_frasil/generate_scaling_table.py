@@ -41,7 +41,7 @@ for key in table.keys():
     h = table[key]['h']
     f_ex = table[key]['f_ex']
     
-    test = (h == 2.5) or (h == 5.0 and f_ex <= 4.2)
+    test = (h == 2.5) or (h == 5.0 and f_ex < 4.2)
     if test:
         table[key]['theta'] = 44.17
         table[key]['facq_t'] = 67

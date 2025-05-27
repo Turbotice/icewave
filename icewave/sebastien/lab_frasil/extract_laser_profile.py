@@ -224,8 +224,8 @@ def process_folder(args):
 #%% Load image
 def main():
     
-    h = 10.0 # frasil thickness 
-    date = '2024_07_11'
+    h = 5.0 # frasil thickness 
+    date = '2024_07_10'
     # base = df.find_path(disk='Backup25',year='2024')
     base = '/media/turbots/Backup25/'
     path2data = f'{base}Aurore_frasil/{date}_e_{h}mm_laser/'
