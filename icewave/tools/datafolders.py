@@ -83,6 +83,7 @@ def find_path(disk='Shack25',year='2025',smb=False,date='0211'):
 
         #    serveurfolder = '/media/turbots/DATA/thiou/'+disk+'/'+base #praise UNIX system
     if 'Windows' in ostype:    #fucking windows OS : beware of the mounting disk you used
+        print('ostype : Windows')
         if disk=='labshared2':
             base = 'W:/'+base 
         if disk=='labshared1':
