@@ -22,7 +22,6 @@ facq_pix = 1/(scale*1e-3) # scale in pixels / meter
 
 for folder in folderlist:
     h = float(re.findall(r'e_(\d+\.\d+)mm',folder)[0]) # frasil thickness
-    print(h)
     
     explist = glob.glob(f'{folder}/*Hz_*mm')
     for exp in explist:
@@ -30,7 +29,6 @@ for folder in folderlist:
         amplitude = float(re.findall(r'Hz_(\d+)mm',exp)[0])
         
         key = f'h_{h}mm_fex_{f_ex}Hz'
-        print(key)
         param_dict = {}
         param_dict[key] = {'h':h,'f_ex': f_ex ,'theta':53.9, 'facq_t':37.215, 'scale':scale, 'facq_pix': facq_pix}
         print(param_dict)
@@ -45,7 +43,8 @@ for key in table.keys():
     if test:
         table[key]['theta'] = 44.17
         table[key]['facq_t'] = 67
-
+    
+    print(table[key])
 #%% Save table 
 
 file2save = f'{path2data}table_experimental_parameters.pkl'
@@ -53,3 +52,14 @@ with open(file2save,'wb') as pf:
     pickle.dump(table,pf)
 
 
+#%% 
+
+key_list = list(table.keys())
+key = key_list[0]
+print(key)
+
+h = table[key]['h']
+f_ex = table[key]['f_ex']
+
+test = (h == 2.5) or (h == 5.0 and f_ex < 4.2)
+print(test)

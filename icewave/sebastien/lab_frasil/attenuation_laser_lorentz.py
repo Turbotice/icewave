@@ -38,6 +38,9 @@ def lorentzian(x,x0,alpha):
     y = 1/np.sqrt(1 + ((x - x0)/alpha)**2)
     return y
 
+def exponential_decay(x,A,alpha):
+    y = A*np.exp(-alpha*x)
+    return y
 
 def get_suffixe(data):
     """ Create suffixe for image and file name definition """
@@ -141,6 +144,29 @@ def save_lorentzian_plot(cut,k,popt,figname):
     plt.close(fig)
     return 
 
+def exponential_fit(y,x,bounds):
+    """ Perform exponential fit of data """
+    popt,pcov = scipy.optimize.curve_fit(lambda x,A,alpha : exponential_decay(x,A,alpha),x,y,bounds = bounds)
+    err_coeff = np.sqrt(np.diag(pcov))
+
+    return popt,err_coeff
+
+def save_exponential_plot(profile,x,popt,figname):
+    
+    xth = np.linspace(x.min(),x.max(),200)
+    yth = exponential_decay(xth,popt[0],popt[1])
+    fig, ax = plt.subplots()
+    ax.plot(x,np.real(profile))
+    ax.plot(x,abs(profile))
+    ax.plot(xth,yth,'r')
+    
+    ax.set_xlabel(r'$x \; \mathrm{(m)}$',labelpad = 5)
+    ax.set_ylabel(r'$|\hat{\xi}|(x) \; \mathrm{(mm)}$',labelpad = 5)
+    plt.savefig(figname + '.pdf', bbox_inches='tight')
+    plt.savefig(figname + '.png', bbox_inches='tight')
+    plt.close(fig)
+    return 
+
 def process_single_experiment(data,main_results_folder):
     """ Perform all processes for a single experiment and save data associated to attenuation """
 
@@ -169,6 +195,7 @@ def process_single_experiment(data,main_results_folder):
     # find maximum
     idx_max = np.argmax(abs(positive_shift).flatten())
     unravel_coords = np.unravel_index(idx_max,positive_shift.shape)
+    f_demod = positive_freq[unravel_coords[1]]
     
     # Plot 
     suffixe = get_suffixe(data)
@@ -183,6 +210,14 @@ def process_single_experiment(data,main_results_folder):
     figname = f'{results_folder}Lorentzian_fit_{suffixe}'
     save_lorentzian_plot(cut,k,popt,figname)
     
+    # Demodulate profile and fit by an exponential 
+    demod_profile = np.mean(data['spatio']*np.exp(1j*2*np.pi*f_demod*data['t']),axis = -1)
+    
+    bounds = ([1e-6,1e-4],[1e-1,1e2])
+    popt_exp,err_coeff_exp = exponential_fit(abs(demod_profile), data['x'], bounds)
+    figname_exp = f'{results_folder}Exponential_fit_{suffixe}'
+    save_exponential_plot(demod_profile, data['x'], popt_exp, figname_exp)
+    
     # save results 
     dict_res = {}
     dict_res['f_demod'] = positive_freq[unravel_coords[1]]
@@ -190,9 +225,16 @@ def process_single_experiment(data,main_results_folder):
     dict_res['err_k0'] = abs(err_coeff[0])
     dict_res['alpha'] = popt[1]
     dict_res['err_alpha'] = abs(err_coeff[1])
+    dict_res['Amax'] = abs(demod_profile).max()
     dict_res['lorentz'] = {}
     dict_res['lorentz']['kx'] = k
     dict_res['lorentz']['y'] = cut
+    dict_res['lorentz']['A'] = (cut.max() - cut.min())*popt[1]
+    dict_res['exponential'] = {}
+    dict_res['exponential']['A'] = popt_exp[0]
+    dict_res['exponential']['err_A'] = err_coeff_exp[0]
+    dict_res['exponential']['alpha'] = popt_exp[1]
+    dict_res['exponential']['err_alpha'] = err_coeff_exp[1]
     dict_res['param'] = data['param']
     dict_res['h'] = data['h']
     dict_res['f_ex'] = data['f_ex']
@@ -215,7 +257,7 @@ def process_file(args):
     process_single_experiment(data, main_results_folder)
     return 
 
-def main(h = 7.5,date = '2024_07_11'):
+def main(h = 10.0,date = '2024_07_11'):
     main_path = f'U:/Aurore_frasil/{date}_e_{h}mm_laser/'
     path2data = f'{main_path}Laser_extraction/'
     filelist = glob.glob(f'{path2data}scaled_laser_structure*')

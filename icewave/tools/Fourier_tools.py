@@ -112,7 +112,7 @@ def temporal_FFT(H,fps,padding_bool = 1,add_pow2 = 0,output_FFT = False):
 #------------------------------------------------------------------------------------------------------------------------
     
 def temporal_FFT_spatio(H,fps,padding_bool = 1,add_pow2 = 0,output_FFT = False):
-    """ Compute FFT along time for a 3D numpy array 
+    """ Compute FFT along time for a 2D numpy array 
        Inputs : - H, 3D numpy array, #dim0 : space, #dim1 : space, #dim2 : time
                 - fps , float, acquisition frequency for time
                 - padding_bool, optional argument, boolean to decide if we padd signal or not. Default = 1

@@ -20,7 +20,7 @@ import cv2 as cv
 from concurrent.futures import ProcessPoolExecutor
 from tqdm import tqdm
 
-# import icewave.tools.datafolders as df
+import icewave.tools.datafolders as df
 
 # plt.rc('text', usetex=True)
 # plt.rc('font', family='serif', serif='Computer Modern')
@@ -88,11 +88,28 @@ def get_laser_indices(img,threshold,channel_color):
     # compute sum along raws
     sum_mask = np.sum(mask,axis = 0)
     # get minimal and maximal index between which we perform correlation 
-    laser_indices = np.where(sum_mask > 4)[0]
+    laser_indices = np.where(sum_mask > 5)[0]
     idx_start = laser_indices[0]
     idx_end = laser_indices[-1]
     return idx_start,idx_end
 
+def supress_interp_outliers(x,y,confidence):
+    """Supress outliers from a 1D signal and replace these values by a linear interpolation
+    Inputs : - x, np.array, array of x coordinates over which interpolation should be performed
+             - y, np.array, arrray of signal values
+             - confidence, float, define the confidence interval outside of which we detect outliers mean +- confidence*std 
+    Output : - clean_y, np.array, array of values after outliers supression and interpolation """
+    mean = np.mean(y)
+    std = np.std(y)
+    
+    threshold = [mean -  confidence*std, mean + confidence*std]
+    outliers = np.where(np.logical_or(y < threshold[0], y > threshold[1]))[0]
+    model_y = np.delete(y,outliers)
+    model_x = np.delete(x,outliers)
+    
+    I = scipy.interpolate.interp1d(model_x,model_y,kind = 'linear',fill_value = 'extrapolate')
+    clean_y = I(x)
+    return clean_y
 
 def scale_spatio(laser_spatio,theta_rad,facq_pix,facq_t,idx_start,idx_end):
     """ Scale spatio temporal extraction of laser 
@@ -147,6 +164,7 @@ def single_experiment_extraction(path2img,table_param,results_folder):
     theta_rad = theta*np.pi/180
     facq_t = table_param[key]['facq_t']
     facq_pix = table_param[key]['facq_pix']
+    print(facq_t)
     
     
     suffixe = f'h_{h}_fex_{f_ex}_amp_{amplitude}mm'
@@ -156,7 +174,7 @@ def single_experiment_extraction(path2img,table_param,results_folder):
     img_list = glob.glob(f'{path2img}Basler*.tiff')
 
     ###### Define section of image where laser will be extracted
-    red_threshold = 120 # threshold for selection of idx_start and idx_end
+    red_threshold = 140 # threshold for selection of idx_start and idx_end
     channel_color = 0
     file2load = img_list[0]
     img = cv.imread(file2load)
@@ -181,6 +199,8 @@ def single_experiment_extraction(path2img,table_param,results_folder):
     N = 10
     gaussian = scipy.signal.windows.gaussian(M = gaussian_width * N,std = gaussian_width)
     
+    confidence = 5
+    
     for idx_img in range(len(img_list)):
         
         file2load = img_list[idx_img]
@@ -191,7 +211,9 @@ def single_experiment_extraction(path2img,table_param,results_folder):
         img_laser = img[:,idx_start:idx_end,:]
     
         laser_profile = extract_laser_frame(img_laser[:,:,0],gaussian)
-        laser_spatio[:,idx_img] = laser_profile
+        x_array = np.indices(laser_profile.shape)[0]
+        clean_profile = supress_interp_outliers(x_array,laser_profile,confidence)
+        laser_spatio[:,idx_img] = clean_profile
 
     file2save = f'{results_folder}unscaled_laser_{suffixe}.pkl'
 
@@ -245,12 +267,13 @@ def main():
            
     # select an experiment (an excitation frequency)
     # for folder in tqdm(folderlist):
-    #     process_folder(folder)
+    #     args = (folder,table_param,results_folder)
+    #     process_folder(args)
     
     # create a list of arguments
     args_list = [(folder, table_param, results_folder) for folder in folderlist]
 
-    with ProcessPoolExecutor(max_workers=30) as executor:
+    with ProcessPoolExecutor(max_workers=2) as executor:
         list(tqdm(executor.map(process_folder, args_list), total=len(args_list)))
 
 if __name__ == '__main__':

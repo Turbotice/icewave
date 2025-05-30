@@ -33,6 +33,10 @@ def lorentzian(x,x0,alpha):
     y = 1/np.sqrt(1 + ((x - x0)/alpha)**2)
     return y
 
+def exponential_decay(x,A,alpha):
+    y = A*np.exp(-alpha*x)
+    return y
+
 def get_data(file2load):
     """ Load PIV data from .mat file
     Input : file2load, str, name of .mat file where data from PIV are saved
@@ -186,6 +190,29 @@ def save_lorentzian_plot(cut,k,popt,figname):
     plt.close(fig)
     return 
 
+def exponential_fit(y,x,bounds):
+    """ Perform exponential fit of data """
+    popt,pcov = scipy.optimize.curve_fit(lambda x,A,alpha : exponential_decay(x,A,alpha),x,y,bounds = bounds)
+    err_coeff = np.sqrt(np.diag(pcov))
+
+    return popt,err_coeff
+
+def save_exponential_plot(profile,x,popt,figname):
+    
+    xth = np.linspace(x.min(),x.max(),200)
+    yth = exponential_decay(xth,popt[0],popt[1])
+    fig, ax = plt.subplots()
+    ax.plot(x,np.real(profile))
+    ax.plot(x,abs(profile))
+    ax.plot(xth,yth,'r')
+    
+    ax.set_xlabel(r'$x \; \mathrm{(m)}$',labelpad = 5)
+    ax.set_ylabel(r'$\langle V_x \rangle_{y} \; \mathrm{(u.a.)}$',labelpad = 5)
+    plt.savefig(figname + '.pdf', bbox_inches='tight')
+    plt.savefig(figname + '.png', bbox_inches='tight')
+    plt.close(fig)
+    return 
+    
 
 def process_folder(folder):
       
@@ -256,6 +283,13 @@ def process_folder(folder):
     figname = f'{fig_folder}Lorentzian_fit_kx_{ID_txt}'
     save_lorentzian_plot(cut, kx, popt, figname)
     
+    # average over y axis and fit by an exponential 
+    profile = np.mean(demod_field,axis = 1)
+    bounds = ([1e-6,1e-4],[1e-1,1e2])
+    popt_exp,err_coeff_exp = exponential_fit(abs(profile),data['x'],bounds)
+    figname_exp = f'{fig_folder}Exponential_fit_{ID_txt}'
+    save_exponential_plot(profile, data['x'], popt_exp, figname_exp)
+    
     # save results 
     dict_res = {}
     dict_res['f_demod'] = f_max
@@ -263,9 +297,16 @@ def process_folder(folder):
     dict_res['err_k0'] = abs(err_coeff[0])
     dict_res['alpha'] = popt[1]
     dict_res['err_alpha'] = abs(err_coeff[1])
+    dict_res['Amax'] = abs(profile).max()
     dict_res['lorentz'] = {}
     dict_res['lorentz']['kx'] = kx
     dict_res['lorentz']['y'] = cut
+    dict_res['lorentz']['A'] = (cut.max() - cut.min())*popt[1]
+    dict_res['exponential'] = {}
+    dict_res['exponential']['A'] = popt_exp[0]
+    dict_res['exponential']['err_A'] = err_coeff_exp[0]
+    dict_res['exponential']['alpha'] = popt_exp[1]
+    dict_res['exponential']['err_alpha'] = err_coeff_exp[1]
     dict_res['PIV_param'] = data['PIV_param']
     dict_res['h'] = float(data['EXP']['h'])
     dict_res['f_ex'] = float(data['EXP']['f_ex'])
@@ -279,7 +320,7 @@ def process_folder(folder):
     return 
 
 
-def main(h = 5.0,date = '2024_07_10'):
+def main(h = 15.0,date = '2024_07_11'):
     path2data = f'U:/Aurore_frasil/{date}_e_{h}mm_laser/matData/'
     folderlist = glob.glob(f'{path2data}*')
     
