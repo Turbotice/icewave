@@ -550,3 +550,62 @@ plt.savefig(f'{figname}.png', bbox_inches = 'tight')
 plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
 plt.savefig(f'{figname}.svg', bbox_inches = 'tight')
 
+#%% Plot dispersion relation 
+
+set_graphs.set_matplotlib_param('single')
+method = 'laser'
+thickness_list = [2.5,5.0,7.5,10.0,12.5,15.0]
+
+bounds = np.array([1.25,3.75,6.25,8.75,11.25,13.75,16.25]) # bounds used for colorbar
+norm = mcolors.BoundaryNorm(boundaries=bounds, ncolors=256)
+cmap = new_blues
+marker_list = ['o','s','D','^','h','p']
+fig, ax = plt.subplots()
+
+
+for i,h in enumerate(thickness_list):
+    valid_keys = []
+    for key in data.keys():
+        if data[key]['method'] == method and data[key]['h'] == h:
+            valid_keys.append(key)
+            
+    k0 = [data[key]['k0'] for key in valid_keys]
+    err_k0 = [data[key]['err_k0'] for key in valid_keys]
+    f_demod = [data[key]['f_demod'] for key in valid_keys]
+    
+    
+    current_color = cmap(norm(h))
+    marker = marker_list[i]
+    ax.errorbar(k0,f_demod,xerr = err_k0,fmt = marker,color = current_color,markeredgecolor = 'k',ecolor = 'k',
+                markersize = 8)
+
+g = 9.81
+H = 1e-1
+kth = np.linspace(10,200,200)
+# yth = np.sqrt(g*kth)/2/np.pi
+yth = np.sqrt(g*kth*np.tanh(kth*H))/2/np.pi
+ax.plot(kth,yth,'r--')
+
+# create a scalar mappable
+sm = cm.ScalarMappable(cmap=cmap, norm=norm)
+sm.set_array([])  # Only needed for the colorbar
+cbar = fig.colorbar(sm, ax=ax)
+midpoints = [(bounds[i] + bounds[i+1])/2 for i in range(len(bounds) - 1)]
+cbar.set_ticks(midpoints)
+cbar.set_ticklabels([f'{mid:.1f}' for mid in midpoints])
+cbar.set_label(r'$h \; \mathrm{(mm)}$')
+
+ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$',labelpad = 5)
+ax.set_ylabel(r'$f \; \mathrm{(Hz)}$',labelpad = 5)
+scalebase = 'linear'
+ax.set_xscale(scalebase)
+ax.set_yscale(scalebase)
+ax.set_title(f'{method}')
+ax.set_xlim([25,150])
+ax.set_ylim([2.5,5.5])
+
+
+figname = f'{fig_folder}freq_VS_k_method_{method}_scale_{scalebase}'
+plt.savefig(f'{figname}.png', bbox_inches = 'tight')
+plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
+plt.savefig(f'{figname}.svg', bbox_inches = 'tight')

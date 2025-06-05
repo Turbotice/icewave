@@ -257,7 +257,7 @@ def process_file(args):
     process_single_experiment(data, main_results_folder)
     return 
 
-def main(h = 10.0,date = '2024_07_11'):
+def main(h = 12.5,date = '2024_07_11'):
     main_path = f'U:/Aurore_frasil/{date}_e_{h}mm_laser/'
     path2data = f'{main_path}Laser_extraction/'
     filelist = glob.glob(f'{path2data}scaled_laser_structure*')
