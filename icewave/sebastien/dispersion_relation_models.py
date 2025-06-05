@@ -99,8 +99,6 @@ ax.legend()
 
 
 
-
-
 #%%
 
 freq = np.linspace(0.2,1,100)
