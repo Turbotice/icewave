@@ -290,9 +290,10 @@ for key_drone in maps.keys():
     full_map = mpl.colormaps[maps[key_drone]].resampled(256)
     new_map = mcolors.ListedColormap(full_map(np.linspace(0.2,1,256)))
     cnorm = mcolors.Normalize(vmin = 0, vmax = 5)
-    
+    cnorm_time = mcolors.Normalize(vmin = 0, vmax = Z[key_drone]['t'].max())
     maps_drone[key_drone]['new_map'] = new_map
     maps_drone[key_drone]['cnorm'] = cnorm
+    maps_drone[key_drone]['cnorm_time'] = cnorm_time
 
     
 #%% Compute (X,Y) coordinates of each buoy
@@ -351,6 +352,22 @@ for drone_key in ['fulmar','bernache','mesange']:
     Z[drone_key]['GPS'][:,1,:] = POS_Long
     
 print('Buoys GPS coordinates computed')
+
+#%% Plot buoys GPS position
+set_graphs.set_matplotlib_param('single')
+fig, ax = plt.subplots()   
+
+for drone_key in Z.keys():
+    for i in range(6): 
+        current_color = maps_drone[drone_key]['new_map'](maps_drone[drone_key]['cnorm'](i))
+        ax.plot(Z[drone_key]['GPS'][i,1,:],Z[drone_key]['GPS'][i,0,:],'.',color = current_color) 
+        
+ax.set_ylabel(r'Latitude')
+ax.set_xlabel(r'Longitude')
+
+figname = f'{fig_folder}Raw_GPS_buoys_3drones'
+plt.savefig(f'{figname}.png', bbox_inches = 'tight')
+plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
 
 #%% Save buoys structure 
 path2save = 'W:/SagWin2024/Data/0211/Drones/'
@@ -418,6 +435,13 @@ for i in range(Nb_frames):
 
 
     
+
+
+
+
+
+
+
 ###################################################################################
 ################ FIND BEST TRANSFORMATION bernache / mesange ######################
 ###################################################################################
@@ -492,6 +516,13 @@ with open(file2save,'wb') as pf :
 
 #%% Compute (Lat,Long) coordinates using procruste operation
 
+# load procruste operations
+file2load = f'{fig_folder}procruste_operation_Nbframes_{Nb_frames}_ref_drone_{ref_drone}_projected_drone_{projected_drone}.pkl'
+with open(file2load,'rb') as pf :
+    procruste_op = pickle.load(pf)
+    print(f'{file2load} loaded !')
+
+
 latlong_transfo = np.zeros(Z[ref_drone]['GPS'][:Nb_buoys,:,:Nb_frames].shape)
 for i in range(Nb_frames):
     R = procruste_op['rot'][:,:,i]
@@ -505,6 +536,8 @@ if ref_drone == 'mesange':
     path2img = f'{root}Initial_images/mesange_im_11496.tiff'
 elif ref_drone == 'bernache':
     path2img = f'{root}Initial_images/bernache_im_11500.tiff'
+
+set_graphs.set_matplotlib_param('single')
 
 img = cv.imread(path2img)
 img = cv.cvtColor(img,cv.COLOR_BGR2RGB)
@@ -534,10 +567,10 @@ c = ax.pcolormesh(Long,Lat,img[:,:,0],shading = 'auto',cmap = 'gray')
 c.set_rasterized(True)
 
 for i in range(5):
-    current_color = maps_drone[ref_drone]['new_map'](maps_drone[ref_drone]['cnorm'](Z[ref_drone]['t'][:Nb_frames])) 
+    current_color = maps_drone[ref_drone]['new_map'](maps_drone[ref_drone]['cnorm_time'](Z[ref_drone]['t'][:Nb_frames])) 
     ax.scatter(Z[ref_drone]['GPS'][i,1,:Nb_frames],Z[ref_drone]['GPS'][i,0,:Nb_frames],s = 20,marker = '.',color = current_color)
     
-    current_color = maps_drone[projected_drone]['new_map'](maps_drone[projected_drone]['cnorm'](Z[projected_drone]['t'][:Nb_frames])) 
+    current_color = maps_drone[projected_drone]['new_map'](maps_drone[projected_drone]['cnorm_time'](Z[projected_drone]['t'][:Nb_frames])) 
     ax.scatter(latlong_transfo[i,1,:],latlong_transfo[i,0,:],s = 20,marker = '.',color = current_color)
     
 ax.set_xlabel(r'Longitude $(^\circ)$',labelpad = 15)
@@ -549,7 +582,7 @@ plt.savefig(f'{figname}.png', bbox_inches = 'tight')
 plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
 
 #%% Superpose buoys position in X,Y mesange coordinates system
-
+set_graphs.set_matplotlib_param('single')
 fig, ax = plt.subplots()
 c = ax.pcolormesh(Xreal,Yreal,img[:,:,0],shading = 'auto', cmap = 'gray')
 c.set_rasterized(True)
@@ -561,10 +594,10 @@ Lat0,Long0 = dp.LatLong_coords_from_referencepoint(param[ref_drone]['latitude'],
 x,y = GPS2XY(latlong_transfo[:,0,:],latlong_transfo[:,1,:],Lat0,Long0,param[ref_drone]['azimuth'])
 
 for i in range(5):
-    current_color = maps_drone[ref_drone]['new_map'](maps_drone[ref_drone]['cnorm'](Z[ref_drone]['t'][:Nb_frames]))
+    current_color = maps_drone[ref_drone]['new_map'](maps_drone[ref_drone]['cnorm_time'](Z[ref_drone]['t'][:Nb_frames]))
     ax.scatter(Z[ref_drone]['real'][i,0,:Nb_frames],Z[ref_drone]['real'][i,1,:Nb_frames],s = 20,marker = '.',
                color = current_color)
-    current_color = maps_drone[projected_drone]['new_map'](maps_drone[projected_drone]['cnorm'](Z[projected_drone]['t'][:Nb_frames]))
+    current_color = maps_drone[projected_drone]['new_map'](maps_drone[projected_drone]['cnorm_time'](Z[projected_drone]['t'][:Nb_frames]))
     ax.scatter(x[i,:],y[i,:],s = 20,marker = '.',color = current_color)
 
 ax.set_xlabel(r'$X \; \mathrm{(m)}$')
@@ -580,13 +613,14 @@ Yref = Z[ref_drone]['real'][:Nb_buoys,1,:Nb_frames]
 
 error = np.sqrt((x - Xref)**2 + (y - Yref)**2)
 
-fig, ax = plt.subplots(figsize = (12,9))
+set_graphs.set_matplotlib_param('single')
+fig, ax = plt.subplots()
 for i in range(5):    
-    label_buoy = f'Buoy {i}'
+    label_buoy = f'Buoy {i+1}'
     ax.plot(error[i,:],label = label_buoy)
 
 ax.legend()
-ax.set_ylabel(r'Error m')
+ax.set_ylabel(r'Error (m)')
 ax.set_xlabel(r'Time step')
 
 figname = f'{fig_folder}Error_{projected_drone}_to_{ref_drone}'
@@ -594,6 +628,8 @@ plt.savefig(f'{figname}.png', bbox_inches = 'tight')
 plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
 ########################################################################################################################
 ########################################################################################################################
+
+
 
 
 
@@ -756,8 +792,10 @@ plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
 ####### Illustrate procruste transformation ########################################################################
 ####################################################################################################################
 synchro = {'fulmar' : 0, 'mesange' : 520, 'bernache' : 520}
-projected_drone = 'fulmar'
+projected_drone = 'bernache'
 ref_drone = 'mesange'
+Nb_buoys = 5
+output_rescaling = 1
 
 # check procrustes alignement 
 i = 0
@@ -770,6 +808,105 @@ for drone_key in [ref_drone,projected_drone]:
 
 points_project = points[projected_drone]
 points_ref = points[ref_drone]
+
+scale_factor,R,t =  procrustes_alignement(points_project,points_ref,output_rescaling = 1)
+
+# apply procruste operations to Lat,Long
+rotated = R @ points_project.T
+scaled = scale_factor * rotated.T
+latlong_transfo = scaled + t[None,...]
+
+print(latlong_transfo.shape)
+# # reshape matrix 
+# latlong_transfo = np.reshape(latlong_transfo,(X.shape[0],X.shape[1],2))
+
+#%% Plot raw positions 
+
+if ref_drone == 'mesange':
+    path2img = f'{root}Initial_images/mesange_im_11496.tiff'
+elif ref_drone == 'bernache':
+    path2img = f'{root}Initial_images/bernache_im_11500.tiff'
+
+img = cv.imread(path2img)
+img = cv.cvtColor(img,cv.COLOR_BGR2RGB)
+# create coordinates for image
+[ny,nx,nc] = np.shape(img) 
+
+x_edges = np.arange(0,nx + 1)
+y_edges = np.arange(0,ny + 1)
+
+x0 = (nx + 1) / 2
+y0 = (ny + 1) / 2
+
+Yedges,Xedges = np.meshgrid(y_edges,x_edges,indexing = 'ij')
+
+# compute real coordinates 
+Xreal,Yreal = dp.projection_real_space(Xedges,Yedges,x0,y0,param[ref_drone]['h'],param[ref_drone]['alpha_0'],
+                                       param[ref_drone]['focale'])
+
+set_graphs.set_matplotlib_param('single')
+mksize = 7
+fig, ax = plt.subplots()
+# Plot frame 
+dist2drone = param[ref_drone]['h']/np.tan(param[ref_drone]['alpha_0'])
+Lat0,Long0 = dp.LatLong_coords_from_referencepoint(param[ref_drone]['latitude'],param[ref_drone]['longitude'],
+                                                param[ref_drone]['azimuth'],dist2drone)
+
+Lat,Long = XY2GPS(Xreal,Yreal,Lat0,Long0,param[ref_drone]['azimuth'])
+c = ax.pcolormesh(Long,Lat,img[:,:,0],shading = 'auto',cmap = 'gray')
+c.set_rasterized(True)
+
+for i in range(5):
+    i0 = synchro[ref_drone]
+    current_color = maps_drone[ref_drone]['new_map'](maps_drone[ref_drone]['cnorm'](i)) 
+    ax.plot(points_ref[i,1],points_ref[i,0],marker = 'o',color = current_color,
+               markeredgecolor = 'k',markersize = mksize)
+    
+    current_color = maps_drone[projected_drone]['new_map'](maps_drone[projected_drone]['cnorm'](i)) 
+    ax.plot(points_project[i,1],points_project[i,0],marker = 'o',color = current_color,
+               markeredgecolor = 'k',markersize = mksize)
+    
+ax.set_xlabel(r'Longitude $(^\circ)$',labelpad = 15)
+ax.set_ylabel(r'Latitude $(^\circ)$',labelpad = 15)
+ax.set_aspect(1/np.cos(Lat0*np.pi/180)) # scaling y/x
+
+figname = f'{fig_folder}illustration_procruste_operations_raw_positions_projected_{projected_drone}_ref_{ref_drone}'
+plt.savefig(f'{figname}.png', bbox_inches = 'tight')
+plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
+
+#%% Plot final positions 
+
+fig, ax = plt.subplots()
+# Plot frame 
+dist2drone = param[ref_drone]['h']/np.tan(param[ref_drone]['alpha_0'])
+Lat0,Long0 = dp.LatLong_coords_from_referencepoint(param[ref_drone]['latitude'],param[ref_drone]['longitude'],
+                                                param[ref_drone]['azimuth'],dist2drone)
+
+Lat,Long = XY2GPS(Xreal,Yreal,Lat0,Long0,param[ref_drone]['azimuth'])
+c = ax.pcolormesh(Long,Lat,img[:,:,0],shading = 'auto',cmap = 'gray')
+c.set_rasterized(True)
+
+for i in range(5):
+    i0 = synchro[ref_drone]
+    current_color = maps_drone[ref_drone]['new_map'](maps_drone[ref_drone]['cnorm'](i)) 
+    ax.plot(points_ref[i,1],points_ref[i,0],marker = 'o',color = current_color,
+               markeredgecolor = 'k',markersize = mksize)
+    
+    current_color = maps_drone[projected_drone]['new_map'](maps_drone[projected_drone]['cnorm'](i)) 
+    ax.plot(latlong_transfo[i,1],latlong_transfo[i,0],marker = 'o',color = current_color,
+               markeredgecolor = 'k',markersize = mksize)
+    
+ax.set_xlabel(r'Longitude $(^\circ)$',labelpad = 15)
+ax.set_ylabel(r'Latitude $(^\circ)$',labelpad = 15)
+ax.set_aspect(1/np.cos(Lat0*np.pi/180)) # scaling y/x
+
+figname = f'{fig_folder}illustration_procruste_operations_finale_projected_{projected_drone}_ref_{ref_drone}'
+plt.savefig(f'{figname}.png', bbox_inches = 'tight')
+plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
+
+
+#%% Detailed computation of each operation 
+
 # Compute centers
 c_proj = np.nanmean(points_project,axis = 0)
 c_ref = np.nanmean(points_ref,axis = 0)
@@ -796,26 +933,100 @@ if np.linalg.det(R) < 0:
 # Compute best translation 
 t = c_ref - scale_factor * R @ c_proj
 
-fig, ax = plt.subplots()
-ax.plot(points_ref[:,1],points_ref[:,0],'.')
-ax.plot(c_ref[1],c_ref[0],'ro')
-ax.plot(points_project[:,1],points_project[:,0],'.')
-ax.plot(c_proj[1],c_ref[0],'go')
 
-fig, ax = plt.subplots()
-ax.plot(centered_ref[:,1],centered_ref[:,0],'.')
-ax.plot(centered_proj[:,1],centered_proj[:,0],'.')
+#%%
 
+
+
+
+#%% Plots to illustrate procruste operations
+
+set_graphs.set_matplotlib_param('single')
+
+mksize = 8
+fig, ax = plt.subplots()
+for i in range(5):
+    ref_color = maps_drone[ref_drone]['new_map'](maps_drone[ref_drone]['cnorm'](i))
+    ax.plot(points_ref[i,1],points_ref[i,0],'o',color = ref_color,markeredgecolor = 'k',markersize = mksize)
+    project_color = maps_drone[projected_drone]['new_map'](maps_drone[projected_drone]['cnorm'](i))
+    ax.plot(points_project[i,1],points_project[i,0],'o',color = project_color,markeredgecolor = 'k',
+            markersize = mksize)
+    
+ax.plot(c_proj[1],c_ref[0],'rd',markeredgecolor = 'k',markersize = mksize)
+ax.plot(c_ref[1],c_ref[0],'gd',markeredgecolor = 'k',markersize = mksize)
+
+ax.set_ylabel(r'Latitude')
+ax.set_xlabel(r'Longitude')
+
+figname = f'{fig_folder}Illustration_procruste_mass_center_ref_{ref_drone}_projected_{projected_drone}_frame_520'
+plt.savefig(f'{figname}.png', bbox_inches = 'tight')
+plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
+
+#%%
+
+set_graphs.set_matplotlib_param('single')
+
+mksize = 8
+fig, ax = plt.subplots()
+for i in range(5):
+    ref_color = maps_drone[ref_drone]['new_map'](maps_drone[ref_drone]['cnorm'](i))
+    ax.plot(centered_ref[i,1],centered_ref[i,0],'o',color = ref_color,markeredgecolor = 'k',markersize = mksize)
+    project_color = maps_drone[projected_drone]['new_map'](maps_drone[projected_drone]['cnorm'](i))
+    ax.plot(centered_proj[i,1],centered_proj[i,0],'o',color = project_color,markeredgecolor = 'k',
+            markersize = mksize)
+
+ax.set_ylabel(r'Latitude')
+ax.set_xlabel(r'Longitude')
+
+figname = f'{fig_folder}Illustration_procruste_centered_points_ref_{ref_drone}_projected_{projected_drone}_frame_520'
+plt.savefig(f'{figname}.png', bbox_inches = 'tight')
+plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
+
+
+
+#%%
 scaled = scale_factor * centered_proj
-fig, ax = plt.subplots()
-ax.plot(centered_ref[:,1],centered_ref[:,0],'.')
-ax.plot(scaled[:,1],scaled[:,0],'.')
+set_graphs.set_matplotlib_param('single')
 
+mksize = 8
+fig, ax = plt.subplots()
+for i in range(5):
+    ref_color = maps_drone[ref_drone]['new_map'](maps_drone[ref_drone]['cnorm'](i))
+    ax.plot(centered_ref[i,1],centered_ref[i,0],'o',color = ref_color,markeredgecolor = 'k',markersize = mksize)
+    project_color = maps_drone[projected_drone]['new_map'](maps_drone[projected_drone]['cnorm'](i))
+    ax.plot(scaled[i,1],scaled[i,0],'o',color = project_color,markeredgecolor = 'k',
+            markersize = mksize)
+
+ax.set_ylabel(r'Latitude')
+ax.set_xlabel(r'Longitude')
+
+figname = f'{fig_folder}Illustration_procruste_scaled_points_ref_{ref_drone}_projected_{projected_drone}_frame_520'
+plt.savefig(f'{figname}.png', bbox_inches = 'tight')
+plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
+
+
+#%%
 rotated = R @ scaled.T
 rotated = rotated.T
+
+set_graphs.set_matplotlib_param('single')
+
+mksize = 8
 fig, ax = plt.subplots()
-ax.plot(centered_ref[:,1],centered_ref[:,0],'.')
-ax.plot(rotated[:,1],rotated[:,0],'.')
+for i in range(5):
+    ref_color = maps_drone[ref_drone]['new_map'](maps_drone[ref_drone]['cnorm'](i))
+    ax.plot(centered_ref[i,1],centered_ref[i,0],'o',color = ref_color,markeredgecolor = 'k',markersize = mksize)
+    project_color = maps_drone[projected_drone]['new_map'](maps_drone[projected_drone]['cnorm'](i))
+    ax.plot(rotated[i,1],rotated[i,0],'o',color = project_color,markeredgecolor = 'k',
+            markersize = mksize)
+
+ax.set_ylabel(r'Latitude')
+ax.set_xlabel(r'Longitude')
+
+figname = f'{fig_folder}Illusatration_procruste_rotated_points_ref_{ref_drone}_projected_{projected_drone}_frame_520'
+plt.savefig(f'{figname}.png', bbox_inches = 'tight')
+plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
+
 
 
 

@@ -18,6 +18,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors 
 import matplotlib.cm as cm
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import scipy.signal as signal
 from scipy.interpolate import LinearNDInterpolator
@@ -27,7 +28,10 @@ import pytz
 import icewave.tools.matlab2python as mat2py
 import icewave.sebastien.set_graphs as set_graphs
 import icewave.drone.drone_projection as dp
+import icewave.tools.matlab_colormaps as matcmaps
 
+# PARULA COLORMAP 
+parula_map = matcmaps.parula()
 
 #%% FUNCTION SECTION 
 
@@ -96,7 +100,7 @@ for i in range(len(drones)):
     
         data[drones[i]] = mat2py.mat_to_dict(fmat['m'],fmat['m'])
 
-#%% Load/ save synchro dictionnary
+#%% Load/save synchro dictionnary
 synchro = {'fulmar' : 0, 'mesange' : 520, 'bernache' : 520}
 
 path_save = 'W:/SagWin2024/Data/0211/Drones/'
@@ -190,9 +194,50 @@ figname = f'{fig_folder}Vz_i{i}_{projected_drone}_framework_{ref_drone}'
 plt.savefig(f'{figname}.png', bbox_inches = 'tight')
 plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
 
+#%% Superpose velocity fields from both views 
+
+set_graphs.set_matplotlib_param('single')
+fig, ax = plt.subplots()
+c = ax.pcolormesh(X_ref,Y_ref,Vz_ref[:,:,i],shading = 'gouraud', cmap = parula_map,vmin = -4, vmax = 4,
+                  alpha = 0.6)
+c.set_rasterized(True)
+
+cproj = ax.pcolormesh(X_proj,Y_proj,Vz[:,:,i],shading = 'gouraud', cmap = parula_map,vmin = -4, vmax = 4,
+                      alpha = 0.3)
+cproj.set_rasterized(True)
+
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="2%", pad=0.1)
+
+cbar = plt.colorbar(c,cax = cax)
+cbar.set_label(r'$V_z \; \mathrm{(m.s^{-1})}$',labelpad = 5)
+ax.set_xlabel(r'$X \; \mathrm{(m)}$')
+ax.set_ylabel(r'$Y \; \mathrm{(m)}$')
+
+ax.set_aspect(1)
+ax.set_xlim([-100,110])
+ax.set_ylim([-60,80])
+fig_folder = 'W:/SagWin2024/Data/0211/Drones/Resultats_f2700/'
+figname = f'{fig_folder}superposition_Vz_i{i}_{projected_drone}_inframework_{ref_drone}'
+plt.savefig(f'{figname}.png', bbox_inches = 'tight')
+plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
+
+
+
 #%% Check evolution of rescaling factor with time
 fig, ax = plt.subplots()
 ax.plot(procruste_op['scaling'])
+
+
+
+
+
+
+
+
+
+
+
 
 ######################################################################
 ################## COMPARISON WITH BUOYS #############################
