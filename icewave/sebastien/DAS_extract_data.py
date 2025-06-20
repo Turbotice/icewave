@@ -18,7 +18,7 @@ import time
 import scipy.signal as signal
 from scipy.fftpack import fft,ifft 
 from scipy.linalg import svd
-
+import pickle
 
 import icewave.tools.matlab2python as mat2py
 import icewave.tools.matlab_colormaps as matcmaps
@@ -218,9 +218,10 @@ def svd_DAS(signals,fs,xs,rang,*varargin):
     return f,k,FK
 #%%
 
-date = '0211'
+date = '0210'
 # path2data = f'E:/Data/{date}/DAS_h5/'
-path2data = 'F:/20250211/'
+# path2data = 'F:/20250211/'
+path2data = f'U:/Data/{date}/DAS/'
 
 filelist = glob.glob(path2data + '*.h5')
 i = 1
@@ -241,14 +242,20 @@ fig_folder = f'{path2data}Figures/'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
 
+#%% Load parameters for DAS
+
+path2DAS_param = 'U:/Data/parameters_Febus_2025.pkl'
+with open(path2DAS_param,'rb') as pf:
+    param = pickle.load(pf)
+
 #%% Convert time to UTC time
 
 fs = np.shape(strain_rate)[1] # time sampling frequency 
-fiber_length = 700 # fiber length in meters (set on DAS)
-fx = np.shape(strain_rate)[2]/fiber_length # spatial sampling frequency
+fiber_length = 750 # fiber length in meters (set on DAS)
+facq_x = np.shape(strain_rate)[2]/fiber_length # spatial sampling frequency
 
 t_1sec = np.arange(0,1,1/fs)
-s = np.arange(0,fiber_length,1/fx)
+s = np.arange(0,fiber_length,1/facq_x)
 
 format_date = '%Y-%m-%d %H:%M:%S.f'
 local_timearea = pytz.timezone('America/Montreal')
@@ -266,36 +273,36 @@ for i,t_epoch in enumerate(t):
     
 #%% Show spatio-temp for a given time 
 
-normalization = 'linear'
-fig, ax = plt.subplots()
-pause = 3
+# normalization = 'linear'
+# fig, ax = plt.subplots()
+# pause = 3
 
-for i0 in range(np.shape(strain_rate)[0]):
+# for i0 in range(np.shape(strain_rate)[0]):
 
-    spatio = strain_rate[i0,:,:]
-    imsh = ax.imshow(spatio.T,origin = 'lower', aspect = 'auto', norm = normalization,
-              extent = extents(t_1sec) + extents(s))
+#     spatio = strain_rate[i0,:,:]
+#     imsh = ax.imshow(spatio.T,origin = 'lower', aspect = 'auto', norm = normalization,
+#               extent = extents(t_1sec) + extents(s))
     
-    ax.set_ylim([450,700])
-    ax.set_xlabel(r'$t$')
-    ax.set_ylabel(r'$s \; \mathrm{(m)}$')
+#     ax.set_ylim([450,700])
+#     ax.set_xlabel(r'$t$')
+#     ax.set_ylabel(r'$s \; \mathrm{(m)}$')
     
-    ax.set_title(f'local time : {local_t[i0]}')
-    plt.pause(3)
-    ax.clear()
+#     ax.set_title(f'local time : {local_t[i0]}')
+#     plt.pause(3)
+#     ax.clear()
 
     # cbar = plt.colorbar(imsh)
 
 #%% Try to concatenate several seconds 
-Nb_minutes = 5
-Nb_seconds = Nb_minutes*60
+Nb_minutes = 1
+Nb_seconds = int(Nb_minutes*60)
 spatio_long,s,t_sec = time_stacking(strain_rate,Nb_seconds,fiber_length)
 
 normalization = 'linear'
 fig,ax = plt.subplots(figsize = (12,9))
 imsh = ax.imshow(spatio_long.T,origin = 'lower',aspect = 'auto',norm = normalization, cmap = parula_map,
           extent = extents(t_sec) + extents(s),vmin = 1, vmax = 0.6e4)
-ax.set_ylim([0,700])
+ax.set_ylim([0,fiber_length])
 
 divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="2%", pad=0.1)
@@ -305,13 +312,13 @@ ax.set_xlabel(r'$t \; \mathrm{(s)}$',labelpad = 5)
 ax.set_ylabel(r'$s \; \mathrm{(m)}$',labelpad = 5)
 
 
-figname = f'{fig_folder}spatio_{date}_norm_{normalization}_Nbmin_{Nb_minutes}'
-plt.savefig(f'{figname}.pdf',bbox_inches = 'tight')
-plt.savefig(f'{figname}.png',bbox_inches = 'tight')
+# figname = f'{fig_folder}spatio_{date}_norm_{normalization}_Nbmin_{Nb_minutes}'
+# plt.savefig(f'{figname}.pdf',bbox_inches = 'tight')
+# plt.savefig(f'{figname}.png',bbox_inches = 'tight')
 
 #%% Perform 2D Fourier transform
 
-FFT_2D,omega,k = FT.fft_2D(spatio_long - np.mean(spatio_long),[fs,fx],add_pow2 = [0,1])
+FFT_2D,omega,k = FT.fft_2D(spatio_long - np.mean(spatio_long),[fs,facq_x],add_pow2 = [0,1])
 
 normalization = 'linear'
 fig,ax = plt.subplots()
@@ -336,7 +343,7 @@ for domain in space_domains.keys():
     idx_min = np.argmin(abs(s - s_min))
     idx_max = np.argmin(abs(s - s_max))
     
-    FFT_2D,omega,k = FT.fft_2D(spatio_long[:,idx_min:idx_max] - np.mean(spatio_long[:,idx_min:idx_max]),[fs,fx],add_pow2 = [0,1])
+    FFT_2D,omega,k = FT.fft_2D(spatio_long[:,idx_min:idx_max] - np.mean(spatio_long[:,idx_min:idx_max]),[fs,facq_x],add_pow2 = [0,1])
 
     space_domains[domain]['FFT_2D'] = FFT_2D
     space_domains[domain]['omega'] = omega
@@ -378,10 +385,13 @@ figname = f'{fig_folder}FK_{date}_spacedom_{dom}'
 plt.savefig(f'{figname}.pdf',bbox_inches = 'tight')
 plt.savefig(f'{figname}.png',bbox_inches = 'tight')
 
+
+
+########################################################
 ############# Create stacks of strain rate #############
 #%% Create new stack of strain rate
 
-Nb_minutes = 2
+Nb_minutes = 1
 Nb_seconds = Nb_minutes*60
 Nb_stack = int(np.shape(strain_rate)[0]/60/Nb_minutes) # number of stacks
 print(Nb_stack)
@@ -392,13 +402,38 @@ for i in range(Nb_stack):
     current_strain,s,_ = time_stacking(strain_rate[i*Nb_seconds:(i+1)*Nb_seconds,:,:],Nb_seconds,fiber_length)
     new_strain[i,:,:] = current_strain
 
+
+#%% 
+
+normalization = 'linear'
+fig,ax = plt.subplots(figsize = (12,9))
+current_spatio = new_strain[0,:,:]
+imsh = ax.imshow(curent_spatio.T,origin = 'lower',aspect = 'auto',norm = normalization, cmap = parula_map,
+          extent = extents(t_sec) + extents(s),vmin = 1, vmax = 0.6e4)
+ax.set_ylim([0,fiber_length])
+
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="2%", pad=0.1)
+cbar = plt.colorbar(imsh,cax = cax)
+
+ax.set_xlabel(r'$t \; \mathrm{(s)}$',labelpad = 5)
+ax.set_ylabel(r'$s \; \mathrm{(m)}$',labelpad = 5)
+
+
+
+
+
+
+
+
+################################################
 #%% Perform FFT 2D for each section
 add_pow2 = [0,1]
 padding= [2**(FT.nextpow2(np.shape(new_strain)[d]) + add_pow2[d - 1]) for d in range(1,3)]
 FFT_stack = np.zeros((np.shape(new_strain)[0],padding[0],padding[1]),dtype = complex)
 
 for i in range(Nb_stack):
-    current_FFT2,omega,k = FT.fft_2D(new_strain[i,:,:] - np.mean(new_strain[i,:,:]),[fs,fx],add_pow2 = add_pow2)
+    current_FFT2,omega,k = FT.fft_2D(new_strain[i,:,:] - np.mean(new_strain[i,:,:]),[fs,facq_x],add_pow2 = add_pow2)
     FFT_stack[i,:,:] = current_FFT2
 
 #%%
@@ -421,7 +456,7 @@ ax.set_ylim([0,6])
 # transpose 
 signals = np.transpose(new_strain,axes = (2,1,0))
 rang = [0,1,2]
-f,k,FK = svd_DAS(signals[:,:,:3],fs,1/fx,rang,'threshold', -30)
+f,k,FK = svd_DAS(signals[:,:,:3],fs,1/facq_x,rang,'threshold', -30)
 F, K = np.meshgrid(f, k)
 
 fig, ax = plt.subplots()
