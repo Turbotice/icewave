@@ -80,8 +80,6 @@ def plot_det_M(x,y,params,figname):
     ax.set_ylabel(r'$\mathrm{Im}(k)/k_0 \; \mathrm{(rad.m^{-1})}$', labelpad = 5)
     
     ax.set_title('abs(det(M(k))) in complex plane')
-    fig_label = f'det_M_{suffixe}'
-    figname = f'{sub_fig_folder}{fig_label}'
     plt.savefig(figname + '.pdf', bbox_inches='tight')
     plt.savefig(figname + '.png', bbox_inches='tight')
     print(f'figure saved under name: {figname}')
@@ -165,38 +163,45 @@ if not os.path.isdir(sub_fig_folder):
 h = 1e-2 # thickness of frasil in meters
 rho_1 = 1000 # in kg/m3
 rho_2 = 1000 # in kg/m3
-nu_2 = 1e-5 # in m2/s
+nu_2 = 1e-6 # in m2/s
+r = rho_1/rho_2
 
-nu_1_array = np.logspace(-6,-3,10)
+nu_1_array = np.logspace(-5,-1,10)
 
-f_ex_array = np.arange(2.0,6.1,0.1)
+f_ex_array = np.arange(3.0,6.1,0.1)
 omega_array = 2*np.pi*f_ex_array
 
 k_array = np.zeros((len(nu_1_array),len(f_ex_array)),dtype = 'complex')
 
 x = np.linspace(1e-1,200,100)
 y = np.linspace(1e-1,200,100)
+
+suffixe = f'h_{h:.3f}_r_{r:.1f}_nu2_{nu_2:.2e}'
+sub_fig_folder = f'{fig_folder}/{suffixe}/'
+if not os.path.isdir(sub_fig_folder):
+    os.mkdir(sub_fig_folder)
 for i,nu_1 in enumerate(nu_1_array):
     
+    print(f'nu_1 = {nu_1:.2e}')
     suffixe = f'h_{h:.3f}_r_{r:.1f}_nu1_{nu_1:.2e}_nu2_{nu_2:.2e}'
-    sub_fig_folder = f'{fig_folder}/{suffixe}/'
-    if not os.path.isdir(sub_fig_folder):
-        os.mkdir(sub_fig_folder)
+    new_fig_folder = f'{sub_fig_folder}/{suffixe}/'
+    if not os.path.isdir(new_fig_folder):
+        os.mkdir(new_fig_folder)
         
     for j,f_ex in enumerate(f_ex_array):
         params = (f_ex,h,rho_1,rho_2,nu_1,nu_2)
         
-        if j == len(f_ex_array)//2:
+        # if j == len(f_ex_array)//2:
             
-            fig_label = f'det_M_{suffixe}'
-            figname = f'{sub_fig_folder}{fig_label}'
-            plot_det_M(x, y, params, figname)
+        fig_label = f'det_M_{suffixe}_{f_ex:.2f}'
+        figname = f'{new_fig_folder}{fig_label}'
+        plot_det_M(x, y, params, figname)
             
         plt.close('all')
         
         omega = 2*np.pi*params[0]
         k_linear = omega**2/g # wave vector for non dissipative linear waves 
-        k0 = k_linear*(1*0.9 + 1j*0.1)  # initial wavevector to start Newton algorithm 
+        k0 = k_linear*(1*0.4 + 1j*0.1)  # initial wavevector to start Newton algorithm 
         print(f'k = omega2/g leads to : {k_linear}')
 
         new_k = get_wavevector(params, k0)

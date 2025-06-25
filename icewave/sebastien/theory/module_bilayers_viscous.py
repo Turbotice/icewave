@@ -49,46 +49,46 @@ def define_M(k,params):
     # typical vector is (A1,B1,C1,D1,A2,C2)
       
     M = np.array([
-        [rho_1*nu_1*(2*alpha_1**2*K_1 + 1j*sigma), 
-         rho_1*nu_1*(-2*alpha_1**2*K_1 + 1j*sigma), 
+        [2*alpha_1**2*K_1 + 1j*sigma, 
+         -2*alpha_1**2*K_1 + 1j*sigma, 
          -1 + sigma - 1j*2*alpha_1**2, 
          -1 - sigma - 2*1j*alpha_1**2,
          0,
          0], # row 1
         
-        [1j*rho_1*nu_1*alpha_1**2*(1 + K_1**2), 
-         1j*rho_1*nu_1*alpha_1**2*(1 + K_1**2), 
+        [1j*alpha_1**2*(1 + K_1**2), 
+         1j*alpha_1**2*(1 + K_1**2), 
          2*alpha_1**2, 
          -2*alpha_1**2,
          0,
          0], # row 2
         
-        [1j*rho_1*nu_1*K_1*np.exp(-K_1*gamma), 
-         -1j*rho_1*nu_1*K_1*np.exp(K_1*gamma), 
+        [1j*K_1*np.exp(-K_1*gamma), 
+         -1j*K_1*np.exp(K_1*gamma), 
          np.exp(-gamma), 
          np.exp(+gamma),
-         -1j*r*rho_2*nu_2*K_2*np.exp(-K_2*gamma),
+         -1j*r*K_2*np.exp(-K_2*gamma),
          -r*np.exp(-gamma)], #row 3
         
-        [1j*rho_1*nu_1*np.exp(-K_1*gamma), 
-         1j*rho_1*nu_1*np.exp(K_1*gamma),
+        [1j*np.exp(-K_1*gamma), 
+         1j*np.exp(K_1*gamma),
          np.exp(-gamma),
          -np.exp(+gamma),
-         -1j*r*rho_2*nu_2*np.exp(-K_2*gamma),
+         -1j*r*np.exp(-K_2*gamma),
          -r*np.exp(-gamma)], # row 4 
         
-        [-2*rho_1*nu_1*alpha_1**2*K_1*np.exp(-K_1*gamma), 
-         +2*rho_1*nu_1*alpha_1**2*K_1*np.exp(K_1*gamma),
+        [-2*alpha_1**2*K_1*np.exp(-K_1*gamma), 
+         +2*alpha_1**2*K_1*np.exp(K_1*gamma),
          (1 + 1j*2*alpha_1**2)*np.exp(-gamma), 
          (1 + 1j*2*alpha_1**2)*np.exp(gamma),
-         rho_2*nu_2*(2*alpha_2**2*K_2 + 1j*(1-r)*sigma)*np.exp(-K_2*gamma),
+         (2*alpha_2**2*K_2 + 1j*(1-r)*sigma)*np.exp(-K_2*gamma),
          (-1 - 1j*2*alpha_2**2 + (1-r)*sigma)*np.exp(-gamma)], # row 5
         
         [1j*rho_1*nu_1*alpha_1**2*(1 + K_1**2)*np.exp(-K_1*gamma), 
          1j*rho_1*nu_1*alpha_1**2*(1 + K_1**2)*np.exp(+K_1*gamma),
          2*alpha_1**2*np.exp(-gamma),
          -2*alpha_1**2*np.exp(+gamma),
-         -1j*rho_2*nu_2*alpha_2**2*(1+K_2**2)*np.exp(-K_2*gamma),
+         -1j*alpha_2**2*(1+K_2**2)*np.exp(-K_2*gamma),
          -2*alpha_2**2*np.exp(-gamma)] # row 6
         
         ])

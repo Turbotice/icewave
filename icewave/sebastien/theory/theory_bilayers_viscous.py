@@ -514,7 +514,7 @@ def compute_sigma_xz_2(z,params,k,coeffs):
 h = 1e-2 # thickness of frasil in meters
 rho_1 = 1000 # in kg/m3
 rho_2 = 1000 # in kg/m3
-nu_1 = 1e-4 # in m2/s
+nu_1 = 1e-6 # in m2/s
 nu_2 = 1e-6 # in m2/s
 f_ex = 3.0 # in Hz
 
