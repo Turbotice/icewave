@@ -6,6 +6,7 @@ Created on Sun Jan 12 16:52:44 2025
 """
 
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 
 #%% 
 
@@ -22,6 +23,10 @@ def set_matplotlib_param(style):
     elif style == 'square':
         fig_size = (12,9)
         font_size_medium = 20
+    elif style == 'powerpoint':
+        fig_size = (12,9)
+        font_size_medium = 40
+        mpl.rcParams['lines.markersize'] = 12
     else:
         
         raise ValueError('The chosen style is not defined')
@@ -41,4 +46,3 @@ def set_matplotlib_param(style):
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif', serif='Computer Modern')
     
-

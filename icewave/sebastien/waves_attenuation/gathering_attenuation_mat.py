@@ -231,6 +231,8 @@ plt.savefig(figname + '.png', bbox_inches='tight')
 set_graphs.set_matplotlib_param('single')
 plt.rc('legend', fontsize= 12)    # legend fontsize
 
+
+
 fig, ax = plt.subplots()
 
 f_fit = np.linspace(1e-1,1,100)
@@ -249,9 +251,11 @@ for date in dates :
             
             coeff = abs(current_att['power_law']['beta'])
             current_label = r'$\alpha = {x:.2f}$'.format(x = coeff)
+            # current_label = exp_ID
             
             current_color = maps_date[date]['new_map'](maps_date[date]['cnorm'](h))
-            ax.loglog(x,y,markers[key_drone],color = current_color,
+            print(current_color)
+            ax.loglog(x,y,'o',color = current_color,
                       label = current_label)
             power_fit = powerfun(f_fit,[current_att['power_law']['beta'] , current_att['power_law']['B']  ])
             ax.loglog(f_fit,power_fit,'--',color = current_color)
@@ -269,16 +273,145 @@ plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.svg', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')
 
-#%% superpose attenuation laws using exponant as colormap
 
-# set_graphs.set_matplotlib_param('single')
+
+#%% Plot single frequency for a given film
+
+
+set_graphs.set_matplotlib_param('single')
 # plt.rc('legend', fontsize= 12)    # legend fontsize
 
-fig, ax = plt.subplots(figsize = fig_size)
+fig, ax = plt.subplots()
+
+f_fit = np.linspace(1e-1,1,100)
+# keywords_list = ['0223_bernache_12-waves_010','0226_mesange_10-waves_005']
+keywords_list = ['0226_mesange_10-waves_005']
+
+# colors = ['tab:blue','tab:orange']
+colors = ['tab:orange']
+
+selected_freq = 0.3
+
+d_threshold = 0.05
+count = 0
+for date in dates :
+    for key_drone in data[date].keys():
+        for exp_ID in data[date][key_drone].keys():
+            
+            key_word = f'{date}_{key_drone}_{exp_ID}'
+            print(key_word)
+            
+            if key_word in keywords_list:
+
+                current_att = data[date][key_drone][exp_ID]['attenuation']
+                # mask = np.logical_and(current_att['d'] < d_threshold, abs(current_att['alpha']) > 1e-3)
+                mask = np.where(current_att['mask'])
+                x = current_att['f'][mask]
+                
+                idx_freq = np.argmin(abs(x - selected_freq))
+                y = abs(current_att['alpha'][mask])
+                
+                coeff = abs(current_att['power_law']['beta'])
+                prefactor = current_att['power_law']['B'] 
+                print(f'{coeff:.2f}')
+                # current_label = r'$\beta = {x:.2f}$'.format(x = coeff)
+                current_label = r'$\alpha (f) = ' + f'{prefactor:.1f}' + r'f^{' + f'{coeff:.1f}' + r'}$'
+                
+                current_slope = current_att['power_law']['beta']
+                # current_color = maps_date[date]['new_map'](maps_date[date]['cnorm'](current_slope))
+                current_color = colors[count]
+
+                ax.loglog(x[idx_freq],y[idx_freq],'o',color = current_color,markeredgecolor = 'k',markersize = marker_size_plot)
+                power_fit = powerfun(f_fit,[current_att['power_law']['beta'] , current_att['power_law']['B']  ])
+                # ax.loglog(f_fit,power_fit,'--',color = current_color)
+                
+                count = count + 1
+
+ax.set_xlabel(r'$f \; \mathrm{(Hz)}$')
+ax.set_ylabel(r'$\alpha \; \mathrm{(m^{-1})}$')
+
+ax.set_xlim([1e-1 , 1])
+ax.set_ylim([1e-3 , 7e-1])
+
+figname = fig_folder + 'Superposition_attenuation_selection_0226_bernache_10_waves_005_single_freq'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.svg', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
+
+#%% Plot single all frequencies without theory for a given film
+
+
+set_graphs.set_matplotlib_param('single')
+# plt.rc('legend', fontsize= 12)    # legend fontsize
+
+fig, ax = plt.subplots()
+
+f_fit = np.linspace(1e-1,1,100)
+# keywords_list = ['0223_bernache_12-waves_010','0226_mesange_10-waves_005']
+keywords_list = ['0226_mesange_10-waves_005']
+
+# colors = ['tab:blue','tab:orange']
+colors = ['tab:orange']
+
+d_threshold = 0.05
+count = 0
+for date in dates :
+    for key_drone in data[date].keys():
+        for exp_ID in data[date][key_drone].keys():
+            
+            key_word = f'{date}_{key_drone}_{exp_ID}'
+            print(key_word)
+            
+            if key_word in keywords_list:
+
+                current_att = data[date][key_drone][exp_ID]['attenuation']
+                # mask = np.logical_and(current_att['d'] < d_threshold, abs(current_att['alpha']) > 1e-3)
+                mask = np.where(current_att['mask'])
+                x = current_att['f'][mask]
+                
+                y = abs(current_att['alpha'][mask])
+                
+                coeff = abs(current_att['power_law']['beta'])
+                prefactor = current_att['power_law']['B'] 
+                print(f'{coeff:.2f}')
+                # current_label = r'$\beta = {x:.2f}$'.format(x = coeff)
+                current_label = r'$\alpha (f) = ' + f'{prefactor:.1f}' + r'f^{' + f'{coeff:.1f}' + r'}$'
+                
+                current_slope = current_att['power_law']['beta']
+                # current_color = maps_date[date]['new_map'](maps_date[date]['cnorm'](current_slope))
+                current_color = colors[count]
+
+                ax.loglog(x,y,'o',color = current_color,markeredgecolor = 'k',markersize = marker_size_plot)
+                power_fit = powerfun(f_fit,[current_att['power_law']['beta'] , current_att['power_law']['B']  ])
+                # ax.loglog(f_fit,power_fit,'--',color = current_color)
+                
+                count = count + 1
+
+ax.set_xlabel(r'$f \; \mathrm{(Hz)}$')
+ax.set_ylabel(r'$\alpha \; \mathrm{(m^{-1})}$')
+
+ax.set_xlim([1e-1 , 1])
+ax.set_ylim([1e-3 , 7e-1])
+
+figname = fig_folder + 'Superposition_attenuation_selection_0226_bernache_10_waves_005_no_theory'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.svg', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
+
+
+#%% superpose attenuation laws using exponant as colormap
+
+set_graphs.set_matplotlib_param('single')
+# plt.rc('legend', fontsize= 12)    # legend fontsize
+
+fig, ax = plt.subplots()
 
 f_fit = np.linspace(1e-1,1,100)
 keywords_list = ['0223_bernache_12-waves_010','0226_mesange_10-waves_005']
+# keywords_list = ['0226_mesange_10-waves_005']
+
 colors = ['tab:blue','tab:orange']
+# colors = ['tab:orange']
 
 d_threshold = 0.05
 count = 0
@@ -321,7 +454,7 @@ ax.set_ylabel(r'$\alpha \; \mathrm{(m^{-1})}$')
 ax.set_xlim([1e-1 , 1])
 ax.set_ylim([1e-3 , 7e-1])
 
-figname = fig_folder + 'Superposition_attenuation_law_cmap_slope_selection'
+figname = fig_folder + 'Superposition_attenuation_selection'
 plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.svg', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')

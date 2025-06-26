@@ -50,7 +50,7 @@ plt.rc('font', family='serif', serif='Computer Modern')
 # PARULA COLORMAP 
 parula_map = matcmaps.parula()
 
-fig_folder = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Conferences/RNL_2025/Figures/'
+fig_folder = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Conferences/GDR_Geofluides_2025/Figures/'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
     
