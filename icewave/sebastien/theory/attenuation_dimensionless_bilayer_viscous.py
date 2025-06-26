@@ -332,9 +332,9 @@ ax.legend()
 #%% Compute attenuation for different dimensionless parameters
 ######################################################################
 
-gamma_array = np.logspace(-2,0,10)
-delta_1_array = np.logspace(-2,1,100)
-ratio_delta = 1e-3
+gamma_array = np.logspace(-2,0,6)
+delta_1_array = np.logspace(-2,1,200)
+ratio_delta = 1e0
 r = 1
 # compute kappa for different delta_1 and different values of delta_1/gamma, keeping ratio delta_1/delta_2 = 1
 
@@ -362,7 +362,7 @@ for i,gamma in enumerate(gamma_array):
         
         suffixe = f'gamma_{gamma:.2e}_delta1_{delta_1:.2e}_delta2_{delta_2:.2e}_r_{r:.2f}'
         
-        figname = f'{sub_fig_folder}{suffixe}'
+        # figname = f'{sub_fig_folder}{suffixe}'
         # set_graphs.set_matplotlib_param('single')
         # fig, ax = plot_det_M(x, y, dimensionless)
     
@@ -420,12 +420,12 @@ ax.set_title(label)
 ax.set_xlim([7e-3,1.5e1])
 ax.set_ylim([-0.1,1.5])
 
-# results_folder = f'{fig_folder}lab_influence_delta_1_gamma/Results/'
-# if not os.path.isdir(results_folder):
-#     os.mkdir(results_folder)
-# figname = f'{results_folder}dispersion_relation_delta_ratio_{ratio_delta:.2e}'
-# plt.savefig(figname + '.pdf', bbox_inches='tight')
-# plt.savefig(figname + '.png', bbox_inches='tight')
+results_folder = f'{fig_folder}lab_influence_delta_1_gamma/Results/'
+if not os.path.isdir(results_folder):
+    os.mkdir(results_folder)
+figname = f'{results_folder}dispersion_relation_delta_ratio_{ratio_delta:.2e}'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
 
 #%% Plot attenuation coefficient 
 
@@ -456,15 +456,15 @@ cbar.set_label(r'$\gamma $')
 label = r'$\delta_2^* / \delta_1^* = ' + f'{ratio_delta:.2e}' + r'$'
 ax.set_title(label)
 
-ax.set_xlim([7e-4,1.5e1])
-ax.set_ylim([6e-7,1e0])
+ax.set_xlim([7e-3,1.5e1])
+ax.set_ylim([6e-6,1e0])
 
 # coeffs,err_coeffs = powerlaw_fit(delta_1_array[:-1],np.imag(kappa_array)[:-1])
 # print(f'beta = {coeffs[0]:.2f} ± {err_coeffs[0]:.2f}')
 
-# figname = f'{results_folder}Im_k_delta_ratio_{ratio_delta:.2e}'
-# plt.savefig(figname + '.pdf', bbox_inches='tight')
-# plt.savefig(figname + '.png', bbox_inches='tight')
+figname = f'{results_folder}Im_k_delta_ratio_{ratio_delta:.2e}'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
 
 
 
