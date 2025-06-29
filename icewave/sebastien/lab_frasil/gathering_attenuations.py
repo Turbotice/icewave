@@ -227,6 +227,12 @@ fig_folder = 'U:/Aurore_frasil/Results_Seb/'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)    
 
+#%% # load attenuation results dictionnary 
+
+file2load = 'U:/Aurore_frasil/attenuation_results.pkl'
+with open(file2load,'rb') as pf:
+    data = pickle.load(pf)
+
 #%% Plot attenuation coeff for a single method and all thicknesses
 
 set_graphs.set_matplotlib_param('single')
@@ -508,7 +514,7 @@ plt.savefig(f'{figname}.svg', bbox_inches = 'tight')
 #%% Plot exponential alpha VS frequency 
 
 set_graphs.set_matplotlib_param('single')
-method = 'PIV'
+method = 'laser'
 thickness_list = [2.5,5.0,7.5,10.0,12.5,15.0]
 
 bounds = np.array([1.25,3.75,6.25,8.75,11.25,13.75,16.25]) # bounds used for colorbar
@@ -556,8 +562,8 @@ scalebase = 'log'
 ax.set_xscale(scalebase)
 ax.set_yscale(scalebase)
 ax.set_title(f'{method}')
-ax.set_xlim([2.7,5.3])
-ax.set_ylim([1e-1,1e2])
+# ax.set_xlim([2.7,5.3])
+# ax.set_ylim([2e0,70])
 
 
 figname = f'{fig_folder}alpha_VS_freq_exponential_method_{method}_scale_{scalebase}'
@@ -624,8 +630,6 @@ figname = f'{fig_folder}freq_VS_k_method_{method}_scale_{scalebase}'
 plt.savefig(f'{figname}.png', bbox_inches = 'tight')
 plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
 plt.savefig(f'{figname}.svg', bbox_inches = 'tight')
-
-
 
 
 
@@ -832,12 +836,14 @@ plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
 
 
 ##############################################################################
-#%% Compare experiments and theory
+#%% Compare experiments and bilayer viscous theory
 ##############################################################################
 
 # set boundaries for colorbar
 f_min = 3.0
 f_max = 5.0
+conversion_mm2m = 1e-3
+thickness_list = np.array([2.5,5.0,7.5,10.0,12.5,15.0])
 gamma_min = thickness_list.min()*conversion_mm2m*(2*np.pi*f_min)**2/g
 gamma_max = thickness_list.max()*conversion_mm2m*(2*np.pi*f_max)**2/g
 norm = mcolors.Normalize(gamma_min,gamma_max)
@@ -885,11 +891,10 @@ for i in range(kappa_array.shape[0]):
 # plot experiments
 method = 'laser'
 thickness_list = np.array([2.5,5.0,7.5,10.0,12.5,15.0])
-conversion_mm2m = 1e-3
 # bounds = np.array([1.25,3.75,6.25,8.75,11.25,13.75,16.25]) # bounds used for colorbar
 # norm = mcolors.BoundaryNorm(boundaries=bounds, ncolors=256)
 
-
+exponential_fit_bool = False
 marker_list = ['o','s','D','^','h','p']
 
 
@@ -897,7 +902,7 @@ nu_1 = 1e-3 # dynamic viscosity of fluid number 1
 nu_ratio = ratio_delta**2
 nu_2 = nu_1*nu_ratio
 
-mksize = 80
+mksize = 100
 
 for i,h in enumerate(thickness_list):
     valid_keys = []
@@ -906,13 +911,15 @@ for i,h in enumerate(thickness_list):
             valid_keys.append(key)
             
     # set dimensionless numbers
-    k0 = np.array([(2*np.pi*data[key]['f_demod'])**2/9.81 for key in valid_keys])
+    k0 = np.array([((2*np.pi*data[key]['f_demod'])**2)/9.81 for key in valid_keys])
     gamma = h*k0*conversion_mm2m
-    delta_1 = np.array([np.sqrt(nu_1*(2*np.pi*data[key]['f_demod'])**3/9.81) for key in valid_keys])
-    delta_2 = np.array([np.sqrt(nu_2*(2*np.pi*data[key]['f_demod'])**3/9.81) for key in valid_keys])
+    delta_1 = np.array([np.sqrt((nu_1*(2*np.pi*data[key]['f_demod'])**3)/9.81) for key in valid_keys])
+    delta_2 = np.array([np.sqrt((nu_2*(2*np.pi*data[key]['f_demod'])**3)/9.81) for key in valid_keys])
     
-    
-    alpha = np.array([data[key]['alpha'] for key in valid_keys])
+    if exponential_fit_bool:
+        alpha = np.array([data[key]['exponential']['alpha'] for key in valid_keys])
+    else:
+        alpha = np.array([data[key]['alpha'] for key in valid_keys])
     kappa = alpha/k0
     current_color = new_blues(norm_linear(gamma))
     current_marker = marker_list[i]
@@ -946,7 +953,7 @@ else:
 
 zoomed_txt = str(zoomed)
 suffixe = f'nu1_{nu_1:.1e}_ratio_delta_{ratio_delta:.1e}_zoomed_{zoomed_txt}'
-figname = f'{fig_folder}alpha_VS_freq_dimensionless_values_with_bilayer_theory_method_{method}_{suffixe}'
+figname = f'{fig_folder}alpha_VS_freq_dimensionless_values_with_bilayer_theory_method_{method}_expfit{exponential_fit_bool}_{suffixe}'
 plt.savefig(f'{figname}.png', bbox_inches = 'tight')
 plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
 
@@ -968,7 +975,7 @@ for i in range(kappa_array.shape[0]):
     
 
 # plot experiments
-method = 'PIV'
+method = 'laser'
 thickness_list = np.array([2.5,5.0,7.5,10.0,12.5,15.0])
 conversion_mm2m = 1e-3
 # bounds = np.array([1.25,3.75,6.25,8.75,11.25,13.75,16.25]) # bounds used for colorbar
@@ -988,7 +995,7 @@ nu_1 = 1e-3 # dynamic viscosity of fluid number 1
 nu_ratio = ratio_delta**2
 nu_2 = nu_1*nu_ratio
 
-mksize = 80
+mksize = 100
 
 for i,h in enumerate(thickness_list):
     valid_keys = []
@@ -1055,10 +1062,10 @@ plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
 
 set_graphs.set_matplotlib_param('powerpoint')
 method = 'laser'
-thickness_list = [5.0]
+thickness_list = [7.5]
 selected_freq = 4.0 # frequency selected
 
-bounds = np.array([1.25,3.75,6.25,8.75,11.25,13.75,16.25]) # bounds used for colorbar
+bounds = np.array([3.75,6.25,8.75,11.25,13.75,16.25]) # bounds used for colorbar
 norm = mcolors.BoundaryNorm(boundaries=bounds, ncolors=256)
 cmap = new_blues
 marker_list = ['o','s','D','^','h','p']
@@ -1080,7 +1087,7 @@ for i,h in enumerate(thickness_list):
     idx_freq = np.argmin(abs(f_demod - selected_freq))
     
     current_color = cmap(norm(h))
-    marker ='s'
+    marker ='D'
     ax.errorbar(f_demod[idx_freq],alpha[idx_freq],yerr = err_alpha[idx_freq],fmt = marker,color = current_color,
                 markeredgecolor = 'k',ecolor = 'k',
                 markersize = mksize)
@@ -1122,9 +1129,9 @@ plt.savefig(f'{figname}.svg', bbox_inches = 'tight')
 
 set_graphs.set_matplotlib_param('powerpoint')
 method = 'laser'
-thickness_list = [5.0]
+thickness_list = [7.5]
 
-bounds = np.array([1.25,3.75,6.25,8.75,11.25,13.75,16.25]) # bounds used for colorbar
+bounds = np.array([3.75,6.25,8.75,11.25,13.75,16.25]) # bounds used for colorbar
 norm = mcolors.BoundaryNorm(boundaries=bounds, ncolors=256)
 cmap = new_blues
 marker_list = ['o','s','D','^','h','p']
@@ -1141,7 +1148,7 @@ for i,h in enumerate(thickness_list):
     f_demod = np.array([data[key]['f_demod'] for key in valid_keys])
 
     current_color = cmap(norm(h))
-    marker = 's'
+    marker = 'D'
     ax.errorbar(f_demod,alpha,yerr = err_alpha[idx_freq],fmt = marker,color = current_color,
                 markeredgecolor = 'k',ecolor = 'k',
                 markersize = mksize)
@@ -1182,12 +1189,12 @@ plt.savefig(f'{figname}.svg', bbox_inches = 'tight')
 
 set_graphs.set_matplotlib_param('powerpoint')
 method = 'laser'
-thickness_list = [2.5,5.0,7.5,10.0,12.5,15.0]
+thickness_list = [5.0,7.5,10.0,12.5,15.0]
 
-bounds = np.array([1.25,3.75,6.25,8.75,11.25,13.75,16.25]) # bounds used for colorbar
+bounds = np.array([3.75,6.25,8.75,11.25,13.75,16.25]) # bounds used for colorbar
 norm = mcolors.BoundaryNorm(boundaries=bounds, ncolors=256)
 cmap = new_blues
-marker_list = ['o','s','D','^','h','p']
+marker_list = ['s','D','^','h','p']
 fig, ax = plt.subplots(figsize = (12,9))
 
 for i,h in enumerate(thickness_list):
@@ -1239,7 +1246,7 @@ plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
 plt.savefig(f'{figname}.svg', bbox_inches = 'tight')
 
 
-#%% Plot all thicknesses with theory
+#%% Plot all thicknesses with powerlaw fit
 
 set_graphs.set_matplotlib_param('powerpoint')
 method = 'laser'

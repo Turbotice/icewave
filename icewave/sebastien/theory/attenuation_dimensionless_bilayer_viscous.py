@@ -21,6 +21,8 @@ import icewave.tools.matlab_colormaps as matcmaps
 import icewave.sebastien.set_graphs as set_graphs
 import icewave.sebastien.theory.module_bilayer_viscous_dimensionless as theory
 
+import pickle
+
 # PARULA COLORMAP 
 parula_map = matcmaps.parula()
 
@@ -328,6 +330,13 @@ ax.set_xlabel(r'$z^*$',labelpad = 5)
 ax.set_ylabel(r'$u^*$',labelpad = 5)
 ax.legend()
 
+
+
+
+
+
+
+
 ######################################################################
 #%% Compute attenuation for different dimensionless parameters
 ######################################################################
@@ -465,6 +474,388 @@ ax.set_ylim([6e-6,1e0])
 figname = f'{results_folder}Im_k_delta_ratio_{ratio_delta:.2e}'
 plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')
+
+
+
+
+
+
+
+
+
+
+###################################################################
+#%% Compute attenuation for different values of nu_1 and h
+###################################################################
+
+results_folder = f'{fig_folder}GDR_geofluides/'
+if not os.path.isdir(results_folder):
+    os.mkdir(results_folder)
+
+f_array = np.linspace(0.1,1e1,100) # range of frequencies
+omega_array = 2*np.pi*f_array
+k0_array = omega_array**2/g
+nu_2 = 1.0e-6 # kinematik viscosity of water
+
+rho_1 = 1e3
+rho_2 = rho_1
+
+nu_1_array = np.logspace(np.log10(nu_2),0,10)
+h_array = np.logspace(-3,np.log10(0.1),10)
+# h_array = np.arange([2.5,5.0,7.5,10.0,12.5,15.0])
+
+# select a value of nu_1
+idx_nu1 = 7
+nu_1 = nu_1_array[idx_nu1]
+print(f'nu_1 = {nu_1:.2e}')
+
+kappa_array = np.zeros((len(h_array),len(f_array)),dtype = 'complex')
+k_array = np.zeros((len(h_array),len(f_array)),dtype = 'complex')
+
+for idx_h,h in enumerate(h_array):
+
+    params_array = np.array([(f_ex,h,rho_1,rho_2,nu_1,nu_2) for f_ex in f_array])
+    dimensionless_array = np.array([dim_numbers(params) for params in params_array])
+    
+    initial_guess = [1 , 0.1] # initial guess for [Re(kappa), Im(kappa)]
+    for i,dimensionless in enumerate(dimensionless_array):
+        
+        solution = scipy.optimize.fsolve(func_real_imag,initial_guess,(dimensionless,))
+        root = solution[0] + 1j*solution[1]
+        print(f'Root of det(M) = {root}')
+        initial_guess = solution
+        kappa_array[idx_h,i] = root
+        k_array[idx_h,i] = root*k0_array[i]
+
+
+
+#%% Plot dispersion relation 
+
+full_blues = mpl.colormaps['Blues'].resampled(256)
+new_blues = mcolors.ListedColormap(full_blues(np.linspace(0.2,1,256)))
+norm = mcolors.LogNorm(h_array.min(),h_array.max()) 
+
+set_graphs.set_matplotlib_param('powerpoint')
+fig, ax = plt.subplots()
+for idx_h in range(kappa_array.shape[0]):
+    
+    current_kappa = kappa_array[idx_h,:]
+    current_k = k_array[idx_h,:]
+    current_color = new_blues(norm(h_array[idx_h]))
+    ax.plot(np.real(current_k),omega_array,'-',color = current_color)
+    
+ax.set_xscale('log')
+ax.set_yscale('log')
+ax.set_ylabel(r'$\omega \; \mathrm{(s^{-1})}$')
+ax.set_xlabel(r'$\mathrm{Re}(k) \; \mathrm{(m^{-1})}$')
+
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="2%", pad=0.1)
+
+sm = cm.ScalarMappable(cmap=new_blues, norm=norm)
+sm.set_array([])  # Only needed for the colorbar
+cbar = plt.colorbar(sm, cax=cax)
+cbar.set_label(r'$h \; \mathrm{(m)} $')
+
+label = r'$\nu_1 = ' + f'{nu_1:.2e}' + r'\; \mathrm{m^2.s^{-1}} \; \nu_2 = ' + f'{nu_2:.2e}' + r'\; \mathrm{m^2.s^{-1}} $'
+ax.set_title(label,pad = 15) 
+
+figname = f'{results_folder}Disp_relation_large_range_h_nu2_{nu_2:.1e}_nu1_{nu_1:.1e}'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
+
+
+#%% Plot attenuation coefficient
+
+
+full_blues = mpl.colormaps['Blues'].resampled(256)
+new_blues = mcolors.ListedColormap(full_blues(np.linspace(0.2,1,256)))
+norm = mcolors.LogNorm(h_array.min(),h_array.max()) 
+
+set_graphs.set_matplotlib_param('powerpoint')
+fig, ax = plt.subplots()
+for idx_h in range(kappa_array.shape[0]):
+    
+    current_kappa = kappa_array[idx_h,:]
+    current_k = k_array[idx_h,:]
+    current_color = new_blues(norm(h_array[idx_h]))
+    ax.plot(f_array,np.imag(current_k),'-',color = current_color)
+    
+ax.set_xscale('log')
+ax.set_yscale('log')
+ax.set_xlabel(r'$f \; \mathrm{(Hz)}$')
+ax.set_ylabel(r'$\mathrm{Im}(k) \; \mathrm{(m^{-1})}$')
+
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="2%", pad=0.1)
+
+sm = cm.ScalarMappable(cmap=new_blues, norm=norm)
+sm.set_array([])  # Only needed for the colorbar
+cbar = plt.colorbar(sm, cax=cax)
+cbar.set_label(r'$h \; \mathrm{(m)} $')
+
+label = r'$\nu_1 = ' + f'{nu_1:.2e}' + r'\; \mathrm{m^2.s^{-1}} \quad \nu_2 = ' + f'{nu_2:.2e}' + r'\; \mathrm{m^2.s^{-1}} $'
+ax.set_title(label,pad = 15) 
+
+
+figname = f'{results_folder}Im_k_VS_f_large_range_h_nu2_{nu_2:.1e}_nu1_{nu_1:.1e}'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
+
+
+
+
+
+###################################################################################
+#%% Compare theory with experiments, plotting Im(k) as a function of frequency 
+###################################################################################
+
+# load experimental data 
+path2data =  'C:/Users/sebas/OneDrive/Bureau/These PMMH/attenuation_results.pkl'
+with open(path2data,'rb') as pf:
+    data = pickle.load(pf)
+
+#%% Compute wavevectors for different values of thickness and a given nu_1
+
+
+f_array = np.linspace(1e0,1e1,500) # range of frequencies
+omega_array = 2*np.pi*f_array
+k0_array = omega_array**2/g
+nu_2 = 1.0e-6 # kinematik viscosity of water
+
+rho_1 = 1e3
+rho_2 = rho_1
+
+nu_1_array = np.logspace(np.log10(nu_2),0,10)
+# h_array = np.logspace(-3,np.log10(0.1),10)
+h_array = np.array([5.0,7.5,10.0,12.5,15.0])*1e-3
+
+# select a value of nu_1
+# idx_nu1 = 2
+# nu_1 = nu_1_array[idx_nu1]
+nu_1 = 9e-3
+print(f'nu_1 = {nu_1:.2e}')
+
+kappa_array = np.zeros((len(h_array),len(f_array)),dtype = 'complex')
+k_array = np.zeros((len(h_array),len(f_array)),dtype = 'complex')
+
+for idx_h,h in enumerate(h_array):
+
+    params_array = np.array([(f_ex,h,rho_1,rho_2,nu_1,nu_2) for f_ex in f_array])
+    dimensionless_array = np.array([dim_numbers(params) for params in params_array])
+    
+    initial_guess = [1 , 0.1] # initial guess for [Re(kappa), Im(kappa)]
+    for i,dimensionless in enumerate(dimensionless_array):
+        
+        solution = scipy.optimize.fsolve(func_real_imag,initial_guess,(dimensionless,))
+        root = solution[0] + 1j*solution[1]
+        print(f'Root of det(M) = {root}')
+        initial_guess = solution
+        kappa_array[idx_h,i] = root
+        k_array[idx_h,i] = root*k0_array[i]
+
+
+#%% Plot disperison relation 
+
+
+full_blues = mpl.colormaps['Blues'].resampled(256)
+new_blues = mcolors.ListedColormap(full_blues(np.linspace(0.2,1,256)))
+bounds = np.array([3.75,6.25,8.75,11.25,13.75,16.25]) # bounds used for colorbar
+norm = mcolors.BoundaryNorm(boundaries=bounds, ncolors=256) 
+conversion_mm2m = 1e-3
+
+set_graphs.set_matplotlib_param('powerpoint')
+fig, ax = plt.subplots()
+
+# Plot theory 
+for idx_h in range(kappa_array.shape[0]):
+    
+    current_kappa = kappa_array[idx_h,:]
+    current_k = k_array[idx_h,:]
+    current_color = new_blues(norm(h_array[idx_h]/conversion_mm2m))
+    ax.plot(f_array,np.real(current_k)/k0_array,'-',color = current_color)
+    
+
+# Plot experimental points 
+method = 'laser'
+thickness_list = np.array([5.0,7.5,10.0,12.5,15.0])
+
+
+# marker_list = ['o','s','D','^','h','p']
+marker_list = ['s','D','^','h','p']
+
+mksize = 12
+
+for i,h in enumerate(thickness_list):
+    valid_keys = []
+    for key in data.keys():
+        if data[key]['method'] == method and data[key]['h'] == h:
+            valid_keys.append(key)
+            
+    # set dimensionless numbers
+    k_exp = np.array([data[key]['k0'] for key in valid_keys])
+    f_exp = np.array([data[key]['f_demod'] for key in valid_keys])
+    omega_exp = 2*np.pi*f_exp
+    k0_exp = (2*np.pi*f_exp)**2/g
+
+    current_color = new_blues(norm(h))
+    current_marker = marker_list[i]
+    ax.errorbar(f_exp,k_exp/k0_exp,fmt = current_marker,color = current_color,
+                markeredgecolor = 'k',ecolor = 'k',
+                markersize = mksize)
+    print(h)
+
+    
+# modify plot
+# ax.set_xscale('log')
+# ax.set_yscale('log')
+ax.set_xlabel(r'$f \; \mathrm{(Hz)}$')
+ax.set_ylabel(r'$\mathrm{Re}(k) g/\omega^2$')
+
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="2%", pad=0.1)
+
+sm = cm.ScalarMappable(cmap=new_blues, norm=norm)
+sm.set_array([])  # Only needed for the colorbar
+cbar = plt.colorbar(sm, cax=cax)
+midpoints = [(bounds[i] + bounds[i+1])/2 for i in range(len(bounds) - 1)]
+cbar.set_ticks(midpoints)
+cbar.set_ticklabels([f'{mid:.1f}' for mid in midpoints])
+cbar.set_label(r'$h \; \mathrm{(mm)}$')
+label = r'$\nu_1 = ' + f'{nu_1:.2e}' + r'\; \mathrm{m^2.s^{-1}} \; \nu_2 = ' + f'{nu_2:.2e}' + r'\; \mathrm{m^2.s^{-1}} $'
+ax.set_title(label,pad = 15) 
+
+
+zoomed_bool = False
+if zoomed_bool:
+    ax.set_xlim([2.7,5.3])
+    # ax.set_ylim([2e0,70])
+
+
+
+figname = f'{results_folder}Disp_relation_exp_VS_theory_h_nu2_{nu_2:.1e}_nu1_{nu_1:.1e}_zoomed_{zoomed_bool}'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
+
+
+#%% Plot theory and experiments - Attenuation
+full_blues = mpl.colormaps['Blues'].resampled(256)
+new_blues = mcolors.ListedColormap(full_blues(np.linspace(0.2,1,256)))
+bounds = np.array([3.75,6.25,8.75,11.25,13.75,16.25]) # bounds used for colorbar
+norm = mcolors.BoundaryNorm(boundaries=bounds, ncolors=256) 
+conversion_mm2m = 1e-3
+
+set_graphs.set_matplotlib_param('powerpoint')
+fig, ax = plt.subplots()
+
+# Plot theory 
+for idx_h in range(kappa_array.shape[0]):
+    
+    current_kappa = kappa_array[idx_h,:]
+    current_k = k_array[idx_h,:]
+    current_color = new_blues(norm(h_array[idx_h]/conversion_mm2m))
+    ax.plot(f_array,np.imag(current_k),'-',color = current_color)
+    
+
+# Plot experimental points 
+method = 'laser'
+thickness_list = np.array([5.0,7.5,10.0,12.5,15.0])
+
+
+# marker_list = ['o','s','D','^','h','p']
+marker_list = ['s','D','^','h','p']
+
+mksize = 12
+
+for i,h in enumerate(thickness_list):
+    valid_keys = []
+    for key in data.keys():
+        if data[key]['method'] == method and data[key]['h'] == h:
+            valid_keys.append(key)
+            
+    # set dimensionless numbers
+    alpha_exp = np.array([data[key]['alpha'] for key in valid_keys])
+    f_exp = np.array([data[key]['f_demod'] for key in valid_keys])
+    omega_exp = 2*np.pi*f_exp
+
+    current_color = new_blues(norm(h))
+    current_marker = marker_list[i]
+    ax.errorbar(f_exp,alpha_exp,fmt = current_marker,color = current_color,
+                markeredgecolor = 'k',ecolor = 'k',
+                markersize = mksize)
+    print(h)
+
+    
+# modify plot
+ax.set_xscale('log')
+ax.set_yscale('log')
+ax.set_xlabel(r'$f \; \mathrm{(Hz)}$')
+ax.set_ylabel(r'$\mathrm{Im}(k) \; \mathrm{(m^{-1})}$')
+
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="2%", pad=0.1)
+
+sm = cm.ScalarMappable(cmap=new_blues, norm=norm)
+sm.set_array([])  # Only needed for the colorbar
+cbar = plt.colorbar(sm, cax=cax)
+midpoints = [(bounds[i] + bounds[i+1])/2 for i in range(len(bounds) - 1)]
+cbar.set_ticks(midpoints)
+cbar.set_ticklabels([f'{mid:.1f}' for mid in midpoints])
+cbar.set_label(r'$h \; \mathrm{(mm)}$')
+label = r'$\nu_1 = ' + f'{nu_1:.2e}' + r'\; \mathrm{m^2.s^{-1}} \; \nu_2 = ' + f'{nu_2:.2e}' + r'\; \mathrm{m^2.s^{-1}} $'
+ax.set_title(label,pad = 15) 
+
+zoomed_bool = False
+if zoomed_bool:
+    ax.set_xlim([2.7,5.3])
+    ax.set_ylim([2e0,70])
+
+figname = f'{results_folder}Im_k_VS_f_exp_VS_theory_nu2_{nu_2:.1e}_nu1_{nu_1:.1e}_zoomed_{zoomed_bool}'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
