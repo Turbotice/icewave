@@ -6,6 +6,34 @@ Created on Mon Jun 23 15:08:13 2025
 """
 
 import numpy as np 
+import matplotlib.pyplot as plt 
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+import icewave.tools.matlab_colormaps as matcmaps
+parula_map = matcmaps.parula()
+
+
+def dim_numbers(params,g = 9.81):
+    """ Return dimensionless numbers from set of parameters
+    Inputs: - params, tuple, (f_ex,h,rho_1,rho_2,nu_1,nu_2)
+    Output: - dimensionless, tuple, (gamma,delta_1,delta_2,r) """
+    
+    omega = 2*np.pi*params[0]
+    k_0 = omega**2/g
+    
+    rho_1 = params[2]
+    rho_2 = params[3]
+    nu_1 = params[4]
+    nu_2 = params[5]
+    
+    gamma = params[1]*k_0
+    delta_1 = np.sqrt(nu_1/omega)*k_0
+    delta_2 = np.sqrt(nu_2/omega)*k_0
+    r = rho_1/rho_2
+    dimensionless = (gamma,delta_1,delta_2,r)
+    return dimensionless
+
+#----------------------------------------------------------------------------------------------------------------
 
 def define_M(kappa,dimensionless):
     """ Create matrix for dispersion relation 
@@ -82,15 +110,21 @@ def define_M(kappa,dimensionless):
 
     return M 
 
+#-------------------------------------------------------------------------------------------------------------
+
 def det_M(k,params):
     
     M = define_M(k,params)
     determinant = np.linalg.det(M)
     return determinant
 
+#---------------------------------------------------------------------------------------------------------------
+
 def d_det_M(k, params, h=1e-6*(1+1j)):
     # Numerical derivative using central difference
     return (det_M(k + h, params) - det_M(k - h, params)) / (2*h)
+
+#---------------------------------------------------------------------------------------------------------------
 
 def newton_raphson(params, k0, tol=1e-3, max_iter=100, step_derivative = 1e-6,threshold_derivative = 1e-12):
     
@@ -115,7 +149,62 @@ def newton_raphson(params, k0, tol=1e-3, max_iter=100, step_derivative = 1e-6,th
         k = k_new
     raise RuntimeError("Newton-Raphson did not converge")
     
+
+#---------------------------------------------------------------------------------------------------------------
+def plot_det_M(x,y,dimensionless,cmap = parula_map):
+    """ Compute determinant of matrix M for different values of k and plot the determinant in the complex plane
+    Inputs : - x, numpy array, real part of wavevector
+             - y, numpy array, imaginary part of wavevector
+             - dimensionless, tuple (gamma,delta_1,delta_2,r)
+             - cmap, colormap, optional colormap used to plot determinant
+    Outputs : - fig, matplotlib figure
+              - ax, matplotlib axis """
+        
+    X, Y = np.meshgrid(x, y)
+    Z = X + 1j * Y
+
+    # Evaluate |det(M(k))| over the grid
+
+    det_values = np.zeros_like(Z, dtype=complex)
+
+    for i in range(Z.shape[0]):
+        for j in range(Z.shape[1]):
+            k = Z[i, j]
+
+            try:
+                det_values[i, j] = det_M(k,dimensionless)
+            except np.linalg.LinAlgError:
+                det_values[i, j] = np.nan  # handle singularities or bad evals
+                
+    fig, ax = plt.subplots()
+    extents = np.array((x.min(),x.max(),y.min(),y.max()))
+    c = ax.imshow(np.log10(abs(det_values)),cmap = cmap,origin = 'lower',aspect = 'equal',
+                  interpolation = 'gaussian',extent = extents)
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="2%", pad=0.1)
     
+    cbar = plt.colorbar(c,cax = cax)
+    cbar.set_label(r'$\mathrm{log10(|det(M(k))|)}$',labelpad = 5)
+    ax.set_xlabel(r'$\mathrm{Re}(k)/k_0 \; \mathrm{(rad.m^{-1})}$', labelpad = 5)
+    ax.set_ylabel(r'$\mathrm{Im}(k)/k_0 \; \mathrm{(rad.m^{-1})}$', labelpad = 5)
+    
+    return fig, ax
+
+#-------------------------------------------------------------------------------------------------------
+
+def func_real_imag(z,dimensionless):
+    """ Compute determinant of matrix M, for a given complex wavevector z and a set of dimensionless numbers 
+    Inputs : - z, complex, wavector, complex
+             - dimensionless, tuple (gamma,delta_1,delta_2,r)"""
+    
+    x,y = z # z = [Re(z),Im(z)]
+    
+    kappa = x + 1j*y
+    determinant = det_M(kappa,dimensionless)
+    return [np.real(determinant),np.imag(determinant)] # system of 2 real equations 
+
+#--------------------------------------------------------------------------------------------------------
+
 def define_M_hat(kappa,dimensionless):
     """ Create matrix for dispersion relation 
     Inputs : - kappa, float, dimensionless wavevector value
@@ -197,6 +286,8 @@ def define_M_hat(kappa,dimensionless):
         ])
 
     return M 
+
+#----------------------------------------------------------------------------------------------------------------
 
 def get_coeffs(kappa,dimensionless):
     """ Get coefficients A1,B1,C1,D1,A2,C2 used to define pressure and vorticity fields.

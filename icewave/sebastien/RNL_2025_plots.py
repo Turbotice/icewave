@@ -74,7 +74,8 @@ def exponential(x,A,alpha):
 #%% Figures associated to Aerial observations 
 
 # Load data 
-base = 'E:/sauvegarde_partielle_hublot_20250206/Share_hublot/Data/'
+# base = 'E:/sauvegarde_partielle_hublot_20250206/Share_hublot/Data/'
+base = 'F:/Rimouski_2024/Data/'
 
 date = '0226'
 drone_ID = 'mesange'
@@ -186,6 +187,52 @@ figname = f'{fig_folder}Amplitude_profile_fdemod_{freq_txt}_python'
 
 plt.savefig(f'{figname}.png',bbox_inches = 'tight')
 plt.savefig(f'{figname}.pdf',bbox_inches = 'tight')
+
+
+#%% Compute E(f,k)
+
+
+N = Vs.shape[2]
+Efk = FT.space_time_spectrum(Vs,1/S['SCALE']['fx'],S['SCALE']['facq_t'],add_pow2 = [0,0,0])
+
+#%%
+
+set_graphs.set_matplotlib_param('single')
+fig, ax = plt.subplots()
+Amin = 1e-5 # change to adjust colormap
+Amax = 1e-2 # change to adjust colormap
+c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = Amin,vmax = Amax,
+              origin = 'lower', interpolation = 'gaussian',
+              extent = (Efk['k'].min(),Efk['k'].max(),2*np.pi*Efk['f'].min(),2*np.pi*Efk['f'].max()))
+
+ax.set_xscale('log')
+ax.set_yscale('log')
+kbounds = [0.1,3.3] # bounds for k axis on Efk plot
+fbounds = [0.55,8] # bounds for f axis on Efk plot
+ax.set_xlim(kbounds)
+ax.set_ylim(fbounds)
+
+ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$', labelpad = 5)
+ax.set_ylabel(r'$\omega \; \mathrm{(rad.s^{-1})}$', labelpad = 5)
+
+cbar = plt.colorbar(c,ax = ax)
+cbar.set_label(r'$|\hat{V}_x| (k,\omega) \; \mathrm{(u.a.)}$',labelpad = 5)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #%% Load data of detected harmonics 
 
