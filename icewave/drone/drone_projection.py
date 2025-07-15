@@ -162,6 +162,31 @@ def georectify_image(img,H,alpha_0,focale):
     
     return Xreal,Yreal
     
+#------------------------------------------------------------------------------------------------------------------------------
+
+def get_angles(xpix,ypix,x0,y0,focal):
+    """ Compute angles with which a pixel (xpix,ypix) is seen. Upper left corner of the image is chosen as the origin 
+    of the camera sensor coordinate system
+    Inputs : - xpix, float or numpy array, x-coordinate on camera sensor 
+             - ypix, float or numpy array, y-coordinate on camera sensor 
+             - x0, float, x-coordinate of camera sensor center 
+             - y0, float, y-coordinate of camera sensor center 
+             - focal, float, camera focal length (in pixels) 
+    
+    Outputs : - beta_x, float or numpy array, angle, with respect to optical axis going throught center of 
+    camera sensor, along x-axis
+             - beta_y, float or numpy array, angle, with respect to optical axis going throught center of 
+    camera sensor, along y-axis
+    - beta_r, float or numpy array, angle, with respect to optical axis going throught center of 
+    camera sensor without any projection""" 
+            
+    beta_x = np.arcsin((xpix - x0)/focal)
+    beta_y = np.arcsin((ypix - y0)/focal)
+    beta_r = np.arcsin(np.sqrt((xpix - x0)**2 + (ypix - y0)**2)/focal)
+
+    return beta_x,beta_y,beta_r
+
+
 
 #--------------------------------------------------------------------------------------------------------------------------
 
@@ -466,4 +491,8 @@ def change_XY_reference_system(X,Y,param_projected,param_ref,R,translation,scali
     X_proj,Y_proj = GPS2XY(latlong_transfo[:,:,0],latlong_transfo[:,:,1],Lat0,Long0,azimuth_ref)
     
     return X_proj,Y_proj    
+
+#--------------------------------------------------------------------------------------------------------------------
+
+
 
