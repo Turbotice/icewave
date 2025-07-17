@@ -56,7 +56,7 @@ def u_dimensionless(kappa,coeffs,dimensionless,z,fluid_idx):
     
     else:
         pressure_term = r*kappa*C_2*np.exp(kappa*z) 
-        vort_term = 1j*m_2*A_2*np.exp(m_2*kappa*z)
+        vort_term = 1j*m_2*A_2*np.exp(m_2*z)
         
         u = pressure_term + vort_term
         
