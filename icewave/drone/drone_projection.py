@@ -324,19 +324,18 @@ def get_height_from_record(record,indice=0,typ='elev'):
     return float(s)
 
 def georeference(key,record,image,flight):
-    """ Computation of vertical velocity field from the pixel displacement along vertical of the camera. 
+    """ Project an image into a georeferenced coordinate system, by using the flight meta data stored
+        in the record file (position, height, and pitch), and the flight file (drone orientation).
+        Currently, only work for pitch = 90°
     
     INPUTS : - key : identification key common to record, flight and image 
              - record : dictionnary with parameters extracted from the data folder
-             - 
-             - y0 : float, y-coordinate of the middle of the camera sensor
-             - alpha_0 : float, angle (in rad) of the camera axis to the horizontal 
-             - focale : float, camera focal length (pixels)
-             - fps : float, frame rate used (frame/s)
-             - Dt : float, time step between two image compared to computer pixel displacement field 
+             - image : image to be projected
+             - flight : flight record of the drone
              
-    OUTPUT : - Fp : function of a tuple of pixel coordinates (x,y,t), or a list of tuples, which computes the vertical velocity
-                associated to a given tuple
+    OUTPUT : - Lat
+             - Long
+             - im
     """
     if type(record[key])==list:
         rec=record[key][0]
@@ -354,14 +353,15 @@ def georeference(key,record,image,flight):
     Lat0=rec['latitude'][0]
     Long0=rec['longitude'][0]
 
-    azimuth = flight[key]['GIMBAL.yaw [360]']
+    azimuth = flight[key]['OSD.yaw [360]']
     print(f'Azimuth : {azimuth}°')
     pitch = float(flight[key]['GIMBAL.pitch'])
     print(f'Pitch : {pitch}°')
 
-    if pitch<-85:
+    if pitch<-80:
         Lat,Long = XY2GPS(Xr,Yr,Lat0,Long0,azimuth)
     else:
+        print(pitch)
         return None,None,im
     
     return Lat,Long,im
