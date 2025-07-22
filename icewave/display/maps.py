@@ -5,13 +5,18 @@ import icewave.display.graphes as graphes
 import icewave.geometry.display as disp
 import icewave.field.time as fieldtime
 
+import icewave.gps.gps as gps
+
 import argparse
 
 
 def display_map(measures,remote=True,w=10,h=10,ax=None):
-    b = -5*10**(-5)
+    b = 10**(-7)
     if ax==None:
         fig,ax = plt.subplots(figsize=(w,h))
+
+    Lons,Lats=[],[]
+    
     for key in measures.keys():
         m = measures[key]
         instrument = key.split('_')[0]
@@ -33,13 +38,13 @@ def display_map(measures,remote=True,w=10,h=10,ax=None):
             latshiftlabel = -b
         elif instrument=='buoys':
             
-            if m['recording'].split('_')[-1]=='1700':
+            if True:#m['recording'].split('_')[-1]=='1700':
                 text=sensor
                 latshiftlabel = b*1.5
             else:
                 text=''
         else:
-            text=''
+            text=sensor
         if instrument=='gps':
             k = m['name'][0].split('_')[0]
             label = disp.labels[k]
@@ -50,14 +55,25 @@ def display_map(measures,remote=True,w=10,h=10,ax=None):
         if name=='B5':# or instrument=='phones':# or instrument=='gps':
             continue
         if len(m['longitude'])>0:
-            ax.plot(m['longitude'][0],m['latitude'][0],label)
-            ax.text(m['longitude'][0],m['latitude'][0]+latshiftlabel,text,color='k')
+            lon = m['longitude'][0]
+            lat = m['latitude'][0]
+            Lons.append(lon)
+            Lats.append(lat)
+            
+            X,Y = gps.project(lon,lat)
+
+            print(Y)
+            ax.plot(X,Y,label)
+            ax.text(X,Y+latshiftlabel,text,color='k')
         else:
             print(f'No GPS coordinates for {key}')
 
-            
-    [Lonmin,Lonmax] = ax.get_xlim()
-    [Latmin,Latmax] = ax.get_ylim()
+    Lonmin = np.min(Lons)
+    Lonmax = np.max(Lons)
+    Latmin = np.min(Lats)
+    Latmax = np.max(Lats)
+#    [Lonmin,Lonmax] = ax.get_xlim()
+#    [Latmin,Latmax] = ax.get_ylim()
 
     print(Lonmin,Lonmax,Latmin,Latmax)
     deg,minute,sec = get_range(Lonmax,Lonmin)
@@ -68,9 +84,15 @@ def display_map(measures,remote=True,w=10,h=10,ax=None):
     lat_display = get_range_display(deg,minute,sec)    
     lat_ticks = coord2angle(deg,minute,sec,sign=1)
 #    lat_display = [display_latitude(angle2coord(lat)) for lat in lat_ticks]
-    
-    ax.set_xticks(lon_ticks,lon_display)
-    ax.set_yticks(lat_ticks,lat_display)
+
+    X,_ = gps.project(lon_ticks,np.zeros(len(lon_ticks)))
+    _,Y = gps.project(np.zeros(len(lat_ticks)),lat_ticks)
+    print(X,Y)
+    ax.set_xticks(X,lon_display)
+    ax.set_yticks(Y,lat_display)
+    #ax.set_xticks(lon_ticks,lon_display)
+    #ax.set_yticks(lat_ticks,lat_display)
+
     #plt.axis('equal')
     figs = graphes.legende('Longitude','Latitude','')
     return figs
