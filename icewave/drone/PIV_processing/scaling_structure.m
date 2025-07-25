@@ -34,5 +34,9 @@ function m = scaling_structure(S,scale_V,fx,ft)
     else
         disp('Initial UTC time not found')
     end 
+    
+    % convert UTC_t array in array of character 
+    m.UTC_t = char(m.UTC_t);
+
 
 end 

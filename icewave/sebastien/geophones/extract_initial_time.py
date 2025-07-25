@@ -44,7 +44,7 @@ year = '2025'
 date = '0212' #date format, 'mmdd'
 acqu_numb = '0002' #acquisition number 
 
-path2data = os.path.join('E:/Data/',date,'Geophones/')
+path2data = os.path.join('U:/Data/',date,'Geophones/')
 
 # set path to geophone correspondence table
 geophones_table_path = 'C:/Users/sebas/git/icewave/sebastien/geophones/geophones_table'
@@ -498,7 +498,7 @@ plt.savefig(figname + '.png',dpi = img_quality,bbox_inches = 'tight')
 #%%----------------------- PLOTTING SELECTED CHANNEL FOR ALL GEOPHONES ------------------ 
 ##############################################################################################
  
-channel = 0 #0 for E, 1 for N, 2 for Z. 
+channel = 2 #0 for E, 1 for N, 2 for Z. 
 
 # selected indices of the corresponding channel
 # seismic_data_G16 = seismic_data_streams[45:]
@@ -1025,7 +1025,28 @@ file2save = path2data + year + '_' + date + '_acq'+acqu_numb+ 'disp_QS_dir' + st
 with open(file2save, 'wb') as file:
      pickle.dump([f_mode, k_mode], file)
      
-     
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##############################################################################################################################
 #%% Invert ice thickness by hand 
 if flexure_wave:
     

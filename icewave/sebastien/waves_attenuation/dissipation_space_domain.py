@@ -13,6 +13,7 @@ import pickle
 import scipy
 import math
 import cv2 as cv
+from scipy.interpolate import LinearNDInterpolator, RegularGridInterpolator
 # from skimage.filters import meijering, sato, frangi, hessian
 
 import matplotlib as mpl
@@ -28,6 +29,7 @@ import icewave.sebastien.set_graphs as set_graphs
 import icewave.tools.Fourier_tools as FT
 import icewave.tools.interactive_scatter_filter as scatter_filter
 import icewave.tools.datafolders as df
+import icewave.drone.drone_projection as dp
 
 # PARULA COLORMAP 
 parula_map = matcmaps.parula()
@@ -37,6 +39,92 @@ plt.rc('font', family='serif', serif='Computer Modern')
 
 full_blues = mpl.colormaps['Blues'].resampled(256)
 new_blues = mcolors.ListedColormap(full_blues(np.linspace(0.2,1,256)))
+
+#%% FUNCTION SECTION 
+
+def orientation_parallel2propagation(field,theta,fx,L0):
+    """ Select a rectangular window aligned with the propagation direction. 
+    Within this window, create an interpolated field and associated coordinates :
+        x_star (direction of propagation) and y_star (oriented upward)
+        
+        WE CONSIDER ONLY WAVE FIELDS PROPAGATING ALONG + x-direction
+    Inputs: - field: numpy array, [Nx,Ny]
+            - theta: float, angle of the propagation direction, defined between [-pi,pi], 
+            positive in counterclockwise
+            - fx: float, scaling factor in meter/box
+            - L0: float, length of the window along the direction of propagation 
+    
+    Outputs: - field_star: numpy 2D array interpolated [Nx,Ny] along the direction given by angle theta
+             - x_star, numpy array, curvilinear coordinate (x-coordinate in field_star framework)
+             - y_star, numpy array, y-coordinate in field_star framework
+             - X_line, numpy array on which field is interpolated 
+             - Y_line, numpy array on which field is interpolated 
+            """
+            
+    x = np.arange(0,field.shape[0])*fx
+    y = np.arange(0,field.shape[1])*fx
+            
+    # Build several segments for theta < 0
+    if theta < 0:
+        
+        # initial line 
+        x0 = x[0]; # minimal value along x axis
+        y0 = L0*np.sin(abs(theta)) + y[0]
+        ds = fx # step of curvilinear coordinate
+        s = np.arange(0,L0,ds) # curvilinear coordinate
+
+        Nb_lines = math.floor((y[-1] - y0)/(ds*np.cos(theta))) # number of lines to draw 
+        X_line = np.zeros((len(s),Nb_lines))
+        Y_line = np.zeros((len(s),Nb_lines))
+
+        for j in range(Nb_lines):
+            x0 = x0 + ds*np.sin(abs(theta))
+            y0 = y0 + ds*np.cos(theta)
+
+            X_line[:,j] = x0 + s*np.cos(theta)  #1 : s-coordinate, #2 line index 
+            Y_line[:,j] = y0 + s*np.sin(theta)
+
+        # Interpolate 
+        points = np.column_stack((X_line.ravel(),Y_line.ravel()))
+        F = RegularGridInterpolator((x,y),field)# Interpolate demodulated field 
+        # interpolate along new grid 
+        field_star = F(points)
+
+        x_star = s
+        y_star_end = (y[-1] - (L0*np.sin(abs(theta)) + y[0]))/np.cos(theta) - ds
+        y_star = np.arange(0,y_star_end,ds)
+    
+    else:
+        x0 = (y[-1] - L0*np.sin(theta) - y[0])*np.tan(theta)
+        y0 = y[0]
+        ds = fx
+        
+        s = np.arange(0,L0,ds) # curvilinear coordinate
+        Nb_lines = math.floor((y[-1] - L0*np.sin(theta) - y[0])/(ds*np.cos(theta))) # number of lines to draw 
+        X_line = np.zeros((len(s),Nb_lines))
+        Y_line = np.zeros((len(s),Nb_lines))
+        
+        for j in range(Nb_lines):
+            x0 = x0 - ds*np.sin(abs(theta))
+            y0 = y0 + ds*np.cos(theta)
+
+            X_line[:,j] = x0 + s*np.cos(theta) #1 : s-coordinate, #2 line index 
+            Y_line[:,j] = y0 + s*np.sin(theta)
+
+        # Interpolate 
+        points = np.column_stack((X_line.ravel(),Y_line.ravel()))
+        F = RegularGridInterpolator((x,y),field)# Interpolate demodulated field 
+        # interpolate along new grid 
+        field_star = F(points)
+
+        x_star = s 
+        y_star_end = (y[-1] - (L0*np.sin(abs(theta)) + y[0]))/np.cos(theta) - ds
+        y_star = np.arange(0,y_star_end,ds)
+        
+    return field_star,x_star,y_star,X_line,Y_line
+
+
+
 
 #%% Load data for a given date and experiment
 date = '0226'
@@ -117,17 +205,122 @@ plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.svg', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')
 
-#%% Compute space FFT for a given frequency and extract main peaks 
+#%% Show demodulated field 
+
+f_demod = 0.28
+idx = np.argmin(abs(f_demod - freq))
+x = data['x']
+y = data['y']
+
+field = FFT_t[:,:,idx]
+fig, ax = plt.subplots()
+c = ax.imshow(np.real(field.T), cmap = parula_map , aspect = 'equal', norm = 'linear', origin = 'lower',
+              interpolation = 'gaussian',extent = (x.min(),x.max(),y.min(),y.max()))
+
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="2%", pad=0.1)
+
+cbar = plt.colorbar(c,cax = cax)
+cbar.set_label(r'$V_x (x,y) \; \mathrm{(u.a.)}$',labelpad = 5)
+ax.set_xlabel(r'$x \; \mathrm{(m)}$', labelpad = 5)
+ax.set_ylabel(r'$y \; \mathrm{(m)}$', labelpad = 5)
+
+#%% Perform FFT 2D to select angle 
+facq_x = 1/data['SCALE']['fx']
+add_pow2 = [1,1]
+shift,kx,ky = FT.fft_2D(field,[facq_x,facq_x],add_pow2)
+
+fig, ax = plt.subplots()
+flipped = np.flip(shift)
+c = ax.imshow(abs(flipped).T, cmap = parula_map , aspect = 'equal', norm = 'linear', origin = 'lower',
+              interpolation = 'gaussian',extent = (kx.min(),kx.max(),ky.min(),ky.max()))
+
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="2%", pad=0.1)
+
+cbar = plt.colorbar(c,cax = cax)
+cbar.set_label(r'$V_x (x,y) \; \mathrm{(u.a.)}$',labelpad = 5)
+ax.set_xlabel(r'$k_x \; \mathrm{(m)}$', labelpad = 5)
+ax.set_ylabel(r'$k_y \; \mathrm{(m)}$', labelpad = 5)
 
 
+#%% Get angle of propagation 
+
+# find maximum of FFT2D
+idx_max = np.argmax(abs(flipped).flatten())
+unravel_coords = np.unravel_index(idx_max,shift.shape)
+(rho,theta) = dp.cart2pol(kx[unravel_coords[0]],ky[unravel_coords[1]])
+print(rho,theta*180/np.pi)
+
+L0 = 210
+fx = data['SCALE']['fx']
+
+if theta < 0:
+
+    # initial line 
+    x0 = x[0]; # minimal value along x axis
+    y0 = L0*np.sin(abs(theta)) + y[0]
+    ds = fx # step of curvilinear coordinate
+    s = np.arange(0,L0,ds) # curvilinear coordinate
+    
+    x_line = x0 + s*np.cos(theta)
+    y_line = y0 + s*np.sin(theta)
+
+else:
+    x0 = (y[-1] - L0*np.sin(theta) - y[0])*np.tan(theta)
+    y0 = y[0]
+    ds = fx
+    
+    s = np.arange(0,L0,ds) # curvilinear coordinate
+    x_line = x0 + s*np.cos(theta)
+    y_line = y0 + s*np.sin(theta)
+  
+fig, ax = plt.subplots()
+c = ax.imshow(np.real(field.T), cmap = parula_map , aspect = 'equal', norm = 'linear', origin = 'lower',
+              interpolation = 'gaussian',extent = (x.min(),x.max(),y.min(),y.max()))
+
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="2%", pad=0.1)
+cbar = plt.colorbar(c,cax = cax)
+cbar.set_label(r'$V_x (x,y) \; \mathrm{(u.a.)}$',labelpad = 5)
+
+ax.plot(x_line,y_line,'r--')
+
+ax.set_xlabel(r'$x \; \mathrm{(m)}$', labelpad = 5)
+ax.set_ylabel(r'$y \; \mathrm{(m)}$', labelpad = 5)
+
+# reorient field 
+field_star,x_star,y_star,X_line,Y_line = orientation_parallel2propagation(field,theta,fx,L0)
+field_star = np.reshape(field_star,X_line.shape)
+
+#%%
+  
+fig, ax = plt.subplots()
+c = ax.imshow(np.real(field.T), cmap = parula_map , aspect = 'equal', norm = 'linear', origin = 'lower',
+              interpolation = 'gaussian',extent = (x.min(),x.max(),y.min(),y.max()))
+
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="2%", pad=0.1)
+cbar = plt.colorbar(c,cax = cax)
+cbar.set_label(r'$V_x (x,y) \; \mathrm{(u.a.)}$',labelpad = 5)
+for j in range(X_line.shape[1]):
+    ax.plot(X_line[:,j],Y_line[:,j],'r--')
+
+ax.set_xlabel(r'$x \; \mathrm{(m)}$', labelpad = 5)
+ax.set_ylabel(r'$y \; \mathrm{(m)}$', labelpad = 5)
 
 
+fig, ax = plt.subplots()
+c = ax.imshow(np.real(field_star.T), cmap = parula_map , aspect = 'equal', norm = 'linear', origin = 'lower',
+              interpolation = 'gaussian',extent = (x_star.min(),x_star.max(),y_star.min(),y_star.max()))
 
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="2%", pad=0.1)
+cbar = plt.colorbar(c,cax = cax)
+cbar.set_label(r'$V_x (x,y) \; \mathrm{(u.a.)}$',labelpad = 5)
 
-
-
-
-
+ax.set_xlabel(r'$x^* \; \mathrm{(m)}$', labelpad = 5)
+ax.set_ylabel(r'$y^* \; \mathrm{(m)}$', labelpad = 5)
 
 
 

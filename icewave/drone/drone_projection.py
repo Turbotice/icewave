@@ -186,6 +186,28 @@ def get_angles(xpix,ypix,x0,y0,focal):
 
     return beta_x,beta_y,beta_r
 
+#----------------------------------------------------------------------------------------------------------------------------
+
+def get_theta_phi(xpix,ypix,x0,y0,focal):
+    """ Compute angles with which a pixel (xpix,ypix) is seen. Upper left corner of the image is chosen as the origin 
+    of the camera sensor coordinate system
+    Inputs : - xpix, float or numpy array, x-coordinate on camera sensor 
+             - ypix, float or numpy array, y-coordinate on camera sensor 
+             - x0, float, x-coordinate of camera sensor center 
+             - y0, float, y-coordinate of camera sensor center 
+             - focal, float, camera focal length (in pixels) 
+    
+    Outputs : - theta, float or numpy array, angle, with respect to optical axis going throught center of 
+    camera sensor without any projection 
+              - phi, float or numpy array, angle with respect to the line passing through the camera sensor center 
+              and the point of coordinate (0,1) (cf np.arctan2)""" 
+              
+    theta = np.arcsin(np.sqrt((xpix - x0)**2 + (ypix - y0)**2)/focal)
+    phi = np.arctan2((ypix-y0),(xpix-x0))
+
+    return theta,phi
+
+
 
 
 #--------------------------------------------------------------------------------------------------------------------------

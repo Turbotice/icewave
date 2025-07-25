@@ -12,14 +12,13 @@
 clear all;
 date = '0226';
 drone_name = 'mesange';
-exp_ID = '23-waves_012';
+exp_ID = '12-FRAC_001';
 ID = [date '_' drone_name '_' exp_ID];
 
 base = ['/media/turbots/Elements/Share_hublot/Data/' date '/Drones/' drone_name '/'];
 folder = [base 'matData/' exp_ID '/'];% folder of raw datas
-filename = 'PIV_processed_i00_N0_Dt6_b1_W32_xROI1_width3839_yROI1_height2159.mat'; % file to load
+filename = 'PIV_processed_i00_N0_Dt7_b1_W32_xROI1_width3839_yROI1_height2159.mat'; % file to load
 fullname = [folder filename];
-
 
 % ##################################################################
 %% ################## Input scales and parameters################################
@@ -28,7 +27,7 @@ fullname = [folder filename];
 % ##########################################
 Lx = 3840; % size of the image in pixel, along larger axis (x-axis)
 Ly = 2160; % size of the image in pixel, along minor axis (y-axis)
-h_drone = 165.7; % height of the drone in meter
+h_drone = 64.6; % height of the drone in meter
 alpha_0 = 90*pi/180; % camera pitch angle to the horizontal
 
 x_0 = (Lx + 1)/2; % camera sensor center
@@ -43,19 +42,19 @@ ft = 1/facq_t ; % factor scaling for time in sec / frame
 % ##########################################
 
 % Longitude and latitude during flight 
-latitude = 48.34951 ;
-longitude = -68.81569 ;
+latitude = 48.34836;
+longitude = -68.81427;
 
 % Create t0 local (beginning of flight)
 Y = 2024;
 M = 02;
 D = 26;
-H = 21; % local time of drone
-MIN = 35;
-S = 59;
-MS = 647;
-
-if strcmp(drone_name,'mesange')
+H = 20; % local time of drone
+MIN = 22;
+S = 00;
+MS = 509;
+ 
+if strcmp(drone_name,'mesange') & Y == 2024
     TimeZone = 'Europe/Paris'; % mesange 
 else 
     TimeZone = 'America/Montreal'; % bernache or Fulmar
@@ -64,7 +63,7 @@ end
 % initial time of recording
 t0_UTC = datetime(Y,M,D,H,MIN,S,MS,'TimeZone',TimeZone); 
 t0_UTC.TimeZone = 'UTC'; % converts time to UTC time 
-t0_UTC.Format = 'yyyy-MMM-dd HH:mm:ss.SSS';
+t0_UTC.Format = 'yyyy-MM-dd HH:mm:ss.SSS';
 
 % #############################################################
 %% ############# Load raw_datas and create structures #########
@@ -181,6 +180,8 @@ else
     m = scaling_structure_oblique(m,double(m.PIXEL.x_pix),double(m.PIXEL.y_pix),m.t,m.PIXEL.x0,m.PIXEL.y0,...
         m.DRONE.h_drone,m.DRONE.alpha_0,m.DRONE.focale,m.SCALE.facq_t,m.PIV_param.Dt);
 end 
+% convert UTC time in character
+m.t0_UTC = char(t0_UTC);
 disp('Data scaled')
 
 save_name = fullname;
