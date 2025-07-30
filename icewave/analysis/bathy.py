@@ -1,18 +1,24 @@
 import numpy as np
 import pylab as plt
+import glob
 import scipy.interpolate as interp
 
 
 import icewave.display.graphes as graphes
 import icewave.geometry.display as disp
-import icewave.field.time as fieldtime
+import icewave.field.time as tfield
 
 import icewave.tools.rw_data as rw_data
+import icewave.tools.datafolders as df
+import icewave.gps.gps as gps
+
+
+import icewave.display.maps as maps
+
 
 filename = '/Volumes/Backup25/General/Bathymetrie/NONNA_CHS/Bathymetry/NONNA10_4830N06890W.txt'
 
 bathy = rw_data.read_csv(filename,delimiter='\t')
-
 
 def get_bathy():
     #only for Haha bay now
@@ -52,6 +58,7 @@ def interpolator(bathy):
     ###
     #compute an interpolation function of the depth in both sites (Capelan & Haha)
     #return a function of two variabples fi(lon,lat)
+    #Note that the new area of interest can be defined in icewave.gps.gps
     ###
     HahaBox = gps.boxes('haha')
     b1 = gps.check_box(bathy['Long'],bathy['Lat'],HahaBox)
@@ -67,7 +74,7 @@ def interpolator(bathy):
     return fi
 
 def display_bathy(bathy,site):
-    if site=='mercier':
+    if site=='capelans':
         BBox = gps.boxes('capelans')
     elif site=='haha':
         BBox = gps.boxes('haha')
@@ -84,10 +91,14 @@ def display_bathy(bathy,site):
     figs = graphes.legende('Longitude','Latitude',f'Bathymétrie, {site}',cplot=True)
     return ax,figs
 
-def load_tide_data(date):
+def load_tide_data(date,year):
     marees = {}
 
-    base = df.find_path(disk='Backup25')
+    if year=='2025':
+        base = df.find_path(disk='Backup25')
+    elif year=='2024':
+        base = df.find_path(disk='Elements')
+
 #n = len(marees[date]['date'])
     filename = glob.glob(base+date+'/Marees/*.csv')[0]
     print(filename)
@@ -104,11 +115,32 @@ def load_tide_data(date):
     marees[date]['time'] = np.asarray(marees[date]['time'])
     return marees
 
+def display_tide(tide_data,date,year='2025'):
+    fig,ax = plt.subplots(figsize=(10,2))
+    #manual conversion into UTC time from local time
+    ax.plot(tide_data[date]['time']+5*3600,tide_data[date]['tide_height'],'ko')
+        
+    times = np.linspace(5,29,13)*3600
+    #at.set_xlim(18*3600,21*3600)
+    #t=[]
+    tlist = tfield.display_time(times,precision='min')
+    ax.set_xticks(times,tlist)
+    figs = graphes.legende('UTC time','Height (m)',f'{date} / {year}')
+    return ax,figs
 
-def get_local_height(date,t0):
-    # return the tide height in Bic Park, the time is given in UTC time
-    marees = load_tide_data(date)
-    ind = np.argmin(np.abs(marees[date]['time']+6*3600-t0))
-    h = marees[datephone]['tide_height'][ind]
+def get_height(date,t0,tide_data=None):
+    if tide_data is None:
+    # return the tide height in Bic Park,
+    # t0 is in UTC time
+        tide_data = load_tide_data(date)
+        
+    ind = np.argmin(np.abs(tide_data[date]['time']+5*3600-t0))
+    h = tide_data[date]['tide_height'][ind]
     return h
     
+def get_local_height(lon,lat,date,t0,tide_data=None,bathy_data=None,fi=None):
+    htide = get_height(date,t0,tide_data=tide_data)
+    if fi is None:
+        fi = interpolator(bathy_data)
+    hlocal = fi(lon,lat)    
+    return htide+hlocal
