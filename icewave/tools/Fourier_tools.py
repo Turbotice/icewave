@@ -60,7 +60,23 @@ def fft_2D(M,facq,add_pow2 = [0,0]):
     
     shift = np.fft.fftshift(FFT)
     return shift,ky,kx
+   
+
+#---------------------------------------------------------------------------------------------------
+
+def inverse_FFT2(FFT2,shape):
+    """ Compute inverse 2D FFT of a matrix. 
+    Inputs : - FFT2, numpy array, matrix of Fourier transformed signal [padd_x,padd_y]
+             - shape, float, initial shape of the initial Fourier transformed signal, typically (nx,ny) 
+    Output : inv_FFT2, numpy complex array, matrix of inverse Fourier transform """
+
+    unshift = np.fft.ifftshift(FFT2)
+    inverse = np.fft.ifft2(unshift)*shape[0]*shape[1]
     
+    inv_FFT2 = inverse[:shape[0],:shape[1]]
+    
+    return inv_FFT2
+
 #---------------------------------------------------------------------------------------------------
 
 def temporal_FFT(H,fps,padding_bool = 1,add_pow2 = 0,output_FFT = False):

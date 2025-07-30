@@ -61,7 +61,7 @@ def heavy_hydroelastic(k,h_ice,H,E,nu,rho_ice,g = 9.81,rho_w = 1000):
     
     D = E*h_ice**3/(12*(1-nu**2))
     ratio = rho_ice/rho_w
-    omega = np.sqrt((g*k + D*k**5/rho_w)*np.tanh(k*H)/(1 + h_ice*k*ratio))
+    omega = np.sqrt((g*k + D*k**5/rho_w)*np.tanh(k*H)/(1 + h_ice*k*ratio*np.tanh(k*H)))
     
     return omega
     
@@ -112,3 +112,20 @@ k_deep_water = (2*np.pi*freq)**2/9.81
 fig,ax = plt.subplots()
 ax.loglog(k_deep_water,freq)
 ax.loglog(k_viscous,freq,'--')
+
+
+
+#%% Plot tanh(x)
+
+
+
+
+x = np.linspace(0,10)
+y = np.tanh(x)
+
+fig, ax = plt.subplots()
+ax.plot(x,y)
+
+
+
+

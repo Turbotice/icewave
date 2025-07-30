@@ -45,5 +45,8 @@ function m = scaling_structure_oblique(S,x_pix,y_pix,t,x0,y0,H,alpha_0,focale,fp
     else
         disp('Initial UTC time not found')
     end 
+
+    % convert UTC_t array in array of character 
+    m.UTC_t = char(m.UTC_t);
     
 end 

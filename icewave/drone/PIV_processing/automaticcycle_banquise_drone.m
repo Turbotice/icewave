@@ -1,13 +1,13 @@
 
 %% Definition of the folder to process and where to save the results
 
-date = '0205';
+date = '0226';
 drone_name = 'mesange';
-exp_ID = '07-waves_003';
+exp_ID = '12-FRAC_001';
 % base where images are saved and where we want to save data 
 
-base_img = ['E:/PIV_images/' date '/Drones/' drone_name '/'];
-base_save = ['E:/Data/' date '/Drones/' drone_name '/'];
+base_img = ['/media/turbots/Elements/Share_hublot/Data/PIV_images/' date '/Drones/' drone_name '/'];
+base_save = ['/media/turbots/Elements/Share_hublot/Data/' date '/Drones/' drone_name '/'];
 
 folder_img = [base_img  exp_ID '/']; % folder where images are saved 
 filelist = dir([folder_img 'im*.tiff']); dirnames={};
@@ -29,12 +29,12 @@ if exist(dirsave,'dir') ~= 7
 end
 
 % Define parameters to process PIV
-i0 = 1; %process starting from image i0
+i0 = 0; %process starting from image i0
 N = 0; %last frame to analyze
-Dt = 4; %ratio between the fps and the scanning frequency (number of image between image A and image B)
+Dt = 7; %ratio between the fps and the scanning frequency (number of image between image A and image B)
 b = 1; %number of images between image A and image A' (from one step to an other)
-ROI.x = 317 ;
-ROI.width = 3523;
+ROI.x = 1 ;
+ROI.width = 3839;
 ROI.y = 1;
 ROI.height = 2159;
 w = 32; 

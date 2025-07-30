@@ -1,0 +1,141 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jul 25 15:03:00 2025
+
+@author: sebas
+
+Package for DAS analysis. Gathers all functions useful to study DAS signals
+
+"""
+
+import numpy as np 
+import matplotlib.pyplot as plt 
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import h5py 
+import glob
+import os 
+from time import strftime, localtime
+from datetime import datetime
+import pytz
+import pickle
+
+import icewave.tools.matlab_colormaps as matcmaps
+
+# PARULA COLORMAP 
+parula_map = matcmaps.parula()
+
+
+def epoch2datetime(t,timezone = None,format_date = '%Y-%m-%d %H:%M:%S.f'):
+    """ Convert time since epoch to UTC time 
+    Inputs: - t, array or list of times since epoch
+            - timezone, pytz timezone in which we want datetime 
+            - format_date, string, format in which datetime will be written """  
+    
+    t_datetime = []
+    for t_epoch in t:
+        current_string = strftime(format_date, localtime(t_epoch))
+        current_time = datetime.strptime(current_string, format_date)
+        if timezone is None:
+            adjusted_time = current_time
+        else:
+            adjusted_time = current_time.astimezone(timezone)
+            
+        t_datetime.append(adjusted_time)
+    
+    t_datetime = np.array(t_datetime)
+    t_datetime = np.reshape(t_datetime,(t.shape))
+    return t_datetime
+
+#-------------------------------------------------------------------------------------------------------
+
+
+def generate_datetime_txt(UTC_0):
+    """ Generate a string from a datetime UTC_0"""
+    
+    txt = f'{UTC_0.year}_{UTC_0.month}_{UTC_0.day}_{UTC_0.hour}_{UTC_0.minute}_{UTC_0.second}'
+    return txt
+
+
+#-------------------------------------------------------------------------------------------------------
+
+def extents(f):
+    """ Computes the extents of an array, returns extremities to be used with plt.imshow """
+    delta = f[1] - f[0]
+    return [f[0] - delta/2, f[-1] + delta/2]
+
+#--------------------------------------------------------------------------------------------------------
+
+def time_stacking(strain_rate,nb_seconds,fiber_length):
+    """ Stack strain rate measurements over time
+        Inputs : - strain_rate, 3D numpy array, #dim 0 : each second of acquisition, #dim 1 : time sampled at fs within 
+        the corresponding second, #dim 2 : space
+                 - nb_seconds , int type, number of seconds to stack
+                 - fiber_length, float type, fiber length
+                 
+        Outputs : - spatio_long, 2D numpy array, #dim 0 : time in seconds, #dim 1 : space
+                  - s, 1D numpy array, curvilinear coordinate
+                  - t_sec, 1D numpy array, time in seconds """
+                  
+    time_length = np.shape(strain_rate)[0]
+    fs = np.shape(strain_rate)[1] # time frequency sampling 
+    fx = np.shape(strain_rate)[2]/fiber_length # space frequency sampling
+    
+    # curvilinear coordinate 
+    s = np.arange(0,fiber_length,1/fx)
+    
+    for i in range(nb_seconds):
+        if i == 0 :    
+            spatio_long = np.vstack((strain_rate[i,:,:],strain_rate[i + 1,:,:]))
+        elif i > 1:
+            spatio_long = np.vstack((spatio_long,strain_rate[i,:,:]))
+            
+    print(f'Spatio-temp computed for a total number of seconds : {nb_seconds}')
+    t_sec = np.arange(0,nb_seconds,1/fs)  # time in seconds
+    
+    return spatio_long,s,t_sec
+
+#---------------------------------------------------------------------------------------------------
+
+def new_stack_strain_rate(strain_rate,t,fiber_length,Nb_minutes = 1):
+    """ Structure strain rate array so that several minutes of spatio-temporal recording are stacked in a 3D array
+    Inputs: - strain_rate, 3D numpy array, #dim 0 : each second of acquisition, #dim 1 : time sampled at fs within 
+            the corresponding second, #dim 2 : space
+            - t, numpy array, time since epoch for each seconds of recording
+            - fiber_length, float, length of the fiber
+            - Nb_minutes, float, duration of each created stack
+    Outputs: - stack_strain, 3D numpy array, #dim 0 : each stack of duration Nb_minutes, #dim 1 : time sampled at fs within 
+            the corresponding stack, #dim 2 : space
+            - stack_time, 2D numpy array # dim 0: each stack of duration Nb_minutes, # dim 1: time in seconds, taking 
+            beginning of recording as a reference
+            - s, numpy array, curvilinear coordinate """
+
+    fs = np.shape(strain_rate)[1] # time frequency sampling 
+    fx = np.shape(strain_rate)[2]/fiber_length # space frequency sampling
+    
+    # create an array # dim 0: stacks of duration Nb_minutes, 
+    # dim 1: time samples within Nb_minutes, dim 2: space samples
+    Nb_stacks = int(np.shape(strain_rate)[0]/60/Nb_minutes) 
+    print(f'Created {Nb_stacks} stacks of duration {Nb_minutes} minutes')  
+    Nb_seconds = int(Nb_minutes*60) # nb_seconds for a single section 
+    
+    stack_strain = np.zeros((Nb_stacks,Nb_seconds*fs,np.shape(strain_rate)[2]))
+    stack_time = np.zeros((Nb_stacks,Nb_seconds*fs))
+    
+    for n in range(Nb_stacks):
+        idx_min = int(n*Nb_seconds)
+        idx_max = int((n + 1)*Nb_seconds)
+        
+        current_section = strain_rate[idx_min : idx_max, : ,:]
+        spatio_long,s,t_sec = time_stacking(current_section,Nb_seconds,
+                                            fiber_length) # stack for a given duration Nb_minutes
+        stack_strain[n,:,:] = spatio_long
+    
+        # create array of time
+        current_time = np.arange(n*Nb_seconds, (n + 1)*Nb_seconds, 1/fs)
+        stack_time[n,:] = current_time 
+        
+
+    return stack_strain,stack_time,s 
+    
+#----------------------------------------------------------------------------------------------------
+
