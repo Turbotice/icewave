@@ -43,6 +43,6 @@ def set_matplotlib_param(style):
     plt.rc('figure', titlesize=font_size_medium)  # fontsize of the figure title
 
     plt.rcParams["axes.labelpad"] = 5
-    plt.rc('text', usetex=True)
+    # plt.rc('text', usetex=True)
     plt.rc('font', family='serif', serif='Computer Modern')
     

@@ -23,7 +23,7 @@ import pickle
 import icewave.tools.matlab2python as mat2py
 import icewave.tools.matlab_colormaps as matcmaps
 import icewave.tools.Fourier_tools as FT
-import icewave.sebastien.DAS_package as DS
+import icewave.das.DAS_package as DS
 import icewave.sebastien.set_graphs as set_graphs
 
 # PARULA COLORMAP 

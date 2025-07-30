@@ -20,6 +20,7 @@ import pytz
 import pickle
 
 import icewave.tools.matlab_colormaps as matcmaps
+import icewave.tools.matlab2python as mat2py
 
 # PARULA COLORMAP 
 parula_map = matcmaps.parula()
@@ -139,3 +140,41 @@ def new_stack_strain_rate(strain_rate,t,fiber_length,Nb_minutes = 1):
     
 #----------------------------------------------------------------------------------------------------
 
+def stack_data_fromfile(file2load,fiber_length,Nb_minutes, timezone = pytz.timezone('UTC')):
+    """ Collect and structure data stored in a .h5 file. Strain rate measurements are stacked into chunks of 
+    duration Nb_minutes. The UTC time of recording is also computed for each chunk.
+    
+    Input: - file2load, string, path to .h5 file to be loaded. 
+           - fiber_length, float, length of optical fiber in meter
+           - Nb_minutes, int or float, duration in minutes of each chunk
+           - timezone, pytz.timezone object, optional argument used to define in which timezone the
+           array of time should be refered to. Default is UTC. 
+    Output: - stack_strain, 3D numpy array, #dim 0 : each stack of duration Nb_minutes, #dim 1 : time sampled at fs within 
+            the corresponding stack, #dim 2 : space
+            - stack_time, 2D numpy array # dim 0: each stack of duration Nb_minutes, # dim 1: time in seconds, taking 
+            beginning of recording as a reference
+            - UTC_stack, 2D numpy array, # dim 0 : each stack / chunk of duration Nb_minutes, # dim 1 : datetime object, 
+            UTC based
+            - s, numpy array, curvilinear coordinate """
+            
+    with h5py.File(file2load,'r') as f:
+        print(list(f.keys()))
+            
+        a_group_key = list(f.keys())[0]
+        data = mat2py.mat_to_dict(f[a_group_key], f[a_group_key])
+                
+    # shape strain rate : 
+    # dim 0 : time in second / dim 1 : time sampled at fs / dim 2 : space 
+    strain_rate = data['Source1']['Zone1']['Strain Rate [nStrain|s]']
+    t = data['Source1']['time'] #time since epoch
+
+    # Stack strain rate into sections of duration Nb_minutes
+    stack_strain,stack_time,s = new_stack_strain_rate(strain_rate, t, fiber_length,Nb_minutes)
+
+    stack_epoch = t[0] + stack_time
+    UTC_stack = np.empty(stack_time.shape,dtype = 'object')
+    for i in range(stack_epoch.shape[0]):
+        current_UTC = epoch2datetime(stack_epoch[i,:],timezone = timezone)
+        UTC_stack[i,:] = current_UTC
+
+    return stack_strain,stack_time,UTC_stack,s

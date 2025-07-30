@@ -293,3 +293,4 @@ def display_mercier(ax,title=''):
     t = tmp_connect()
     ax,figs = display_map(ext,t,title=title,ax=ax,width=600)
     return ax,figs
+

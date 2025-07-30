@@ -21,6 +21,7 @@ import scipy
 
 import icewave.tools.matlab_colormaps as matcmaps
 import icewave.sebastien.set_graphs as set_graphs
+import icewave.tools.weather as weather
 
 parula_map = matcmaps.parula()
 plt.rcParams.update({
@@ -78,34 +79,6 @@ def waypoints_loc(gpx):
     return Long, Lat 
 
 #---------------------------------------------------------------------------
-def get_tidefromfile(file_tide,format_datetime = '%Y-%m-%dT%H:%M:%S.%f%z'):
-    """ Create a tide dictionnary from a csv file of tides
-    Inputs : - file_tide, string, path to a csv file containing two headers : 'date' and 'tide_height'
-             - format_datetime, string, format with which date is saved in the csv file
-    Output : - tide, dictionnary, with keys : + date : string containing local date
-                                              + tide_height : height of tide 
-                                              + datetime_UTC : UTC datetime object """
-                                              
-    tide = {'date':[],'tide_height':[]}
-    with open(file2load,'r') as file:
-        csv_file = csv.DictReader(file)
-        for line in csv_file:
-            tide['date'].append(line['date'])
-            tide['tide_height'].append(float(line['tide_height']))
-
-    # Convert a date in a datetime object
-    UTC_timearea = pytz.timezone('UTC')
-
-    tide['datetime_UTC'] = []
-    for d in tide['date']:
-        localdatetime = datetime.strptime(d, format_datetime)
-        UTC_time = localdatetime.astimezone(UTC_timearea)
-        tide['datetime_UTC'].append(UTC_time)
-        
-    tide['timestamp_UTC'] = [UTC_time.timestamp() for UTC_time in tide['datetime_UTC']]
-    return tide 
-
-#----------------------------------------------------------------------------
 
 def distance_GPS(lat,long,Lat0,Long0,R_earth = 6371e3):
     """ Computes distance between GPS coordinates. 
@@ -134,20 +107,6 @@ def closest_bathymetry(GPS_coords,data_bath):
     
     lat,long,H = data_bath[idx_min,:]
     return (lat,long,H)
-
-#--------------------------------------------------------------------------
-
-def get_tidefromUTC(filetide,UTC_datetime):
-    """ Get tide for a given datetime using 1D interpolation 
-    Inputs : - filetide, path to csv file of tides data
-             - UTC_datetime, datetime object, with UTC timzone
-    Output : tide_height, tide height in meter """
-    
-    tide = get_tidefromfile(filetide)
-    tide_interp = scipy.interpolate.interp1d(tide['timestamp_UTC'], tide['tide_height'])
-    tide_height = tide_interp(UTC_datetime.timestamp())
-    
-    return tide_height
 
 #--------------------------------------------------------------------------
 
@@ -269,8 +228,8 @@ cax = divider.append_axes("right", size="2%", pad=0.1)
 cbar = plt.colorbar(scatter,cax = cax)
 cbar.set_label(r'$H \; \mathrm{(m)}$')
 
-ax.set_xlim([Haha_coordinates[0], Haha_coordinates[1]])
-ax.set_ylim([Haha_coordinates[2], Haha_coordinates[3]])
+ax.set_xlim([Haha_edges[0], Haha_edges[1]])
+ax.set_ylim([Haha_edges[2], Haha_edges[3]])
 
 #%% Get bathymetry close to a GPS point 
 
@@ -287,17 +246,17 @@ H = get_bathymetry_GPS((source_wpts['lat'][0],source_wpts['long'][0]), path2inte
 #%% Collect tide data
 
 path2tides = f'U:/Data/{date}/Marees/'
-filelist = glob.glob(f'{path2tides}*.csv')
+filelist = glob.glob(f'{path2tides}*array.pkl')
 
 file2load = filelist[0]
-tide = get_tidefromfile(file2load)
+with open(file2load,'rb') as pf:
+    tide = pickle.load(pf)
 
 # interpolate tide height using datetime 
 # create datetime object
 
 test = datetime(2025,2,11,18,42,43,tzinfo = pytz.timezone('UTC'))
-tide_height = get_tidefromUTC(file2load, test)
-
+tide_height = weather.tide_from_datetime(test)
 
 #%% Interpolate bathymetry 
 
