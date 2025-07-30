@@ -43,7 +43,7 @@ def today_time(times):
 def to_UTC(times,hours=-5):
     return np.asarray(times)-hours*3600
 
-def display_time(times):    
+def display_time(times,precision='sec'):    
     timestamps=[]
     for t in times:
         hour = int(t/3600)
@@ -55,5 +55,12 @@ def display_time(times):
             minute = '0'+str(minute)
         if sec<10:
             sec = '0'+str(sec)
-        timestamps.append(f'{hour}:{minute}:{sec}')
+        if precision=='sec':
+            timestamps.append(f'{hour}:{minute}:{sec}')
+        elif precision=='min':
+            timestamps.append(f'{hour}:{minute}')
+        elif precision=='hour':
+            timestamps.append(f'{hour}h')
+        else:
+            timestamps.append(f'{hour}:{minute}:{sec}')
     return timestamps
