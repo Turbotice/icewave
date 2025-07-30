@@ -37,12 +37,8 @@ osname = socket.gethostname()
 print(ostype)
 print(osname)
 
-def find_path(disk='Shack25',year='2025',smb=False,date='0211'):
-    if year=='2025':
-        if 'macOS' in ostype:
-            disk='F-1'
-        else:
-            disk='F'#Shack25'
+def find_path(disk='Shack25',year='2025',smb=False,date='0211',opt=None):
+    #if year=='2025':
     #print('OS type : '+str(ostype))
     #print('Computer name : '+str(osname))
     #if year=='2025':
@@ -57,6 +53,13 @@ def find_path(disk='Shack25',year='2025',smb=False,date='0211'):
         base = disk+'/Share_hublot/Data/'
     elif disk=='Shack25' or 'F':
         base = disk+'/Data/'
+    elif disk=='Backup25':
+        print('toto')
+
+        if opt is not None:
+            base = disk+'/'+opt
+        else:   
+            base = disk+'/Data/'
     else:
         print('please specify the folder path')
     if 'Linux' in ostype:
