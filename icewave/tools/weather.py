@@ -18,6 +18,20 @@ import scipy
 
 import icewave.tools.datafolders as df
 
+
+def get_bathy_interpolator(disk = 'Backup25',year = '2024'):
+    """ Load bathymetry interpolator and return it"""
+    
+    base = df.find_path(disk,year)
+    path2bathy = f'{base}Bathymetrie/linear_interpolator_bathymetry.pkl'
+    
+    with open(path2bathy,'rb') as pf:
+        interp_H = pickle.load(pf)
+        
+    return interp_H
+    
+#-------------------------------------------------------------------------------------------
+
 def get_bathymetry_GPS(GPS_coords,interp_H):
     """ Get bathymetry at a given GPS coordinate from linear interpolation 
     Input : - GPS_coords, tuple or array, [lat,long]
@@ -30,6 +44,7 @@ def get_bathymetry_GPS(GPS_coords,interp_H):
 #-------------------------------------------------------------------------------------------
 
 def tide_from_datetime(UTC_datetime,disk = 'Backup25',year = '2024'):
+    """ Compute tide height from a datetime object based on UTC schedule """
     monthday = UTC_datetime.strftime('%m%d')
     
     directory = df.find_path(disk = disk,year = year )
@@ -44,6 +59,25 @@ def tide_from_datetime(UTC_datetime,disk = 'Backup25',year = '2024'):
     tide_height = tide_interp(UTC_datetime.timestamp())
     
     return tide_height
+
+#--------------------------------------------------------------------------------------------------------
+
+def get_water_height(GPS_coords,UTC_datetime,interp_bathy = None,disk = 'Backup25', year = '2024'):
+    """ Compute water height from bathymetry data and tide height.
+    Input : - GPS_coords, tuple or array, (lat,long)
+            - UTC_datetime, datetime object, UTC based 
+    Output : - water_height, water depth in meter"""
+    
+    if interp_bathy == None:    
+        interp_bathy = get_bathy_interpolator(disk,year)
+    
+    H = get_bathymetry_GPS(GPS_coords, interp_bathy)
+    tide_height = tide_from_datetime(UTC_datetime,disk,year)
+    
+    water_height = H + tide_height
+    
+    return water_height
+    
 
 #--------------------------------------------------------------------------------------
 
@@ -74,6 +108,8 @@ def get_tidefromcsvfile(file_tide,format_datetime = '%Y-%m-%dT%H:%M:%S.%f%z'):
     tide['timestamp_UTC'] = [UTC_time.timestamp() for UTC_time in tide['datetime_UTC']]
     return tide 
 
+
+
 #--------------------------------------------------------------------------------------------------------
 
 def generate_tide_array(disk = 'Backup25',year = '2024'):
@@ -94,6 +130,8 @@ def generate_tide_array(disk = 'Backup25',year = '2024'):
         print(file2save)
         with open(file2save,'wb') as pf: 
             pickle.dump(tide,pf)
+            
+            
     
 if __name__ == '__main__':
     generate_tide_array(disk = 'Backup25')
