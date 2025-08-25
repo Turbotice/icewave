@@ -164,7 +164,7 @@ filelist = glob.glob(path2data + '*.h5')
 Nb_minutes = 1 # duration of each stack
 
 
-idx_file = 1
+idx_file = 0
 file2load = filelist[idx_file]
 with h5py.File(file2load,'r') as f:
     print(list(f.keys()))
@@ -189,7 +189,7 @@ for i in range(stack_epoch.shape[0]):
 #%% Plot spatio 
 
 set_graphs.set_matplotlib_param('single')
-chunk = 6
+chunk = 0
 extents = [UTC_stack[chunk,0], UTC_stack[chunk,-1],s[0],s[-1]]
 fig, ax , imsh, cbar = plot_spatio_temp(stack_strain[chunk,:,:],UTC_stack[chunk,:],s,fiber_length,extents = extents)
 
@@ -249,11 +249,16 @@ ax.set_ylabel(r'$\hat{\dot{\epsilon}}(s)$')
 #%% Create a spatial Short-Time Fourier Transform 
 
 # create hann window
-M = 100 # number of points of window (in samples)
+max_wavelength = 300 # maximum wavelength we are looking for, in meter 
+M = int(max_wavelength*facq_x) # number of points of window (in samples)
 hann_win = scipy.signal.windows.hann(M,sym = True)
 
+txt_wavelength = f'wavelengths measured : min = {2/facq_x:.2f} m, max = {M/facq_x:.2f} m'
+print(txt_wavelength)
+
 # create SFT transfrom
-hop = 25 # hops between two computations (in samples)
+hop_meter = 50 # hops in meter between two STFT computations
+hop = int(hop_meter*facq_x) # hops between two computations (in samples)
 padding = 2**(FT.nextpow2(M) + 1)
 SFT = scipy.signal.ShortTimeFFT(hann_win, hop,facq_x, fft_mode = 'onesided',mfft = padding,scale_to = 'magnitude')
 
@@ -299,10 +304,10 @@ SFT_extents = SFT.extent(stack_strain.shape[2])
 
 fig, ax = plt.subplots()
 imsh = ax.imshow(np.log10(Sfx[:,:,idx_x]),origin = 'lower',aspect = 'auto',cmap = parula_map, 
-          extent = [SFT_extents[2],SFT_extents[3],freq[0],freq[-1]])
+          extent = [2*np.pi*SFT_extents[2],2*np.pi*SFT_extents[3],freq[0],freq[-1]])
 imsh.set_clim([1,6])
 
-# ax.set_xlim([0,0.1])
+# ax.set_xlim([0,0.6])
 # ax.set_ylim([0,1])
 
 divider = make_axes_locatable(ax)
@@ -310,7 +315,7 @@ cax = divider.append_axes("right", size="2%", pad=0.1)
 cbar = plt.colorbar(imsh,cax = cax)
 cbar.set_label(r'$\log10(S_{fx})$')
 
-ax.set_xlabel(r'$1/\lambda \; \mathrm{(m^{-1})}$')
+ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$')
 ax.set_ylabel(r'$f \; \mathrm{(Hz)}$')
 ax.set_title(r'FK for $s = ' +  f'{x[idx_x]:.2f}' + r'\; \mathrm{m}$')
 
@@ -335,7 +340,7 @@ SFT_extents = SFT.extent(stack_strain.shape[2])
 
 fig, ax = plt.subplots()
 imsh = ax.imshow(np.log10(mean_Sfx[:,:,idx_x]),origin = 'lower',aspect = 'auto',cmap = parula_map, 
-          extent = [SFT_extents[2],SFT_extents[3],freq[0],freq[-1]])
+          extent = [2*np.pi*SFT_extents[2],2*np.pi*SFT_extents[3],freq[0],freq[-1]])
 imsh.set_clim([1,5])
 
 # ax.set_xlim([0,0.1])
@@ -346,11 +351,11 @@ cax = divider.append_axes("right", size="2%", pad=0.1)
 cbar = plt.colorbar(imsh,cax = cax)
 cbar.set_label(r'$\log10(S_{fx})$')
 
-ax.set_xlabel(r'$1/\lambda \; \mathrm{(m^{-1})}$')
+ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$')
 ax.set_ylabel(r'$f \; \mathrm{(Hz)}$')
 ax.set_title(r'Average FK for $s = ' +  f'{x[idx_x]:.2f}' + r'\; \mathrm{m}$')
 
-
+#%%
 # Select points on the graph
 print('Select points on FK plots')
 Nb_points = 10
