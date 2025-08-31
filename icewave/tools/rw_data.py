@@ -118,3 +118,69 @@ def csv2dict(table,headerindex=0,symbol='#'):
             for j,key in enumerate(header):
                 data[key].append(table[i][j])
     return data
+
+
+def save_dict_to_h5(dict_obj,filename):
+    """ Save dictionnary in HDF5 file """
+    with h5py.File(filename,'w') as hf:
+        write_dict_h5_rec(hf,dict_obj)
+        
+def write_dict_h5_rec(h5group,dict_obj):
+    """ Write a dictionary (dict_obj) to an open h5py.File object. This recursive function converts
+    numpy arrays, arrays of strings, list of strings and dictionnaries to equivalents h5 structures """
+
+    for key,value in dict_obj.items():
+        
+        if isinstance(value,dict): # if value is a dictionnary
+            subgroup = h5group.create_group(key)
+            write_dict_h5_rec(subgroup,value)
+            
+        elif isinstance(value,np.ndarray): # if value is a numpy array
+            # case 1 : numpy array of strings
+            if value.dtype.kind in {'U','O'} and np.all(np.vectorize(lambda x: isinstance(x,str))(value)):
+                dt = h5py.string_dtype(encoding = 'utf-8')
+                h5group.create_dataset(key, data = value.astype(object),dtype = dt)
+                
+            # case 2 : any other numpy array 
+            else :
+                h5group.create_dataset(key, data = value)
+                
+        elif isinstance(value,str): # if value is a string 
+            dt = h5py.string_dtype(encoding = 'utf-8')
+            h5group.create_dataset(key, data = value,dtype = dt)
+            
+        elif isinstance(value,list) and all(isinstance(v,str) for v in value): # if value is a list of strings
+            dt = h5py.string_dtype(encoding = 'utf-8')
+            h5group.create_dataset(key, data = np.array(value,dtype = object),dtype = dt)
+            
+        else:
+            raise TypeError(f"Unsupported data type for key '{key}': {type(value)}")
+            
+def load_dict_from_h5(filename):
+    """ Load dictionnary saved in a HDF5 file """
+    with h5py.File(filename,'r') as hf:
+        out = load_dict_h5_rec(hf)
+        return out
+        
+def load_dict_h5_rec(h5group):
+    """ Load dictionnary from an open h5py.file object. """
+    out = {}
+    
+    for key,item in h5group.items():
+        if isinstance(item,h5py.Group): # if item is a h5 group 
+            out[key] = load_dict_h5_rec(item)
+            
+        elif isinstance(item,h5py.Dataset): # if item is a h5 dataset 
+            data = item[()]
+            
+            if isinstance(data,bytes): # decode single string
+                out[key] = data.decode('utf-8')
+            
+            elif isinstance(data,np.ndarray) and data.dtype.kind in {'U','S','O'}: # decode arrays of strings
+                list_string = [x.decode('utf-8') if isinstance(x,bytes) else str(x) for x in data]
+                out[key] = np.array(list_string)
+            
+            else : 
+                out[key] = data
+                
+    return out
