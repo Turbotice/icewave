@@ -238,7 +238,7 @@ print(f'Omega = {popt[0]:.2f} ± {err_coeff[0]:.2f} and alpha = {popt[1]:.2e} ±
 xfit = np.linspace(x[0],x[-1]) 
 yth = lorentzian(xfit, popt[0], popt[1])
 scaled_theory = yth*(TF_spectrum.max() - TF_spectrum.min()) + TF_spectrum.min()
-label_th = r'$\frac{1}{\sqrt{1 + (\omega - \Omega)^2/\lambda^2}}$'
+label_th = r'$\frac{1}{\sqrt{1 + (\omega - \omega_0)^2/\lambda^2}}$'
 
 set_graphs.set_matplotlib_param('single')
 fix, ax = plt.subplots()
@@ -246,17 +246,19 @@ ax.plot(freq,TF_spectrum,'o')
 ax.plot(freq[points2fit],TF_spectrum[points2fit],'ro')
 ax.plot(xfit/2/np.pi,scaled_theory,'r',label = label_th)
 
-# ax.set_xscale('log')
-# ax.set_yscale('log')
-ax.set_ylim([-1e-3,1e-2])
-ax.set_xlim([-1,40])
+ax.set_xscale('log')
+ax.set_yscale('log')
+ax.set_ylim([3e-5,1e-2])
+ax.set_xlim([3e-1,1.5e2])
+# ax.set_ylim([-1e-3,1e-2])
+# ax.set_xlim([-1,40])
 
 ax.set_xlabel(r'$f \; \mathrm{(Hz)}$')
 ax.set_ylabel(r'$\langle \hat{\zeta} \rangle _{x,y} \; \mathrm{(cm)}$')
 
-ax.legend(loc = 'upper right')
+ax.legend(loc = 'lower left')
 
-figname = f'TF_spectrum_impulse_lorentzian_linear_{exp_ID}_{test_ID}_Omega_{popt[0]:.2f}_lambda_{popt[1]:.2f}'
+figname = f'TF_spectrum_impulse_lorentzian_loglog_{exp_ID}_{test_ID}_Omega_{popt[0]:.2f}_lambda_{popt[1]:.2f}'
 figname = figname.replace('.','p')
 figname = f'{fig_folder}{figname}'
 plt.savefig(figname + '.pdf', bbox_inches='tight')

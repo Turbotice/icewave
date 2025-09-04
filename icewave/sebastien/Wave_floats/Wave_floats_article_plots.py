@@ -183,8 +183,8 @@ cbar.set_ticks(midpoints)
 cbar.set_ticklabels([f'{mid:.1f}' for mid in midpoints])
 
 figname = fig_folder + 'f_center_wavefield_VS_H_cmap_R'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
     
 
 #%% Figure 4 : Experimental data VS Kyle elliptic model
