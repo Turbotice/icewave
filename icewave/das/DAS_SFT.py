@@ -29,6 +29,7 @@ import icewave.tools.matlab_colormaps as matcmaps
 import icewave.tools.Fourier_tools as FT
 import icewave.das.DAS_package as DS
 import icewave.sebastien.set_graphs as set_graphs
+import icewave.tools.rw_data as rw
 
 # PARULA COLORMAP 
 parula_map = matcmaps.parula()
@@ -181,7 +182,7 @@ def get_water_height(DAS_water_height,UTC_t,selected_x):
             - selected_x, float, position along optical fiber in meter 
     Output : H, float, water height at the selected time and position 
     """
-
+    
     closest_idx = np.argmin(abs(UTC_t - DAS_water_height['UTC_t']))
     closest_idx_pos = np.argmin(abs(selected_x - DAS_water_height['s']))
     H = DAS_water_height['water_height'][closest_idx_pos,closest_idx]
@@ -189,7 +190,7 @@ def get_water_height(DAS_water_height,UTC_t,selected_x):
 
 #%% load DAS parameters and data 
 
-date = '0211'
+date = '0212'
 # fig_folder = f'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2025/DAS/{date}/Figures/'
 
 
@@ -211,48 +212,40 @@ local_timearea = pytz.timezone('America/Montreal')
 UTC_timearea = pytz.timezone('UTC')
 
 # path2data = f'E:/Data/{date}/DAS_h5/'
-# path2data = f'F:/Rimouski_2025/Data/{date}/DAS/'
-path2data = f'U:/Data/{date}/DAS/'
+path2data = f'F:/Rimouski_2025/Data/{date}/DAS/'
+# path2data = f'U:/Data/{date}/DAS/'
 
 # Create folder for saving graphs
 fig_folder = f'{path2data}Figures/'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
 
-filelist = glob.glob(path2data + '*.h5')
+filelist = glob.glob(path2data + '*UTC.h5')
 Nb_minutes = 1 # duration of each stack
 
 
-idx_file = 0
+idx_file = -2
 file2load = filelist[idx_file]
-with h5py.File(file2load,'r') as f:
-    print(list(f.keys()))
-        
-    a_group_key = list(f.keys())[0]
-    data = mat2py.mat_to_dict(f[a_group_key], f[a_group_key])
-            
-# shape strain rate : 
-# dim 0 : time in second / dim 1 : time sampled at fs / dim 2 : space 
-strain_rate = data['Source1']['Zone1']['Strain Rate [nStrain|s]']
-t = data['Source1']['time'] #time since epoch
+Nb_minutes = 1 # duration of each stack
+stack_strain,stack_time,UTC_stack,s = DS.stack_data_fromfile(file2load, fiber_length, Nb_minutes)
+down_sampling_factor = 10
+date_downsampling = ['0210','0212']
 
-# Stack strain rate into sections of duration Nb_minutes
-stack_strain,stack_time,s = DS.new_stack_strain_rate(strain_rate, t, fiber_length,Nb_minutes)
-
-stack_epoch = t[0] + stack_time
-UTC_stack = np.empty(stack_time.shape,dtype = 'object')
-for i in range(stack_epoch.shape[0]):
-    current_UTC = DS.epoch2datetime(stack_epoch[i,:],timezone = UTC_timearea)
-    UTC_stack[i,:] = current_UTC
+# decimation for 0210 and 0212
+if date in date_downsampling:
+    fs = fs/down_sampling_factor # new value of sampling frequency
+    stack_strain,stack_time,UTC_stack = DS.time_decimation_stack_strain(stack_strain,
+                                                                        stack_time,UTC_stack,down_sampling_factor)
+    print(f'New value of sampling frequency, fs = {fs:.2f}')
         
 #%% Plot spatio 
 
 set_graphs.set_matplotlib_param('single')
-chunk = 0
+chunk = 2
 extents = [UTC_stack[chunk,0], UTC_stack[chunk,-1],s[0],s[-1]]
 fig, ax , imsh, cbar = plot_spatio_temp(stack_strain[chunk,:,:],UTC_stack[chunk,:],s,fiber_length,extents = extents)
 
-imsh.set(clim = [-1e4, 1e4])
+imsh.set(clim = [1, 5e3])
 
 # figname = f'spatio_file_{idx_file}_chunk{chunk}_{Nb_minutes}min'
 # figname = f'{fig_folder}{figname}'
@@ -295,7 +288,7 @@ cbar = plt.colorbar(imsh,cax = cax)
 
 #%% Show a profile for a frequency 
 
-selected_freq = 0.2
+selected_freq = 0.28
 idx_freq = np.argmin(abs(freq - selected_freq))
 
 profile = FFT_t[0,idx_freq,:]
@@ -308,7 +301,7 @@ ax.set_ylabel(r'$\hat{\dot{\epsilon}}(s)$')
 #%% Create a spatial Short-Time Fourier Transform 
 
 # create hann window
-max_wavelength = 300 # maximum wavelength we are looking for, in meter 
+max_wavelength = 200 # maximum wavelength we are looking for, in meter 
 M = int(max_wavelength*facq_x) # number of points of window (in samples)
 hann_win = scipy.signal.windows.hann(M,sym = True)
 
@@ -350,21 +343,21 @@ ax.set_ylabel(r'$1/\lambda \; \mathrm{(m^{-1})}$')
 
 #%% Compute Spectrogram for all frequencies 
 
-chunk = 0
+chunk = 2
 Sfx = SFT.spectrogram(np.real(FFT_t[chunk,:,:]),detr = 'constant',axis = -1)
 
 x_SFT = SFT.t(stack_strain.shape[2])
 
-selected_x = 80 # distance from interogator
+selected_x = 440 # distance from interogator
 idx_x = np.argmin(abs(selected_x - SFT.t(stack_strain.shape[2])))
 print(idx_x)
 
 SFT_extents = SFT.extent(stack_strain.shape[2])
 
 fig, ax = plt.subplots()
-imsh = ax.imshow(np.log10(Sfx[:,:,idx_x]),origin = 'lower',aspect = 'auto',cmap = parula_map, 
+imsh = ax.imshow(np.log10(abs(Sfx[:,:,idx_x])),origin = 'lower',aspect = 'auto',cmap = parula_map, 
           extent = [2*np.pi*SFT_extents[2],2*np.pi*SFT_extents[3],freq[0],freq[-1]])
-imsh.set_clim([1,6])
+imsh.set_clim([0.5,1.5])
 
 # ax.set_xlim([0,0.6])
 # ax.set_ylim([0,1])
@@ -385,14 +378,14 @@ ax.set_title(r'FK for $s = ' +  f'{x_SFT[idx_x]:.2f}' + r'\; \mathrm{m}$')
 
 #%% Plot space-time spectrum for different positions 
 
-selected_x = np.array([50,100,150,300,400,500])
+selected_x = np.array([70,140,200,380,450,550])
 idx_x = [np.argmin(abs(x_SFT - x)) for x in selected_x]
 
 fig, axs = plt.subplots(nrows = 2, ncols = 3, sharex = True, sharey = True,figsize = (12,8))
 for ax, idx in zip(axs.flatten(),idx_x):
     imsh = ax.imshow(np.log10(abs(Sfx[:,:,idx])),origin = 'lower',aspect = 'auto',cmap = parula_map, 
               extent = [2*np.pi*SFT_extents[2],2*np.pi*SFT_extents[3],freq[0],freq[-1]])
-    imsh.set_clim([1,6])
+    imsh.set_clim([1,3])
     ax.set_ylim([0,1])
     ax.set_xlim([0.01,0.6])
     # ax.set_ylim([0,10])
@@ -426,14 +419,14 @@ mean_Sfx = np.mean(abs(Sfx_all),axis = 0)
 
 #%% Plot for a given position 
 
-selected_x = 80 # distance from interogator
+selected_x = 150 # distance from interogator
 idx_x = np.argmin(abs(selected_x - SFT.t(stack_strain.shape[2])))
 print(idx_x)
 
 fig, ax = plt.subplots()
 imsh = ax.imshow(np.log10(mean_Sfx[:,:,idx_x]),origin = 'lower',aspect = 'auto',cmap = parula_map, 
           extent = [2*np.pi*SFT_extents[2],2*np.pi*SFT_extents[3],freq[0],freq[-1]])
-imsh.set_clim([1,6])
+imsh.set_clim([1,2])
 
 # ax.set_xlim([0,0.6])
 # ax.set_ylim([0,1])
@@ -449,14 +442,14 @@ ax.set_title(r'FK for $s = ' +  f'{x_SFT[idx_x]:.2f}' + r'\; \mathrm{m}$')
 
 #%% Plot space-time spectrum average over all chunks for different positions
 
-selected_x = np.array([50,100,150,300,400,500])
+selected_x = np.array([100,200,350,450,500,550])
 idx_x = [np.argmin(abs(x_SFT - x)) for x in selected_x]
 
 fig, axs = plt.subplots(nrows = 2, ncols = 3, sharex = True, sharey = True,figsize = (12,8))
 for ax, idx in zip(axs.flatten(),idx_x):
     imsh = ax.imshow(np.log10(mean_Sfx[:,:,idx]),origin = 'lower',aspect = 'auto',cmap = parula_map, 
               extent = [2*np.pi*SFT_extents[2],2*np.pi*SFT_extents[3],freq[0],freq[-1]])
-    imsh.set_clim([1,6])
+    imsh.set_clim([1,2])
     ax.set_ylim([0,1])
     ax.set_xlim([0.01,0.6])
     # ax.set_ylim([0,10])
@@ -471,11 +464,11 @@ for i in range(axs.shape[0]):
 
 #%% Plot profile for a given frequency 
 
-selected_x = 400
+selected_x = 440
 idx_x = np.argmin(abs(x_SFT - selected_x))
 
-freq_min = 0.02
-freq_max = 0.5
+freq_min = 0.1
+freq_max = 0.6
 idx_min = np.argmin(abs(freq - freq_min))
 idx_max = np.argmin(abs(freq - freq_max))
 
@@ -485,7 +478,7 @@ indices = np.arange(idx_min,idx_max + 1, step = 1)
 norm = colors.Normalize(vmin = freq[idx_min], vmax = freq[idx_max])
 
 min_prominence = 0.7
-min_width = 1
+min_width = 0
 # min_height = 0.9
 
 dict_peaks = {}
@@ -496,7 +489,7 @@ for idx_freq in indices:
     current_max = np.max(abs(mean_Sfx[idx_freq,:,idx_x]))
     # find peaks
     peaks,properties = scipy.signal.find_peaks(abs(mean_Sfx[idx_freq,:,idx_x])/current_max,
-                                               prominence = min_prominence,width = min_width)
+                                               height = min_prominence)
     if len(peaks) != 0:
         dict_peaks[str(idx_freq)] = peaks
     current_color = new_blues(norm(freq[idx_freq]))
@@ -515,23 +508,38 @@ ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$')
 
 #%% Load DAS water height 
 path2water_DAS = f'U:/Data/{date}/DAS/'
-file2load = glob.glob(f'{path2water_DAS}fiber_water_height_GPS_structure_{date}.pkl')[0]
-with open(file2load,'rb') as pf:
-    DAS_water_height = pickle.load(pf)
+file2water = glob.glob(f'{path2water_DAS}fiber_water_height_GPS_structure_{date}.h5')[0]
+print(file2water)
+DAS_water_height = rw.load_dict_from_h5(file2water)
+print(DAS_water_height.keys())
+# convert UTC string to datetime 
+format_date = '%Y-%m-%dT%H-%M-%S.%f'
+# convert UTC string to datetime 
+DAS_water_height['UTC_datetime'] = []
+for date_txt in DAS_water_height['UTC_t']:
+    if date_txt != 'None' :
+        datetime_obj = datetime.strptime(date_txt,format_date)
+        datetime_obj = datetime_obj.replace(tzinfo = pytz.timezone('UTC'))
+    # else :
+    #     datetime_obj = None
+    DAS_water_height['UTC_datetime'].append(datetime_obj)
+    
+DAS_water_height['UTC_t'] = np.array(DAS_water_height['UTC_datetime'])
+del DAS_water_height['UTC_datetime']
 
 UTC_chunk = UTC_stack[0,0] #initial UTC time of the studied chunk 
 
 #%% Extract peaks from space-time spectrum and compute D 
 
-selected_x = np.array([50,100,150,300,400,500])
+selected_x = np.array([100,200,350,450,500,550])
 idx_x = [np.argmin(abs(x_SFT - x)) for x in selected_x]
 
 D = np.zeros(len(selected_x))
 err_D = np.zeros(len(selected_x))
 
-freq_range = [0.02,0.6]
-min_prominence = 0.9
-min_width = 2
+freq_range = [0.1,0.6]
+min_prominence = 0.6
+min_width = 1
 
 rho_w = 1027
 

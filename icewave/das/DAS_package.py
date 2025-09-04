@@ -18,6 +18,7 @@ from time import strftime, localtime
 from datetime import datetime
 import pytz
 import pickle
+import scipy
 
 import icewave.tools.matlab_colormaps as matcmaps
 import icewave.tools.matlab2python as mat2py
@@ -178,3 +179,37 @@ def stack_data_fromfile(file2load,fiber_length,Nb_minutes, timezone = pytz.timez
         UTC_stack[i,:] = current_UTC
 
     return stack_strain,stack_time,UTC_stack,s
+
+#-----------------------------------------------------------------------------------------------------------------
+
+def time_decimation_stack_strain(stack_strain,stack_time,UTC_stack,down_sampling_factor,axis = 1):
+    """ Decimate arrays of strain rate, experimental time and UTC datetime (returned by function new_stack_strain_rate)
+    Inputs : - stack_strain, 3D numpy array, #dim 0 : each stack of duration Nb_minutes, #dim 1 : time sampled at fs within 
+            the corresponding stack, #dim 2 : space
+            - stack_time, 2D numpy array # dim 0: each stack of duration Nb_minutes, # dim 1: time in seconds, taking 
+            beginning of recording as a reference
+            - UTC_stack, 2D numpy array, # dim 0 : each stack / chunk of duration Nb_minutes, # dim 1 : datetime object, 
+            UTC based 
+            - down_sampling_factor, float or int, down sampling factor 
+            - axis, axis over which decimation is performed, default is 1
+    Outputs: decimated versions of stakc_strain, stack_time and UTC_stack """
+    
+    # convert datetime objects into time since epoch
+    epoch_matrix = np.zeros(UTC_stack.shape)
+    for i in range(UTC_stack.shape[0]):
+        t_epoch = [UTC_datetime.timestamp() for UTC_datetime in UTC_stack[i,:]]
+        epoch_matrix[i,:] = t_epoch
+        
+    # decimate
+    decimated_epoch = epoch_matrix[:,::down_sampling_factor]
+    decimated_time = stack_time[:,::down_sampling_factor]
+    decimated_stack_strain = scipy.signal.decimate(stack_strain,down_sampling_factor,axis = 1) # anti-aliasing filter
+
+    # convert back to datetime objects
+    UTC_decimated = np.zeros(decimated_epoch.shape,dtype = object)
+    for i in range(UTC_decimated.shape[0]):
+        UTC_decimated[i,:] = epoch2datetime(decimated_epoch[i,:],timezone = pytz.timezone('UTC'))
+    
+    print(f'Decimation performed with a factor {down_sampling_factor:.2f}')
+
+    return decimated_stack_strain, decimated_time, UTC_decimated

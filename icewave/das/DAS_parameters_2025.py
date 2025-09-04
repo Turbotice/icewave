@@ -17,9 +17,9 @@ for date in dates:
     param[date] = {'fiber_length':[],'fs':[],'facq_x':[]}
 
 # set parameters for 0210
-param['0210']['fiber_length'] = 750
+param['0210']['fiber_length'] = 600
 param['0210']['fs'] = 840
-param['0210']['facq_x'] = 2
+param['0210']['facq_x'] = 2.5
 
 # set parameters for 0211
 param['0211']['fiber_length'] = 700
