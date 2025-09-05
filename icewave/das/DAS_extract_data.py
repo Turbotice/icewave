@@ -334,6 +334,7 @@ print('Parameters file loaded')
 # facq_x = np.shape(strain_rate)[2]/fiber_length # spatial sampling frequency
 fs = param[date]['fs']
 fiber_length = param[date]['fiber_length'] # fiber length in meters (set on DAS)
+fiber_length = 700
 facq_x = param[date]['facq_x'] 
 
 format_date = '%Y-%m-%d %H:%M:%S.f'
@@ -388,7 +389,7 @@ if not os.path.isdir(subfig_folder):
 
 # loop over all stacks
 # for idx in range(stack_strain.shape[0]):
-idx = 5
+idx = 0
 spatio = stack_strain[idx,:,:]
 curent_t = stack_time[idx,:]
 current_UTC = UTC_stack[idx,:]
@@ -398,7 +399,7 @@ imsh.set(clim = [1, 0.3e4])
 ax.set_title(f'{current_UTC[0]} - {current_UTC[-1]}')
 ax.set_xlabel(r'UTC',labelpad = 5)
 
-initial_UTC = generate_datetime_txt(current_UTC[0])
+# initial_UTC = generate_datetime_txt(current_UTC[0])
 # figname = f'{subfig_folder}spatiotemporal_duration_{Nb_minutes}_UTC_{initial_UTC}'
 
 # plt.savefig(figname + '.pdf', bbox_inches='tight')
