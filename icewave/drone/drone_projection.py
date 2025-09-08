@@ -516,5 +516,59 @@ def change_XY_reference_system(X,Y,param_projected,param_ref,R,translation,scali
 
 #--------------------------------------------------------------------------------------------------------------------
 
+def get_uz_from_Vy(Vy,theta,phi):
+    """ Compute vertical velocity profile from apparent velocity field computed from Digital Image Correlation. 
+    This projection only works if waves are parallel to the coordinate system (x,y).
+    Inputs : - Vy, array like, dimensions [nx,ny,nt], apparent velocity field along vertical axis of camera sensor
+             - theta, array like, dimensions [ny,nx], angle, with respect to optical axis going through center of 
+    camera sensor without any projection 
+              - phi, array like, dimensions [ny,nx], angle with respect to the line passing through the camera sensor center 
+              and the point of coordinate (x,y) = (1,0) (cf np.arctan2) 
+    Output : - uz, array like, dimensions [nx,nt], vertical velocity profile """
 
+    uz = np.zeros((Vy.shape[0],Vy.shape[2])) # create array for uz
+    for frame in range(uz.shape[1]):
+        field = Vy[:,:,frame]
+        for idx_x in range(uz.shape[0]):
+            f_thetaphi = np.tan(theta[:,idx_x])*np.sin(phi[:,idx_x])
+            p = np.polyfit(f_thetaphi,field[idx_x,:],1)
+            uz[idx_x,frame] = p[0]
+
+    return uz
+
+def get_ux_from_VxVy(Vx,Vy,theta,phi):
+    """ Compute horizontal velocity profile from apparent velocity field computed from Digital Image Correlation. 
+    This projection only works if waves are parallel to the coordinate system (x,y).
+    Inputs : - Vx, array like, dimensions [nx,ny,nt], apparent velocity field along horizontal axis of camera sensor
+             - Vy, array like, dimensions [nx,ny,nt], apparent velocity field along vertical axis of camera sensor
+             - theta, array like, dimensions [ny,nx], angle, with respect to optical axis going through center of 
+    camera sensor without any projection 
+              - phi, array like, dimensions [ny,nx], angle with respect to the line passing through the camera sensor center 
+              and the point of coordinate (x,y) = (1,0) (cf np.arctan2) 
+    Output : - ux, array like, dimensions [nx,ny,nt], horizontal velocity field. Velocity is supposed to be parallel to sea ice plane """
+    
+    uz = get_uz_from_Vy(Vy,theta,phi)
+    uz_xyt = np.transpose(uz[:,np.newaxis,:],(2,0,1))*np.tan(theta.T)*np.cos(phi.T)
+    uz_xyt = np.transpose(uz_xyt,(1,2,0))
+    ux = Vx - uz_xyt
+    
+    return ux
+
+def get_uz_ux_from_structure(Vx,Vy,S):
+    """ Compute vertical velocity profile as well as horizontal velocity field (uz,ux) from apparent velocity field obtained from 
+    Digital Image Correlation (Vx,Vy).
+    Inputs : - S, dictionnary, structure returned by matlab code main_data_structuration.m. 
+             - Vx, array like, dimensions [nx,ny,nt], apparent velocity field along horizontal axis of camera sensor
+             - Vy, array like, dimensions [nx,ny,nt], apparent velocity field along vertical axis of camera sensor
+    Outputs : - uz, array like, dimensions [nx,nt], real scaled vertical velocity profile. Vertical velocity is supposed to be 
+    perpendicular to sea ice plane 
+              - ux, array like, dimensions [nx,ny,nt], horizontal velocity field. Velocity is supposed to be parallel to sea ice plane """
+    
+    xpix,ypix = np.meshgrid(S['PIXEL']['x_pix'],S['PIXEL']['y_pix'],indexing = 'xy')
+    theta,phi = get_theta_phi(xpix,ypix,S['PIXEL']['x0'], S['PIXEL']['y0'],S['DRONE']['focale'])
+    
+    uz = get_uz_from_Vy(Vy,theta,phi)
+    ux = get_ux_from_VxVy(Vx,Vy,theta,phi)
+    
+    return uz,ux
 
