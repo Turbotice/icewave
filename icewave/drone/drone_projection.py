@@ -527,14 +527,17 @@ def get_uz_from_Vy(Vy,theta,phi):
     Output : - uz, array like, dimensions [nx,nt], vertical velocity profile """
 
     uz = np.zeros((Vy.shape[0],Vy.shape[2])) # create array for uz
+    err_uz = np.zeros((Vy.shape[0],Vy.shape[2]))
     for frame in range(uz.shape[1]):
         field = Vy[:,:,frame]
         for idx_x in range(uz.shape[0]):
             f_thetaphi = np.tan(theta[:,idx_x])*np.sin(phi[:,idx_x])
-            p = np.polyfit(f_thetaphi,field[idx_x,:],1)
+            p,V = np.polyfit(f_thetaphi,field[idx_x,:],1,cov = True)
+            err_coeffs = np.sqrt(np.diag(V))
             uz[idx_x,frame] = p[0]
+            err_uz[idx_x,frame] = err_coeffs[0]
 
-    return uz
+    return uz, err_uz
 
 def get_ux_from_VxVy(Vx,Vy,theta,phi):
     """ Compute horizontal velocity profile from apparent velocity field computed from Digital Image Correlation. 
@@ -547,7 +550,7 @@ def get_ux_from_VxVy(Vx,Vy,theta,phi):
               and the point of coordinate (x,y) = (1,0) (cf np.arctan2) 
     Output : - ux, array like, dimensions [nx,ny,nt], horizontal velocity field. Velocity is supposed to be parallel to sea ice plane """
     
-    uz = get_uz_from_Vy(Vy,theta,phi)
+    uz, err_uz = get_uz_from_Vy(Vy,theta,phi)
     uz_xyt = np.transpose(uz[:,np.newaxis,:],(2,0,1))*np.tan(theta.T)*np.cos(phi.T)
     uz_xyt = np.transpose(uz_xyt,(1,2,0))
     ux = Vx - uz_xyt
@@ -567,8 +570,8 @@ def get_uz_ux_from_structure(Vx,Vy,S):
     xpix,ypix = np.meshgrid(S['PIXEL']['x_pix'],S['PIXEL']['y_pix'],indexing = 'xy')
     theta,phi = get_theta_phi(xpix,ypix,S['PIXEL']['x0'], S['PIXEL']['y0'],S['DRONE']['focale'])
     
-    uz = get_uz_from_Vy(Vy,theta,phi)
+    uz,err_uz = get_uz_from_Vy(Vy,theta,phi)
     ux = get_ux_from_VxVy(Vx,Vy,theta,phi)
     
-    return uz,ux
+    return uz,ux,err_uz
 
