@@ -1,13 +1,13 @@
 
 %% Definition of the folder to process and where to save the results
 
-date = '0226';
-drone_name = 'mesange';
-exp_ID = '12-FRAC_001';
+date = '0219';
+drone_name = 'bernache';
+exp_ID = '02-waves_001';
 % base where images are saved and where we want to save data 
 
-base_img = ['/media/turbots/Elements/Share_hublot/Data/PIV_images/' date '/Drones/' drone_name '/'];
-base_save = ['/media/turbots/Elements/Share_hublot/Data/' date '/Drones/' drone_name '/'];
+base_img = ['F:/PIV_images/' date '/Drones/' drone_name '/'];
+base_save = ['F:/Data/' date '/Drones/' drone_name '/'];
 
 folder_img = [base_img  exp_ID '/']; % folder where images are saved 
 filelist = dir([folder_img 'im*.tiff']); dirnames={};
@@ -29,14 +29,14 @@ if exist(dirsave,'dir') ~= 7
 end
 
 % Define parameters to process PIV
-i0 = 0; %process starting from image i0
+i0 = 1; %process starting from image i0
 N = 0; %last frame to analyze
-Dt = 7; %ratio between the fps and the scanning frequency (number of image between image A and image B)
+Dt = 4; %ratio between the fps and the scanning frequency (number of image between image A and image B)
 b = 1; %number of images between image A and image A' (from one step to an other)
 ROI.x = 1 ;
-ROI.width = 3839;
-ROI.y = 1;
-ROI.height = 2159;
+ROI.width = 3808;
+ROI.y = 248;
+ROI.height = 1888;
 w = 32; 
 
 if w == 32
@@ -49,7 +49,7 @@ end
 s = cell(15,2); % To make it more readable, let's create a "settings table"
 %Parameter                          %Setting           %Options
 s{1,1}= 'Int. area 1';              s{1,2}=128;         % window size of first pass
-s{2,1}= 'Step size 1';              s{2,2}=32;         % step of first pass
+s{2,1}= 'Step size 1';              s{2,2}=64;         % step of first pass
 s{3,1}= 'Subpix. finder';           s{3,2}=2;          % 1 = 3point Gauss, 2 = 2D Gauss
 s{4,1}= 'Mask';                     s{4,2}=[];         % If needed, generate via: imagesc(image); [temp,Mask{1,1},Mask{1,2}]=roipoly;
 s{5,1}= 'ROI';                      s{5,2}=[ROI.x,ROI.y,ROI.width,ROI.height];         % Region of interest: [x,y,width,height] in pixels, may be left empty
