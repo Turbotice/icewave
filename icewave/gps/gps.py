@@ -4,12 +4,10 @@ import glob
 import os
 
 #import stephane.display.graphes as graphes
-import stephane.display.graphes as graphes
-
+import icewave.display.graphes as graphes
 import icewave.gps.garmin as garmin
 import fitdecode
 import gpxpy
-
 
 # Import the required library
 from geopy.geocoders import Nominatim

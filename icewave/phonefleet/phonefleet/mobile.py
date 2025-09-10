@@ -28,7 +28,6 @@ def check_status(phonelist):
 def get_status(phone):
     connect.ipbase
 
-
 def choose():
     s = input('Chose action among :')
     actions = ['network','phones','status','time','start','stop','exit']
