@@ -16,6 +16,7 @@ import h5py
 import glob
 import os 
 import pickle
+import joblib
 
 from datetime import datetime
 import pytz
@@ -32,15 +33,20 @@ import icewave.tools.matlab_colormaps as matcmaps
 import icewave.tools.Fourier_tools as FT
 import icewave.das.DAS_package as DS
 import icewave.sebastien.set_graphs as set_graphs
+import icewave.tools.rw_data as rw
 
 # PARULA COLORMAP 
 parula_map = matcmaps.parula()
 
-plt.rcParams.update({
-    "text.usetex": True}) # use latex
+# plt.rcParams.update({
+#     "text.usetex": False}) # use latex
 
 global g
 g = 9.81
+global date_downsampling 
+date_downsampling = ['0210','0212']
+global down_sampling_factor
+down_sampling_factor = 10
 
 
 #%% FUNCTION SECTION 
@@ -183,11 +189,11 @@ def plot_time_spectrum_chunk(FFT_t,freq,s,UTC_stack,fig_folder,colormap):
         fig, ax = plt.subplots()
         imsh = ax.imshow(abs(FFT_t[chunk,:,:]).T,origin = 'lower',cmap = parula_map, aspect = 'auto',
                   extent = [freq[0],freq[-1],s[0],s[-1]])
-        imsh.set_clim([1e1,1e3])
+        imsh.set_clim([1e1,3e2])
         
         ax.set_xlabel(r'$f \; \mathrm{(Hz)}$')
         ax.set_ylabel(r'$s \; \mathrm{(m)}$')
-        ax.set_xlim([0,20])
+        ax.set_xlim([0,10])
         
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size="2%", pad=0.1)
@@ -277,26 +283,34 @@ def extract_D(mean_CWT,selected_x,s,freq,k,peaks_detec,DAS_water_height,UTC_mid)
         FK = abs(mean_CWT[:,:,idx_x])
     
         k_exp,f_exp = extract_peaks(FK,freq,k,freq_range,min_prominence,min_width)
-    
-        H = get_water_height(DAS_water_height,UTC_mid,selected_x[i])
-        popt,pcov = scipy.optimize.curve_fit(lambda x,D : shallow_hydroelastic(x, D, rho_w, H)/2/np.pi,k_exp,f_exp,
-                                             bounds = (1e5,1e8))
-        err_coeff = np.sqrt(np.diag(pcov))
-        # print(f'D = {popt[0]:.2e} ± {err_coeff[0]:.2e}')
-        D[i] = popt[0]
-        err_D[i] = err_coeff[0]
+        
+        if len(k_exp) != 0:
+            
+            H = get_water_height(DAS_water_height,UTC_mid,selected_x[i])
+            popt,pcov = scipy.optimize.curve_fit(lambda x,D : shallow_hydroelastic(x, D, rho_w, H)/2/np.pi,k_exp,f_exp,
+                                                 bounds = (1e5,1e8))
+            err_coeff = np.sqrt(np.diag(pcov))
+            # print(f'D = {popt[0]:.2e} ± {err_coeff[0]:.2e}')
+            D[i] = popt[0]
+            err_D[i] = err_coeff[0]
+            
+        else:
+            D[i] = None
+            err_D[i] = None
 
     return D, err_D
 
 
 #%% Load DAS parameter and Data
 
-def main():
-    date = '0211'
+def get_DAS_parameters(path2DAS_param,date):
+    """ Collect DAS acquisition parameters 
+    Inputs : - path2DAS_param, string, path to table of DAS acquisition parameters
+             - date, string, date for wich parameters are collected, format 'mmdd'
+    Outputs : - fs, float, sampling frequency
+              - fiber_length, float, fiber length set in the interrogator (in meters)
+              - facq_x, float, spatial acquisition frequency (points/meter) """
     
-    # Load parameters for DAS
-    main_path = '/media/turbots/DATA/Backup25/'
-    path2DAS_param = f'{main_path}/Data/parameters_Febus_2025.pkl'
     with open(path2DAS_param,'rb') as pf:
         param = pickle.load(pf)
     print('Parameters file loaded')
@@ -308,32 +322,37 @@ def main():
     fiber_length = param[date]['fiber_length'] # fiber length in meters (set on DAS)
     facq_x = param[date]['facq_x'] 
     
-    path2data = f'{main_path}/Data/{date}/DAS/'
+    return fs,fiber_length,facq_x
+
+def process_file(file2load,fig_folder,path2DAS_param,date, DAS_water_height): 
+    """ Process a file, computation of Time Fourier Transform, Continuous Wavelet Transform, 
+    average of FK spectrum and extraction of flexural modulus 
+    Inputs : - file2load, string, path to .h5 file 
+             - fig_folder, string, folder where plots are saved 
+             - date, string, date of acquisition """
+             
+    fs,fiber_length,facq_x = get_DAS_parameters(path2DAS_param,date)
     
-    # Create folder for saving graphs
-    fig_folder = f'{path2data}Figures/'
-    if not os.path.isdir(fig_folder):
-        os.mkdir(fig_folder)
-    
-    filelist = glob.glob(path2data + '*.h5')
     Nb_minutes = 1 # duration of each stack
-    
-    idx_file = 0
-    file2load = filelist[idx_file]
     stack_strain,stack_time,UTC_stack,s = DS.stack_data_fromfile(file2load, fiber_length, Nb_minutes)
+    
+    # decimation for 0210 and 0212
+    if date in date_downsampling:
+        fs = fs/down_sampling_factor # new value of sampling frequency
+        stack_strain,stack_time,UTC_stack = DS.time_decimation_stack_strain(stack_strain,
+                                                                            stack_time,UTC_stack,down_sampling_factor)
+        print(f'New value of sampling frequency, fs = {fs:.2f}')
     
     format_date = '%Y-%m-%dT%H-%M-%S'
     label_UTC0 = UTC_stack[0,0].strftime(format_date)
-    current_fig_folder = f'{fig_folder}format_date/'
+    current_fig_folder = f'{fig_folder}Wavelet_study_{label_UTC0}/'
     if not os.path.isdir(current_fig_folder):
         os.mkdir(current_fig_folder)
         
     # Perform Fourier transform in time for all time chunks
     
     FFT_t, freq = all_chunks_FFT_t(stack_strain,fs)
-     
     plot_time_spectrum_chunk(FFT_t,freq,s,UTC_stack,current_fig_folder,parula_map)
-    
     
     # Define wavelet 
     
@@ -363,18 +382,10 @@ def main():
     print(f'Wavelengths sampled : min = {wavelength_sampled[0]:.2f}, max = {wavelength_sampled[-1]:.2f}')
     
     mean_CWT,k = CWT_all_chunks(FFT_t,scales,wavelet,sampling_period)
-    
-    # Load water height data 
-    
-    path2water_DAS = f'{main_path}/Data/{date}/DAS/'
-    file2load = glob.glob(f'{path2water_DAS}fiber_water_height_GPS_structure_{date}.pkl')[0]
-    with open(file2load,'rb') as pf:
-        DAS_water_height = pickle.load(pf)
-    
-    
+        
     # Plot (f,k) for different positions 
     
-    selected_x = np.array([80,150,300,400,500,550])
+    selected_x = np.array([100,180,400,450,500,550])
     idx_x = [np.argmin(abs(s - x)) for x in selected_x]
     
     # plot FK without theory
@@ -386,6 +397,7 @@ def main():
         # ax.set_ylim([0,10])
         # ax.set_xlim([0,1.0])
         ax.set_title(f's = {s[idx]:.2f} m')
+        imsh.set_clim([0,300])
     
     for j in range(axs.shape[1]):
         axs[1,j].set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$')
@@ -398,10 +410,20 @@ def main():
     plt.savefig(f'{figname}.pdf',bbox_inches = 'tight')
     
     # plot FK with theory 
-    freq_range = [0.02,0.6]
-    min_prominence = 0.9
-    min_width = 10
+    # select range of frequency within which we look for a peak
+    freq_range = [0.02,0.8]
+    min_prominence = 0.7
+    min_width = 3
     
+    # select range of k for which we look for a peak
+    if date in date_downsampling:
+        k_min = 0.05
+        k_max = 0.6
+        idx_kmin = np.argmin(abs(k - k_min))
+        idx_kmax = np.argmin(abs(k - k_max))
+        mean_CWT = mean_CWT[:,idx_kmax:idx_kmin,:]
+        k = k[idx_kmax:idx_kmin]
+
     rho_w = 1027
     UTC_mid = UTC_stack[UTC_stack.shape[0]//2,0]
     
@@ -413,22 +435,25 @@ def main():
         ax.set_xlim([0.01,0.6])
         # ax.set_ylim([0,8])
         # ax.set_xlim([0,0.7])
-        ax.set_title(f's = {s[idx_x]:.2f} m')
+        ax.set_title(f's = {s[idx]:.2f} m')
+        imsh.set_clim([0,300])
         
         k_exp,f_exp = extract_peaks(FK,freq,k,freq_range,min_prominence,min_width)
         ax.plot(k_exp,f_exp,'r.')
-    
-        H = get_water_height(DAS_water_height,UTC_mid,selected_x[i])
-        popt,pcov = scipy.optimize.curve_fit(lambda x,D : shallow_hydroelastic(x, D, rho_w, H)/2/np.pi,k_exp,f_exp,
-                                             bounds = (1e5,1e8))
-        err_coeff = np.sqrt(np.diag(pcov))
-        print(f'D = {popt[0]:.2e} ± {err_coeff[0]:.2e}')
-    
-        k_th = np.linspace(0,1,100)
-        omega_th = shallow_hydroelastic(k_th, popt[0], rho_w, H)
-        label_th = r'$D = ' + f'{popt[0]:.2e}' + r'$'
-        ax.plot(k_th,omega_th/2/np.pi,'r--',label = label_th)
-        ax.legend(loc = 'lower right',fontsize = 10)
+        print(f'Detected coordinates :{k_exp}')
+        
+        if len(k_exp) != 0:
+            H = get_water_height(DAS_water_height,UTC_mid,selected_x[i])
+            popt,pcov = scipy.optimize.curve_fit(lambda x,D : shallow_hydroelastic(x, D, rho_w, H)/2/np.pi,k_exp,f_exp,
+                                                 bounds = (1e5,1e8))
+            err_coeff = np.sqrt(np.diag(pcov))
+            print(f'D = {popt[0]:.2e} ± {err_coeff[0]:.2e}')
+        
+            k_th = np.linspace(0,1,100)
+            omega_th = shallow_hydroelastic(k_th, popt[0], rho_w, H)
+            label_th = r'$D = ' + f'{popt[0]:.2e}' + r'$'
+            ax.plot(k_th,omega_th/2/np.pi,'r--',label = label_th)
+            ax.legend(loc = 'lower right',fontsize = 10)
     
     for j in range(axs.shape[1]):
         axs[1,j].set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$')
@@ -436,20 +461,19 @@ def main():
     for i in range(axs.shape[0]):
         axs[i,0].set_ylabel(r'$f \; \mathrm{(Hz)}$')   
     
-    figname = f'{fig_folder}{date}_subplots_D_extraction_spectrum_avg_{label_UTC0}'
+    figname = f'{current_fig_folder}{date}_subplots_D_extraction_spectrum_avg_{label_UTC0}'
     plt.savefig(f'{figname}.png',bbox_inches = 'tight')
     plt.savefig(f'{figname}.pdf',bbox_inches = 'tight')
     
     # Compute flexural modulus D 
-    
-    zone1 = np.arange(40,210,step = 20)
+    zone1 = np.arange(60,210,step = 20)
     zone2 = np.arange(280,570,step = 20)
     selected_x = np.concatenate((zone1,zone2))
     
     peaks_detec = {}
-    peaks_detec['freq_range'] = [0.02,0.6]
-    peaks_detec['min_prominence'] = 0.9
-    peaks_detec['min_width'] = 5
+    peaks_detec['freq_range'] = [0.02,0.8]
+    peaks_detec['min_prominence'] = 0.7
+    peaks_detec['min_width'] = 3
     
     UTC_mid = UTC_stack[UTC_stack.shape[0]//2,0]
     D,err_D = extract_D(mean_CWT, selected_x, s, freq, k, peaks_detec,DAS_water_height,UTC_mid)
@@ -458,10 +482,52 @@ def main():
     results_dict['D'] = D
     results_dict['err_D'] = err_D
     results_dict['x'] = selected_x
+    results_dict['UTC_0'] = label_UTC0
     
-    file2save = f'{path2data}{date}_wavelet_flexural_modulus_file_{label_UTC0}.pkl'
-    with open(file2save, 'wb') as pf: 
-        pickle.dump(results_dict,pf)
+    file2save = f'{current_fig_folder}{date}_wavelet_flexural_modulus_file_{label_UTC0}.h5'
+    rw.save_dict_to_h5(results_dict, file2save)
+    print(f'{file2save} successfully saved !')
+
+def main():
+    date = '0212'
+    print(np.__version__)
+
+    # Load parameters for DAS
+    main_path = '/media/turbots/Backup25/'
+    path2DAS_param = f'{main_path}Data/parameters_Febus_2025.pkl'
+    
+    path2data = f'{main_path}Data/{date}/DAS/'
+    filelist = glob.glob(path2data + '*UTC.h5')
+    
+    # Load water height data 
+    file2water = glob.glob(f'{path2data}fiber_water_height_GPS_structure_{date}.h5')[0]
+    print(file2water)
+    DAS_water_height = rw.load_dict_from_h5(file2water)
+    print(DAS_water_height.keys())
+    # convert UTC string to datetime 
+    format_date = '%Y-%m-%dT%H-%M-%S.%f'
+    # convert UTC string to datetime 
+    DAS_water_height['UTC_datetime'] = []
+    for date_txt in DAS_water_height['UTC_t']:
+        if date_txt != 'None' :
+            datetime_obj = datetime.strptime(date_txt,format_date)
+            datetime_obj = datetime_obj.replace(tzinfo = pytz.timezone('UTC'))
+        # else :
+        #     datetime_obj = None
+        DAS_water_height['UTC_datetime'].append(datetime_obj)
+        
+    DAS_water_height['UTC_t'] = np.array(DAS_water_height['UTC_datetime'])
+    del DAS_water_height['UTC_datetime']
+
+    # Create folder for saving graphs
+    fig_folder = f'{path2data}Figures/'
+    if not os.path.isdir(fig_folder):
+        os.mkdir(fig_folder)
+    
+    for idx_file in range(len(filelist)-1):
+        file2load = filelist[idx_file]
+        print(file2load)
+        process_file(file2load, fig_folder, path2DAS_param, date, DAS_water_height)
         
 if __name__ == '__main__':
     main()
