@@ -1,16 +1,17 @@
 # Details about files that can be extracted from Drone DJI Mavic 3 Pro
 
-## Different ypes of files
+## Different types of files
 
 - Videos, format .MP4
-- Videos aformat .LRF (Low Resolution File), can be converted to .MP4 to get a low resolution file
-- fichier format .SRT (SubRip Subtitle) file, used to add subtitles to videos
-It is possible to extract from these files the Following parameters for each frame of the video performed : 
-	- experimental time and UTC time at which the frame has been captured 
+- Videos format .LRF (Low Resolution File), can be converted to .MP4 to get a low resolution file
+- file format .SRT (SubRip Subtitle), used to add subtitles to videos
+It is possible to extract from these files the following parameters for each frame recorded : 
+	- experimental time and local time at which the frame has been captured 
 	- camera propreties : (iso, shutter, focal length)
 	- drone GPS location (1e-5 precision) and relative altitude in meter (1e-1 meter precision), relative to the home point altitude
-- photo au format .JPG 
-- flightrecords.txt : encrypted binary txt file… It is hard to decode this document. The only way to get these data is by using PhantomHelp LogViewer (https://www.phantomhelp.com/LogViewer/upload/) or the designed
+- photo, format .JPG 
+- flightrecords.txt : encrypted binary txt file… It is hard to decode this document. 
+The only way to get these data is by using PhantomHelp LogViewer (https://www.phantomhelp.com/LogViewer/upload/) or the designed
 software : flightreader (see section below)
 
 ## How to organize files ? 
@@ -48,8 +49,8 @@ From Flightrecords csv files : All parameters listed below are recorded every 0.
 5. OSD.yaw [360], UAV orientation with respect to North direction (0 is North), computed by the IMU (in degrees)
 6. GIMABL.pitch, Camera angle to the horizontal (in degrees)
 7. GIMBAL.yaw [360], camera orientation with respect to North direction (0 is North), computed by IMU (in degrees)
-8. CAMERA.isPhoto , boolean whether if the camera is capturing pictures or not. Not very reliant..
-9. CAMERA.isVideo, boolean whether if the camera is capturing videos or not. Not very reliant..
+8. CAMERA.isPhoto , boolean whether if the camera is capturing pictures or not. 
+9. CAMERA.isVideo, boolean whether if the camera is capturing videos or not. 
 
 Many other parameters are recorded and stored in these csv files  
 
