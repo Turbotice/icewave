@@ -29,7 +29,7 @@ import icewave.tools.weather as weather
 
 #%% Set fig_folder path 
 
-fig_folder = 'U:/Data/0211/DAS/Figures_article/'
+fig_folder = 'U:/Data/0211/DAS/Figures_article/Situation_picture/'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
 

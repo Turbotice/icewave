@@ -303,26 +303,6 @@ def extract_D(mean_CWT,selected_x,s,freq,k,peaks_detec,DAS_water_height,UTC_mid)
 
 #%% Load DAS parameter and Data
 
-def get_DAS_parameters(path2DAS_param,date):
-    """ Collect DAS acquisition parameters 
-    Inputs : - path2DAS_param, string, path to table of DAS acquisition parameters
-             - date, string, date for wich parameters are collected, format 'mmdd'
-    Outputs : - fs, float, sampling frequency
-              - fiber_length, float, fiber length set in the interrogator (in meters)
-              - facq_x, float, spatial acquisition frequency (points/meter) """
-    
-    with open(path2DAS_param,'rb') as pf:
-        param = pickle.load(pf)
-    print('Parameters file loaded')
-    
-    # Set parameters
-    # fs = np.shape(strain_rate)[1] # time sampling frequency 
-    # facq_x = np.shape(strain_rate)[2]/fiber_length # spatial sampling frequency
-    fs = param[date]['fs']
-    fiber_length = param[date]['fiber_length'] # fiber length in meters (set on DAS)
-    facq_x = param[date]['facq_x'] 
-    
-    return fs,fiber_length,facq_x
 
 def process_file(file2load,fig_folder,path2DAS_param,date, DAS_water_height): 
     """ Process a file, computation of Time Fourier Transform, Continuous Wavelet Transform, 
@@ -331,7 +311,7 @@ def process_file(file2load,fig_folder,path2DAS_param,date, DAS_water_height):
              - fig_folder, string, folder where plots are saved 
              - date, string, date of acquisition """
              
-    fs,fiber_length,facq_x = get_DAS_parameters(path2DAS_param,date)
+    fs,fiber_length,facq_x = DS.set_DAS_parameters(path2DAS_param,date)
     
     Nb_minutes = 1 # duration of each stack
     stack_strain,stack_time,UTC_stack,s = DS.stack_data_fromfile(file2load, fiber_length, Nb_minutes)
