@@ -40,7 +40,7 @@ print(osname)
 def find_path(disk='Shack25',year='2025',smb=False,date='0211'):
     if year=='2025':
         if 'macOS' in ostype:
-            disk='F-1'
+            pass#disk='F-1'
         elif 'Linux' in ostype:
             disk='F'#Shack25'
     #print('OS type : '+str(ostype))
