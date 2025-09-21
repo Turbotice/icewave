@@ -411,7 +411,7 @@ import scipy.signal as sig
 
 def filtering(y,fc=0.01,flow=0.0001):
     #correspond to 4Hz and 0.04Hz at fs = 400Hz
-    #correspond to 5Hz and 0.1Hz at fs = 50Hz
+    #correspond to 0.5Hz and 0.1Hz at fs = 50Hz
 
     [b1,a1] = sig.butter(4,fc,'high')
     y_high =  sig.filtfilt(b1,a1,y)
@@ -515,6 +515,9 @@ def time_spectrum_all(t,y,nt=300):
     TF = TF[:,:int(Nt/2)]/np.sqrt(df)/nt  #normalisation de la transformée de Fourier
     return f,TF
 
+def display_spectrum():
+    pass
+    
 def main(args):
     process(args.date,args.step,cutting=args.cut)
     
