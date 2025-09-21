@@ -133,7 +133,7 @@ def get_height(date,t0,tide_data=None):
     # return the tide height in Bic Park,
     # t0 is in UTC time
         tide_data = load_tide_data(date)
-        
+
     ind = np.argmin(np.abs(tide_data[date]['time']+5*3600-t0))
     h = tide_data[date]['tide_height'][ind]
     return h
