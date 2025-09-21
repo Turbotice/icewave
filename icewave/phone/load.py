@@ -77,9 +77,10 @@ def load(folder):
     metalist = glob.glob(folder+'/meta/*.csv')
     datalist = glob.glob(folder+'/*.csv')
 
+    print('toto')
     data = {}
     for meta in metalist:
-        key = os.path.basename(meta).split('.')[0]
+        key = '_'.join(os.path.basename(meta).split('.')[:-1])
         if key=='device':
             data[key]  = read_meta_device(meta)
         elif key=='time':
@@ -89,7 +90,7 @@ def load(folder):
             print('meta csv file unrecognized')
 
     for datafile in datalist:
-        key = os.path.basename(datafile).split('.')[0]
+        key = '_'.join(os.path.basename(datafile).split('.')[:-1])
         if key in table:
             key = table[key]
        #try:
