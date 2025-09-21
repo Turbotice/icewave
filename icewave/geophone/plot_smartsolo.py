@@ -5,22 +5,26 @@ Created on Mon Jan 22 10:38:04 2024
 
 @author: moreaul
 """
-#%matplotlib qt
+%matplotlib qt
 import os
 import shutil
 from obspy import read
 from obspy.core import UTCDateTime
 import matplotlib.pyplot as plt
 from matplotlib.widgets import RectangleSelector
-import mplcursors
 from datetime import datetime
 import numpy as np
 
 
+date = '0221'
+year = '2024'
 
-path2data = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/2024_BICWIN/0210/Geophones'
+
+path2data = f'/YOUR_DATA_PATH_HERE/{year}_BICWIN/{date}/Geophones'
 acqu_numb = '0001'
-geophones_table_path = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/geophones_table'
+geophones_table_path = '/icewave/geophone/geophones_table'
+
+
 
 #warnings.filterwarnings("ignore", category=np.ComplexWarning)
 def fn_svd(signals, fs, xs, name, issaving, *varargin):
@@ -129,36 +133,9 @@ def read_data(path2data):
     
     return streams, miniseed_files
 
-class ZoomHandler:
-    def __init__(self, ax, time_vector, data_vector):
-        self.ax = ax
-        self.time_vector = time_vector
-        self.data_vector = data_vector
-        self.original_xlim = ax.get_xlim()
-        self.original_ylim = ax.get_ylim()
 
-        # Initialize rectangle selector
-        self.rs = RectangleSelector(ax, self.on_rectangle_select, drawtype='box', useblit=True, button=[1],
-                                    minspanx=5, minspany=5, spancoords='pixels', interactive=True)
 
-    def on_click(self, event):
-        if event.dblclick:
-            self.reset_zoom()
 
-    def on_rectangle_select(self, eclick, erelease):
-        # Extract rectangle coordinates
-        x1, y1 = eclick.xdata, eclick.ydata
-        x2, y2 = erelease.xdata, erelease.ydata
-
-        # Apply zoom to the selected area
-        self.ax.set_xlim(min(x1, x2), max(x1, x2))
-        self.ax.set_ylim(min(y1, y2), max(y1, y2))
-        plt.draw()
-
-    def reset_zoom(self):
-        self.ax.set_xlim(self.original_xlim)
-        self.ax.set_ylim(self.original_ylim)
-        plt.draw()
 
 def convert_to_utc_times(trace, time_vector):
     start_time_utc = UTCDateTime(trace.stats.starttime)
@@ -246,17 +223,17 @@ def sort_key(trace):
 # Sort the seismic_data_streams based on the custom sorting function
 seismic_data_streams = sorted(seismic_data_streams, key=sort_key)
 
-# Find the largest start time (t0) and the smallest end time (t1) among all streams
-t0 = max([stream[0].stats.starttime for stream in seismic_data_streams])
-t1 = min([stream[-1].stats.endtime for stream in seismic_data_streams])
+# Find the largest start time (tstart) and the smallest end time (tend) among all streams
+tstart = max([stream[0].stats.starttime for stream in seismic_data_streams])
+tend = min([stream[-1].stats.endtime for stream in seismic_data_streams])
 
-# Truncate all streams between t0 and t1
+# Truncate all streams between tstart and tend
 for i, stream in enumerate(seismic_data_streams):
     for trace in stream:
-        if trace.stats.starttime < t0:
-            trace.trim(t0, t1, pad=True, fill_value=0)
-        elif trace.stats.endtime > t1:
-            trace.trim(t0, t1, pad=True, fill_value=0)
+        if trace.stats.starttime < tstart:
+            trace.trim(tstart, tend, pad=True, fill_value=0)
+        elif trace.stats.endtime > tend:
+            trace.trim(tstart, tend, pad=True, fill_value=0)
 
 
 
@@ -264,180 +241,25 @@ for i, stream in enumerate(seismic_data_streams):
 first_stream = seismic_data_streams[1]
 first_trace = first_stream[0]
 time_vector = convert_to_utc_times(first_trace, first_trace.times())
+datetime_values = [datetime.utcfromtimestamp(t.timestamp) for t in time_vector]
 data_vector = first_trace.data
 start_time_utc = UTCDateTime(first_trace.stats.starttime)
 fs = first_trace.stats.sampling_rate
 
-num_traces_to_plot = 48
-# Calculate datetime values only once outside the loop
-datetime_values = [datetime.utcfromtimestamp(t.timestamp) for t in time_vector]
+channel = 2 #0 for E, 1 for N, 2 for Z.  
+selected_indices = range(channel, len(seismic_data_streams),3)
 
-
-channel_nb = 0 #0 for E, 1 for N, 2 for Z.  
+#----------------------- PLOTTING SELECTED CHANNEL FOR WHOLE RECORDING ------------------ 
 fig, ax = plt.subplots()
-for k in range(0, num_traces_to_plot,3):
-    stream_index =  k+channel_nb  # Adjust index to match Python's 0-based indexing
-    current_stream = seismic_data_streams[stream_index]
+for k in selected_indices:
+    current_stream = seismic_data_streams[k]
     print(current_stream[0])
-
     # Plot the data for each stream using precalculated datetime values
     ax.plot(datetime_values, 
             current_stream[0].data / max(np.abs(current_stream[0].data) )+ k, 
-            label=f"Stream {stream_index}")
-
+            label=f"Stream {k}")
 fig.suptitle(f"Seismic Data - {start_time_utc.strftime('%Y-%m-%d %H:%M:%S')}", fontsize=16)
-
-
 # Create an instance of ZoomHandler
-zoom_handler = ZoomHandler(ax, time_vector, data_vector)
-fig.canvas.mpl_connect('button_press_event', zoom_handler.on_click)
-# Enable interactive labels using mplcursors
-mplcursors.cursor(hover=True)
-# Adjust the backend to make it work better in Spyder
-plt.ion()
-plt.show(block=True)  # Use block=True to make it work better in Spyder
 
 
 
-
-## EXTRACTING AND PLOTTING SIGNALS IN TIME OF INTEREST 
-# Define the desired time range
-t1 = UTCDateTime("2024-02-10T12:50:52") 
-t2 = t1 + 1.5
-
-# Create a matrix to store the seismic data
-num_traces = len(seismic_data_streams)
-num_samples = int((t2 - t1) * first_trace.stats.sampling_rate)
-
-seismic_matrix = np.zeros((num_traces, num_samples))
-
-# Extract the relevant data for each trace and populate the matrix
-for i, stream in enumerate(seismic_data_streams):
-    for j, trace in enumerate(stream):
-        start_sample = int((t1 - trace.stats.starttime) * trace.stats.sampling_rate)
-        end_sample = start_sample + num_samples
-        seismic_matrix[i, :] = trace.data[start_sample:end_sample]
-
-
-
-time_vector = np.linspace(t1.timestamp, t2.timestamp, num_samples)
-
-
-selected_indices = range(2, num_traces_to_plot,3)
-
-fig, ax = plt.subplots()
-
-for k in selected_indices:
-    ax.plot(time_vector, seismic_matrix[k, :] / max(np.abs(seismic_matrix[k, :])) + k, label=f"Stream {k}")
-
-ax.set_xlabel('Time (UTC)')
-ax.set_ylabel('Normalized Seismic Data')
-ax.set_title('Seismic Data for Selected Streams')
-#ax.legend()
-plt.show()
-
-
-
-## PLOTTING WAVENUMBER VS FREQUENCY SPECTRUM
-Nfft_t= 1024
-Nfft_k = 1024
-geohpones_spacing = 3
-fs = 1000
-ks = 2*np.pi/geohpones_spacing
-space_vector = np.arange(0,48,geohpones_spacing)
-
-# Define the spatial and temporal frequencies
-freq_spatial = np.linspace(0,ks/2,Nfft_k)
-freq_temporal = np.linspace(0,fs/2,Nfft_t)
-
-freq_spatial = np.fft.fftfreq(Nfft_k, d=1/ks)
-freq_temporal = np.fft.fftfreq(Nfft_t, d=1/fs)
-
-
-# Create a 2D Fourier transform of the seismic matrix
-seismic_fft = np.fft.fft2(seismic_matrix, (Nfft_k, Nfft_t))
-
-# Shift zero frequency component to the center
-seismic_fft_shifted = np.fft.fftshift(seismic_fft)
-
-# Plot the 2D Fourier transform
-plt.imshow(np.abs(seismic_fft_shifted), extent=(freq_temporal.min(), freq_temporal.max(), freq_spatial.min(), freq_spatial.max()), aspect='auto', cmap='viridis')
-#plt.colorbar(label='Amplitude')
-plt.xlabel('Temporal Frequency (Hz)')
-plt.ylabel('Spatial Frequency')
-plt.title('2D Fourier Transform of Seismic')
-plt.show()
-
-
-# Define three different values of t1
-t1_values = [UTCDateTime("2024-02-10T12:50:52"), UTCDateTime("2024-02-10T12:50:54.75"), UTCDateTime("2024-02-10T12:50:58")]
-
-# Calculate corresponding t2 values
-t2_values = [t1 + 1.5 for t1 in t1_values]
-
-# Create a 3D matrix to store the seismic data
-num_traces = len(seismic_data_streams)
-
-# Determine the maximum number of samples among all time windows
-num_samples_max = max(int((t2 - t1) * seismic_data_streams[0][0].stats.sampling_rate) for t1, t2 in zip(t1_values, t2_values))
-
-seismic_3D_matrix = np.zeros((len(t1_values), num_traces, num_samples_max))
-
-# Extract the relevant data for each trace, for each t1 value, and populate the 3D matrix
-for k, (t1, t2) in enumerate(zip(t1_values, t2_values)):
-    num_samples = int((t2 - t1) * seismic_data_streams[0][0].stats.sampling_rate)
-    
-    for i, stream in enumerate(seismic_data_streams):
-        for j, trace in enumerate(stream):
-            start_sample = int((t1 - trace.stats.starttime) * trace.stats.sampling_rate)
-            end_sample = start_sample + num_samples
-            seismic_3D_matrix[k, i, :num_samples] = trace.data[start_sample:end_sample]
-
-fig, axs = plt.subplots(len(t1_values), 1, figsize=(8, 6), sharex=True, sharey=True)
-
-# Plot seismic data for each time window
-for k, (t1, t2) in enumerate(zip(t1_values, t2_values)):
-    seismic_matrix_slice = seismic_3D_matrix[k, :, :]
-    
-    # Extract time vector
-    num_samples = len(seismic_matrix_slice[0])
-    time_vector = np.linspace(t1.timestamp, t2.timestamp, num_samples)
-    
-    # Plot seismic data for selected traces
-    selected_indices = range(2, num_traces, 3)
-    for trace_idx in selected_indices:
-        axs[k].plot(time_vector, seismic_matrix_slice[trace_idx, :] / max(np.abs(seismic_matrix_slice[trace_idx, :])) + trace_idx, label=f"Stream {trace_idx} - Time Window {k+1}")
-
-    axs[k].set_title(f'Seismic Data - Time Window {k+1}')
-
-axs[-1].set_xlabel('Time (UTC)')
-axs[len(t1_values)//2].set_ylabel('Normalized Seismic Data')
-plt.tight_layout()
-plt.show()
-
-
-# Accumulate Fourier transform values for each time window
-average_fft = np.zeros((Nfft_k, Nfft_t))
-
-for k, t1 in enumerate(t1_values):
-    seismic_matrix_slice = seismic_3D_matrix[k, :, :]
-    
-    seismic_fft = np.fft.fft2(seismic_matrix_slice, (Nfft_k, Nfft_t))
-    seismic_fft_shifted = np.fft.fftshift(seismic_fft)
-
-    # Accumulate Fourier transform values
-    average_fft += np.abs(seismic_fft_shifted)
-
-# Calculate the average
-average_fft /= len(t1_values)
-
-# Plot the averaged spectrum
-fig, ax_avg = plt.subplots(figsize=(8, 6))
-ax_avg.imshow(average_fft, extent=(freq_temporal.min(), freq_temporal.max(), freq_spatial.min(), freq_spatial.max()), aspect='auto', cmap='viridis')
-ax_avg.set_title('Averaged 2D Fourier Transform')
-
-ax_avg.set_xlabel('Temporal Frequency (Hz)')
-ax_avg.set_ylabel('Spatial Frequency')
-
-plt.tight_layout()
-plt.show()

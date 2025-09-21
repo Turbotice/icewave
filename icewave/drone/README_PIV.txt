@@ -1,123 +1,119 @@
-# Utilisation des Codes Drones/PIV_banquise
-
-Ce fichier décrit l'utilisation des différents codes nécessaires au traitement d'une vidéo de Drone par le logiciel PIVlab sur Matlab.
-Il ne décrit que les étapes permettant le traitement total des vidéos. 
+# How to use codes Drones/PIV_processing ?
 
 
-## Passer de la vidéo '.MP4' à un dossier d'images '.tiff' : 
---> convert_multivideo2tiff.py : 
-	Code Python, converti une série de vidéos en un seul dossier contenant l'ensemble des images au format : 'im_000.tiff'
+This file describes different codes that are needed to perform a Digital Image Correlation (DIC) method on a video recorded with an UAV. 
+The DIC algorithm is performed through the PIVlab software of Matlab. 
 
-## Traiter les images avec PIVlab : 
 
-  ### Avant-propos : 
-  --> La Correlation d'Images Digitales (DIC) nécessite l'entrée de plusieurs paramètres : 
-	Dt : pas de temps entre deux images permettant de calculer le champ de vitesse
-	W : taille de fenêtre au sein de laquelle les pixels sont comparés entre l'image i et l'image i+Dt
-	b : pas de temps entre deux comparaisons d'images : u[i] = img[i+1] - img[i] , u[i+1] = img[i+b+1] - img[i+b] 
+## From a video '.MP4' to a folder of images '.tiff' :
+--> convert_mutlivideo2tiff.py : 
+	converts a serie of video into a folder of images. Images are named by index, starting from 0. 
 
-  --> Règles permettant une bonne PIV : 
-  Sur l'ensemble de la zone d'intérêt, le champ de vitesse calculé doit satisfaire les conditions suivantes : 
-	- u > 0.1 pix/frame => distinction du signal et du bruit
-	- u < W/4 => le déplacement des pixels ne doit pas être trop grand par rapport à la taille de chaque boîte
-	- u < ?? Eviter une trop grande rotation des champs de vitesse...
+## Processing images using PIVlab : 
 
-  ### Déterminer le pas de temps Dt nécessaire entre deux images : 
-  --> Ouvrir PIVlab, importer des images séparées de [0,1,2,3,4,5,6,7...] images. Exécuter l'analyse PIVlab avec les paramètres souhaités,
-	pre-processing des images, nombre de passage etc... 
-  --> Balayer les champs de vitesse obtenus, sélectionner le champ de vitesse permettant d'avoir un signal suffisamment fort 
-	dans la zone d'intérêt : u > 0.1 pix/frame. 
-	Cela permet de distinguer le signal du bruit environnant. 
-	Le champ de vitesse ne doit pas être trop élevé u < W/4, sinon la taille de fenêtre est trop faible pour le pas de temps Dt choisi... 
-  --> Idéal : choisir Dt le plus faible possible, permettant d'assurer u > 0.1 pix/frame pour l'ensemble de la zone étudiée. 
+  ### Before starting : 
+  --> DIC method needs several parameters : 
+	Dt: time step between two images that are compared
+	W: window size, in pixels, within which pixels of image i are compared to the corresponding pixels of image i+Dt
+	b: time step between two image comparison : u[i] = img[i+1] - img[i] , u[i+1] = img[i+b+1] - img[i+b]
 
-  --> Cette étape peut être répétée sur plusieurs séquences d'images !! 
 
-  ### Réaliser la PIV
-  --> PIV_processing/automaticcycle_banquise_drone.m
-	Permet de réaliser la PIV en utilisant PIVlab en parallel-computing
-	Bien prendre garde à sélectionner le fichier que l'on souhaite traiter. Donc exécuter la première cellule du code avant de passer à la suite. 
-	Le code créer un fichier .mat contenant : le champ de vitesse (u,v), la position des boîtes de PIV en pixel ainsi que les tables de paramètres (s et p) utilisées 
-	pour effectuer la PIV .
-	Le code appelle la fonction PIVlab_commandline_parallel_stereo décrite ci-dessous
+  --> Rules to follow : 
+  The computed displacement field must respect the following conditions : 
+	- u > 0.1 pix/frame => sufficiently high signal/noise ratio 
+	- u < W/4 => pixel displacements must not be too high compared to the window size
 
+
+  ### How to determine time step between two images ? 
+  --> Open PIVlabe, import a serie of images (maximum 20 images) which are successively separated by [1,2,3,4,5,6,7...] images. Execute the PIVlab analysis with
+	the desired parameters, pre-processing parameters, etc...
+  --> Have a look at the obtained velocity fields for the different time steps. 
+  --> Choose the value of Dt such that the computed fields check the rules previously mentionned
+  --> This step can be repeated several times, with different sequences of images in order to define the best time step. 
+
+
+
+ ### Perform PIV
+ --> PIV_processing/automaticcycle_banquise_drone.m
+	Enables to perform DIC algorithm using PIVlab and parallel computing. 
+	This script creates a .mat file which contains : the computed velocity fields (u,v), PIV boxes position in pixels and tables of parameters (s and p) which 
+	are used for the DIC algorithm
+
+	This script calls function PIVlab_commandline_parallel_stereo described below
 
   --> PIVlab_commandline_parallel_stereo.m
-	Cette fonction prend plusieurs arguments :
-	 - directory = fichier où se trouve les images .tiff à traiter (le nom complet du fichier doit être renseigné)
-	 - reference = image de référence si l'on souhaite effectuer la PIV à partir d'une même image de référence, si égal à '', alors on compare les images 
-		séparées de Dt deux à deux
-	 - N = nombre de frames à process, si N = 0 alors la fonction process l'ensemble des images se trouvant dans le directory 
-	 - i0 = première image à partir de laquelle on réalise la PIV
-	 - Dt = pas de temps décrit précédemment
-	 - b = décrit précédemment
-	 - s = table de paramètres utiles à la réalisation de la PIV
-	 - p = table de paramètres utiles au pre-processing des images 
+	This function takes into account several arguments : 
+	 - directory = file where .tiff images are saved 
+	 - reference = reference image if we want to perform DIC using a single image as a reference frame, if reference = '', then images separated by time step 
+	Dt are compared
+	 - N = number of frames to process, if N = 0, the function process all images that are in the directory
+	 - i0 = first image from which we start DIC
+	 - Dt = time step, detailed above
+	 - b, detailed above
+	 - s = table of parameters used to perform PIV
+	 - p = table of parameters for images pre-processing 
 
-	 La fonction appelle piv_analysis.m 
-	 
-	 Puis on réalise une boucle sur l'ensemble des images, les images sont preprocess à l'aide de la fonction PIVlab_preproc qui prend en argument l'image et la table de paramètres p. 
-	 - PIVlab_preproc est une fonction implémentée dans PIVlab, permettant de préprocess une image à partir d'une table de paramètres donnée (cf documentation de PIVlab_preproc). 
-	 Dans notre cas, nous utilisons uniquement une accentuation de contraste en utilisant un algorithme de CLAHE (Contrast Enhancement). 
-	 Le contraste est alors localement accentué au sein d'une fenêtre de taille définie dans la table de paramètres p 'CLAHE size'. 
-	 
-	 La fonction appelle piv_FFTmulti (décrite ci-dessous) grâce à laquelle on récupère le champ de vitesse (u0,v0) entre les deux images comparées. 
-	 - piv_FFTmulti est une fonction implémentée dans PIVlab, elle permet de réaliser la PIV et d'obtenir le champ de vitesse associé après corrélation entre deux images.
-	 
-	 
-  --> piv_analysis.m 
-	Permet de réaliser la PIV sur une paire d'images (filename1, filename2). Les actions réalisées par la fonction sont entièrement décrites dans la fonction Matlab. 
-	Cette fonction peut être utilisée à l'aide du script 'PIV_image_pair.m'
-	
+	This function calls piv_analysis.m, described below. 
 
-  ### Post-processing des champs de vitesse brute 
+	Then, we perform a loop over all images. Images are preprocessed by function PIVlabe_preproc which take as arguments an image and
+	the table of parameters p. In our case we only use a contrast enhancement algorithm (CLAHE). Contrast is locally increased within a window of finite size,
+	defined in table of parameters p ('CLAHE size').
+
+	We then use piv_FFTmulti (described below) thanks to which we compute displacement field (u0,v0) between the two compared images. 
+
+  --> piv_analysis.m
+	Perform DIC algorithm on a pair of images (filename1, filename2). Processing is described in the Matlab function
+	 
+
+
+
+### Post-processing of raw displacement fields 
   --> Main_data_structuration.m
-	Ce script permet de traiter et ordonner les données brutes obtenues à partir de PIVlab. Les données brutes sont traitées par la fonction 'PIV_banquise_postprocessing.m' 
-	décrite ci-dessous.
-	Les données traitées ainsi que les paramètres de PIV sont ensuite assemblés au sein d'une structure matlab, grâce à la fonction 'genere_structure_banquise.m'. 
-	Différents champs associés aux paramètres du drone, horaires et positions GPS sont ajoutés à cette structure, formant la structure '*_total_processed.mat'
+	This script order the raw data as well as the parameters used in PIVlabe into a matlab structure thanks to functions 
+	PIV_banquise_postprocessing.m and genere_structure_banquise.m
+	
+	Different fields, parameters and time related to the drone flight are added to the structure which is saved under the format '*_total_processed.mat'
 
-	A partir de cette première structure, il est possible de générer une nouvelle structure à l'aide des fonctions 'scaling_structure.m' et 'scaling_structure_oblique.m'
-	Ces fonctions permettent de mettre à l'échelle les champs de déplacement mesurés (y compris les champs de déplacement verticaux dans l'hypothèse où la surface filmée 
-	est plane). A l'issue de l'une de ces fonctions, une structure matlab '*_scaled.mat' est sauvegardée. 
+	From this first structure, a new structure, containing scaled velocity fields can be created using functuons 
+	scaling_structure.m and scaling_structure_oblique.m. 
+	These functions enable to scale the measured displacement fields. In the case of an oblique view, pitch angle not equal to 90°, vertical displacement field 
+	is computed. This scaled version of the structure is saved under the name '*_scaled.mat'.
 
-	Enfin l'ensemble des paramètres utilisés pour traiter les données est sauvegardé dans un fichier .txt à l'aide de la fonction 'saving_parameters.m'
+	Finally all parameters used during the process are saved in a .txt file thanks to the function saving_parameters.m
+
 
 
   --> PIV_banquise_postprocessing.m
-	Réalise le post-process des données brutes, obtenues à partir de PIVlab_commandline_parallel_stereo.m. Ce script prend comme argument :
-	- le champ de vitesse brut (u,v) calculé par la PIV et les tables de paramètres utilisées (s,p)
-	- W, la fenêtre utilisée par la PIV en pixels (dernière taille de la zone d'interrogation utilisée)
-	- N, le nombre de frames à traiter, si N = 0, alors il faut traiter toutes le frames
+	Post-process raw displacement fields obtained by function PIVlab_commandline_parallel_stereo.m
+	This script takes as arguments : 
+	- raw displacement fields (u,v)
+	- parameters tables (s and p)
+	- W, window size, previously described
+	- N, number of frames to post-process, if N = 0, all frames must be post-processed
 
-	Il renvoie un champ de vitesse (u_filt,v_filt) filtré. 
-
-	Le script applique une filtre médian à l'ensemble du champ de vitesse, retire les données abérrantes puis réalise une interpolation afin de remplacer les données abbérantes par des valeurs plus plausibles
-	La méthode de filtrage utilisée par ce script est décrite dans les articles scientifiques suivants : 'Universal outlier detection for PIV data' Westerweel & Scarano (2005)
+	It returns a filtered velocity field (u_filt,v_filt). 
+	This script applies a median filter to the displacement fields and then replace outliers by interpolated values. Methods are described in 
+	article 'Universal outlier detection for PIV data' Westerweel & Scarano (2005) https://doi.org/10.1007/s00348-005-0016-6
 
 
   --> genere_structure_banquise.m 
+	Create a matlab structure (equivalent to a Python dictionnary) from a .mat file created by code automaticcycle_banquise_drone.m. 
+	All inputs and outputs are defined in the function
+	
+	It is possible to supress PIV boxes on the image boundaries by using parameter a. This can be useful to always have all boxes of the same size. 
 
-	Fonction permettant de créer une structure Matlab (un dictionnaire) à partir d'un fichier .mat généré par le code automaticcycle_banquise_drone.m. 
-	Les arguments de cette fonction sont convenablement définis dans la fonction. 
-	
-	Elle retourne une structure Matlab contenant 
-	- le champ de vitesse (m.Vx , m.Vy) dimensions [nx,ny,nt] (non scalés)
-	- la grille spatiale utilisée pour la PIV (m.x , m.y) 
-	- d'autres paramètres...
-	
-	Il est possible de supprimer les boîtes de PIV situées sur le contour de l'image étudiée en jouant sur le paramètre a. Si a = 1, alors toutes les boîts 
-	situées sur le contour sont supprimées. Si a = 2, le contour formé par les deux séries de boîtes de PIV les plus à l'extérieures sont supprimées. 
-	Cela peut être utile pour avoir toujours la même taille de boîte de PIV (en pixel). 
-	
+
   --> scaling_structure.m / scaling_structure_oblique.m
 	
-	Ces fonctions permettent de mettre à l'échelle les champs de déplacement mesurés (y compris les champs de déplacement verticaux dans l'hypothèse où la surface filmée 
-	est plane). Elles ajoutent des champs à une structure pré-existante contenant : les coordonnées spatiales x,y en mètres, le temps t et le temps international t_UTC,
-	ainsi que les vitesses de déplacement mesurées par la PIV. 
+	These function enable the scaling of measured velocity fields. 
+	New fields are added to the pre-existing structure : 
+		+ spatial coordinates x and y in meters, 
+		+ experimental time t and international time t_UTC
+		+ Vx, Vy and Vz, scaled velocity fields measured by PIV
 
-	Dans le cas d'une vidéo verticale, les champs horizontaux Vx et Vy sont mis à l'échelle. Dans le cas d'une vue oblique, seul le champ de déplacement vertical Vz
-	est mis à l'échelle
+	In the case of a vertical view (camera pitch angle of 90°), horizontal velocity fields Vx and Vy are scaled. In the case of an oblique view, 
+	a vertical velocity field Vz is computed and scaled, horizontal fields are not to scale in this particular case. 
+
 
 
 

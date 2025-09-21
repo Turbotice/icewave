@@ -153,6 +153,10 @@ def write_dict_h5_rec(h5group,dict_obj):
             dt = h5py.string_dtype(encoding = 'utf-8')
             h5group.create_dataset(key, data = np.array(value,dtype = object),dtype = dt)
             
+        elif isinstance(value, (int, float, np.integer, np.floating)):
+                # store scalars directly
+                h5group.create_dataset(key, data=value)
+            
         else:
             raise TypeError(f"Unsupported data type for key '{key}': {type(value)}")
             
