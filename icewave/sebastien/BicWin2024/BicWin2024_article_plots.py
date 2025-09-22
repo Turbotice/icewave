@@ -241,7 +241,8 @@ cbar.set_label(r'$|\hat{V}_x| (k,\omega) \; \mathrm{(u.a.)}$',labelpad = 5)
 
 #%% Load initial image 
 
-path2img = path2data + 'DJI_20240226213559_0938_D_exemple.tiff'
+# path2img = path2data + 'DJI_20240226213559_0938_D_exemple.tiff'
+path2img = 'K:/Share_hublot/Data/0226/Drones/mesange/23-waves_012/DJI_20240226213559_0938_D_exemple.tiff'
 
 img = cv.imread(path2img)
 img = cv.cvtColor(img,cv.COLOR_BGR2RGB)
@@ -262,7 +263,9 @@ with h5py.File(file2load) as fmat :
     print('Top-level keys : ', list(fmat.keys()))
     Harm = mat2py.mat_to_dict(fmat['S_disp'],fmat['S_disp'])
     
-    
+#%% Load water height associated to drone GPS position 
+
+
 #%% Plot Harmonics with colorbar 
 
 k_th = np.linspace(0,2,100)
@@ -447,9 +450,9 @@ ax4.set_xlim(0.5/factor_2pi,6/factor_2pi)
 ax4.set_xscale('log')
 ax4.set_yscale('log')
 
-figname = fig_folder + 'Subplot_Drone_wave_field_kf'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
+# figname = fig_folder + 'Subplot_Drone_wave_field_kf'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
 
 
 #%% Fit data with shallow water dispersion relation 
