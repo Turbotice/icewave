@@ -136,7 +136,7 @@ def process_file(base,date,drone_ID,exp_ID, flip_field = 0, idx_file = 0):
 
 
 def main():
-    base = 'E:/Rimouski_2024/Data/'
+    base = 'F:/Rimouski_2024/Data/'
 
     date = '0226'
     drone_ID = 'mesange'

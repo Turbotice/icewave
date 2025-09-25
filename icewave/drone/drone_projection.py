@@ -164,27 +164,27 @@ def georectify_image(img,H,alpha_0,focale):
     
 #------------------------------------------------------------------------------------------------------------------------------
 
-def get_angles(xpix,ypix,x0,y0,focal):
-    """ Compute angles with which a pixel (xpix,ypix) is seen. Upper left corner of the image is chosen as the origin 
-    of the camera sensor coordinate system
-    Inputs : - xpix, float or numpy array, x-coordinate on camera sensor 
-             - ypix, float or numpy array, y-coordinate on camera sensor 
-             - x0, float, x-coordinate of camera sensor center 
-             - y0, float, y-coordinate of camera sensor center 
-             - focal, float, camera focal length (in pixels) 
+# def get_angles(xpix,ypix,x0,y0,focal):
+#     """ Compute angles with which a pixel (xpix,ypix) is seen. Upper left corner of the image is chosen as the origin 
+#     of the camera sensor coordinate system
+#     Inputs : - xpix, float or numpy array, x-coordinate on camera sensor 
+#              - ypix, float or numpy array, y-coordinate on camera sensor 
+#              - x0, float, x-coordinate of camera sensor center 
+#              - y0, float, y-coordinate of camera sensor center 
+#              - focal, float, camera focal length (in pixels) 
     
-    Outputs : - beta_x, float or numpy array, angle, with respect to optical axis going throught center of 
-    camera sensor, along x-axis
-             - beta_y, float or numpy array, angle, with respect to optical axis going throught center of 
-    camera sensor, along y-axis
-    - beta_r, float or numpy array, angle, with respect to optical axis going throught center of 
-    camera sensor without any projection""" 
+#     Outputs : - beta_x, float or numpy array, angle, with respect to optical axis going throught center of 
+#     camera sensor, along x-axis
+#              - beta_y, float or numpy array, angle, with respect to optical axis going throught center of 
+#     camera sensor, along y-axis
+#     - beta_r, float or numpy array, angle, with respect to optical axis going through center of 
+#     camera sensor without any projection""" 
             
-    beta_x = np.arcsin((xpix - x0)/focal)
-    beta_y = np.arcsin((ypix - y0)/focal)
-    beta_r = np.arcsin(np.sqrt((xpix - x0)**2 + (ypix - y0)**2)/focal)
+#     beta_x = np.arcsin((xpix - x0)/focal)
+#     beta_y = np.arcsin((ypix - y0)/focal)
+#     beta_r = np.arcsin(np.sqrt((xpix - x0)**2 + (ypix - y0)**2)/focal)
 
-    return beta_x,beta_y,beta_r
+#     return beta_x,beta_y,beta_r
 
 #----------------------------------------------------------------------------------------------------------------------------
 
@@ -202,7 +202,7 @@ def get_theta_phi(xpix,ypix,x0,y0,focal):
               - phi, float or numpy array, angle with respect to the line passing through the camera sensor center 
               and the point of coordinate (0,1) (cf np.arctan2)""" 
               
-    theta = np.arcsin(np.sqrt((xpix - x0)**2 + (ypix - y0)**2)/focal)
+    theta = np.arctan(np.sqrt((xpix - x0)**2 + (ypix - y0)**2)/focal)
     phi = np.arctan2((ypix-y0),(xpix-x0))
 
     return theta,phi
@@ -406,7 +406,8 @@ def backward_projection(fun,points,y0,h,alpha_0,focale,fps,Dt):
     """
     
     Fp = h*focale*fun(points)/((points[:,1] - y0)*np.cos(alpha_0) + 
-                              focale*np.sin(alpha_0))/((points[:,1] - y0 + fun(points))*np.sin(alpha_0) - focale*np.cos(alpha_0))*fps/Dt
+                              focale*np.sin(alpha_0))/((points[:,1] - y0 + fun(points))*np.sin(alpha_0) 
+                                                       - focale*np.cos(alpha_0))*fps/Dt
     
     return Fp 
 

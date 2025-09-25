@@ -23,6 +23,9 @@ import icewave.sebastien.set_graphs as set_graphs
 import icewave.tools.rw_data as rw
 import icewave.tools.weather as weather
 
+plt.rc('text', usetex=True)
+plt.rc('font', family='serif', serif='Computer Modern')
+
 
 #%% Load picture
 

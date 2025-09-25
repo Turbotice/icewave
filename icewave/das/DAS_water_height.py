@@ -142,9 +142,9 @@ cbar.set_label(r'$H \; \mathrm{(m)}$')
 
 imsh.set_clim([2.0,5.5])
 
-figname = f'{fig_folder}DAS_water_height_{date}'
-plt.savefig(f'{figname}.png',bbox_inches = 'tight')
-plt.savefig(f'{figname}.pdf',bbox_inches = 'tight')
+# figname = f'{fig_folder}DAS_water_height_{date}'
+# plt.savefig(f'{figname}.png',bbox_inches = 'tight')
+# plt.savefig(f'{figname}.pdf',bbox_inches = 'tight')
 
 
 

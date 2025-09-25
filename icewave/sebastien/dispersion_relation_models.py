@@ -45,7 +45,7 @@ def shallow_water(k,H,g = 9.81):
 def heavy_water(k,h_ice,H,ratio,g = 9.81):
     """ Shallow water dispersion relation, taking into account sea ice weight"""
     
-    omega = np.sqrt(g*k*np.tanh(k*H)/(1 + h_ice*k*ratio))
+    omega = np.sqrt(g*k*np.tanh(k*H)/(1 + h_ice*k*ratio*np.tanh(k*H)))
     return omega
 
 def hydroelastic_squire(k,h_ice,H,E,nu,g = 9.81,rho_w = 1000):
