@@ -213,7 +213,8 @@ def get_theta_phi(xpix,ypix,x0,y0,focal):
 #--------------------------------------------------------------------------------------------------------------------------
 
 def get_FOV_vertices(Lx,Ly,h,alpha_0,focale):
-    """ Return coordinates of the 4 vertices of a given image. Coordinates are given in the local coordinate system of the drone, 
+    """ Return coordinates of the 4 vertices of a given image. Coordinates are given in the local coordinate system 
+    of the drone, 
     choosing point corresponding to the camera center as the origin 
     Inputs : 
         - Lx : horizontal dimension of the studied image (pixels)
