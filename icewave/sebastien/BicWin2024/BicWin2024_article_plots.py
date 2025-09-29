@@ -14,6 +14,7 @@ import matplotlib.colors as colors
 import matplotlib.gridspec as gridspec
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import scipy.optimize
+from datetime import datetime, time , timedelta
 
 import cv2 as cv
 import glob
@@ -24,6 +25,7 @@ import h5py
 import icewave.tools.matlab2python as mat2py
 import icewave.tools.matlab_colormaps as matcmaps
 import icewave.tools.Fourier_tools as FT
+import icewave.tools.weather as weather
 
 # import seb plotting package 
 import icewave.sebastien.set_graphs as set_graphs
@@ -95,6 +97,11 @@ def bound_harmonicN(k,N,h_w):
     omegaN = np.sqrt(N*9.81*k*np.tanh(h_w*k/N))
     return omegaN
 
+def heavy_water(k,h_ice,H,ratio,g = 9.81):
+    """ Shallow water dispersion relation, taking into account sea ice weight"""
+    
+    omega = np.sqrt(g*k*np.tanh(k*H)/(1 + h_ice*k*ratio*np.tanh(k*H)))
+    return omega
 
     
 #%% Show a frame of DIC and fit it by a quadratic function 
@@ -241,7 +248,8 @@ cbar.set_label(r'$|\hat{V}_x| (k,\omega) \; \mathrm{(u.a.)}$',labelpad = 5)
 
 #%% Load initial image 
 
-path2img = path2data + 'DJI_20240226213559_0938_D_exemple.tiff'
+# path2img = path2data + 'DJI_20240226213559_0938_D_exemple.tiff'
+path2img = 'K:/Share_hublot/Data/0226/Drones/mesange/23-waves_012/DJI_20240226213559_0938_D_exemple.tiff'
 
 img = cv.imread(path2img)
 img = cv.cvtColor(img,cv.COLOR_BGR2RGB)
@@ -262,19 +270,27 @@ with h5py.File(file2load) as fmat :
     print('Top-level keys : ', list(fmat.keys()))
     Harm = mat2py.mat_to_dict(fmat['S_disp'],fmat['S_disp'])
     
+#%% Load water height associated to drone GPS position 
+
+path2bath_interp = 'U:/Data/Bathymetrie/linear_interpolator_bathymetry.pkl'
+# load interpolator 
+with open(path2bath_interp,'rb') as pf:
+    interp_H = pickle.load(pf)
     
+H = weather.get_bathymetry_GPS((S['GPS']['latitude'],S['GPS']['longitude']), interp_H)
+
+UTC_str = '2024-02-26T20-35-59'
+format_date = '%Y-%m-%dT%H-%M-%S'
+UTC0 = datetime.strptime(UTC_str,format_date)
+tide = weather.tide_from_datetime(UTC0,disk = 'Elements', year = '2024')
+
+hw = H + tide
 #%% Plot Harmonics with colorbar 
-
-k_th = np.linspace(0,2,100)
-omega1 = bound_harmonicN(k_th, N = 1, h_w = 5.0)
-
 
 fig, ax = plt.subplots()
 scatter = ax.scatter(Harm['k'][Harm['closest_harmonic'] == 1], Harm['omega'][Harm['closest_harmonic'] == 1],
                      c = Harm['A'][Harm['closest_harmonic'] == 1], s = 70, cmap = new_blues,
-                     edgecolors = 'k',zorder = 2)
-
-ax.plot(k_th,omega1,'--', color = 'blue',zorder = 1)
+                     edgecolors = 'k',zorder = 1)
 
 cbar = plt.colorbar(scatter,ax = ax)
 cbar.set_label(r'$|\hat{V}_x| (k,\omega) \; \mathrm{(u.a.)}$',labelpad = 5.0)
@@ -282,10 +298,19 @@ ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$', labelpad = 5)
 ax.set_ylabel(r'$\omega \; \mathrm{(rad.s^{-1})}$', labelpad = 5)
 
 N = 1
-hw_min = scipy.optimize.curve_fit(lambda x,h_w : bound_harmonicN(x,N,h_w),Harm['k'][Harm['closest_harmonic'] == 1], 
+# hw_min = scipy.optimize.curve_fit(lambda x,h_w : bound_harmonicN(x,N,h_w),Harm['k'][Harm['closest_harmonic'] == 1], 
+#                                    Harm['omega'][Harm['closest_harmonic'] == 1])
+h_ice = 0.05 # ice thickness in meters 
+ratio = 917/1030 # ratio rho_ice/rho_w
+hw_min = scipy.optimize.curve_fit(lambda x,h_w : heavy_water(x,h_ice,h_w,ratio),Harm['k'][Harm['closest_harmonic'] == 1], 
                                    Harm['omega'][Harm['closest_harmonic'] == 1])
 
 print(f'Best fit : hw = {hw_min[0]} +- {2*np.sqrt(hw_min[1])}')
+
+k_th = np.linspace(0,2,100)
+omega1 = bound_harmonicN(k_th, N = 1, h_w = hw_min[0])
+
+ax.plot(k_th,omega1,'--', color = 'tab:red',zorder = 2)
 
 #%% Create quadrant figure for article 
 
@@ -447,9 +472,9 @@ ax4.set_xlim(0.5/factor_2pi,6/factor_2pi)
 ax4.set_xscale('log')
 ax4.set_yscale('log')
 
-figname = fig_folder + 'Subplot_Drone_wave_field_kf'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
+# figname = fig_folder + 'Subplot_Drone_wave_field_kf'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
 
 
 #%% Fit data with shallow water dispersion relation 

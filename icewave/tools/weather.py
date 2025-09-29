@@ -134,7 +134,7 @@ def generate_tide_array(disk = 'Backup25',year = '2024'):
             
     
 if __name__ == '__main__':
-    generate_tide_array(disk = 'Backup25')
+    generate_tide_array(disk = 'Elements')
             
 
 

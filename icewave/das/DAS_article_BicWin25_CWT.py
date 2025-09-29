@@ -12,6 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt 
 from matplotlib.collections import LineCollection
 import matplotlib.colors as colors
+import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import pickle
 from datetime import datetime, time , timedelta
@@ -34,6 +35,13 @@ import icewave.tools.weather as weather
 
 # PARULA COLORMAP 
 parula_map = matcmaps.parula()
+
+full_yarg = mpl.colormaps['gist_yarg'].resampled(256)
+new_yarg = colors.ListedColormap(full_yarg(np.linspace(0.1,1,256)))
+
+full_blues = mpl.colormaps['Blues'].resampled(256)
+new_blues = colors.ListedColormap(full_blues(np.linspace(0.2,1,256)))
+
 
 global g
 g = 9.81
@@ -299,6 +307,60 @@ def extract_D(mean_CWT,selected_x,s,freq,k,peaks_detec,DAS_water_height,UTC_mid)
 
     return D, err_D
 
+
+#----------------------------------------------------------------------------------------------------------------------
+
+def flexural_day(D_results):
+    """ Compute mean value of flexural values for each position along optical fiber 
+    Inputs : - D_results, dictionnary, containing keys 'D' and 'err_D' which are the flexural modulus and 
+    associate error obtained from the fit. 
+    
+    Outputs : - mean_filtered, array like, mean value of flexural modulus at each position, getting rid off outliers
+              - main_std, array like, standard deviation computed using both uncertainty from type A (std/np.sqrt(N))
+            and type B (average std over all fits for each position)
+    """
+    
+    keys = list(D_results.keys())
+    # create an array of flexural modulus and error
+    D_array = np.zeros((len(D_results[keys[0]]['D']),len(keys)))
+    errD_array  = np.zeros((len(D_results[keys[0]]['D']),len(keys)))
+    for i,key in enumerate(keys) :
+        D_array[:,i] = D_results[key]['D']
+        errD_array[:,i] = D_results[key]['err_D']
+        
+    # Compute average of flexural modulus for each position 
+    mean_D = np.nanmean(D_array, axis = 1)
+    std_D_time = np.nanstd(D_array,axis = 1)
+    
+    # get rid off outliers 
+    filtered_D = np.zeros((D_array.shape))
+    for j in range(D_array.shape[1]):
+        test = abs(D_array[:,j] - mean_D) > 2*std_D_time 
+        for i in range(D_array.shape[0]):
+            if test[i] == 1:
+                filtered_D[i,j] = None
+                print('Outliers detected')
+            else : 
+                filtered_D[i,j] = D_array[i,j]
+        
+    filtered_errD = np.zeros((errD_array.shape))
+    for j in range(D_array.shape[1]):
+        test = abs(D_array[:,j] - mean_D) > 2*std_D_time 
+        for i in range(D_array.shape[0]):
+            if test[i] == 1:
+                filtered_errD[i,j] = None
+            else : 
+                filtered_errD[i,j] = errD_array[i,j]
+            
+    mean_filtered = np.nanmean(filtered_D,axis = 1)
+    std_filtered = np.nanstd(filtered_D,axis = 1) # standard deviation type A
+    
+    std_b = np.nanmean(filtered_errD, axis = 1) # standard deviation type b (mean std over each fit for a given position)
+    
+    main_std = np.sqrt((std_filtered/np.sqrt(filtered_D.shape[0]))**2 + std_b**2)
+    
+    return mean_filtered, main_std 
+
 #%% Load DAS parameters and data
 
 # Load parameters for DAS
@@ -326,7 +388,6 @@ if date in date_downsampling:
     stack_strain,stack_time,UTC_stack = DS.time_decimation_stack_strain(stack_strain,
                                                                         stack_time,UTC_stack,down_sampling_factor)
     print(f'New value of sampling frequency, fs = {fs:.2f}')
-
 
 #%% Show spatio-temporal 
 
@@ -455,7 +516,9 @@ fig, ax = plt.subplots(2,2,figsize = (12,9), layout = 'constrained')
 
 # Plot spatio 
 quad_spatio = (0,0)
-imsh = ax[quad_spatio].imshow(stack_strain[chunk,:,:].T,origin = 'lower',aspect = 'auto',norm = 'linear', cmap = 'seismic',
+max_spatio = np.max(abs(stack_strain[chunk,:,:]))
+imsh = ax[quad_spatio].imshow(stack_strain[chunk,:,:].T/max_spatio,
+          origin = 'lower',aspect = 'auto',norm = 'linear', cmap = 'seismic',
           interpolation = 'gaussian', extent = extents)
 ax[quad_spatio].set_ylim([0,fiber_length])
 
@@ -467,14 +530,17 @@ ax[quad_spatio].set_ylim([0,fiber_length])
 ax[quad_spatio].set_xlabel(r'UTC time')
 ax[quad_spatio].set_ylabel(r'$x \; \mathrm{(m)}$')
 
-imsh.set_clim([-1e4,1e4])
+imsh.set_clim([-1e4/max_spatio,1e4/max_spatio])
+imsh.set_rasterized(True)
 
-cbar.set_label(r'$\dot{\epsilon} \; \mathrm{(u.a.)}$')
-cbar.formatter.set_powerlimits((3, 3))
-cbar.update_ticks()
+# cbar = plt.colorbar(imsh,ax = ax[quad_spatio], shrink = 1, pad = 0.002)
 
-offset_text = cbar.ax.yaxis.get_offset_text()
-offset_text.set_x(1)
+# cbar.set_label(r'$\dot{\epsilon} \; \mathrm{(u.a.)}$')
+# cbar.formatter.set_powerlimits((3, 3))
+# cbar.update_ticks()
+
+# offset_text = cbar.ax.yaxis.get_offset_text()
+# offset_text.set_x(1)
 
 # Plot filtered signal
 quad_filtered = (0,1)
@@ -505,10 +571,12 @@ ax[quad_wavelet].legend()
 
 # Plot scaleogram
 quad_scaleo = (1,1)
-imsh = ax[quad_scaleo].pcolormesh(s,k,abs(cwtmatr[:,:]),cmap = 'gist_yarg',shading = 'auto',norm = 'linear')
+max_scaleo = np.max(abs(cwtmatr))
+imsh = ax[quad_scaleo].pcolormesh(s,k,abs(cwtmatr[:,:])/max_scaleo,cmap = parula_map,shading = 'auto',norm = 'linear')
 ax[quad_scaleo].set_xlabel(r'$x \; \mathrm{(m)}$')
 ax[quad_scaleo].set_ylabel(r'$k \; \mathrm{(rad.m^{-1})}$')
-imsh.set_clim([0,6000])
+imsh.set_clim([0,1])
+imsh.set_rasterized(True)
 
 ax[quad_scaleo].set_ylim([k.min(),1.0])
 ax[quad_scaleo].set_yscale('log')
@@ -517,25 +585,227 @@ ax[quad_scaleo].set_yscale('log')
 # cax = divider.append_axes("right", size="2%", pad=0.1)
 # cbar = plt.colorbar(imsh,cax = cax)
 
-cbar = plt.colorbar(imsh,ax = ax[quad_scaleo], shrink = 1)
+cbar = plt.colorbar(imsh,ax = ax[quad_scaleo], shrink = 1, pad = 0.02)
 
-cbar.set_label(r'$\hat{\dot{\epsilon}} \; \mathrm{(u.a.)}$')
-cbar.formatter.set_powerlimits((3, 3))
-cbar.update_ticks()
+# cbar.set_label(r'$\hat{\dot{\epsilon}} \; \mathrm{(u.a.)}$')
+# cbar.formatter.set_powerlimits((3, 3))
+# cbar.update_ticks()
 
-# figname = f'{fig_folder}Quadrant_spatio_wavelet_scaleo_f_{freq_txt}_{label_UTC0}_chunk_{chunk}'
-# plt.savefig(figname + '.pdf', bbox_inches='tight')
-# plt.savefig(figname + '.svg', bbox_inches='tight')
-# plt.savefig(figname + '.png', bbox_inches='tight')
+figname = f'{fig_folder}Quadrant_spatio_wavelet_scaleo_f_{freq_txt}_{label_UTC0}_chunk_{chunk}'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.svg', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
 
 #%% Compute Continuous Wavelet Transform for all frequencies and all chunks
 
+# parameters for CWT
+sampling_period = 1/facq_x #spatial sampling wavelength
+#logarithmic scales
+scales = np.geomspace(2,1024,num = 100)
+
+# compute normalized wavenumber (sigma)
+wavelet = 'cmor1.5-1.5' # mother wavelet 
+norm_sigma = pywt.scale2frequency(wavelet,scales)
+wavelength_sampled = sampling_period/norm_sigma # typical wavelength that will be sampled 
+print(f'Wavelengths sampled : min = {wavelength_sampled[0]:.2f}, max = {wavelength_sampled[-1]:.2f}')
+
+mean_CWT,k = CWT_all_chunks(FFT_t,scales,wavelet,sampling_period)
+
+#%% Save mean_CWT in a dictionnary
+
+CWT_results = {}
+CWT_results['mean_CWT'] = mean_CWT
+CWT_results['k'] = k
+CWT_results['f'] = freq
+CWT_results['wavelet'] = wavelet
+CWT_results['scales'] = scales
+CWT_results['label'] = label_UTC0
+
+filename = f'{fig_folder}CWT_{label_UTC0}.h5'
+rw.save_dict_to_h5(CWT_results, filename)
+
+#%% Load DAS water height data
+
+file_water_height = f'{main_path}/Data/{date}/DAS/fiber_water_height_GPS_structure_{date}.h5'
+DAS_water_height = rw.load_dict_from_h5(file_water_height)
+# convert UTC string to datetime 
+format_date = '%Y-%m-%dT%H-%M-%S.%f'
+# convert UTC string to datetime 
+DAS_water_height['UTC_datetime'] = []
+for date_txt in DAS_water_height['UTC_t']:
+    if date_txt != 'None' :
+        datetime_obj = datetime.strptime(date_txt,format_date)
+        datetime_obj = datetime_obj.replace(tzinfo = pytz.timezone('UTC'))
+    # else :
+    #     datetime_obj = None
+    DAS_water_height['UTC_datetime'].append(datetime_obj)
+    
+DAS_water_height['UTC_t'] = np.array(DAS_water_height['UTC_datetime'])
+del DAS_water_height['UTC_datetime']
+
+#%% Load mean_CWT dictionnary 
+
+CWT_results = rw.load_dict_from_h5(filename)
+
+#%% Plot (f,k) and D fit for three different positions 
+
+selected_x = np.array([100,300,500])
+idx_x = [np.argmin(abs(s - x)) for x in selected_x]
+
+freq_range = [0.02,0.8]
+min_prominence = 0.7
+min_width = 3
+
+# select range of k for which we look for a peak
+if date in date_downsampling:
+    k_min = 0.05
+    k_max = 0.6
+    idx_kmin = np.argmin(abs(k - k_min))
+    idx_kmax = np.argmin(abs(k - k_max))
+    mean_CWT = mean_CWT[:,idx_kmax:idx_kmin,:]
+    k = k[idx_kmax:idx_kmin]
+
+rho_w = 1027
+UTC_mid = UTC_stack[UTC_stack.shape[0]//2,0]
+
+set_graphs.set_matplotlib_param('square')
+fig, axs = plt.subplots(nrows = 1, ncols = 3, sharex = True, sharey = True,figsize = (12,5),layout = 'constrained')
+for i,(ax,idx) in enumerate(zip(axs.flatten(),idx_x)):
+    FK = mean_CWT[:,:,idx]
+    max_FK = np.max(abs(FK))
+    imsh = ax.pcolormesh(k,freq,abs(FK)/max_FK,cmap = parula_map, shading = 'auto')
+    # imsh = ax.imshow(abs(FK).T/max_FK, cmap = parula_map, interpolation = 'auto', origin = 'lower',
+    #                  extent = [k.min(),k.max(),freq.min(),freq.max()])
+    ax.set_ylim([0,1])
+    ax.set_xlim([0.01,0.6])
+    # ax.set_ylim([0,8])
+    # ax.set_xlim([0,0.7])
+    # ax.set_title(f'x = {s[idx]:.0f} m')
+    imsh.set_clim([0,1])
+    imsh.set_rasterized(True)
+    
+    k_exp,f_exp = extract_peaks(FK,freq,k,freq_range,min_prominence,min_width)
+    ax.plot(k_exp,f_exp,'r.')
+    print(f'Detected coordinates :{k_exp}')
+    
+    if len(k_exp) != 0:
+        H = get_water_height(DAS_water_height,UTC_mid,selected_x[i])
+        popt,pcov = scipy.optimize.curve_fit(lambda x,D : shallow_hydroelastic(x, D, rho_w, H)/2/np.pi,k_exp,f_exp,
+                                             bounds = (1e5,1e8))
+        err_coeff = np.sqrt(np.diag(pcov))
+        print(f'D = {popt[0]:.2e} ± {err_coeff[0]:.2e} J')
+    
+        k_th = np.linspace(0,1,100)
+        omega_th = shallow_hydroelastic(k_th, popt[0], rho_w, H)
+        label_th = r'$D = ' + f'{popt[0]:.2e}' + r' \; \mathrm{J}$'
+        ax.plot(k_th,omega_th/2/np.pi,'r--',label = label_th)
+        ax.legend(loc = 'upper right',fontsize = 17)
+
+for j in range(len(axs)):
+    axs[j].set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$')
+
+axs[0].set_ylabel(r'$f \; \mathrm{(Hz)}$')   
+
+fig.colorbar(imsh, ax=axs.ravel().tolist(), pad = 0.02)
+
+figname = f'{fig_folder}Flexural_modulus_fit_3pos_all_chunks_{label_UTC0}'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.svg', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
 
 
+#%% Load flexural modulus data from CWT analysis #0211
+
+main_path = 'U:/Data/'
+date_DAS = ['0211', '0212']
+
+main_D = {}
+for date in date_DAS : 
+    filepath = f'{main_path}{date}/DAS/Figures/Wavelet_study*/{date}_wavelet_flexural_modulus*.h5'
+    filelist = glob.glob(filepath, recursive = True)
+    print(filelist)
+    
+    D_results = {}
+    for file2load in filelist:
+        data = rw.load_dict_from_h5(file2load)
+        UTC_0 = data['UTC_0']
+        D_results[UTC_0] = data
+    
+    keys = list(D_results.keys())
+    mean_filtered, main_std = flexural_day(D_results)
+    
+    main_D[date] = {'D':mean_filtered, 'err_D': main_std, 'x' : D_results[keys[0]]['x']}
+
+#%% Plot mean flexural modulus
+
+fig, ax = plt.subplots()
+for date in date_DAS :
+    ax.errorbar(main_D[date]['x'],main_D[date]['D'],yerr = main_D[date]['err_D'],fmt = '-o',
+                label = date)
+ax.legend()
+
+#%% Load Ludo's results 
+
+date = '0212'
+path2active_results = f'{main_path}{date}/DAS/Results_active_sources/'
+path2values_h = os.path.join(path2active_results, 'thicknesses.pkl')
+path2values_E = os.path.join(path2active_results, 'young_modulus.pkl')
+
+with open(path2values_h, 'rb') as f:
+    thicknesses = pickle.load(f)
+    print("Contents of thicknesses.pkl:")
+    print(thicknesses)
+
+with open(path2values_E, 'rb') as f:
+    young_modulus = pickle.load(f)
+    print("\nContents of young_modulus.pkl:")
+    print(young_modulus)
 
 
+# --- Prepare h data ---
+h_raw = np.array(thicknesses['h'])
+h_xpos_raw = np.array(list(thicknesses['xposition'].values()))
 
+# Compute moving average (window = 4)
+window = 2
+h_ma = np.convolve(h_raw, np.ones(window)/window, mode='valid')
 
+# Adjust x-position for moving average (centered)
+h_xpos_ma = h_xpos_raw[(window - 1)//2 : -(window//2)] if len(h_xpos_raw) >= window else []
 
+# --- Prepare E data ---
+E_raw = np.array(young_modulus['E'][:-1])  # drop last value
+E_xpos_raw = np.array(list(young_modulus['xposition'].values())[:-1])
 
+E_ma = np.convolve(E_raw, np.ones(window)/window, mode='valid')
+E_xpos_ma = E_xpos_raw[(window - 1)//2 : -(window//2)] if len(E_xpos_raw) >= window else []
 
+nu = 0.3
+
+# --- Interpolate E onto h_xpos_raw ---
+E_interp = np.interp(h_xpos_raw, E_xpos_raw, E_raw)
+
+# Compute D on h_xpos_raw grid
+D_raw = E_interp * (h_raw**3) / (12 * (1 - nu**2))
+
+#%% Plot Ludo's results and passive results 
+
+set_graphs.set_matplotlib_param('single')
+fig, ax = plt.subplots()
+
+color_date = {'0211':new_blues(0.5), '0212': new_blues(0.8)}
+for date in date_DAS :
+    ax.errorbar(main_D[date]['x'],main_D[date]['D'],yerr = main_D[date]['err_D'],fmt = '-o',
+                label = date, color = color_date[date])
+
+ax.plot(h_xpos_raw,D_raw,'o-',color = 'tab:red',label = 'Active 0212')
+
+ax.legend()
+
+ax.set_xlabel(r'$x \; \mathrm{(m)}$')
+ax.set_ylabel(r'$D \; \mathrm{(J)}$')
+
+figname = f'{fig_folder}D_VS_x_comparison_with_active_sources'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.svg', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')

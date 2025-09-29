@@ -10,12 +10,12 @@
 %% Post-process raw datas from PIV analysis and create an associated structure 
 
 clear all;
-date = '0226';
+date = '0211';
 drone_name = 'mesange';
-exp_ID = '12-FRAC_001';
+exp_ID = '08-stereo_002';
 ID = [date '_' drone_name '_' exp_ID];
 
-base = ['/media/turbots/Elements/Share_hublot/Data/' date '/Drones/' drone_name '/'];
+base = ['/media/turbots/Backup25/Data/' date '/Drones/' drone_name '/'];
 folder = [base 'matData/' exp_ID '/'];% folder of raw datas
 filename = 'PIV_processed_i00_N0_Dt7_b1_W32_xROI1_width3839_yROI1_height2159.mat'; % file to load
 fullname = [folder filename];
@@ -27,8 +27,8 @@ fullname = [folder filename];
 % ##########################################
 Lx = 3840; % size of the image in pixel, along larger axis (x-axis)
 Ly = 2160; % size of the image in pixel, along minor axis (y-axis)
-h_drone = 64.6; % height of the drone in meter
-alpha_0 = 90*pi/180; % camera pitch angle to the horizontal
+h_drone = 29.9; % height of the drone in meter
+alpha_0 = 35.4*pi/180; % camera pitch angle to the horizontal
 
 x_0 = (Lx + 1)/2; % camera sensor center
 y_0 = (Ly + 1)/2; % camera sensor center
@@ -42,17 +42,18 @@ ft = 1/facq_t ; % factor scaling for time in sec / frame
 % ##########################################
 
 % Longitude and latitude during flight 
-latitude = 48.34836;
-longitude = -68.81427;
+latitude = 48.34637;
+longitude = -68.82676;
+yaw = 14;
 
 % Create t0 local (beginning of flight)
-Y = 2024;
+Y = 2025;
 M = 02;
-D = 26;
-H = 20; % local time of drone
-MIN = 22;
-S = 00;
-MS = 509;
+D = 11;
+H = 15; % local time of drone
+MIN = 43;
+S = 04;
+MS = 295;
  
 if strcmp(drone_name,'mesange') & Y == 2024
     TimeZone = 'Europe/Paris'; % mesange 
@@ -158,8 +159,10 @@ m.DRONE.units.Ly = 'pix';
 % Store initial GPS position
 m.GPS.latitude = latitude ;
 m.GPS.longitude = longitude ;
+m.GPS.yaw = yaw;
 m.GPS.units.latitude = 'deg';
 m.GPS.units.longitude = 'deg';
+m.GPS.units.yaw = 'deg';
 
 % store inital UTC_time
 m.t0_UTC = t0_UTC;
