@@ -409,20 +409,20 @@ def averages(data,keys='all'):
 
 import scipy.signal as sig
 
-def filtering(y,fc=0.01,flow=0.0001):
+def filtering(y,fc=0.01,flow=0.0001,n=4):
     #correspond to 4Hz and 0.04Hz at fs = 400Hz
     #correspond to 0.5Hz and 0.1Hz at fs = 50Hz
 
-    [b1,a1] = sig.butter(4,fc,'high')
+    [b1,a1] = sig.butter(n,fc,'high')
     y_high =  sig.filtfilt(b1,a1,y)
     
-    [b2,a2] = sig.butter(4,fc,'low')
+    [b2,a2] = sig.butter(n,fc,'low')
     y_low =  sig.filtfilt(b2,a2,y)
 
-    [b3,a3] = sig.butter(4,flow,'high')    
+    [b3,a3] = sig.butter(n,flow,'high')    
     y_wave  =  sig.filtfilt(b3,a3,y_low)
 
-    [b4,a4] = sig.butter(4,flow,'low')
+    [b4,a4] = sig.butter(n,flow,'low')
     y_trend  =  sig.filtfilt(b4,a4,y_low)
 
     sigma = np.std(y)

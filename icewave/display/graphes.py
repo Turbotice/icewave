@@ -7,7 +7,7 @@ import pickle
 
 
 
-def legende(x_legend,y_legend,title,ax=None,font=18,display=False,cplot=False,show=True,**kwargs):
+def legende(x_legend,y_legend,title,ax=None,font=12,display=False,cplot=False,show=True,**kwargs):
     """
     Add a legend to the current figure
         Contains standard used font and sizes
