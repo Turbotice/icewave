@@ -122,7 +122,7 @@ def compute_coeffs(H,alpha,theta,focale,X,Y):
     z_star = get_zstar(H, alpha, Y)
     
     a = (np.cos(theta) + np.sin(theta)*np.cos(alpha)*X/z_star)* focale / z_star
-    b = (np.sin(theta) -np.cos(theta)*np.cos(alpha)*X/z_star)* focale / z_star
+    b = (np.sin(theta) - np.cos(theta)*np.cos(alpha)*X/z_star)* focale / z_star
     c = np.sin(alpha)*X*focale/z_star**2
     d = (-np.sin(theta)*np.sin(alpha) + np.sin(theta)*np.cos(alpha)*Y*np.sin(alpha)/z_star)* focale / z_star
     e = (np.cos(theta) * np.sin(alpha) - np.cos(theta) * np.cos(alpha)*np.sin(alpha)*Y/z_star)*focale/z_star
@@ -190,7 +190,7 @@ def solve_linear_system_all_pos(M,b):
 #%% Load data
 
 date = '0211'
-path2data = f'E:/Rimouski_2024/Data/{date}/Drones/'
+path2data = f'F:/Rimouski_2024/Data/{date}/Drones/'
 drones = ['bernache','mesange']
 data = {}
 for i in range(len(drones)):
@@ -314,8 +314,12 @@ for frame in range(Nb_frames):
  
 #%% Create a structure to be saved
 
+# compute scaling factor m/frame => m/s
+Dt = data[ref_drone]['PIV_param']['Dt']
+scaling_factor_V = data[ref_drone]['SCALE']['facq_t']/Dt
+
 u_struct = {}
-u_struct['u'] = u
+u_struct['u'] = u*scaling_factor_V
 u_struct['ref_drone'] = ref_drone
 u_struct['projected_drone'] = projected_drone
 u_struct['X'] = grid_x
@@ -329,6 +333,7 @@ u_struct['u_shape'] = {'dim_0':'u_componants','dim_1':'ny','dim_2':'nx','dim_3':
 u_struct['SCALE'] = {}
 u_struct['SCALE']['facq_t'] = data[ref_drone]['SCALE']['facq_t']
 u_struct['SCALE']['facq_x'] = artificial_facq_x
+u_struct['SCALE']['scaling_factor_V'] = scaling_factor_V
 u_struct['SCALE']['units'] = {'facq_t':'Hz','facq_x':'box/meter'}
  
 # drone parameters
