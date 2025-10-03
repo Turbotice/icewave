@@ -396,7 +396,7 @@ set_graphs.set_matplotlib_param('single')
 extents = [UTC_stack[chunk,0],UTC_stack[chunk,-1],s[0],s[-1]]
 fig, ax ,imsh, cbar = plot_spatio_temp(stack_strain[chunk,:,:], fiber_length, extents, 'seismic')
 imsh.set_clim([-1e4,1e4])
-ax.set_xlabel(r'UTC time (s)')
+ax.set_xlabel(r'UTC')
 
 cbar.set_label(r'$\dot{\epsilon} \; \mathrm{(u.a.)}$')
 cbar.formatter.set_powerlimits((3, 3))
@@ -405,10 +405,10 @@ cbar.update_ticks()
 offset_text = cbar.ax.yaxis.get_offset_text()
 offset_text.set_x(1)
 
-# figname = f'{fig_folder}spatio_temporal_{label_UTC0}_chunk_{chunk}'
-# plt.savefig(figname + '.pdf', bbox_inches='tight')
-# plt.savefig(figname + '.svg', bbox_inches='tight')
-# plt.savefig(figname + '.png', bbox_inches='tight')
+figname = f'{fig_folder}spatio_temporal_{label_UTC0}_chunk_{chunk}'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.svg', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
 
 #%% Perform Fourier transform in time for all time chunks
 
@@ -748,6 +748,7 @@ ax.legend()
 
 date = '0212'
 path2active_results = f'{main_path}{date}/DAS/Results_active_sources/'
+
 path2values_h = os.path.join(path2active_results, 'thicknesses.pkl')
 path2values_E = os.path.join(path2active_results, 'young_modulus.pkl')
 
@@ -800,12 +801,14 @@ for date in date_DAS :
 
 ax.plot(h_xpos_raw,D_raw,'o-',color = 'tab:red',label = 'Active 0212')
 
-ax.legend()
-
 ax.set_xlabel(r'$x \; \mathrm{(m)}$')
 ax.set_ylabel(r'$D \; \mathrm{(J)}$')
+ax.set_ylim([6e6,2e8])
+ax.set_yscale('log')
 
-figname = f'{fig_folder}D_VS_x_comparison_with_active_sources'
+ax.legend(loc = 'lower right')
+
+figname = f'{fig_folder}D_VS_x_comparison_with_active_sources_ylog'
 plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.svg', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')

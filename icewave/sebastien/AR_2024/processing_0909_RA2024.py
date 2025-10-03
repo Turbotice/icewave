@@ -24,7 +24,7 @@ N.B. : The inversion of the ice thickness can then be done using the averaged va
 
 """
 
-%matplotlib qt
+# %matplotlib qt
 
 import os
 import shutil

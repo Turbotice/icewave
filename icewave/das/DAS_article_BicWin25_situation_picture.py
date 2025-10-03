@@ -22,10 +22,14 @@ import h5py
 from scipy.io import loadmat
 
 import icewave.tools.matlab2python as mat2py
+import icewave.tools.matlab_colormaps as matcmaps
 import icewave.drone.drone_projection as dp 
 import icewave.sebastien.set_graphs as set_graphs
 import icewave.tools.rw_data as rw
 import icewave.tools.weather as weather
+
+# PARULA COLORMAP 
+parula_map = matcmaps.parula()
 
 #%% Set fig_folder path 
 
@@ -243,9 +247,9 @@ ax.set_ylim([-240,600])
 ax.set_xlim([-400,400])
 
 figname = fig_folder + 'Camera_coord_situation_picture_0205_18_doc_010_DAS_GPS' 
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
 
 #%% Plot initial figure with fiber position in pixel coordinates system 
 
@@ -280,11 +284,46 @@ cbar = plt.colorbar(lc,cax = cax)
 cbar.set_label(r'$s \; \mathrm{(m)}$')
 
 figname = f'{fig_folder}Pixel_coords_situation_picture_0205_18_doc_010_DAS_GPS'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
 
-#%%
+#%% Create figure for presentations
 
+xpix_interp,ypix_interp = dp.projection_pixel_space(X_interp, Y_interp, x0, y0, param_dict['H'], 
+                                               param_dict['alpha_0']*np.pi/180, param_dict['focale'])
+
+
+# create line segments (pairs of consecutive points)
+points = np.array([xpix_interp,ypix_interp]).T.reshape(-1,1,2)
+segments = np.concatenate([points[:-1], points[1:]], axis=1)
+
+# distance from fiber beginning
+distance = np.sqrt((X_interp - X_DAS[0])**2 + (Y_interp - Y_DAS[0])**2)
+
+# create a norm and a line collection 
+norm = colors.Normalize(vmin = distance.min(), vmax = distance.max())
+lc = LineCollection(segments,cmap = parula_map, norm = norm, linewidths = 4)
+lc.set_array(distance) # values used for colormap
+
+
+set_graphs.set_matplotlib_param(('single'))
 fig, ax = plt.subplots()
-ax.plot(xpix_interp,ypix_interp,'o')
+c = ax.imshow(img)
+# ax.set_xlabel(r'$x_{pix}$',labelpad = 5)
+# ax.set_ylabel(r'$y_{pix}$',labelpad = 5)
+ax.set_aspect(1) # set aspect ratio to 1 
+
+ax.add_collection(lc)
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="2%", pad=0.1)
+cbar = plt.colorbar(lc,cax = cax)
+cbar.set_label(r'$x \; \mathrm{(m)}$')
+
+ax.get_xaxis().set_visible(False)
+ax.get_yaxis().set_visible(False)
+
+figname = f'{fig_folder}Pixel_coords_situation_picture_0205_18_doc_010_DAS_GPS_powerpoint_version'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.svg', bbox_inches='tight',dpi = 600)
+plt.savefig(figname + '.png', bbox_inches='tight',dpi = 600)
