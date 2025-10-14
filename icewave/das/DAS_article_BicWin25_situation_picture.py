@@ -31,6 +31,9 @@ import icewave.tools.weather as weather
 # PARULA COLORMAP 
 parula_map = matcmaps.parula()
 
+plt.rcParams.update({
+    "text.usetex": True}) # use latex
+
 #%% Set fig_folder path 
 
 fig_folder = 'U:/Data/0211/DAS/Figures_article/Situation_picture/'
@@ -266,7 +269,7 @@ distance = np.sqrt((X_interp - X_DAS[0])**2 + (Y_interp - Y_DAS[0])**2)
 
 # create a norm and a line collection 
 norm = colors.Normalize(vmin = distance.min(), vmax = distance.max())
-lc = LineCollection(segments,cmap = 'viridis', norm = norm, linewidths = 4)
+lc = LineCollection(segments,cmap = parula_map, norm = norm, linewidths = 4)
 lc.set_array(distance) # values used for colormap
 
 
@@ -281,12 +284,15 @@ ax.add_collection(lc)
 divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="2%", pad=0.1)
 cbar = plt.colorbar(lc,cax = cax)
-cbar.set_label(r'$s \; \mathrm{(m)}$')
+cbar.set_label(r'$x \; \mathrm{(m)}$')
 
-figname = f'{fig_folder}Pixel_coords_situation_picture_0205_18_doc_010_DAS_GPS'
-# plt.savefig(figname + '.pdf', bbox_inches='tight')
-# plt.savefig(figname + '.svg', bbox_inches='tight')
-# plt.savefig(figname + '.png', bbox_inches='tight')
+ax.get_xaxis().set_visible(False)
+ax.get_yaxis().set_visible(False)
+
+figname = f'{fig_folder}Pixel_coords_situation_picture_0205_18_doc_010_DAS_GPS_no_axis_labels'
+plt.savefig(figname + '.pdf', bbox_inches='tight', dpi = 600)
+plt.savefig(figname + '.svg', bbox_inches='tight',dpi = 600)
+plt.savefig(figname + '.png', bbox_inches='tight',dpi = 600)
 
 #%% Create figure for presentations
 
