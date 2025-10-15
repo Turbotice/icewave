@@ -8,6 +8,8 @@ Created on Thu Jun  5 17:07:17 2025
 import numpy as np
 import pickle
 
+import icewave.tools.rw_data as rw
+
 #%% Set up Febus DAS parameters 
 
 dates = ['0210','0211','0212','0217']
@@ -47,7 +49,14 @@ file2save = f'{path2save}parameters_Febus_2025.pkl'
 with open(file2save,'wb') as pf:
     pickle.dump(param,pf)
 
+#%%
 
+swell_orientation = {}
+swell_orientation['0211'] = 13.5
+swell_orientation['0212'] = 8.5
+
+file_swell_orientation = f'U:/Data/swell_orientation_beam_forming.h5'
+rw.save_dict_to_h5(swell_orientation, file_swell_orientation)
 
 
 

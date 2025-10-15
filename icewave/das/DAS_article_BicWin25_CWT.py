@@ -791,6 +791,13 @@ D_raw = E_interp * (h_raw**3) / (12 * (1 - nu**2))
 
 #%% Plot Ludo's results and passive results 
 
+# create mask for hidding data
+outliers = np.array([236,256])
+mask = []
+for pos in h_xpos_raw :
+    mask.append(pos not in outliers)
+
+
 set_graphs.set_matplotlib_param('single')
 fig, ax = plt.subplots()
 
@@ -799,16 +806,16 @@ for date in date_DAS :
     ax.errorbar(main_D[date]['x'],main_D[date]['D'],yerr = main_D[date]['err_D'],fmt = '-o',
                 label = date, color = color_date[date])
 
-ax.plot(h_xpos_raw,D_raw,'o-',color = 'tab:red',label = 'Active 0212')
+ax.plot(h_xpos_raw[mask],D_raw[mask],'o-',color = 'tab:red',label = 'Active 0212')
 
 ax.set_xlabel(r'$x \; \mathrm{(m)}$')
 ax.set_ylabel(r'$D \; \mathrm{(J)}$')
-ax.set_ylim([6e6,2e8])
-ax.set_yscale('log')
+ax.set_ylim([1e6,1.6e8])
+# ax.set_yscale('log')
 
-ax.legend(loc = 'lower right')
+ax.legend(loc = 'upper right')
 
-figname = f'{fig_folder}D_VS_x_comparison_with_active_sources_ylog'
+figname = f'{fig_folder}D_VS_x_comparison_with_active_sources'
 plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.svg', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')
