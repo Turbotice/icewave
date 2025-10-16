@@ -205,15 +205,15 @@ maddie_gps['GPS'] = np.array([
     [48.347697, -68.817693],
  ]) 
 
-maddie_gps['artificial_gps'] = np.zeros((3,3,2))
+maddie_gps['image_gps'] = np.zeros((3,3,2))
 for i in range(3):
     for j in range(3):
         idx = j+i*4
         print(idx)
-        maddie_gps['artificial_gps'][j,i,:] = np.mean(np.array([
+        maddie_gps['image_gps'][j,i,:] = np.mean(np.array([
             POS['GPS'][idx,:], POS['GPS'][idx + 1,:], POS['GPS'][idx + 4, : ], POS['GPS'][idx + 5, :]]),axis = 0)
 
-maddie_gps['artificial_gps'] = maddie_gps['artificial_gps'].reshape(maddie_gps['GPS'].shape)
+maddie_gps['image_gps'] = maddie_gps['image_gps'].reshape(maddie_gps['GPS'].shape)
 
 maddie_gps['h'] = np.array([57,57,51,62,59,68,66,71,66])
 maddie_gps['free_board'] = np.array([5,6,4,7,6,10,5,6,6])
@@ -221,7 +221,7 @@ maddie_gps['free_board'] = np.array([5,6,4,7,6,10,5,6,6])
 
 filename = f'{path2data}maddie_gps_tomography_data_{date}_2025.pkl'
 with open(filename,'wb') as pf:
-    pickle.dump(param_dict,pf)
+    pickle.dump(maddie_gps,pf)
     
 # additional thickness measurements (geophone line)
 additional_gps = {}
@@ -239,6 +239,11 @@ additional_gps['GPS'] = np.array([
 additional_gps['h'] = np.array([52,47,61,55,54,50,54,59,56])
 additional_gps['free_board'] = np.array([3,5,4,6,4,5,5,6,5])
 
+
+filename = f'{path2data}maddie_gps_tomography_data_{date}_2025_additional_positions.pkl'
+with open(filename,'wb') as pf:
+    pickle.dump(additional_gps,pf)
+    
 #%% Show geophone array and thickness measurements
 
 fig,ax = plt.subplots()
@@ -299,5 +304,12 @@ ax.set_ylabel(r'Latitude $(^\circ)$',labelpad = 5)
 ax.set_aspect(1/np.cos(Lat0*np.pi/180)) # scaling y/x
 
 c.set_rasterized(True)
+
+
+#%%
+
+filename = f'{path2data}maddie_gps_tomography_data_{date}_2025_additional_positions.pkl'
+with open(filename,'rb') as pf:
+    test = pickle.load(pf)
 
 
