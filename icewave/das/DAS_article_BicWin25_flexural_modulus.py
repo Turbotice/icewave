@@ -26,6 +26,7 @@ import pywt
 
 import icewave.tools.matlab2python as mat2py
 import icewave.tools.matlab_colormaps as matcmaps
+import icewave.drone.drone_projection as dp
 import icewave.tools.Fourier_tools as FT
 import icewave.sebastien.set_graphs as set_graphs
 import icewave.das.DAS_package as DS
@@ -246,7 +247,56 @@ plt.savefig(figname + '.svg', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')
 
 
+#%% Create a dictionnary that gathers all results
+
+# load DAS gps positions
+file_water_height = 'U:/Data/0211/DAS/fiber_water_height_GPS_structure_0211.h5'
+DAS_water_height = rw.load_dict_from_h5(file_water_height)
+
+# GPS coordinates of beginning and end of fiber
+Lat0 = DAS_water_height['lat'][0]
+Long0 = DAS_water_height['long'][0]
+
+Lat1 = DAS_water_height['lat'][-1]
+Long1 = DAS_water_height['long'][-1]
+
+# azimuth angle of fiber 
+psi = 360 + np.arctan2(np.cos(Lat0*np.pi/180)*(Long1 - Long0)*np.pi/180,(Lat1 - Lat0)*np.pi/180)*180/np.pi
+
+# create a dictionnary
+results = {}
+results['passive'] = main_D
+
+outliers = np.array([236,256])
+mask = []
+for pos in h_xpos_raw :
+    mask.append(pos not in outliers)
+    
+results['active'] = {}
+results['active']['0212'] = {'D':D_raw[mask], 'E': E_interp[mask], 'h': h_raw[mask], 'x': h_xpos_raw[mask]}
+
+for key_corr in results['passive'].keys():
+    for key_date in results['passive'][key_corr].keys():
+        
+        Lat,Long = dp.LatLong_coords_from_referencepoint(Lat0, Long0, psi, results['passive'][key_corr][key_date]['x'])
+        results['passive'][key_corr][key_date]['latitude'] = Lat
+        results['passive'][key_corr][key_date]['longitude'] = Long
+        
+for key_date in results['active'].keys():
+    
+    Lat,Long = dp.LatLong_coords_from_referencepoint(Lat0, Long0, psi, results['active'][key_date]['x'])
+    results['active'][key_date]['latitude'] = Lat
+    results['active'][key_date]['longitude'] = Long
+    
+
+filename = 'U:/Data/Summary/DAS/main_results_active_passive.h5'
+rw.save_dict_to_h5(results, filename)
+
+
 #%%
 
 file_swell_orientation = f'{main_path}swell_orientation_beam_forming.h5'
 swell_orientation = rw.load_dict_from_h5(file_swell_orientation)
+
+
+
