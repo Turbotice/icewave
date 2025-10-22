@@ -37,7 +37,7 @@ osname = socket.gethostname()
 print(ostype)
 print(osname)
 
-def find_path(disk='Shack25',year='2025',smb=False,date='0211'):
+def find_path(disk='Backup25',year='2025',smb=False,date='0211'):
     if year=='2025':
         if 'macOS' in ostype:
             pass#disk='F-1'
