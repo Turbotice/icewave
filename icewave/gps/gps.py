@@ -6,7 +6,7 @@ import os
 #import stephane.display.graphes as graphes
 import icewave.display.graphes as graphes
 import icewave.gps.garmin as garmin
-import fitdecode
+# import fitdecode
 import gpxpy
 
 # Import the required library
@@ -292,3 +292,15 @@ def display_mercier(ax,title=''):
     ax,figs = display_map(ext,t,title=title,ax=ax,width=600)
     return ax,figs
 
+def distance_GPS(lat,long,Lat0,Long0,R_earth = 6371e3):
+    """ Computes distance between GPS coordinates. 
+        Inputs : - lat, numpy array of latitude, in degree
+                 - long, numpy array of longitude, in degree
+                 - Lat0, reference latitude, in degree
+                 - Long0, reference longitude, in degree
+        Output : - rho, array of distance between all points of (lat,long) coordinate compared to
+        reference point of coordinate (Lat0,Long0) """
+        
+    rho = R_earth*np.sqrt(((lat - Lat0)*np.pi/180)**2 + np.cos(Lat0*np.pi/180)**2 * ((long - Long0)*np.pi/180)**2)
+    
+    return rho
