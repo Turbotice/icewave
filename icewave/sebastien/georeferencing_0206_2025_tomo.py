@@ -312,4 +312,10 @@ filename = f'{path2data}maddie_gps_tomography_data_{date}_2025_additional_positi
 with open(filename,'rb') as pf:
     test = pickle.load(pf)
 
+#%% Load pickles file 
+
+filename = 'C:/Users/sebas/Downloads/maddie_gps_tomography_data_0206_2025_additional_positions.pkl'
+with open(filename,'rb') as pf:
+    test = pickle.load(pf)
+
 
