@@ -331,17 +331,20 @@ I['azimuth'] = scipy.interpolate.interp1d(records_csv['t_epoch'], records_csv['O
 alpha_0 = param['alpha']
 focale = param['focal']
 
-set_graphs.set_matplotlib_param('single')
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize = (12,6))
 
-N = 3500
-step = 100
+N = 3500 #3500
+step = 200 #100
 indices_list = np.arange(0,N,step = step)
 extents = []
 for idx in indices_list:
     img_name = filelist[idx]
     img = cv.imread(img_name)
     img = cv.cvtColor(img,cv.COLOR_BGR2RGB)
+    gray_img = cv.cvtColor(img, cv.COLOR_RGB2GRAY)
+
+    mean_gray = np.mean(gray_img)
+    norm_img = gray_img/mean_gray
     
     H = dp.get_height_from_record(rec,indice = idx//100)
     
@@ -363,7 +366,20 @@ for idx in indices_list:
 
     # ax.pcolormesh(Long,Lat,img[:,:,0], cmap = 'gray')
     # ax.imshow(np.transpose(img,(1,0,2)),extent = extent)
-    ax.pcolormesh(Long,Lat,img[:,:,0],cmap = 'gray',rasterized = True)
+    ax.pcolormesh(Long,Lat,norm_img,cmap = 'gray',vmin = 0,vmax = 1.2,rasterized = True)
+
+
+# plot DAS positions
+# create a norm and a line collection 
+points = np.array([DAS_water_height['long'],DAS_water_height['lat']]).T.reshape(-1,1,2)
+segments = np.concatenate([points[:-1], points[1:]], axis=1)
+distance = DAS_water_height['s']
+norm = colors.Normalize(vmin = distance.min(), vmax = distance.max())
+lc = LineCollection(segments,cmap = parula_map, norm = norm, linewidths = 2)
+lc.set_array(distance) # values used for colormap
+ax.add_collection(lc)
+# ax.plot(DAS_water_height['long'],DAS_water_height['lat'],'k')
+
 
 # superpose deployments points 
 ms = 70
@@ -375,9 +391,6 @@ cmap = colors.ListedColormap(full_cmap(np.linspace(0.2,1,256)))
 
 color_date = {'0210':new_blues(0.2),'0211':new_blues(0.6), '0212': new_blues(0.9)}
 
-# plot DAS positions
-ax.plot(DAS_water_height['long'],DAS_water_height['lat'],'k')
-
 # plot geophone lines and tomo
 for geo_key in new_matrix.keys():
     for acqu_key in new_matrix[geo_key].keys():
@@ -387,7 +400,8 @@ for geo_key in new_matrix.keys():
             GPS_logs = geophone_gps.compute_avg_logs(GPS_logs)
         
         current_color = cmap(norm_acq(acqu_key))
-        ax.scatter(GPS_logs['longitude'],GPS_logs['latitude'],marker = '^',color = current_color,edgecolors = 'k')
+        ax.scatter(GPS_logs['longitude'],GPS_logs['latitude'],marker = '^',color = current_color,
+                   edgecolors = 'k',zorder = 2)
 
 # plot ice thickness
 # for key_date in records.keys():
@@ -401,22 +415,22 @@ for geo_key in new_matrix.keys():
 for key_date in gps_results.keys():
     current_color = color_date[key_date]
     ax.scatter(gps_results[key_date]['longitude'],gps_results[key_date]['latitude'],
-               marker = 'p',color = current_color,edgecolors = 'k')
+               marker = 'p',color = current_color,edgecolors = 'k',zorder = 3)
+
 
 extents = [-68.821900,-68.813627,48.346588,48.348010]
 ax.set_xlim([extents[0], extents[1]])
 ax.set_ylim([extents[2], extents[3]])
 
-ax.set_xlabel(r'Longitude (°)')
-ax.set_ylabel(r'Latitude (°)')
+# ax.set_xlabel(r'Longitude (°)')
+# ax.set_ylabel(r'Latitude (°)')
 
 Lat0 = DAS_water_height['lat'][0]
 ax.set_aspect(1/np.cos(Lat0*np.pi/180)) # scaling y/x
 
 figname = f'{fig_folder}DAS_measurements_image_instrument_superposition'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
-
+plt.savefig(figname + '.pdf', bbox_inches='tight',dpi = 300)
+plt.savefig(figname + '.png', bbox_inches='tight',dpi = 300)
 
 
 #%% Compute Flexural modulus for gps positions and geophones lines 
