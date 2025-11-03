@@ -291,10 +291,10 @@ ax.set_xlim([2.7,5.3])
 ax.set_ylim([2e0,70])
 
 
-figname = f'{fig_folder}attenuation_all_thicknesses_logscale_{method}'
-plt.savefig(f'{figname}.png', bbox_inches = 'tight')
-plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
-plt.savefig(f'{figname}.svg', bbox_inches = 'tight')
+# figname = f'{fig_folder}attenuation_all_thicknesses_logscale_{method}'
+# plt.savefig(f'{figname}.png', bbox_inches = 'tight')
+# plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
+# plt.savefig(f'{figname}.svg', bbox_inches = 'tight')
 
 #%% Compare attenuation coeff 
 
@@ -566,10 +566,10 @@ ax.set_title(f'{method}')
 # ax.set_ylim([2e0,70])
 
 
-figname = f'{fig_folder}alpha_VS_freq_exponential_method_{method}_scale_{scalebase}'
-plt.savefig(f'{figname}.png', bbox_inches = 'tight')
-plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
-plt.savefig(f'{figname}.svg', bbox_inches = 'tight')
+# figname = f'{fig_folder}alpha_VS_freq_exponential_method_{method}_scale_{scalebase}'
+# plt.savefig(f'{figname}.png', bbox_inches = 'tight')
+# plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
+# plt.savefig(f'{figname}.svg', bbox_inches = 'tight')
 
 #%% Plot dispersion relation 
 

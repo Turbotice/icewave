@@ -8,9 +8,13 @@ Created on Mon Jun 23 15:08:13 2025
 import numpy as np 
 import matplotlib.pyplot as plt 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import scipy
 
 import icewave.tools.matlab_colormaps as matcmaps
 parula_map = matcmaps.parula()
+
+global g 
+g = 9.81
 
 
 def dim_numbers(params,g = 9.81):
@@ -202,6 +206,30 @@ def func_real_imag(z,dimensionless):
     kappa = x + 1j*y
     determinant = det_M(kappa,dimensionless)
     return [np.real(determinant),np.imag(determinant)] # system of 2 real equations 
+
+#-------------------------------------------------------------------------------------------------------
+
+def get_wavevector_theory(freq,h,rho_1,rho_2,nu_1,nu_2):
+    """ Compute wavector using viscous bilayers, for a given set of frequencies and 
+    fluid physical properties. """
+    
+    params_array = np.array([(f_ex,h,rho_1,rho_2,nu_1,nu_2) for f_ex in freq])
+    dimensionless_array = np.array([dim_numbers(params) for params in params_array]) 
+    omega_array = 2*np.pi*freq
+    k0_array = omega_array**2/g
+    
+    initial_guess = [1 , 0.1] # initial guess for [Re(kappa), Im(kappa)]
+    k_array = np.zeros(len(freq),dtype = 'complex')
+    for i,dimensionless in enumerate(dimensionless_array): # loop over dimensionless parameters
+        
+        solution = scipy.optimize.fsolve(func_real_imag,initial_guess,(dimensionless,))
+        root = solution[0] + 1j*solution[1]
+        print(f'Root of det(M) = {root}')
+        initial_guess = solution
+        k_array[i] = root*k0_array[i]
+        
+    return k_array
+
 
 #--------------------------------------------------------------------------------------------------------
 
