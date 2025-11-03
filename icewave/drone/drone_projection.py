@@ -388,6 +388,40 @@ def georeference(key,record,image,flight):
         return None,None,im
     
     return Lat,Long,im
+
+#---------------------------------------------------------------------------------------------------------------
+
+def georeference_from_param(img,H,alpha_0,focale,GPS_D):
+    """ Georeference an aerial image using its parameters :
+        Inputs : - img, image to georeference
+                 - H, drone altitude (in meters)
+                 - alpha_0, absolute value of drone pitch angle (in rad), with respect to the horizontal
+                 - focale, camera focal length (in pixels)
+                 - GPS_D, tuple, containing drone GPS position and orientation (Lat,Long,azimuth) in degrees. 
+                 azimuth is taken between 0° and 360° clockwise from geographic North direction 
+                 
+        Outputs : - Lat,Long, array of latitude and longitude of the images """
+
+    Lat_D,Long_D,azimuth = GPS_D
+    Xreal,Yreal = georectify_image(img, H, alpha_0, focale)
+    
+    if alpha_0 != np.pi/2:
+        
+        dist2drone = H/np.tan(alpha_0)
+        Lat0,Long0 = LatLong_coords_from_referencepoint(Lat_D,Long_D,
+                                                        azimuth,dist2drone)
+    else : 
+        Lat0 = Lat_D
+        Long0 = Long_D
+    
+    Lat,Long = XY2GPS(Xreal,Yreal,Lat0,Long0,azimuth)
+    
+    return Lat,Long
+
+
+
+
+
 #-------------------------------------------------------------------------------------------------------------------------------
 
 def backward_projection(fun,points,y0,h,alpha_0,focale,fps,Dt):

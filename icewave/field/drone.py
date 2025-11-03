@@ -3,6 +3,8 @@ import glob
 from pprint import pprint
 import numpy as np
 import os
+from datetime import datetime 
+import pytz
 
 import icewave.tools.datafolders as df
 import icewave.tools.rw_data as rw_data
@@ -111,7 +113,7 @@ def save_mp4file(drone,filename):
     print(f"Save image : {imagefile.split('/')[-1]}")
     cv2.imwrite(imagefile, frame) # Save the image
 
-def convert_flightrecords(date):
+def convert_flightrecords(date,year = '2025'):
     csvfiles = get_csvfiles(date)
     records={}
     records['drones']={}
@@ -140,8 +142,9 @@ def convert_flightrecords(date):
 #    return records
             #merge the record files ?
             
-def get_csvfiles(date):
+def get_csvfiles(date,year = '2025'):
     csvfiles = {}
+    base = df.find_path(year=year,date=date)
     print(base)
     drones = ['mesange','Bernache','Fulmar']
     for key in drones:
@@ -172,7 +175,7 @@ def parse_csv_flightrecord(csvfile,drone='mesange'):
     for key in keys_date:
         record[key]= data[key]
     for key in keys_bool:
-        record[key]= [bool(d) for d in data[key]]
+        record[key]= [True if d == 'True' else False for d in data[key]]
     return record
 
 def cut_flightrecord(record,flight,h0=0):# at that stage, all files should already by in UTC time
@@ -193,6 +196,49 @@ def cut_flightrecord(record,flight,h0=0):# at that stage, all files should alrea
     for key in flight.keys():
         flight_p[key]=flight[key][iinit:iend]
     return flight_p
+
+def get_datetime_from_csvflightrecord(records_csv,str_format = '%m/%d/%Y %I:%M:%S.%f %p'):
+    """ Compute datetime values from flightrecords saved in a csv file. 
+    Inputs : - records_csv, dictionnary, containing keys : 'CUSTOM.date [local]' and 'CUSTOM.updateTime [local]' 
+             - str_format, string, format of resulting datetime string 
+    
+    Output : datetime_array, array of datetime objects, UTC based 
+    """
+    
+    datetime_array = []
+    for idx in range(len(records_csv['CUSTOM.date [local]'])):
+        datetime_string = '0' + records_csv['CUSTOM.date [local]'][idx] + ' 0' + records_csv['CUSTOM.updateTime [local]'][idx][:-3] + '0000'
+        datetime_string = datetime_string + records_csv['CUSTOM.updateTime [local]'][idx][-3:]
+        
+        datetime_obj = datetime.strptime(datetime_string,str_format)
+        datetime_obj = datetime_obj.replace(tzinfo = pytz.timezone('UTC'))
+        
+        datetime_array.append(datetime_obj)
+
+    datetime_array = np.array(datetime_array)
+    
+    return datetime_array
+
+
+def get_datetime_from_srtrecord(record, str_format = '%Y-%m-%d %H:%M:%S'):
+    """ Compute datetime objects from records created from .srt files 
+    Inputs : - record, dictionnary, containing keys 'date' and 'time' 
+    
+    Outputs : - datetime_array, array of datetime objects 
+    """
+    
+    datetime_array = []
+    for idx in range(len(record['time'])):
+        datetime_string = record['date'][idx] + ' ' + record['time'][idx]
+        
+        datetime_obj = datetime.strptime(datetime_string,str_format)
+        datetime_obj = datetime_obj.replace(tzinfo = pytz.timezone('UTC'))
+        
+        datetime_array.append(datetime_obj)
+
+    datetime_array = np.array(datetime_array)
+    
+    return datetime_array
     
 
 def get_flighrecord(srtfile,step=100,drone='mesange'):
