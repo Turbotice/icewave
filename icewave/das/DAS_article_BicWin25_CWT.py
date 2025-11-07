@@ -394,7 +394,7 @@ if date in date_downsampling:
 chunk = 0
 set_graphs.set_matplotlib_param('single')
 extents = [UTC_stack[chunk,0],UTC_stack[chunk,-1],s[0],s[-1]]
-fig, ax ,imsh, cbar = plot_spatio_temp(stack_strain[chunk,:,:], fiber_length, extents, 'seismic')
+fig, ax ,imsh, cbar = plot_spatio_temp(stack_strain[chunk,:,:], fiber_length, extents, 'gray')
 imsh.set_clim([-1e4,1e4])
 ax.set_xlabel(r'UTC')
 
@@ -405,10 +405,10 @@ cbar.update_ticks()
 offset_text = cbar.ax.yaxis.get_offset_text()
 offset_text.set_x(1)
 
-figname = f'{fig_folder}spatio_temporal_{label_UTC0}_chunk_{chunk}'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
+# figname = f'{fig_folder}spatio_temporal_{label_UTC0}_chunk_{chunk}'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
 
 #%% Perform Fourier transform in time for all time chunks
 
@@ -444,10 +444,10 @@ ax.ticklabel_format(axis='y', style='sci', scilimits=(3, 3))
 
 freq_txt = f'f_{selected_freq:.2f}'.replace('.','p')
 
-figname = f'{fig_folder}Filtered_signal_{freq_txt}_{label_UTC0}_chunk_{chunk}'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
+# figname = f'{fig_folder}Filtered_signal_{freq_txt}_{label_UTC0}_chunk_{chunk}'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
 
 #%% Define wavelet
 
@@ -464,10 +464,10 @@ ax.set_xlabel(r'$u$')
 
 ax.legend()
 
-figname = f'{fig_folder}Wavelet_morlet_{label_UTC0}_chunk_{chunk}'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
+# figname = f'{fig_folder}Wavelet_morlet_{label_UTC0}_chunk_{chunk}'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
 #%% Compute scaleogram for this specific frequency 
 
 sampling_period = 1/facq_x #spatial sampling wavelength
@@ -503,10 +503,10 @@ cbar.set_label(r'$\hat{\dot{\epsilon}} \; \mathrm{(u.a.)}$')
 cbar.formatter.set_powerlimits((3, 3))
 cbar.update_ticks()
 
-figname = f'{fig_folder}Scaleogram_{freq_txt}_{label_UTC0}_chunk_{chunk}'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
+# figname = f'{fig_folder}Scaleogram_{freq_txt}_{label_UTC0}_chunk_{chunk}'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
 
 #%% Compile 4 figures into one 
 set_graphs.set_matplotlib_param('square')
@@ -572,7 +572,7 @@ ax[quad_wavelet].legend()
 # Plot scaleogram
 quad_scaleo = (1,1)
 max_scaleo = np.max(abs(cwtmatr))
-imsh = ax[quad_scaleo].pcolormesh(s,k,abs(cwtmatr[:,:])/max_scaleo,cmap = parula_map,shading = 'auto',norm = 'linear')
+imsh = ax[quad_scaleo].pcolormesh(s,k,abs(cwtmatr[:,:])/max_scaleo,cmap = 'gist_yarg',shading = 'auto',norm = 'linear')
 ax[quad_scaleo].set_xlabel(r'$x \; \mathrm{(m)}$')
 ax[quad_scaleo].set_ylabel(r'$k \; \mathrm{(rad.m^{-1})}$')
 imsh.set_clim([0,1])
@@ -591,7 +591,7 @@ cbar = plt.colorbar(imsh,ax = ax[quad_scaleo], shrink = 1, pad = 0.02)
 # cbar.formatter.set_powerlimits((3, 3))
 # cbar.update_ticks()
 
-figname = f'{fig_folder}Quadrant_spatio_wavelet_scaleo_f_{freq_txt}_{label_UTC0}_chunk_{chunk}'
+figname = f'{fig_folder}Quadrant_spatio_wavelet_scaleo_f_{freq_txt}_gist_yarg_{label_UTC0}_chunk_{chunk}'
 plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.svg', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')

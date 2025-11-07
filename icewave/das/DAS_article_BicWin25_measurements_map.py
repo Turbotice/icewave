@@ -277,8 +277,9 @@ figname = f'{fig_folder}DAS_measurements_map_thickness_colorbar'
 plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')
 
-
+# =============================================================================
 #%% Create a map with superposed images 
+# =============================================================================
 
 # path to drone images and records 
 date = '0210'
@@ -326,7 +327,7 @@ I['latitude'] = scipy.interpolate.interp1d(records_csv['t_epoch'], records_csv['
 I['longitude'] = scipy.interpolate.interp1d(records_csv['t_epoch'], records_csv['OSD.longitude'])
 I['azimuth'] = scipy.interpolate.interp1d(records_csv['t_epoch'], records_csv['OSD.yaw [360]'])
 
-#%% Plot several frames 
+#%% Plot several frames + superpose geophones and GPS deployment
 
 alpha_0 = param['alpha']
 focale = param['focal']
@@ -334,7 +335,7 @@ focale = param['focal']
 fig, ax = plt.subplots(figsize = (12,6))
 
 N = 3500 #3500
-step = 200 #100
+step = 100 #100
 indices_list = np.arange(0,N,step = step)
 extents = []
 for idx in indices_list:
@@ -422,18 +423,20 @@ extents = [-68.821900,-68.813627,48.346588,48.348010]
 ax.set_xlim([extents[0], extents[1]])
 ax.set_ylim([extents[2], extents[3]])
 
-# ax.set_xlabel(r'Longitude (°)')
-# ax.set_ylabel(r'Latitude (°)')
+ax.set_xlabel(r'Longitude (°)')
+ax.set_ylabel(r'Latitude (°)')
 
 Lat0 = DAS_water_height['lat'][0]
 ax.set_aspect(1/np.cos(Lat0*np.pi/180)) # scaling y/x
 
-figname = f'{fig_folder}DAS_measurements_image_instrument_superposition'
-plt.savefig(figname + '.pdf', bbox_inches='tight',dpi = 300)
-plt.savefig(figname + '.png', bbox_inches='tight',dpi = 300)
+figname = f'{fig_folder}DAS_measurements_image_instrument_superposition_V2'
+plt.savefig(figname + '.pdf', bbox_inches='tight',dpi = 400)
+plt.savefig(figname + '.png', bbox_inches='tight',dpi = 400)
 
 
+# =============================================================================
 #%% Compute Flexural modulus for gps positions and geophones lines 
+# =============================================================================
 
 # geophone lines
 model_key = '20250210'
@@ -467,11 +470,21 @@ for date in ['0211','0212'] :
                 yerr = results_DAS['passive'][key_swell][date]['err_D'],
                 fmt = '-o',label = date, color = color_date[date])
 
-ax.plot(results_DAS['active']['0212']['x'],results_DAS['active']['0212']['D'],'o-',color = 'tab:red',label = 'Active 0212')
+ax.plot(sub_results[model_key]['x'],sub_results[model_key]['D'],'s', color = color_date['0210'],
+        ms = ms,mec = 'k',label = 'Geophones')
 
-ax.plot(sub_results[model_key]['x'],sub_results[model_key]['D'],'s', color = color_date['0210'],ms = ms)
-for key_date in gps_results.keys():
-    ax.plot(gps_results[key_date]['x'],gps_results[key_date]['D'],'^', color = color_date[key_date],ms = ms)
+count = 0
+for key_date in gps_results.keys():    
+    if count == 0:
+        ax.plot(gps_results[key_date]['x'],gps_results[key_date]['D'],'^', color = color_date[key_date],
+                ms = ms,mec = 'k',label = 'Thickness')
+    
+    else : 
+        ax.plot(gps_results[key_date]['x'],gps_results[key_date]['D'],'^', color = color_date[key_date],
+                ms = ms,mec = 'k')      
+    count += 1
+    
+ax.plot(results_DAS['active']['0212']['x'],results_DAS['active']['0212']['D'],'o-',color = 'tab:red',label = 'Active 0212')
 
 ax.set_xlabel(r'$x \; \mathrm{(m)}$')
 ax.set_ylabel(r'$D \; \mathrm{(J)}$')
@@ -481,11 +494,11 @@ ax.set_xlim([0,630])
 if scale == 'log':
     ax.set_ylim([4e6,3e8])
     ax.set_yscale(scale)
-    ax.legend(loc = 'lower right')
+    ax.legend(loc = 'lower right',fontsize = 18)
 else :
     ax.set_ylim([0.5e6,2e8])
     ax.set_yscale(scale)
-    ax.legend(loc = 'upper right')
+    ax.legend(loc = 'upper right',fontsize = 18)
 
 
 figname = f'{fig_folder}D_vs_x_multi_instrument_superposition_{scale}'
