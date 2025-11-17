@@ -367,13 +367,13 @@ def flexural_day(D_results):
 main_path = 'U:/'
 path2DAS_param = f'{main_path}Data/parameters_Febus_2025.pkl'
 
-date = '0211'
+date = '0212'
 fs,fiber_length,facq_x = DS.get_DAS_parameters(path2DAS_param,date)
 
 # Load DAS data 
 path2data = f'{main_path}Data/{date}/DAS/'
 filelist = glob.glob(path2data + '*UTC.h5')
-idx_file = 5
+idx_file = 1 #5 for 0211
 file2load = filelist[idx_file]
 print(file2load)
 
@@ -383,19 +383,19 @@ format_date = '%Y-%m-%dT%H-%M-%S'
 label_UTC0 = UTC_stack[0,0].strftime(format_date)
 
 # decimation for 0210 and 0212
-if date in date_downsampling:
-    fs = fs/down_sampling_factor # new value of sampling frequency
-    stack_strain,stack_time,UTC_stack = DS.time_decimation_stack_strain(stack_strain,
-                                                                        stack_time,UTC_stack,down_sampling_factor)
-    print(f'New value of sampling frequency, fs = {fs:.2f}')
+# if date in date_downsampling:
+#     fs = fs/down_sampling_factor # new value of sampling frequency
+#     stack_strain,stack_time,UTC_stack = DS.time_decimation_stack_strain(stack_strain,
+#                                                                         stack_time,UTC_stack,down_sampling_factor)
+#     print(f'New value of sampling frequency, fs = {fs:.2f}')
 
 #%% Show spatio-temporal 
 
-chunk = 0
+chunk = 3
 set_graphs.set_matplotlib_param('single')
 extents = [UTC_stack[chunk,0],UTC_stack[chunk,-1],s[0],s[-1]]
-fig, ax ,imsh, cbar = plot_spatio_temp(stack_strain[chunk,:,:], fiber_length, extents, 'gray')
-imsh.set_clim([-1e4,1e4])
+fig, ax ,imsh, cbar = plot_spatio_temp(stack_strain[chunk,:,:], fiber_length, extents, 'seismic')
+imsh.set_clim([-3e4,3e4]) # [-1e4,1e4] for 0211
 ax.set_xlabel(r'UTC')
 
 cbar.set_label(r'$\dot{\epsilon} \; \mathrm{(u.a.)}$')
@@ -417,7 +417,7 @@ FFT_t, freq = all_chunks_FFT_t(stack_strain,fs)
 fig, ax = plt.subplots()
 imsh = ax.imshow(abs(FFT_t[chunk,:,:]).T,origin = 'lower',cmap = parula_map, aspect = 'auto',
           extent = [freq[0],freq[-1],s[0],s[-1]])
-imsh.set_clim([0,2e3])
+imsh.set_clim([0,1e2]) # 2e3 for 0211
 
 ax.set_xlabel(r'$f \; \mathrm{(Hz)}$')
 ax.set_ylabel(r'$x \; \mathrm{(m)}$')

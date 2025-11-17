@@ -457,7 +457,7 @@ for key_date in gps_results.keys():
     
 #%%  Plot flexural modulus using geophones and thickness measurements - gps  
 
-scale = 'log'
+scale = 'linear'
 ms = 7
 
 set_graphs.set_matplotlib_param('single')
@@ -501,7 +501,7 @@ else :
     ax.legend(loc = 'upper right',fontsize = 18)
 
 
-figname = f'{fig_folder}D_vs_x_multi_instrument_superposition_{scale}'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
+# figname = f'{fig_folder}D_vs_x_multi_instrument_superposition_{scale}'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
 
