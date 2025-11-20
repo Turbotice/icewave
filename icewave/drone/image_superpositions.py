@@ -93,16 +93,21 @@ focale = param['focal']
 
 
 fig, ax = plt.subplots()
-N = 1000
-step = 100
+N = 3500
+step = 200
 indices_list = np.arange(0,N,step = step)
 extents = []
 
-cmap = ['Reds','Greens','Blues']
+mean_gray_array = []
 for idx in indices_list:
     img_name = filelist[idx]
     img = cv.imread(img_name)
     img = cv.cvtColor(img,cv.COLOR_BGR2RGB)
+    gray_img = cv.cvtColor(img, cv.COLOR_RGB2GRAY)
+
+    mean_gray = np.mean(gray_img)
+    mean_gray_array.append(mean_gray)
+    norm_img = gray_img/mean_gray
     
     H = dp.get_height_from_record(rec,indice = idx//100)
     
@@ -123,26 +128,55 @@ for idx in indices_list:
     extents.append(extent)
 
     # ax.pcolormesh(Long,Lat,img[:,:,0], cmap = 'gray',rasterized = True)
-    ax.pcolormesh(Long,Lat,img[:,:,1],cmap = 'gray',rasterized = True)
+    ax.pcolormesh(Long,Lat,norm_img,cmap = 'gray',vmin = 0,vmax = 1.2,rasterized = True)
     # ax.imshow(np.transpose(img,(1,0,2)),extent = extent,zorder = 2)
 
-extents = np.array(extents)
-long_min = np.min(extents[:,0])
-long_max = np.max(extents[:,1])
-lat_min = np.min(extents[:,2])
-lat_max = np.max(extents[:,3])
-
-ax.set_xlim([long_min,long_max])
-ax.set_ylim([lat_min,lat_max])
+extents = [-68.821900,-68.813627,48.346588,48.348010]
+ax.set_xlim([extents[0], extents[1]])
+ax.set_ylim([extents[2], extents[3]])
 
 ax.set_aspect(1/np.cos(Lat_D*np.pi/180)) # scaling y/x
 # ax.set_aspect('equal')
 
-fig_folder = 'U:/Data/Summary/DAS/'
-figname = f'{fig_folder}Images_superposition_DAS_{date}_{drone_ID}_{exp_ID}_N{N}_step{step}_Green'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
+# fig_folder = 'U:/Data/Summary/DAS/'
+# figname = f'{fig_folder}Images_superposition_DAS_{date}_{drone_ID}_{exp_ID}_N{N}_step{step}_Green'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
+
+#%%
+
+fig, ax = plt.subplots()
+ax.plot(mean_gray_array,'o-')
+
+#%%
+idx = 0
+img_name = filelist[idx]
+img = cv.imread(img_name)
+img = cv.cvtColor(img,cv.COLOR_BGR2RGB)
+gray_img = cv.cvtColor(img, cv.COLOR_RGB2GRAY)
+
+mean_gray = np.mean(gray_img)
+norm_img = gray_img/mean_gray
+
+H = dp.get_height_from_record(rec,indice = idx//100)
+
+Lat_D = I['latitude'](rec['t_epoch'][idx//100])
+Long_D = I['longitude'](rec['t_epoch'][idx//100])
+azimuth = I['azimuth'](rec['t_epoch'][idx//100])
+
+print(idx,H,Lat_D,Long_D,azimuth)
+
+# Lat_D = rec['latitude'][idx//100]
+# Long_D = rec['longitude'][idx//100]
+# print(H,Lat_D,Long_D)
+
+GPS_D = (Lat_D,Long_D,azimuth)
+Lat,Long = dp.georeference_from_param(img,H,alpha_0,focale,GPS_D)
+
+fig, ax = plt.subplots()
+ax.pcolormesh(Long,Lat,norm_img,cmap = 'gray',rasterized = True)
+ax.set_aspect(1/np.cos(Lat_D*np.pi/180)) # scaling y/x
 
 #%%
 
@@ -169,6 +203,3 @@ ax.pcolormesh(lon, lat, Z[:,:,0],cmap = 'Reds', shading='auto', alpha = 0.33)
 ax.pcolormesh(lon, lat, Z[:,:,1],cmap = 'Greens', shading='auto', alpha = 0.33)
 ax.pcolormesh(lon, lat, Z[:,:,2],cmap = 'Blues', shading='auto', alpha = 0.33)
 
-
-#%%
-ax.pcolormesh(Long,Lat,img[:,:,i])

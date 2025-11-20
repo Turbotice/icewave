@@ -50,6 +50,9 @@ date_downsampling = ['0210','0212']
 global down_sampling_factor
 down_sampling_factor = 10
 
+plt.rc('text', usetex=True)
+plt.rc('font', family='serif', serif='Computer Modern')
+
 #%% Set fig_folder path 
 
 fig_folder = 'U:/Data/0211/DAS/Figures_article/CWT/'
@@ -367,17 +370,17 @@ def flexural_day(D_results):
 main_path = 'U:/'
 path2DAS_param = f'{main_path}Data/parameters_Febus_2025.pkl'
 
-date = '0212'
+date = '0211'
 fs,fiber_length,facq_x = DS.get_DAS_parameters(path2DAS_param,date)
 
 # Load DAS data 
 path2data = f'{main_path}Data/{date}/DAS/'
 filelist = glob.glob(path2data + '*UTC.h5')
-idx_file = 1 #5 for 0211
+idx_file = 3 #5 for 0211
 file2load = filelist[idx_file]
 print(file2load)
 
-Nb_minutes = 1 # duration of each stack
+Nb_minutes = 10 # duration of each stack
 stack_strain,stack_time,UTC_stack,s = DS.stack_data_fromfile(file2load, fiber_length, Nb_minutes)
 format_date = '%Y-%m-%dT%H-%M-%S'
 label_UTC0 = UTC_stack[0,0].strftime(format_date)
@@ -391,11 +394,11 @@ label_UTC0 = UTC_stack[0,0].strftime(format_date)
 
 #%% Show spatio-temporal 
 
-chunk = 3
+chunk = 0
 set_graphs.set_matplotlib_param('single')
 extents = [UTC_stack[chunk,0],UTC_stack[chunk,-1],s[0],s[-1]]
 fig, ax ,imsh, cbar = plot_spatio_temp(stack_strain[chunk,:,:], fiber_length, extents, 'seismic')
-imsh.set_clim([-3e4,3e4]) # [-1e4,1e4] for 0211
+imsh.set_clim([-1e4,1e4]) # [-1e4,1e4] for 0211
 ax.set_xlabel(r'UTC')
 
 cbar.set_label(r'$\dot{\epsilon} \; \mathrm{(u.a.)}$')

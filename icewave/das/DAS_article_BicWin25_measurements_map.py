@@ -62,7 +62,7 @@ Long0 = DAS_water_height['long'][0]
 
 #%% Load DAS results 
 
-file2load = 'U:/Data/Summary/DAS/main_results_active_passive.h5'
+file2load = 'U:/Data/Summary/DAS/main_results_active_passive_V2.h5'
 results_DAS = rw.load_dict_from_h5(file2load)
 
 #%% Load geophones acquisition position
@@ -473,16 +473,16 @@ for date in ['0211','0212'] :
 ax.plot(sub_results[model_key]['x'],sub_results[model_key]['D'],'s', color = color_date['0210'],
         ms = ms,mec = 'k',label = 'Geophones')
 
-count = 0
-for key_date in gps_results.keys():    
-    if count == 0:
-        ax.plot(gps_results[key_date]['x'],gps_results[key_date]['D'],'^', color = color_date[key_date],
-                ms = ms,mec = 'k',label = 'Thickness')
+# count = 0
+# for key_date in gps_results.keys():    
+#     if count == 0:
+#         ax.plot(gps_results[key_date]['x'],gps_results[key_date]['D'],'^', color = color_date[key_date],
+#                 ms = ms,mec = 'k',label = 'Thickness')
     
-    else : 
-        ax.plot(gps_results[key_date]['x'],gps_results[key_date]['D'],'^', color = color_date[key_date],
-                ms = ms,mec = 'k')      
-    count += 1
+#     else : 
+#         ax.plot(gps_results[key_date]['x'],gps_results[key_date]['D'],'^', color = color_date[key_date],
+#                 ms = ms,mec = 'k')      
+#     count += 1
     
 ax.plot(results_DAS['active']['0212']['x'],results_DAS['active']['0212']['D'],'o-',color = 'tab:red',label = 'Active 0212')
 
@@ -496,12 +496,78 @@ if scale == 'log':
     ax.set_yscale(scale)
     ax.legend(loc = 'lower right',fontsize = 18)
 else :
-    ax.set_ylim([0.5e6,2e8])
+    ax.set_ylim([0.5e6,1.7e8])
     ax.set_yscale(scale)
     ax.legend(loc = 'upper right',fontsize = 18)
 
 
-# figname = f'{fig_folder}D_vs_x_multi_instrument_superposition_{scale}'
+figname = f'{fig_folder}D_vs_x_DAS_geophone_superposition_{scale}'
 # plt.savefig(figname + '.pdf', bbox_inches='tight')
 # plt.savefig(figname + '.png', bbox_inches='tight')
 
+
+#%% Load E,h from Ludo's active method  
+
+date = '0212'
+path2active_results = f'U:/Data/{date}/DAS/Results_active_sources/'
+
+path2values_h = os.path.join(path2active_results, 'thicknesses.pkl')
+path2values_E = os.path.join(path2active_results, 'young_modulus.pkl')
+
+with open(path2values_h, 'rb') as f:
+    thicknesses = pickle.load(f)
+    print("Contents of thicknesses.pkl:")
+    print(thicknesses)
+
+with open(path2values_E, 'rb') as f:
+    young_modulus = pickle.load(f)
+    print("\nContents of young_modulus.pkl:")
+    print(young_modulus)
+
+
+# --- Prepare h data ---
+h_raw = np.array(thicknesses['h'])
+h_xpos_raw = np.array(list(thicknesses['xposition'].values()))
+
+# Compute moving average (window = 4)
+window = 2
+h_ma = np.convolve(h_raw, np.ones(window)/window, mode='valid')
+
+# Adjust x-position for moving average (centered)
+h_xpos_ma = h_xpos_raw[(window - 1)//2 : -(window//2)] if len(h_xpos_raw) >= window else []
+
+# --- Prepare E data ---
+E_raw = np.array(young_modulus['E'][:-1])  # drop last value
+E_xpos_raw = np.array(list(young_modulus['xposition'].values())[:-1])
+
+E_ma = np.convolve(E_raw, np.ones(window)/window, mode='valid')
+E_xpos_ma = E_xpos_raw[(window - 1)//2 : -(window//2)] if len(E_xpos_raw) >= window else []
+
+# --- Interpolate E onto h_xpos_raw ---
+E_interp = np.interp(h_xpos_raw, E_xpos_raw, E_raw)
+
+
+#%% Superpose gps thickness results and Ludo's Thickness
+
+set_graphs.set_matplotlib_param('single')
+fig, ax = plt.subplots()
+ax.plot(h_xpos_ma,h_ma,'o-',color = 'tab:red',mec = 'k',label = 'Active')
+count = 0
+for key_date in gps_results.keys():
+    if count == 0 :
+        ax.plot(gps_results[key_date]['x'],gps_results[key_date]['h'],'^',color = 'tab:blue',mec = 'k',
+                label = 'By hand')
+    
+    else :
+        ax.plot(gps_results[key_date]['x'],gps_results[key_date]['h'],'^',color = 'tab:blue',mec = 'k')
+    
+    count+=1
+
+ax.set_xlim([0,630])
+ax.set_xlabel(r'$x \; \mathrm{(m)}$')
+ax.set_ylabel(r'$h \; \mathrm{(m)}$')
+ax.legend()
+
+figname = f'{fig_folder}h_vs_x_DAS_thickness_hand_superposition'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')

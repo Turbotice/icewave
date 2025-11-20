@@ -16,9 +16,9 @@ import icewave.gps.gps as gps
 import icewave.display.maps as maps
 
 
-filename = '/Volumes/Backup25/General/Bathymetrie/NONNA_CHS/Bathymetry/NONNA10_4830N06890W.txt'
+# filename = '/Volumes/Backup25/General/Bathymetrie/NONNA_CHS/Bathymetry/NONNA10_4830N06890W.txt'
 
-bathy = rw_data.read_csv(filename,delimiter='\t')
+# bathy = rw_data.read_csv(filename,delimiter='\t')
 
 def get_bathy():
     #only for Haha bay now

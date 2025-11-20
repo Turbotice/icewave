@@ -165,9 +165,9 @@ ax.set_xlabel(r'$x \; \mathrm{(m)}$')
 ax.set_ylabel(r'$D \; \mathrm{(J)}$')
 
 figname = f'{fig_folder}D_VS_x_swell_correction_comparison'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
 
 #%% Load Ludo's results 
 
@@ -217,7 +217,8 @@ D_raw = E_interp * (h_raw**3) / (12 * (1 - nu**2))
 #%% Plot Ludo's results and passive results 
 
 # create mask for hidding data
-outliers = np.array([236,256])
+# outliers = np.array([236,256])
+outliers = np.array([])
 mask = []
 for pos in h_xpos_raw :
     mask.append(pos not in outliers)
@@ -242,9 +243,9 @@ ax.set_yscale('log')
 ax.legend(loc = 'lower right')
 
 figname = f'{fig_folder}D_VS_x_comparison_with_active_sources_swell_corrected_log_scale'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
 
 
 #%% Create a dictionnary that gathers all results
@@ -267,7 +268,7 @@ psi = 360 + np.arctan2(np.cos(Lat0*np.pi/180)*(Long1 - Long0)*np.pi/180,(Lat1 - 
 results = {}
 results['passive'] = main_D
 
-outliers = np.array([236,256])
+outliers = np.array([])
 mask = []
 for pos in h_xpos_raw :
     mask.append(pos not in outliers)
@@ -289,7 +290,7 @@ for key_date in results['active'].keys():
     results['active'][key_date]['longitude'] = Long
     
 
-filename = 'U:/Data/Summary/DAS/main_results_active_passive.h5'
+filename = 'U:/Data/Summary/DAS/main_results_active_passive_V2.h5'
 rw.save_dict_to_h5(results, filename)
 
 
