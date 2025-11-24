@@ -84,7 +84,6 @@ for i,geo_key in enumerate(new_matrix.keys()):
                             
         print(GPS_logs)
 
-
         
 #%% Collect Stephane GPS waypoints 
 

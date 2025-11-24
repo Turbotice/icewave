@@ -24,6 +24,7 @@ import cv2 as cv
 import h5py
 import csv
 
+# module for map plotting
 import cmocean.cm as cmo
 import alphashape
 from shapely.geometry import MultiPoint
@@ -31,7 +32,13 @@ from shapely.geometry import Point, Polygon
 from scipy.interpolate import griddata
 import cartopy.io.shapereader as shpreader
 
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+from scipy.interpolate import griddata
+from shapely.ops import unary_union
+import cartopy.io.shapereader as shpreader
 
+# icewave modules
 import icewave.tools.matlab2python as mat2py
 import icewave.tools.matlab_colormaps as matcmaps
 import icewave.drone.drone_projection as dp 
@@ -54,7 +61,7 @@ plt.rcParams.update({
 
 #%% Set fig_folder
 
-fig_folder = 'U:/Data/0211/DAS/Figures_article/Bathymetry/'
+fig_folder = 'U:/Data/Summary/DAS/Bathymetry/'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
     
@@ -198,6 +205,80 @@ plt.savefig(figname + '.pdf', bbox_inches='tight',dpi = 600)
 plt.savefig(figname + '.svg', bbox_inches='tight',dpi = 600)
 plt.savefig(figname + '.png', bbox_inches='tight',dpi = 600)
 
+#%% Try Chatgpt method
+
+# load data 
+lon = bathy_data['Long'][b]
+lat = bathy_data['Lat'][b]
+depth = bathy_data['Depth'][b]
+
+# create a regular grid for colormap
+xi = np.linspace(lon.min(), lon.max(), 300)
+yi = np.linspace(lat.min(), lat.max(), 300)
+Xi, Yi = np.meshgrid(xi, yi)
+
+Zi = griddata((lon, lat), depth, (Xi, Yi), method='cubic')
+
+
+proj = ccrs.PlateCarree()
+# get shorelines
+land = cfeature.NaturalEarthFeature(
+    'physical', 'land', '10m',
+    edgecolor='black',
+    facecolor='lightyellow',
+)
+
+# coastline = cfeature.NaturalEarthFeature('physical', 'coastline', '10m',
+#                                          edgecolor = 'black')
+
+shp = shpreader.natural_earth(resolution='10m',
+                              category='physical',
+                              name='coastline')
+
+#%% Create figure 
+
+fig, ax = plt.subplots(
+    figsize=(10, 7),
+    subplot_kw=dict(projection=proj)
+)
+
+# Set extent (lon_min, lon_max, lat_min, lat_max)
+ax.set_extent([lon.min(), lon.max(), lat.min(), lat.max()], crs=proj)
+
+# Plot interpolated bathymetry
+im = ax.pcolormesh(
+    Xi, Yi, Zi,
+    cmap='viridis',
+    shading='auto',
+    transform=proj
+)
+
+# Add contours
+cs = ax.contour(
+    Xi, Yi, Zi,
+    levels=[-1,0,1,2,5],
+    colors='black',
+    linewidths=0.7,
+    transform=proj
+)
+ax.clabel(cs, inline=True, fontsize=8, fmt='%dm')
+
+# Add land/shorelines
+
+# Add GSHHG coastlines (high res)
+ax.add_feature(
+    cfeature.GSHHSFeature(scale='full'),
+    facecolor='lightyellow',
+    edgecolor='black',
+    linewidth=1.0
+)
+
+# ax.add_feature(land,zorder = 0)
+# ax.add_feature(coastline,zorder = 0)
+# ax.coastlines
+
+ax.set_xlabel(r'Longitude (°)')
+ax.set_ylabel(r'Latitude (°)')
 
 
 # =============================================================================

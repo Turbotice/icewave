@@ -171,10 +171,31 @@ figname = f'{fig_folder}D_VS_x_swell_correction_comparison'
 
 #%% Load Ludo's results 
 
-date = '0212'
-path2active_results = f'{main_path}{date}/DAS/Results_active_sources/'
+path2active_results = f'{main_path}Summary/DAS/Results_active_sources/'
 
-path2values_h = os.path.join(path2active_results, 'thicknesses.pkl')
+# load '0211' data
+date = '0211'
+path2values_h = os.path.join(path2active_results,f'thicknesses{date}.pkl')
+path2values_E = os.path.join(path2active_results, 'young_modulus.pkl')
+
+with open(path2values_h, 'rb') as f:
+    thicknesses = pickle.load(f)
+    print("Contents of thicknesses.pkl:")
+    print(thicknesses)
+
+with open(path2values_E, 'rb') as f:
+    young_modulus = pickle.load(f)
+    print("\nContents of young_modulus.pkl:")
+    print(young_modulus)
+
+active = {date:{}}
+active[date]['h'] = thicknesses['thickness']
+active[date]['x'] = thicknesses['position']
+
+#%% load 0212 data
+date = '0212'
+
+path2values_h = os.path.join(path2active_results, f'thicknesses{date}.pkl')
 path2values_E = os.path.join(path2active_results, 'young_modulus.pkl')
 
 with open(path2values_h, 'rb') as f:
@@ -213,6 +234,19 @@ E_interp = np.interp(h_xpos_raw, E_xpos_raw, E_raw)
 
 # Compute D on h_xpos_raw grid
 D_raw = E_interp * (h_raw**3) / (12 * (1 - nu**2))
+
+# eventual outliers 
+outliers = np.array([])
+mask = []
+for pos in h_xpos_raw :
+    mask.append(pos not in outliers)
+
+# save data in dictionnary
+active[date] = {}
+active[date]['E'] = E_interp[mask]
+active[date]['h'] = h_raw[mask]
+active[date]['x'] = h_xpos_raw[mask]
+active[date]['D'] = D_raw[mask]
 
 #%% Plot Ludo's results and passive results 
 
@@ -267,22 +301,21 @@ psi = 360 + np.arctan2(np.cos(Lat0*np.pi/180)*(Long1 - Long0)*np.pi/180,(Lat1 - 
 # create a dictionnary
 results = {}
 results['passive'] = main_D
-
-outliers = np.array([])
-mask = []
-for pos in h_xpos_raw :
-    mask.append(pos not in outliers)
     
+# store active results
 results['active'] = {}
-results['active']['0212'] = {'D':D_raw[mask], 'E': E_interp[mask], 'h': h_raw[mask], 'x': h_xpos_raw[mask]}
-
+for key_date in ['0211','0212']:
+    results['active'][key_date] = active[key_date]
+    
+# compute GPS positions
 for key_corr in results['passive'].keys():
     for key_date in results['passive'][key_corr].keys():
         
         Lat,Long = dp.LatLong_coords_from_referencepoint(Lat0, Long0, psi, results['passive'][key_corr][key_date]['x'])
         results['passive'][key_corr][key_date]['latitude'] = Lat
         results['passive'][key_corr][key_date]['longitude'] = Long
-        
+
+
 for key_date in results['active'].keys():
     
     Lat,Long = dp.LatLong_coords_from_referencepoint(Lat0, Long0, psi, results['active'][key_date]['x'])
@@ -293,6 +326,9 @@ for key_date in results['active'].keys():
 filename = 'U:/Data/Summary/DAS/main_results_active_passive_V2.h5'
 rw.save_dict_to_h5(results, filename)
 
+filename = filename.replace('.h5','.pkl')
+with open(filename,'wb') as pf:
+    pickle.dump(results,pf)
 
 #%%
 
