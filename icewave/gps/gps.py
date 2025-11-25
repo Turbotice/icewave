@@ -292,6 +292,23 @@ def display_mercier(ax,title=''):
     ax,figs = display_map(ext,t,title=title,ax=ax,width=600)
     return ax,figs
 
+
+def waypoints_loc(gpx):
+    """ Extract longitude and latitude of waypoints stored in a GPX file :
+        - Inputs : gpx, a gpxpy.gpx.GPX object
+        - Outputs : Long, array of longitude and Lat, array of latitude """
+        
+    Long,Lat = [],[]
+    for waypoint in gpx.waypoints: # loop over all waypoints 
+        Long.append(waypoint.longitude)
+        Lat.append(waypoint.latitude)
+            
+        
+    return Long, Lat 
+
+#----------------------------------------------------------------------------------------------------
+
+
 def distance_GPS(lat,long,Lat0,Long0,R_earth = 6371e3):
     """ Computes distance between GPS coordinates. 
         Inputs : - lat, numpy array of latitude, in degree

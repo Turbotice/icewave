@@ -84,6 +84,7 @@ for i,geo_key in enumerate(new_matrix.keys()):
                             
         print(GPS_logs)
 
+
         
 #%% Collect Stephane GPS waypoints 
 
@@ -114,7 +115,7 @@ MS_gps['latitude'] = [48.347624, 48.347229]
 MS_gps['h'] = [0.31,0.56]
 
     
-#%% Situation picture 
+#%% Load situation picture 
 
 main_path = 'U/Data/'
 date = '0205'
@@ -192,17 +193,16 @@ ax.get_yaxis().set_visible(False)
 # plt.savefig(figname + '.svg', bbox_inches='tight')
 # plt.savefig(figname + '.png', bbox_inches='tight')
 
-#%% Try georectify the selected picture 
+#%% Set drone parameters 
 
 # Set drone parameters
-
 param_dict = {}
 param_dict['H'] = 110.8 #110.8
 param_dict['alpha_0'] = 22.4
 param_dict['focale'] = 4100 # around 4100 (+- 100) for format 5280 x 2970 # initial guess 4100
 
 # -68.8131039300668
--68.81312780555555 #- from image data
+# -68.81312780555555 #- from image data
 
 param_dict['latitude'] =  48.347697722222215 #- from image data #48.3476967601294 - Column BN True 
 param_dict['longitude'] =  -68.81312780555555 #- from image data #-68.8131401977678 - Column BN True 
@@ -224,6 +224,7 @@ Yedges,Xedges = np.meshgrid(y_edges,x_edges,indexing = 'ij')
 # compute real coordinates for each pixels of the image 
 Xreal,Yreal = dp.projection_real_space(Xedges,Yedges,x0,y0,param_dict['H'],param_dict['alpha_0']*np.pi/180,
                                        param_dict['focale'])
+# shift image position
 Xshift = 0
 Yshift = -17
 
@@ -309,7 +310,7 @@ figname = fig_folder + 'Situation_picture_0205_18_doc_010_DAS_geoph_drillings_GP
 # plt.savefig(figname + '.png', bbox_inches='tight',dpi = 600)
 
 
-#%% Position fiber on image using DAS GPS coordinates 
+#%% Position fiber on image in (X,Y) coordinates 
 
 # convert DAS GPS coordinates into (X,Y) coordinates 
 X_DAS,Y_DAS = dp.GPS2XY(DAS_water_height['lat'], DAS_water_height['long'], Lat0, Long0, param_dict['azimuth'])

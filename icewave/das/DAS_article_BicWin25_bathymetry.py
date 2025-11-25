@@ -56,8 +56,8 @@ import icewave.gps.gps as gps
 # PARULA COLORMAP 
 parula_map = matcmaps.parula()
 
-plt.rcParams.update({
-    "text.usetex": True}) # use latex
+plt.rc('text', usetex=True)
+plt.rc('font', family='serif', serif='Computer Modern')
 
 #%% Set fig_folder
 
@@ -162,6 +162,7 @@ sc = ax.scatter(bathy_data['Long'][b],bathy_data['Lat'][b],c=bathy_data['Depth']
 # plot DAS
 ax.plot(DAS_water_height['long'],DAS_water_height['lat'],'k',lw = 2.5)
 
+# gps.display_haha(ax)
 # plot geophones
 # norm_acq = colors.Normalize(vmin = 0,vmax = 3)
 # full_cmap = mpl.colormaps['Greens'].resampled(256)
