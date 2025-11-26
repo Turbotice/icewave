@@ -59,6 +59,40 @@ parula_map = matcmaps.parula()
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif', serif='Computer Modern')
 
+#%% Set fig_folder path
+
+fig_folder = 'U:/Data/Summary/DAS/Sources_location/'
+if not os.path.isdir(fig_folder):
+    os.mkdir(fig_folder)
+
+#%% FUNCTION SECTION
+
+def get_UTC_from_filename(filename):
+
+    array_str = filename.split('\\')
+    date_str = array_str[-1][1:-7]
+    print(date_str)
+
+    # create datetime object
+    format_date = '%Y-%m-%d_%H-%M-%S'
+    UTC_0 = datetime.strptime(date_str,format_date)
+    
+    return UTC_0
+
+#-------------------------------------------------------------------------
+
+def compute_source_UTC(sources_xt,UTC_array):
+    """ Compute UTC time of each source, based on initial UTC time of each acquisition file
+    and the time tmin at which tyhe source is observed """
+    
+    for i in range(len(sources_xt)):
+        source = sources_xt[i]
+        dt = timedelta(seconds = source['tmin'])
+        UTC_source = UTC_array[source['acq_num']] + dt
+        sources_xt[i]['UTC'] = UTC_source
+        
+    return sources_xt
+
 #%% Load sources GPS position and time from Stephane's GPS
  
 data_gps = {}
@@ -90,9 +124,11 @@ for date in data_gps.keys():
         elif key == 'borne_01':
             sources_gps[date][key] = data_gps[date][key]
             
-#%% Plot sources each day
-
-
+# adjust UTC time of GPS sources
+for date in sources_gps.keys():
+    for key in sources_gps[date].keys():
+        sources_gps[date][key]['time'] = sources_gps[date][key]['time'].astimezone(pytz.utc)
+ 
 #%% Ludovic's sources detection 
 
 sources_xt = {}
@@ -142,33 +178,189 @@ sources_xt['0211'] = [
      {'acq_num': 4, 'x0': 505, 'tmin': 183}, 
      {'acq_num': 4, 'x0': 525, 'tmin': 265.6},]
 
+# save sources_xt structure
+file2save = f'{fig_folder}Active_sources_spatio_detection.h5'
+rw.save_dict_to_h5(sources_xt, file2save)
+
+
 #%% Compute sources_xt UTC time from UTC file time 
 
-# collect files for a given date
-date = '0211'
 base = 'U:/Data/'
-path2DAS_data = f'{base}{date}/DAS/*_UTC.h5'
-filelist = glob.glob(path2DAS_data)
+
+for date in ['0211','0212']:
+    path2DAS_data = f'{base}{date}/DAS/*_UTC.h5'
+    filelist = glob.glob(path2DAS_data)
+    
+    # get UTC initial time for each acquisition 
+    UTC_array = np.array([get_UTC_from_filename(filename) for filename in filelist])
+    
+    # Compute UTC time from tmin
+    sources_xt[date] = compute_source_UTC(sources_xt[date],UTC_array)
+
+#%% Plot all sources Stephane GPS in GPS coordinates 
+
+Lat0 = sources_gps['0212']['borne_01']['latitude']
+set_graphs.set_matplotlib_param('single')
+fig, ax = plt.subplots()
+
+color_dict = {'0211':'tab:blue','0212':'tab:orange','0210':'tab:green'}
+
+for date in ['0211','0212']:
+    current_color = color_dict[date]
+    for key in sources_gps[date].keys():
+        if key != 'borne_01':
+            ax.plot(sources_gps[date][key]['longitude'],sources_gps[date][key]['latitude'],'o',color = current_color,
+                    mec = 'k')
+        else : 
+            ax.plot(sources_gps[date][key]['longitude'],sources_gps[date][key]['latitude'],'s',color = current_color,
+                    mec = 'k')
+            
+# ax.set_aspect(1/np.cos(Lat0*np.pi/180)) # scaling y/x
+ax.set_xlabel('Longitude (°)')
+ax.set_ylabel('Latitude (°)')
+
+figname = f'{fig_folder}GPS_sources_map'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.svg', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
+
+#%% Plot all sources Stephane GPS in metric coordinates
 
 
-# get UTC initial time for each acquisition 
+
+#%% Compute x distance of each source to borne_01
+
+Lat0 = np.mean([sources_gps[date]['borne_01']['latitude'] for date in ['0212']])
+Long0 = np.mean([sources_gps[date]['borne_01']['longitude'] for date in ['0212']])
+
+for date in sources_gps.keys():
+    for key in sources_gps[date].keys():
+        sources_gps[date][key]['x'] = gps.distance_GPS(sources_gps[date][key]['latitude'],sources_gps[date][key]['longitude'],
+                                                       Lat0,Long0)
+       
+    
+#%% Plot x VS time for gps_sources and sources detection done by Ludovic
+
+offset_fiber = 37.5 # amount of fiber enrolled in the DAS unit
 
 
+for date in sources_gps.keys():
+    fig, ax = plt.subplots()
+    
+    current_color = color_dict[date]
+    # plot Stephane GPS data
+    x = [sources_gps[date][key]['time'] for key in sources_gps[date].keys()]
+    y = [sources_gps[date][key]['x'] for key in sources_gps[date].keys()]
+    ax.plot(x,y,'o',color = current_color,mec = 'k',
+            label = 'GPS')
+    
+    # plot Ludovic's sources detection
+    x = [sources_xt[date][i]['UTC'] for i in range(len(sources_xt[date]))]
+    y = [sources_xt[date][i]['x0'] - offset_fiber for i in range(len(sources_xt[date]))]
+    ax.plot(x,y,'^',color = current_color,mec = 'k',
+            label = 'Spatio detection')
+    
+    ax.legend()
+    ax.set_xlabel(r'UTC')
+    ax.set_ylabel(r'distance to IU')
+    
+    ax.set_title(date)
+    ax.grid()
+
+    figname = f'{fig_folder}Comparison_GPS_sources_VS_spatio_sources_x_VS_UTC_{date}'
+    plt.savefig(figname + '.pdf', bbox_inches='tight')
+    plt.savefig(figname + '.svg', bbox_inches='tight')
+    plt.savefig(figname + '.png', bbox_inches='tight')
+    
+#%% Need to make correspondance between sources
 
 
+    
 
-
-
-
+#%% Superpose sources on spatio-temporal plots
 
 # Load parameters for DAS
-# path2DAS_param = f'{base}/parameters_Febus_2025.pkl'
-# date = '0211'
-# fs,fiber_length,facq_x = DS.get_DAS_parameters(path2DAS_param,date)
+main_path = 'U:/'
+path2DAS_param = f'{main_path}Data/parameters_Febus_2025.pkl'
 
-# file2load = filelist[0]
-# Nb_minutes = 1
-# stack_strain,stack_time,UTC_stack,s = DS.stack_data_fromfile(file2load, fiber_length, Nb_minutes)
-# format_date = '%Y-%m-%dT%H-%M-%S'
-# label_UTC0 = UTC_stack[0,0].strftime(format_date)
+date = '0211'
+# Load spatio-temporal 
+fs,fiber_length,facq_x = DS.get_DAS_parameters(path2DAS_param,date)
+
+# Load DAS data 
+path2data = f'{main_path}Data/{date}/DAS/'
+filelist = glob.glob(path2data + '*UTC.h5')
+
+for idx_file in range(len(filelist)):
+    # idx_file = 0 #5 for 0211
+    file2load = filelist[idx_file]
+    print(file2load)
+    
+    Nb_minutes = 10 # duration of each stack
+    stack_strain,stack_time,UTC_stack,s = DS.stack_data_fromfile(file2load, fiber_length, Nb_minutes)
+    format_date = '%Y-%m-%dT%H-%M-%S'
+    label_UTC0 = UTC_stack[0,0].strftime(format_date)
+    
+    # keep only sources related to this acquisition
+    UTC_start = UTC_stack[0,0]
+    UTC_end = UTC_stack[0,-1]
+
+    # keep only sources within UTC range
+    sub_sources_xt = [i for i in range(len(sources_xt[date])) if sources_xt[date][i]['acq_num'] == idx_file]
+    sub_sources_gps = []
+    for key in sources_gps[date].keys():
+        test = np.logical_and(sources_gps[date][key]['time'] >= UTC_start, sources_gps[date][key]['time'] <= UTC_end)
+        if test:
+            sub_sources_gps.append(key)
+
+    # Show spatio-temporal 
+    markersize = 8
+    
+    chunk = 0
+    set_graphs.set_matplotlib_param('single')
+    extents = [UTC_stack[chunk,0],UTC_stack[chunk,-1],s[0],s[-1]]
+    # fig, ax ,imsh, cbar = plot_spatio_temp(stack_strain[chunk,:,:], fiber_length, extents, 'seismic')
+    normalization = 'linear'
+    fig,ax = plt.subplots(figsize = (12,6))
+    imsh = ax.imshow(stack_strain[chunk,:,:].T,origin = 'lower',aspect = 'auto',norm = normalization, cmap = 'seismic',
+              interpolation = 'gaussian', extent = extents)
+    
+    # plot spatio sources
+    current_color = 'tab:green'
+    x = [sources_xt[date][idx]['UTC'] for idx in sub_sources_xt]
+    y = [sources_xt[date][idx]['x0'] for idx in sub_sources_xt]
+    ax.plot(x,y,'^',color = current_color,mec = 'k',ms = markersize,
+            label = 'Spatio')
+    
+    # plot GPS sources
+    x = [sources_gps[date][key]['time'] for key in sub_sources_gps]
+    y = [sources_gps[date][key]['x'] + offset_fiber for key in sub_sources_gps]
+    ax.plot(x,y,'o',color = current_color,mec = 'k',ms = markersize,
+            label = 'GPS')
+    
+    ax.set_ylim([0,fiber_length])
+    
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="2%", pad=0.1)
+    cbar = plt.colorbar(imsh,cax = cax)
+    cbar.set_label(r'$\dot{\epsilon} \; \mathrm{(u.a.)}$')
+    cbar.formatter.set_powerlimits((3, 3))
+    cbar.update_ticks()
+    
+    ax.set_xlabel(r'$t \; \mathrm{(s)}$',labelpad = 5)
+    ax.set_ylabel(r'$x \; \mathrm{(m)}$',labelpad = 5)
+    
+    imsh.set_clim([-1e4,1e4]) # [-1e4,1e4] for 0211
+    ax.set_xlabel(r'UTC')
+    ax.legend()
+    
+    offset_text = cbar.ax.yaxis.get_offset_text()
+    offset_text.set_x(1)
+    
+    figname = f'{fig_folder}Spatio_sources_comparison_{label_UTC0}'
+    plt.savefig(figname + '.pdf', bbox_inches='tight')
+    plt.savefig(figname + '.svg', bbox_inches='tight')
+    plt.savefig(figname + '.png', bbox_inches='tight')
+
+
 
