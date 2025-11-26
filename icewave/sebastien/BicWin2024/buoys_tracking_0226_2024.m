@@ -24,16 +24,16 @@ file2save = [base_save 'Buoys_tracking_pix_' date '_' drone_ID '_' exp_ID '.mat'
 
 % set values of RGB channel
 R0 = 0.74; % value on canal R
-G0 = 0.10; % value on canal G 
-B0 = 0.19; % value on canal B 
+G0 = 0.18; % value on canal G 
+B0 = 0.25; % value on canal B 
 RGB0 = [R0,G0,B0];
 
 % threshold for binarization 
-threshold = 0.7;
+threshold = 0.78;
 
 % define a structuring element for erosion 
 SE = strel('square',2);
-min_area = 7; % minimal area of detected objects 
+min_area = 9; % minimal area of detected objects 
 min_distance = 20; % minimal distance in pixels to merge objects
 
 % create an empty structure based on heads
@@ -47,7 +47,7 @@ S_buoys = struct();
 % end
 
 % for i0 = 1:Nb_frames
-i0 = 1196;
+i0 = 7810;
 img = imread(tiffFullPaths{i0});
 % figure(1);
 % imshow(img)
