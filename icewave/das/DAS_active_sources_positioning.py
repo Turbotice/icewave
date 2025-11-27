@@ -59,6 +59,11 @@ parula_map = matcmaps.parula()
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif', serif='Computer Modern')
 
+global date_downsampling 
+date_downsampling = ['0210','0212']
+global down_sampling_factor
+down_sampling_factor = 10
+
 #%% Set fig_folder path
 
 fig_folder = 'U:/Data/Summary/DAS/Sources_location/'
@@ -283,7 +288,9 @@ for date in sources_gps.keys():
 main_path = 'U:/'
 path2DAS_param = f'{main_path}Data/parameters_Febus_2025.pkl'
 
-date = '0211'
+colorscale = {'0211':1e4,'0212':5e3}
+
+date = '0212'
 # Load spatio-temporal 
 fs,fiber_length,facq_x = DS.get_DAS_parameters(path2DAS_param,date)
 
@@ -296,10 +303,20 @@ for idx_file in range(len(filelist)):
     file2load = filelist[idx_file]
     print(file2load)
     
-    Nb_minutes = 10 # duration of each stack
+    if date == '0212' and idx_file == 3:
+        Nb_minutes = 9
+    else:
+        Nb_minutes = 10 # duration of each stack
     stack_strain,stack_time,UTC_stack,s = DS.stack_data_fromfile(file2load, fiber_length, Nb_minutes)
     format_date = '%Y-%m-%dT%H-%M-%S'
     label_UTC0 = UTC_stack[0,0].strftime(format_date)
+    
+    # decimation for 0210 and 0212
+    if date in date_downsampling:
+        fs = fs/down_sampling_factor # new value of sampling frequency
+        stack_strain,stack_time,UTC_stack = DS.time_decimation_stack_strain(stack_strain,
+                                                                            stack_time,UTC_stack,down_sampling_factor)
+        print(f'New value of sampling frequency, fs = {fs:.2f}')
     
     # keep only sources related to this acquisition
     UTC_start = UTC_stack[0,0]
@@ -350,7 +367,7 @@ for idx_file in range(len(filelist)):
     ax.set_xlabel(r'$t \; \mathrm{(s)}$',labelpad = 5)
     ax.set_ylabel(r'$x \; \mathrm{(m)}$',labelpad = 5)
     
-    imsh.set_clim([-1e4,1e4]) # [-1e4,1e4] for 0211
+    imsh.set_clim([-colorscale[date],colorscale[date]]) # [-1e4,1e4] for 0211
     ax.set_xlabel(r'UTC')
     ax.legend()
     
@@ -361,6 +378,8 @@ for idx_file in range(len(filelist)):
     plt.savefig(figname + '.pdf', bbox_inches='tight')
     plt.savefig(figname + '.svg', bbox_inches='tight')
     plt.savefig(figname + '.png', bbox_inches='tight')
+    
+    plt.close('all')
 
 
 
