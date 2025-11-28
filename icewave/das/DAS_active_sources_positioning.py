@@ -224,14 +224,47 @@ for date in ['0211','0212']:
 ax.set_xlabel('Longitude (°)')
 ax.set_ylabel('Latitude (°)')
 
-figname = f'{fig_folder}GPS_sources_map'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
+# figname = f'{fig_folder}GPS_sources_map'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
 
 #%% Plot all sources Stephane GPS in metric coordinates
 
 
+# compute azimuth between first and last point of DAS waypoints 
+Lat0 = sources_gps['0212']['borne_01']['latitude']
+Long0 = sources_gps['0212']['borne_01']['longitude']
+
+Lat1 = sources_gps['0211']['S_32']['latitude']
+Long1 = sources_gps['0211']['S_32']['longitude']
+psi = 360 + np.arctan2(np.cos(Lat0*np.pi/180)*(Long1 - Long0)*np.pi/180,(Lat1 - Lat0)*np.pi/180)*180/np.pi
+
+for date in sources_gps.keys():
+    for key in sources_gps[date].keys():
+        lat = sources_gps[date][key]['latitude']
+        long = sources_gps[date][key]['longitude']
+        psi = 360 + np.arctan2(np.cos(Lat0*np.pi/180)*(long - Long0)*np.pi/180,(lat - Lat0)*np.pi/180)*180/np.pi
+        X,Y = dp.GPS2XY(sources_gps[date][key]['latitude'],sources_gps[date][key]['longitude'], Lat0, Long0, psi)
+        sources_gps[date][key]['X'] = X
+        sources_gps[date][key]['Y'] = Y
+
+
+set_graphs.set_matplotlib_param('single')
+fig, ax = plt.subplots()
+
+color_dict = {'0211':'tab:blue','0212':'tab:orange','0210':'tab:green'}
+
+for date in ['0211','0212']:
+    current_color = color_dict[date]
+    for key in sources_gps[date].keys():
+        if key != 'borne_01':
+            ax.plot(sources_gps[date][key]['X'],sources_gps[date][key]['Y'],'o',color = current_color,
+                    mec = 'k')
+        else : 
+            ax.plot(sources_gps[date][key]['X'],sources_gps[date][key]['Y'],'s',color = current_color,
+                    mec = 'k')
+                
 
 #%% Compute x distance of each source to borne_01
 
