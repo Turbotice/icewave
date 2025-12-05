@@ -153,9 +153,9 @@ ax.set_aspect(1/np.cos(Lat0*np.pi/180)) # scaling y/x
 c.set_rasterized(True)
 
 figname = f'{fig_folder}Tomography_situation_GPS_{date}'
-plt.savefig(figname + '.pdf', bbox_inches='tight',dpi = 600)
-plt.savefig(figname + '.svg', bbox_inches='tight',dpi = 600)
-plt.savefig(figname + '.png', bbox_inches='tight',dpi = 600)
+# plt.savefig(figname + '.pdf', bbox_inches='tight',dpi = 600)
+# plt.savefig(figname + '.svg', bbox_inches='tight',dpi = 600)
+# plt.savefig(figname + '.png', bbox_inches='tight',dpi = 600)
 
 #%% Show positioning in (X,Y) coordinates
 
@@ -186,9 +186,9 @@ ax.set_ylabel(r'$Y \; \mathrm{(m)}$',labelpad = 15)
 ax.set_aspect(1) # scaling y/x
 
 figname = f'{fig_folder}Tomography_situation_XY_{date}'
-plt.savefig(figname + '.pdf', bbox_inches='tight',dpi = 600)
-plt.savefig(figname + '.svg', bbox_inches='tight',dpi = 600)
-plt.savefig(figname + '.png', bbox_inches='tight',dpi = 600)
+# plt.savefig(figname + '.pdf', bbox_inches='tight',dpi = 600)
+# plt.savefig(figname + '.svg', bbox_inches='tight',dpi = 600)
+# plt.savefig(figname + '.png', bbox_inches='tight',dpi = 600)
 
 
 #%% Position fiber on image in (X,Y) coordinates 

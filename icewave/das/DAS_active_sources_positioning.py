@@ -21,6 +21,7 @@ import imageio as iio
 import cv2 as cv
 import h5py
 import csv
+import scipy
 
 # module for map plotting
 import cmocean.cm as cmo
@@ -94,9 +95,21 @@ def compute_source_UTC(sources_xt,UTC_array):
         source = sources_xt[i]
         dt = timedelta(seconds = source['tmin'])
         UTC_source = UTC_array[source['acq_num']] + dt
-        sources_xt[i]['UTC'] = UTC_source
+        sources_xt[i]['UTC'] = UTC_source.replace(tzinfo = pytz.utc)
         
     return sources_xt
+
+#------------------------------------------------------------------------
+
+def linear(x,a):
+    y = a*x
+    return y
+
+#--------------------------------------------------------------------------
+
+def affine(x,a,b):
+    y = a*x + b
+    return y
 
 #%% Load sources GPS position and time from Stephane's GPS
  
@@ -180,7 +193,7 @@ sources_xt['0211'] = [
      {'acq_num': 3, 'x0': 420, 'tmin': 468.9}, 
      {'acq_num': 3, 'x0': 445, 'tmin': 549}, 
      {'acq_num': 4, 'x0': 485, 'tmin': 106}, 
-     {'acq_num': 4, 'x0': 505, 'tmin': 183}, 
+     {'acq_num': 4, 'x0': 505, 'tmin': 183},
      {'acq_num': 4, 'x0': 525, 'tmin': 265.6},]
 
 # save sources_xt structure
@@ -280,23 +293,27 @@ for date in sources_gps.keys():
 #%% Plot x VS time for gps_sources and sources detection done by Ludovic
 
 offset_fiber = 37.5 # amount of fiber enrolled in the DAS unit
-
+txt_shift = 1
 
 for date in sources_gps.keys():
     fig, ax = plt.subplots()
     
     current_color = color_dict[date]
     # plot Stephane GPS data
-    x = [sources_gps[date][key]['time'] for key in sources_gps[date].keys()]
-    y = [sources_gps[date][key]['x'] for key in sources_gps[date].keys()]
+    x = np.array([sources_gps[date][key]['time'].timestamp() for key in sources_gps[date].keys()])
+    y = np.array([sources_gps[date][key]['x'] for key in sources_gps[date].keys()])
     ax.plot(x,y,'o',color = current_color,mec = 'k',
             label = 'GPS')
     
+    for i,key in enumerate(sources_gps[date].keys()):
+        ax.text(x[i]*txt_shift,y[i]*txt_shift,key,fontsize = 8)
+    
     # plot Ludovic's sources detection
-    x = [sources_xt[date][i]['UTC'] for i in range(len(sources_xt[date]))]
+    x = [sources_xt[date][i]['UTC'].timestamp() for i in range(len(sources_xt[date]))]
     y = [sources_xt[date][i]['x0'] - offset_fiber for i in range(len(sources_xt[date]))]
     ax.plot(x,y,'^',color = current_color,mec = 'k',
             label = 'Spatio detection')
+    
     
     ax.legend()
     ax.set_xlabel(r'UTC')
@@ -305,15 +322,119 @@ for date in sources_gps.keys():
     ax.set_title(date)
     ax.grid()
 
-    figname = f'{fig_folder}Comparison_GPS_sources_VS_spatio_sources_x_VS_UTC_{date}'
-    plt.savefig(figname + '.pdf', bbox_inches='tight')
-    plt.savefig(figname + '.svg', bbox_inches='tight')
-    plt.savefig(figname + '.png', bbox_inches='tight')
+    # figname = f'{fig_folder}Comparison_GPS_sources_VS_spatio_sources_x_VS_UTC_{date}'
+    # plt.savefig(figname + '.pdf', bbox_inches='tight')
+    # plt.savefig(figname + '.svg', bbox_inches='tight')
+    # plt.savefig(figname + '.png', bbox_inches='tight')
     
-#%% Need to make correspondance between sources
+#%% Make correspondance between sources
 
+xt2gps_table = {}
+xt2gps_table['0211'] = ['borne_01','S_02','S_03','S_05','S_08','S_09','S_11','S_15','S_16','S_16','S_18','S_19','S_20',
+                        'S_21','S_23','S_25','S_26','S_27']
+xt2gps_table['0212'] = ['S_01','S_03','S_06','S_07','S_08','S_09','S_10','S_11',None,'S_12','S_13','S_14','S_16','S_17',
+                        'S_18','S_20','S_21','S_23','S_24','S_25','S_26',None,None]
 
+#%% Plot X vs X using correspondance 
+
+offset_fiber = 39.5
+
+fig, ax = plt.subplots()
+for date in xt2gps_table.keys():
+
+    relevant_keys = xt2gps_table[date]
+    current_color = color_dict[date]
+    y = np.array([sources_xt[date][i]['x0']- offset_fiber for i in range(len(sources_xt[date]))])
+    x = []
+    for key in relevant_keys:
+        if key != None:
+            x.append(sources_gps[date][key]['x'])
+        else:
+            x.append(None)
+    x = np.array(x)
+    ax.plot(x,y,'o',color = current_color,mec = 'k')
     
+    x_th = np.linspace(-10,620,50)
+    if offset_fiber is None:
+        popt,pcov = scipy.optimize.curve_fit(lambda x,a,b : affine(x,a,b),x,y,nan_policy = 'omit')    
+        coeff = popt
+        err_coeff = np.sqrt(np.diag(pcov))
+        y_th = affine(x_th,coeff[0],coeff[1])
+        label_th = f'{date}: ' + '$' + f'y = {popt[0]:.3f}x + {popt[1]:.2f}' + '$'
+
+    else :
+    # fit by an affine function 
+        popt,pcov = scipy.optimize.curve_fit(lambda x,a : linear(x,a),x,y,nan_policy = 'omit')
+        coeff = popt[0]
+        err_coeff = np.sqrt(np.diag(pcov[0]))
+        y_th = linear(x_th,coeff)
+        label_th = f'{date}: ' + '$' + f'y = {popt[0]:.3f}x' + '$'
+
+    ax.plot(x_th,y_th,'--',color = current_color,label = label_th)
+
+ax.set_xlabel(r'$x_{GPS} \; \mathrm{(m)}$')
+ax.set_ylabel(r'$x_{spatio} \; \mathrm{(m)}$')
+
+ax.set_xlim([-5,610])
+ax.set_ylim([-5,610])
+
+ax.legend()
+
+offset_txt = f'{offset_fiber:.1f}'
+offset_txt = offset_txt.replace('.','p')
+figname = f'{fig_folder}Comparison_x_spatio_VS_x_gps_offset_{offset_txt}'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.svg', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
+
+#%% Load a spatio 
+
+# Load parameters for DAS
+main_path = 'U:/'
+path2DAS_param = f'{main_path}Data/parameters_Febus_2025.pkl'
+
+colorscale = {'0211':1e4,'0212':5e3}
+
+date = '0211'
+# Load spatio-temporal 
+fs,fiber_length,facq_x = DS.get_DAS_parameters(path2DAS_param,date)
+
+# Load DAS data 
+path2data = f'{main_path}Data/{date}/DAS/'
+filelist = glob.glob(path2data + '*UTC.h5')
+idx_file = 0
+file2load = filelist[idx_file]
+Nb_minutes = 10
+stack_strain,stack_time,UTC_stack,s = DS.stack_data_fromfile(file2load, fiber_length, Nb_minutes)
+
+# Show spatio-temporal 
+markersize = 8
+
+chunk = 0
+set_graphs.set_matplotlib_param('single')
+extents = [UTC_stack[chunk,0],UTC_stack[chunk,-1],s[0],s[-1]]
+# fig, ax ,imsh, cbar = plot_spatio_temp(stack_strain[chunk,:,:], fiber_length, extents, 'seismic')
+normalization = 'linear'
+fig,ax = plt.subplots(figsize = (12,6))
+imsh = ax.imshow(stack_strain[chunk,:,:].T,origin = 'lower',aspect = 'auto',norm = normalization, cmap = 'seismic',
+          interpolation = 'gaussian', extent = extents)
+
+ax.set_ylim([0,fiber_length])
+
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="2%", pad=0.1)
+cbar = plt.colorbar(imsh,cax = cax)
+cbar.set_label(r'$\dot{\epsilon} \; \mathrm{(u.a.)}$')
+cbar.formatter.set_powerlimits((3, 3))
+cbar.update_ticks()
+
+ax.set_xlabel(r'$t \; \mathrm{(s)}$',labelpad = 5)
+ax.set_ylabel(r'$x \; \mathrm{(m)}$',labelpad = 5)
+
+imsh.set_clim([-colorscale[date],colorscale[date]]) # [-1e4,1e4] for 0211
+ax.set_xlabel(r'UTC')
+ax.legend()
+
 
 #%% Superpose sources on spatio-temporal plots
 
@@ -323,7 +444,7 @@ path2DAS_param = f'{main_path}Data/parameters_Febus_2025.pkl'
 
 colorscale = {'0211':1e4,'0212':5e3}
 
-date = '0212'
+date = '0211'
 # Load spatio-temporal 
 fs,fiber_length,facq_x = DS.get_DAS_parameters(path2DAS_param,date)
 

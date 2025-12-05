@@ -108,6 +108,9 @@ stack_strain,stack_time,UTC_stack,s = DS.stack_data_fromfile(file2load, fiber_le
 format_date = '%Y-%m-%dT%H-%M-%S'
 label_UTC0 = UTC_stack[0,0].strftime(format_date)
 
+# shift curvilinear axis
+offset_fiber = 37.5
+s = s - offset_fiber
 # decimation for 0210 and 0212
 # if date in date_downsampling:
 #     fs = fs/down_sampling_factor # new value of sampling frequency
@@ -125,7 +128,7 @@ normalization = 'linear'
 fig,ax = plt.subplots(figsize = (12,6))
 imsh = ax.imshow(stack_strain[chunk,:,:].T,origin = 'lower',aspect = 'auto',norm = normalization, cmap = 'seismic',
           interpolation = 'gaussian', extent = extents)
-ax.set_ylim([0,fiber_length])
+ax.set_ylim([0,s[-1]])
 
 divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="2%", pad=0.1)
@@ -145,9 +148,9 @@ offset_text = cbar.ax.yaxis.get_offset_text()
 offset_text.set_x(1)
 
 figname = f'{fig_folder}spatio_temporal_{label_UTC0}_chunk_{chunk}_general'
-# plt.savefig(figname + '.pdf', bbox_inches='tight')
-# plt.savefig(figname + '.svg', bbox_inches='tight')
-# plt.savefig(figname + '.png', bbox_inches='tight')
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.svg', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
 
 #%% Show zoomed on ZEN spatio-temporal
 
@@ -159,7 +162,7 @@ normalization = 'linear'
 fig,ax = plt.subplots(figsize = (12,6))
 imsh = ax.imshow(stack_strain[chunk,:,:].T,origin = 'lower',aspect = 'auto',norm = normalization, cmap = 'seismic',
           interpolation = 'gaussian', extent = extents)
-ax.set_ylim([0,fiber_length])
+ax.set_ylim([0,s[-1]])
 
 divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="2%", pad=0.1)
@@ -173,7 +176,7 @@ ax.set_xlabel(r'UTC')
 xmin = datetime(2025,2,11,18,43,48)
 xmax= datetime(2025,2,11,18,44,40)
 ax.set_xlim([xmin,xmax])
-ax.set_ylim([40,200])
+ax.set_ylim([0,160])
 
 cbar.set_label(r'$\dot{\epsilon} \; \mathrm{(u.a.)}$')
 cbar.formatter.set_powerlimits((3, 3))
@@ -183,9 +186,9 @@ offset_text = cbar.ax.yaxis.get_offset_text()
 offset_text.set_x(1)
 
 figname = f'{fig_folder}spatio_temporal_{label_UTC0}_chunk_{chunk}_ZEN'
-# plt.savefig(figname + '.pdf', bbox_inches='tight')
-# plt.savefig(figname + '.svg', bbox_inches='tight')
-# plt.savefig(figname + '.png', bbox_inches='tight')
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.svg', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
 
 #%% Show zoomed on flexural wave spatio-temporal
 
@@ -221,7 +224,7 @@ imsh.set_clim([-1e4,1e4]) # [-1e4,1e4] for 0211
 ax.set_xlabel(r'$t \; \mathrm{(s)}$')
 
 ax.set_xlim([xmin,xmax])
-ax.set_ylim([40,200])
+ax.set_ylim([0,160])
 
 # change tick labels
 xticks = ax.get_xticks()
@@ -238,9 +241,9 @@ offset_text = cbar.ax.yaxis.get_offset_text()
 offset_text.set_x(1)
 
 figname = f'{fig_folder}spatio_temporal_{label_UTC0}_chunk_{chunk}_Z_zoomed'
-# plt.savefig(figname + '.pdf', bbox_inches='tight')
-# plt.savefig(figname + '.svg', bbox_inches='tight')
-# plt.savefig(figname + '.png', bbox_inches='tight')
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.svg', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
 
 
 #%% Create a subplot of three graphs
@@ -262,7 +265,7 @@ for ax_key in axd.keys():
         ax = axd[ax_key]
         imsh = ax.imshow(stack_strain[chunk,:,:].T,origin = 'lower',aspect = 'auto',norm = normalization, cmap = 'seismic',
                   interpolation = 'gaussian', extent = extents)
-        ax.set_ylim([0,fiber_length])
+        ax.set_ylim([0,s[-1]])
         
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size="2%", pad=0.1)
@@ -303,7 +306,7 @@ for ax_key in axd.keys():
         xmin = datetime(2025,2,11,18,43,48)
         xmax= datetime(2025,2,11,18,44,40)
         ax.set_xlim([xmin,xmax])
-        ax.set_ylim([40,200])
+        ax.set_ylim([0,160])
 
         # offset_text = cbar.ax.yaxis.get_offset_text()
         # offset_text.set_x(1)
@@ -323,7 +326,7 @@ for ax_key in axd.keys():
         # mask = np.logical_and(timestamp_array > t0, timestamp_array < t1)
         imsh = ax.imshow(stack_strain[chunk,:,:].T,origin = 'lower',aspect = 'auto',norm = normalization, cmap = 'seismic',
                   interpolation = 'gaussian', extent = extents)
-        ax.set_ylim([0,fiber_length])
+        ax.set_ylim([0,s[-1]])
 
         # divider = make_axes_locatable(ax)
         # cax = divider.append_axes("right", size="2%", pad=0.1)
@@ -339,7 +342,7 @@ for ax_key in axd.keys():
         ax.set_xlabel(r'$t \; \mathrm{(s)}$')
 
         ax.set_xlim([xmin,xmax])
-        ax.set_ylim([40,200])
+        ax.set_ylim([0,160])
 
         # change tick labels
         xticks = ax.get_xticks()

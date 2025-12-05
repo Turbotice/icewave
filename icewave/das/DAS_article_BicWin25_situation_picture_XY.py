@@ -38,6 +38,17 @@ parula_map = matcmaps.parula()
 plt.rcParams.update({
     "text.usetex": True}) # use latex
 
+#%% Function section 
+
+def shift_XY(X,Y,X0,Y0):
+    
+    """ Shift X, Y coordinate system by a vector (X0,Y0), """
+
+    X_shift = X - X0
+    Y_shift = Y - Y0
+    
+    return X_shift,Y_shift
+
 #%% Set fig_folder path 
 
 fig_folder = 'U:/Data/0211/DAS/Figures_article/Situation_picture/'
@@ -125,7 +136,7 @@ img = cv.cvtColor(img,cv.COLOR_BGR2RGB)
 # Set drone parameters
 param_dict = {}
 param_dict['H'] = 110.8 #110.8
-param_dict['alpha_0'] = 22.4
+param_dict['alpha_0'] = 22.4*np.pi/180
 param_dict['focale'] = 4100 # around 4100 (+- 100) for format 5280 x 2970 # initial guess 4100
 
 # -68.8131039300668
@@ -148,11 +159,11 @@ y0 = (ny + 1) / 2
 Yedges,Xedges = np.meshgrid(y_edges,x_edges,indexing = 'ij')
 
 # compute real coordinates for each pixels of the image 
-Xreal,Yreal = dp.projection_real_space(Xedges,Yedges,x0,y0,param_dict['H'],param_dict['alpha_0']*np.pi/180,
+Xreal,Yreal = dp.projection_real_space(Xedges,Yedges,x0,y0,param_dict['H'],param_dict['alpha_0'],
                                        param_dict['focale'])
 # shift image position
 Xshift = 0
-Yshift = -17
+Yshift = -18
 
 Xreal = Xreal + Xshift
 Yreal = Yreal + Yshift
@@ -160,7 +171,7 @@ Yreal = Yreal + Yshift
 #%% Compute image GPS position 
 
 # horizontal distance between center of metric coordinates and drone position 
-dist2drone = param_dict['H']/np.tan(param_dict['alpha_0']*np.pi/180)
+dist2drone = param_dict['H']/np.tan(param_dict['alpha_0'])
 Lat0,Long0 = dp.LatLong_coords_from_referencepoint(param_dict['latitude'],param_dict['longitude'],
                                                 param_dict['azimuth'],dist2drone)
 
@@ -171,7 +182,7 @@ local_azimuth = param_dict['azimuth'] + 90 - theta
 Lat,Long = dp.LatLong_coords_from_referencepoint(Lat0,Long0,
                                                 local_azimuth,rho)
 
-#%% Position fiber on image in (X,Y) coordinates 
+#%% Compute (X,Y) coordinates of each instruments
 
 # convert DAS GPS coordinates into (X,Y) coordinates 
 X_DAS,Y_DAS = dp.GPS2XY(DAS_water_height['lat'], DAS_water_height['long'], Lat0, Long0, param_dict['azimuth'])
@@ -189,22 +200,42 @@ MS_date = '0210'
 X_MS, Y_MS = dp.GPS2XY(MS_gps[MS_date]['latitude'],MS_gps[MS_date]['longitude'],
                                             Lat0, Long0, param_dict['azimuth'])
 
-# interpolate new positions along the fiber 
-s  = np.linspace(0,1,600)
-X_interp = (1-s)*X_DAS[0] + s*X_DAS[-1] - X_DAS[0]
-Y_interp = (1-s)*Y_DAS[0] + s*Y_DAS[-1] - Y_DAS[0]
+# Flip X coordinate
+X_DAS = -X_DAS
+X_geoph = -X_geoph
+for key_date in gps_results.keys():
+    X_gps[key_date] = -X_gps[key_date]
 
-# create line segments (pais of consecutive points)
-points = np.array([Y_interp,X_interp]).T.reshape(-1,1,2)
-segments = np.concatenate([points[:-1], points[1:]], axis=1)
+X_MS = - X_MS
+Xreal = - Xreal
 
-# distance from fiber beginning
-distance = np.sqrt((X_interp)**2 + (Y_interp)**2)
+# Set DAS interrogator unit as origin
+X0,Y0 = X_DAS[0],Y_DAS[0]
+Xreal,Yreal = shift_XY(Xreal,Yreal,X0,Y0)
+X_geoph,Y_geoph = shift_XY(X_geoph, Y_geoph, X0, Y0)
+for key_date in gps_results.keys():
+    X_gps[key_date],Y_gps[key_date] = shift_XY(X_gps[key_date],Y_gps[key_date],X0, Y0)
+X_MS,Y_MS = shift_XY(X_MS,Y_MS,X0, Y0)  
+X_DAS,Y_DAS = shift_XY(X_DAS, Y_DAS, X0, Y0)
 
-# create a norm and a line collection 
-norm = colors.Normalize(vmin = distance.min(), vmax = distance.max())
-lc = LineCollection(segments,cmap = parula_map, norm = norm, linewidths = 4)
-lc.set_array(distance) # values used for colormap
+#%% Plot situation map
+
+# # interpolate new positions along the fiber 
+# s  = np.linspace(0,1,600)
+# X_interp = (1-s)*X_DAS[0] + s*X_DAS[-1] - X_DAS[0]
+# Y_interp = (1-s)*Y_DAS[0] + s*Y_DAS[-1] - Y_DAS[0]
+
+# # create line segments (pais of consecutive points)
+# points = np.array([Y_interp,X_interp]).T.reshape(-1,1,2)
+# segments = np.concatenate([points[:-1], points[1:]], axis=1)
+
+# # distance from fiber beginning
+# distance = np.sqrt((X_interp)**2 + (Y_interp)**2)
+
+# # create a norm and a line collection 
+# norm = colors.Normalize(vmin = distance.min(), vmax = distance.max())
+# lc = LineCollection(segments,cmap = parula_map, norm = norm, linewidths = 4)
+# lc.set_array(distance) # values used for colormap
 
 
 set_graphs.set_matplotlib_param('single')
@@ -221,7 +252,7 @@ ax.set_aspect(1) # set aspect ratio to 1
 # ax.add_collection(lc)
 
 # Plot DAS without colors
-ax.plot(Y_interp ,X_interp,'k',lw = 2.5,label = 'DAS')
+ax.plot(Y_DAS ,X_DAS,'k',lw = 2.5,label = 'DAS')
 
 # plot geophones
 norm_acq = colors.Normalize(vmin = 0,vmax = 3)
@@ -231,10 +262,10 @@ cmap = colors.ListedColormap(full_cmap(np.linspace(0.2,0.8,256)))
 for j in range(4):
     current_color = cmap(norm_acq(j))
     if j == 0:
-        ax.plot(Y_geoph[:,j]-Y_DAS[0],X_geoph[:,j]-X_DAS[0],'^',color = current_color,mec = 'k',
+        ax.plot(Y_geoph[:,j],X_geoph[:,j],'^',color = current_color,mec = 'k',
             ms = 6,zorder = 3,label = 'Geophone')
     else :
-        ax.plot(Y_geoph[:,j]-Y_DAS[0],X_geoph[:,j]-X_DAS[0],'^',color = current_color,mec = 'k',
+        ax.plot(Y_geoph[:,j],X_geoph[:,j],'^',color = current_color,mec = 'k',
             ms = 6,zorder = 3)
         
 
@@ -246,15 +277,15 @@ for i,key_date in enumerate(gps_results.keys()):
     for j in range(len(gps_results[key_date]['h'])):
         current_color = cmap(norm_h(gps_results[key_date]['h'][j]))
         if j == 0 and i == 0:
-            scatter = ax.plot(Y_gps[key_date][j]-Y_DAS[0],X_gps[key_date][j]-X_DAS[0],'p',color = current_color,mec = 'k',
+            scatter = ax.plot(Y_gps[key_date][j],X_gps[key_date][j],'p',color = current_color,mec = 'k',
                     ms = 8,zorder = 2,label = 'Drilling')
         else:
-            scatter = ax.plot(Y_gps[key_date][j]-Y_DAS[0],X_gps[key_date][j]-X_DAS[0],'p',color = current_color,mec = 'k',
+            scatter = ax.plot(Y_gps[key_date][j],X_gps[key_date][j],'p',color = current_color,mec = 'k',
                     ms = 8,zorder = 2)
 
 for i in range(len(MS_gps[MS_date]['h'])):
     current_color = cmap(norm_h(MS_gps[MS_date]['h'][i]))
-    ax.plot(Y_MS[i] - Y_DAS[0],X_MS[i] - X_DAS[0],'p',color = current_color,mec = 'k',
+    ax.plot(Y_MS[i],X_MS[i],'p',color = current_color,mec = 'k',
             ms = 8,zorder = 2)
     
 divider = make_axes_locatable(ax)
@@ -267,13 +298,13 @@ cbar.set_label(r'$h \; \mathrm{(m)}$')
 
 # cbar = plt.colorbar(scatter,cax = cax)
 
-ax.set_xlim(np.array([-225,390]) - Y_DAS[0]) # [-225,380]
-ax.set_ylim(np.array([-120,120]) - X_DAS[0]) # [-120,120]
+ax.set_xlim(np.array([-225,390]) - Y0) # [-225,380]
+ax.set_ylim(np.array([-120,120]) - X0) # [-120,120]
 
 ax.legend(ncols = 3, bbox_to_anchor = (0.11, 1),
               loc='lower left')
 
 figname = fig_folder + 'Camera_coord_YX_situation_picture_0205_18_doc_010__with_MS_core_colorbar_h' 
-# plt.savefig(figname + '.pdf', bbox_inches='tight',dpi = 600)
-# plt.savefig(figname + '.svg', bbox_inches='tight',dpi = 600)
-# plt.savefig(figname + '.png', bbox_inches='tight',dpi = 600)
+plt.savefig(figname + '.pdf', bbox_inches='tight',dpi = 600)
+plt.savefig(figname + '.svg', bbox_inches='tight',dpi = 600)
+plt.savefig(figname + '.png', bbox_inches='tight',dpi = 600)
