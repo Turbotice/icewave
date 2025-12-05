@@ -20,6 +20,9 @@ def set_matplotlib_param(style):
     elif style == 'double':
         fig_size = (8,6)
         font_size_medium = 30
+    elif style == 'triple':
+        fig_size = (8,6)
+        font_size_medium = 28
     elif style == 'square':
         fig_size = (12,9)
         font_size_medium = 20
@@ -27,6 +30,8 @@ def set_matplotlib_param(style):
         fig_size = (12,9)
         font_size_medium = 40
         mpl.rcParams['lines.markersize'] = 12
+    elif type(style) == int or type(style) == float:
+        font_size_medium = style
     else:
         
         raise ValueError('The chosen style is not defined')

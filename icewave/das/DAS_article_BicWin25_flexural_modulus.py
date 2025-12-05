@@ -114,6 +114,8 @@ def flexural_day(D_results):
 main_path = 'U:/Data/'
 date_DAS = ['0211', '0212']
 
+# set offset fiber
+offset_fiber = 37.5 # in meters
 
 main_D = {}
 main_D['corrected'] = {}
@@ -131,7 +133,7 @@ for date in date_DAS :
     keys = list(D_results.keys())
     mean_filtered, main_std = flexural_day(D_results)
     
-    main_D['corrected'][date] = {'D':mean_filtered, 'err_D': main_std, 'x' : D_results[keys[0]]['x']}
+    main_D['corrected'][date] = {'D':mean_filtered, 'err_D': main_std, 'x' : D_results[keys[0]]['x'] - offset_fiber}
 
 main_D['uncorrected'] = {}
 for date in date_DAS : 
@@ -148,7 +150,7 @@ for date in date_DAS :
     keys = list(D_results.keys())
     mean_filtered, main_std = flexural_day(D_results)
     
-    main_D['uncorrected'][date] = {'D':mean_filtered, 'err_D': main_std, 'x' : D_results[keys[0]]['x']}
+    main_D['uncorrected'][date] = {'D':mean_filtered, 'err_D': main_std, 'x' : D_results[keys[0]]['x'] - offset_fiber}
 
 #%% Plot mean flexural modulus
 
@@ -190,7 +192,7 @@ with open(path2values_E, 'rb') as f:
 
 active = {date:{}}
 active[date]['h'] = thicknesses['thickness']
-active[date]['x'] = thicknesses['position']
+active[date]['x'] = thicknesses['position'] - offset_fiber
 
 #%% load 0212 data
 date = '0212'
@@ -245,7 +247,7 @@ for pos in h_xpos_raw :
 active[date] = {}
 active[date]['E'] = E_interp[mask]
 active[date]['h'] = h_raw[mask]
-active[date]['x'] = h_xpos_raw[mask]
+active[date]['x'] = h_xpos_raw[mask] - offset_fiber
 active[date]['D'] = D_raw[mask]
 
 #%% Plot Ludo's results and passive results 
@@ -297,6 +299,7 @@ Long1 = DAS_water_height['long'][-1]
 
 # azimuth angle of fiber 
 psi = 360 + np.arctan2(np.cos(Lat0*np.pi/180)*(Long1 - Long0)*np.pi/180,(Lat1 - Lat0)*np.pi/180)*180/np.pi
+
 
 # create a dictionnary
 results = {}

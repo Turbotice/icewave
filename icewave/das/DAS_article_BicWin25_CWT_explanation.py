@@ -268,6 +268,10 @@ stack_strain,stack_time,UTC_stack,s = DS.stack_data_fromfile(file2load, fiber_le
 format_date = '%Y-%m-%dT%H-%M-%S'
 label_UTC0 = UTC_stack[0,0].strftime(format_date)
 
+# shift curvilinear axis
+offset_fiber = 37.5
+s = s - offset_fiber
+
 # decimation for 0210 and 0212
 # if date in date_downsampling:
 #     fs = fs/down_sampling_factor # new value of sampling frequency
@@ -305,13 +309,14 @@ for selected_freq in freq_list:
     profile = FFT_t[0,idx_freq,:]
     max_profile = max(np.real(profile))
     
-    set_graphs.set_matplotlib_param('single')
+    set_graphs.set_matplotlib_param('triple')
     fig, ax = plt.subplots()
     ax.plot(s,np.real(profile))
     ax.set_xlabel(r'$x \; \mathrm{(m)}$')
     ax.set_ylabel(r'$\hat{\dot{\epsilon}} \; \mathrm{(a.u.)}$')
     max_y = max_profile*1.1
     ax.set_ylim([-max_y,max_y])
+    ax.set_xlim([0,s[-1]])
     # ax.set_ylim([-1.1,1.1])
     label = r'$f = ' + f'{selected_freq:.2f}' + '\; \mathrm{Hz}$'
     ax.set_title(label)
@@ -349,7 +354,7 @@ for selected_freq in freq_list:
     # compute cwt
     cwtmatr, freqs = pywt.cwt(np.real(profile), scales, wavelet, sampling_period = sampling_period)
     
-    set_graphs.set_matplotlib_param('single')
+    set_graphs.set_matplotlib_param('triple')
     fig, ax = plt.subplots()
     k = 2*np.pi*freqs
     
@@ -369,6 +374,7 @@ for selected_freq in freq_list:
     
     ax.set_ylim([k.min(),0.5])
     # ax.set_yscale('log')
+    ax.set_xlim([0,s[-1]])
     
     label = r'$f = ' + f'{selected_freq:.2f}' + '\; \mathrm{Hz}$'
     ax.set_title(label)
@@ -425,12 +431,12 @@ else:
 
 #%% Plot (f,k) and D fit for three different positions 
 
-s = data['x']
+s = data['x'] - offset_fiber
 k = data['k_star']
 freq = data['f']
 mean_CWT = data['mean_CWT']
 
-selected_x = np.array([100,300,500])
+selected_x = np.array([100,300,500]) - 35
 idx_x = [np.argmin(abs(s - x)) for x in selected_x]
 
 freq_range = [0.02,0.8]
@@ -453,7 +459,7 @@ UTC_0 = datetime.strptime(data['label'],format_date)
 UTC_0 = UTC_0.replace(tzinfo = pytz.timezone('UTC'))
 label_UTC0 = data['label']
 
-set_graphs.set_matplotlib_param('single')
+set_graphs.set_matplotlib_param(38)
 cmap = 'gist_yarg'
 
 for i,idx in enumerate(idx_x):

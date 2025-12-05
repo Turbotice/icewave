@@ -146,6 +146,12 @@ for date in data_gps.keys():
 for date in sources_gps.keys():
     for key in sources_gps[date].keys():
         sources_gps[date][key]['time'] = sources_gps[date][key]['time'].astimezone(pytz.utc)
+
+# save sources_xt structure
+file2save = f'{fig_folder}Active_sources_gps.pkl'
+with open(file2save,'wb') as pf:
+    pickle.dump(sources_gps,pf)
+
  
 #%% Ludovic's sources detection 
 

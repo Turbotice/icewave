@@ -212,32 +212,33 @@ def load_dict_h5_rec(h5group):
     
     # First detect if this group represents a LIST
     # HDF5 groups used to store lists have numeric keys: "0", "1", "2", ...
-    if all(k.isdigit() for k in h5group.keys()) and len(h5group.keys()) > 0:
-        # → This group is a list
-        out_list = []
-        for idx in sorted(h5group.keys(), key=lambda x: int(x)):
-            item = h5group[idx]
+    # if all(k.isdigit() for k in h5group.keys()) and len(h5group.keys()) > 0:
+    #     # → This group is a list
+    #     print('This group is a list')
+    #     out_list = []
+    #     for idx in sorted(h5group.keys(), key=lambda x: int(x)):
+    #         item = h5group[idx]
 
-            if isinstance(item, h5py.Group):
-                out_list.append(load_dict_h5_rec(item))
+    #         if isinstance(item, h5py.Group):
+    #             out_list.append(load_dict_h5_rec(item))
 
-            elif isinstance(item, h5py.Dataset):
-                data = item[()]
+    #         elif isinstance(item, h5py.Dataset):
+    #             data = item[()]
 
-                if isinstance(data, bytes):
-                    out_list.append(data.decode("utf-8"))
+    #             if isinstance(data, bytes):
+    #                 out_list.append(data.decode("utf-8"))
 
-                elif isinstance(data, np.ndarray) and data.dtype.kind in {"U", "S", "O"}:
-                    list_string = [
-                        x.decode("utf-8") if isinstance(x, bytes) else str(x)
-                        for x in data
-                    ]
-                    out_list.append(np.array(list_string))
+    #             elif isinstance(data, np.ndarray) and data.dtype.kind in {"U", "S", "O"}:
+    #                 list_string = [
+    #                     x.decode("utf-8") if isinstance(x, bytes) else str(x)
+    #                     for x in data
+    #                 ]
+    #                 out_list.append(np.array(list_string))
 
-                else:
-                    out_list.append(data)
+    #             else:
+    #                 out_list.append(data)
 
-        return out_list
+    #     return out_list
     
     for key,item in h5group.items():
         if isinstance(item,h5py.Group): # if item is a h5 group 
