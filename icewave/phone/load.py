@@ -51,15 +51,24 @@ def loads(folderlist,header=False):
 
 def load_gobfile(datafile):
     data = {}
-    data['coords']=['x','y','z']
     if "-gps-" in datafile:
-        print('specify gps format')
-        return None
+        var = 'gps'
+        raw = np.loadtxt(datafile,usecols=(0,1,2,3),delimiter=',',skiprows=0)#
+        if np.sum(np.isnan(raw))>0:
+            i0 = np.where(np.isnan(raw)[:,1])[0][0]
+        else:
+            i0 = len(raw[:,0])
+        data['t'+var]=raw[:i0,0]
+        data[var+'lat']=raw[:i0,1]
+        data[var+'lon']=raw[:i0,2]
+        data[var+'lat2']=raw[:i0,3]
+        return data
     else:
+        data['coords']=['x','y','z']
         name = datafile.split('.')[-2].split('-')[0]
         #print(name)
         var = table[name]
-        raw = np.loadtxt(datafile,usecols=(0,1,2,3),delimiter=',',skiprows=1)#
+        raw = np.loadtxt(datafile,usecols=(0,1,2,3),delimiter=',',skiprows=0)#
         if np.sum(np.isnan(raw))>0:
             i0 = np.where(np.isnan(raw)[:,1])[0][0]
         else:

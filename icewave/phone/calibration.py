@@ -26,21 +26,26 @@ def load_param_table(filename):
     return param
 
 
-def load_data(param,datafolder):
+def load_data(param,datafolder,key='rate'):
     datafiles = glob.glob(datafolder+'*.csv')
     datas={}
     for i,fichier in enumerate(param['fichier']):
         files=[]
-        rate = int(param['rate'][i])#.keys()
-        datas[rate]={}
+        try:
+            k = int(param[key][i])#.keys()
+        except:
+            k = np.round(float(param[key][i]),decimals=1)#.keys()
+
         for datafile in datafiles:
             file = os.path.basename(datafile).split('_D')[1].split('-android')[0]
             if fichier==file:
                 #print(file,os.path.basename(datafile))
                 files.append(datafile)
-                
-        for filename in files:
-            datas[rate].update(load.load_gobfile(filename))
+
+        if len(files)>0:
+            datas[k]={}
+            for filename in files:
+                datas[k].update(load.load_gobfile(filename))
 
     return datas
 
@@ -58,7 +63,7 @@ def display_data(datas,var='g'):
             y = data[var+c]
     #        if var+c =='a'
             y = y# -np.mean(y)
-            nb = 0#int(len(y)/2)
+            nb = int(len(y)/2)
             ax.plot(t[nb:],y[nb:])
         ax.legend(Vars)
         figs = graphes.legende('',str(key),'',ax=ax)
@@ -68,27 +73,52 @@ def display_data(datas,var='g'):
 
     return figs,axs
 
+def compute_ar(datas,c='x'):
+    n = len(datas.keys())
+    var = 'a'
+    for key in datas.keys():
+        data = datas[key]
+        rate = int(key)
+        y = data[var+c]
+        nb = int(len(y)/2)#cut the first half to avoid transient regime
+        ax = np.mean(y[nb:])
+        datas[key]['Acc_r']=ax
+    return datas
+
+def display_ar_a(datas,axis='x'):
+    fig,ax = plt.subplots(figsize=(4.78,4.78))#,nrows=n,sharex=True)
+
+    Xs = [int(key) for key in datas.keys()]
+    ar = [datas[key]['Acc_r'] for key in datas.keys()]
+    
+    p = np.polyfit(Xs,ar,1)
+    Xth = np.linspace(np.min(Xs),np.max(Xs),100)
+
+    X0 = -p[1]/p[0]
+    ax.plot(Xs,ar,'ko')
+    ax.plot(Xth,np.polyval(p,Xth),'r--')
+    ax.plot(X0,0,'r*',markersize=14)
+
+    title = f'${axis}_S =$ '+str(np.round(X0,decimals=2))+' mm'
+    #ax.set_xlim([0,110])
+    #ax.set_ylim([0,10])
+#    plt.legend(['$g_y$','$c$ ='+str(np.round(p[0],decimals=4))])
+    figs = graphes.legende(f'${axis}$ (mm)','$a_r$ (m/s$^{2}$)',title,ax=ax)
+    #fig.subplots_adjust(hspace=0)
+
+    return figs,ax
+
+
 def compute_Omega_g(datas,c='y'):
     n = len(datas.keys())
     var = 'g'
-    c = 'y'
-    Rates=[]
-    Gys =[]
     for key in datas.keys():
         data = datas[key]
         rate = int(key)
         y = data[var+c]
         nb = int(len(y)/2)#cut the first half to avoid transient regime
         gy = np.mean(y[nb:])
-        
-        print(rate,gy)
-        Rates.append(rate)
-        Gys.append(-gy)
-
         datas[key]['Omega_g']=np.abs(gy)        
-
-    Rates = np.asarray(Rates)
-    Gys = np.asarray(Gys)
     return datas
 
 def display_Omega_g(datas):
@@ -129,7 +159,7 @@ def compare_Omegas(datas):
 
     fig,ax = plt.subplots(figsize=(4.78,4))#,nrows=n,sharex=True)
     ax.plot(Omega_m,Omega_g,'ko')
-    Oth = np.linspace(0,10,100)
+    Oth = np.linspace(0,np.max(Omega_m),100)
     ax.plot(Oth,Oth,'r--')
 
     figs = graphes.legende('$\Omega_m$ (rad/s)','$\Omega_g$ (rad/s)','',ax=ax)
