@@ -148,9 +148,9 @@ offset_text = cbar.ax.yaxis.get_offset_text()
 offset_text.set_x(1)
 
 figname = f'{fig_folder}spatio_temporal_{label_UTC0}_chunk_{chunk}_general'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
 
 #%% Show zoomed on ZEN spatio-temporal
 

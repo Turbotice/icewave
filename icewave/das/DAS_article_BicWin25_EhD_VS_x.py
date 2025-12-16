@@ -39,8 +39,8 @@ import icewave.gps.gps as gps_pack
 # PARULA COLORMAP 
 parula_map = matcmaps.parula()
 
-plt.rcParams.update({
-    "text.usetex": True}) # use latex
+plt.rc('text', usetex=True)
+plt.rc('font', family='serif', serif='Computer Modern')
 
 full_blues = mpl.colormaps['Blues'].resampled(256)
 new_blues = colors.ListedColormap(full_blues(np.linspace(0.2,1,256)))
@@ -173,10 +173,36 @@ for key_date in gps_results.keys():
     gps_results[key_date]['x'] = gps_pack.distance_GPS(gps_results[key_date]['latitude'], gps_results[key_date]['longitude'], 
                                              Lat0, Long0)
     
+#%% Plot ice thickness drilling measurements as mean value 
+
+# create an array of all measured thickness
+drillings = {'x':np.concatenate([gps_results[date]['x'] for date in gps_results.keys()]),
+             'h': np.concatenate([gps_results[date]['h'] for date in gps_results.keys()])} 
+
+# create three different zones 
+R_bounds = np.array([[0,170],[170,310],[310,600]])
+data_h = {} 
+regions_name = ['R1','R2','R3']
+for i in range(R_bounds.shape[0]):
+    
+    xmin = R_bounds[i,0]
+    xmax = R_bounds[i,1]
+    
+    mask = np.logical_and(drillings['x'] > xmin, drillings['x'] < xmax)
+    data_h[regions_name[i]] = np.array([drillings['x'][mask],drillings['h'][mask]])
+    
+# create an array of three points (one for each region)
+avg_data = np.zeros((len(data_h),2,2))
+for i,key in enumerate(data_h.keys()):
+    avg = np.mean(data_h[key],axis = 1)
+    std = np.std(data_h[key],axis = 1)
+    avg_data[i,0,:] = avg
+    avg_data[i,1,:] = std    
+
 #%% Create subplot
 
 model_key = '20250210'
-markersize = 7
+markersize = 8
 
 full_blues = mpl.colormaps['Blues'].resampled(256)
 new_blues = colors.ListedColormap(full_blues(np.linspace(0.2,1,256)))
@@ -202,13 +228,15 @@ axs[0].set_ylim([4,6])
 
 # plot h VS x
 # plot drilling
-for i,date in enumerate(gps_results.keys()):
-    if i == 0:
-        axs[1].plot(gps_results[date]['x'],gps_results[date]['h'],'p',
-                color = 'tab:cyan',mec = 'k',ms = markersize,label = 'drilling',zorder = 2)
-    else:
-        axs[1].plot(gps_results[date]['x'],gps_results[date]['h'],'p',
-                color = 'tab:cyan',mec = 'k',ms = markersize)
+axs[1].errorbar(avg_data[:,0,0],avg_data[:,0,1],xerr = avg_data[:,1,0],yerr = avg_data[:,1,1],
+            fmt = 'none',ecolor = 'tab:cyan',elinewidth = 2,label = 'drilling',zorder = 2)
+# for i,date in enumerate(gps_results.keys()):
+#     if i == 0:
+#         axs[1].plot(gps_results[date]['x'],gps_results[date]['h'],'p',
+#                 color = 'tab:cyan',mec = 'k',ms = markersize,label = 'drilling',zorder = 2)
+#     else:
+#         axs[1].plot(gps_results[date]['x'],gps_results[date]['h'],'p',
+#                 color = 'tab:cyan',mec = 'k',ms = markersize)
 # plot DAS
 for date in results_DAS['active'].keys():
     axs[1].plot(results_DAS['active'][date]['x'],results_DAS['active'][date]['h'],'-o',
@@ -250,8 +278,21 @@ plt.savefig(figname + '.svg', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')
 
 #%%
+    
+test = np.mean(results_DAS['active']['0212']['E'])/1e9
+std_test = np.std(results_DAS['active']['0212']['E'])/1e9
 
 
+
+
+
+
+
+
+#%%
+fig, ax = plt.subplots()
+ax.errorbar(avg_data[:,0,0],avg_data[:,0,1],xerr = avg_data[:,1,0],yerr = avg_data[:,1,1],
+            fmt = 'none',ecolor = 'tab:cyan')
 
 
 
