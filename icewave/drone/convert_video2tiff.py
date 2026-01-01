@@ -15,11 +15,13 @@ import os
 #%%
 
 def main():
-    datafolder = '/media/turbots/BicWin2024/Share/Data/0211/Drones/bernache/stereo_001/relevant/'
+    # datafolder = '/media/turbots/BicWin2024/Share/Data/0211/Drones/bernache/stereo_001/relevant/'
 
+    datafolder = '/media/turbots/DATA/thiou/labshared1/Banquise/_TERRAIN_GENERAL/INSTRUMENTS/TOURTERELLE/Calibration_PMMH/20251216/calib_video_4K/'
+    
     # datafolder = browse.find_path(datafolder)
     print(datafolder)
-    file_mp4 = glob.glob(datafolder+'*.MP4')
+    file_mp4 = glob.glob(datafolder+'*V.MP4')
     
     filelist = file_mp4
     print(len(filelist))
@@ -67,5 +69,5 @@ def later(filelist,datafolder):
 
 if __name__=='__main__':
     filelist = main()
-    datafolder = '/media/turbots/BicWin2024/Share/Data/0211/Drones/bernache/stereo_001/relevant/'
+    datafolder = '/media/turbots/DATA/thiou/labshared2/Banquise/Calibration_PMMH_2026/20251216/calib_video_4K/'
     vid = later(filelist,datafolder)
