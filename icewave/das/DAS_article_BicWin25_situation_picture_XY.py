@@ -259,14 +259,14 @@ norm_acq = colors.Normalize(vmin = 0,vmax = 3)
 full_cmap = mpl.colormaps['Greens'].resampled(256)
 cmap = colors.ListedColormap(full_cmap(np.linspace(0.2,0.8,256)))
 
-for j in range(4):
+for j in range(3):
     current_color = cmap(norm_acq(j))
-    if j == 0:
+    if j == 2:
         ax.plot(Y_geoph[:,j],X_geoph[:,j],'^',color = current_color,mec = 'k',
-            ms = 6,zorder = 3,label = 'Geophone')
+            ms = 6,zorder = 2,label = 'Geophone')
     else :
         ax.plot(Y_geoph[:,j],X_geoph[:,j],'^',color = current_color,mec = 'k',
-            ms = 6,zorder = 3)
+            ms = 6,zorder = 2)
         
 
 # plot drillings
@@ -278,15 +278,15 @@ for i,key_date in enumerate(gps_results.keys()):
         current_color = cmap(norm_h(gps_results[key_date]['h'][j]))
         if j == 0 and i == 0:
             scatter = ax.plot(Y_gps[key_date][j],X_gps[key_date][j],'p',color = current_color,mec = 'k',
-                    ms = 8,zorder = 2,label = 'Drilling')
+                    ms = 8,zorder = 3,label = 'Drilling')
         else:
             scatter = ax.plot(Y_gps[key_date][j],X_gps[key_date][j],'p',color = current_color,mec = 'k',
-                    ms = 8,zorder = 2)
+                    ms = 8,zorder = 3)
 
 for i in range(len(MS_gps[MS_date]['h'])):
     current_color = cmap(norm_h(MS_gps[MS_date]['h'][i]))
     ax.plot(Y_MS[i],X_MS[i],'p',color = current_color,mec = 'k',
-            ms = 8,zorder = 2)
+            ms = 8,zorder = 3)
     
 divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="2%", pad=0.1)
@@ -304,7 +304,7 @@ ax.set_ylim(np.array([-120,120]) - X0) # [-120,120]
 ax.legend(ncols = 3, bbox_to_anchor = (0.11, 1),
               loc='lower left')
 
-figname = fig_folder + 'Camera_coord_YX_situation_picture_0205_18_doc_010__with_MS_core_colorbar_h' 
+figname = fig_folder + 'Camera_coord_YX_situation_picture_0205_18_doc_010_without_tomo_colorbar_h' 
 plt.savefig(figname + '.pdf', bbox_inches='tight',dpi = 600)
 plt.savefig(figname + '.svg', bbox_inches='tight',dpi = 600)
 plt.savefig(figname + '.png', bbox_inches='tight',dpi = 600)

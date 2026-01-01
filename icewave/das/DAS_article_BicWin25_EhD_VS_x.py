@@ -220,8 +220,10 @@ fig, axs = plt.subplots(nrows = 1, ncols = 3, figsize = (16,6.5),layout = 'const
 # plot E VS x
 axs[0].plot(results_DAS['active']['0212']['x'],results_DAS['active']['0212']['E']*1e-9,'-o',
             color = color_date['active']['0212'],mec = 'k')
-axs[0].plot(sub_results[model_key]['x'],sub_results[model_key]['Young modulus (Pa)']*1e-9,'^',
+axs[0].plot(sub_results[model_key]['x'][0],sub_results[model_key]['Young modulus (Pa)'][0]*1e-9,'^',
             color = 'tab:green',mec = 'k',ms = markersize,label = 'geophones')
+axs[0].plot(np.mean(sub_results[model_key]['x'][1:3]),np.mean(sub_results[model_key]['Young modulus (Pa)'][1:3])*1e-9,'^',
+            color = 'tab:green',mec = 'k',ms = markersize)
 axs[0].set_xlabel(r'$x \; \mathrm{(m)}$')
 axs[0].set_ylabel(r'$E \; \mathrm{(GPa)}$')
 axs[0].set_ylim([4,6])
@@ -243,8 +245,10 @@ for date in results_DAS['active'].keys():
                 color = color_date['active'][date],mec = 'k',label = f'active {date}',zorder = 0)
 
 # plot geophone
-axs[1].plot(sub_results[model_key]['x'],sub_results[model_key]['thickness (m)'],'^',
+axs[1].plot(sub_results[model_key]['x'][0],sub_results[model_key]['thickness (m)'][0],'^',
             color = 'tab:green',mec = 'k',ms = markersize,zorder = 1)
+axs[1].plot(np.mean(sub_results[model_key]['x'][1:3]),np.mean(sub_results[model_key]['thickness (m)'][1:3]),'^',
+            color = 'tab:green',mec = 'k',ms = markersize)
 
 axs[1].set_xlabel(r'$x \; \mathrm{(m)}$')
 axs[1].set_ylabel(r'$h \; \mathrm{(m)}$')
@@ -259,7 +263,9 @@ for date in results_DAS['passive']['corrected'].keys():
                     yerr = results_DAS['passive']['corrected'][date]['err_D'],fmt = 'o-', ecolor = 'k',
                     color = color_date['passive'][date],mec = 'k',label = f'passive {date}')
 # plot geophones
-axs[2].plot(sub_results[model_key]['x'],sub_results[model_key]['D'],'^',
+axs[2].plot(sub_results[model_key]['x'][0],sub_results[model_key]['D'][0],'^',
+            color = 'tab:green',mec = 'k',ms = markersize)
+axs[2].plot(np.mean(sub_results[model_key]['x'][1:3]),np.mean(sub_results[model_key]['D'][1:3]),'^',
             color = 'tab:green',mec = 'k',ms = markersize)
 
 axs[2].set_xlabel(r'$x \; \mathrm{(m)}$')
@@ -272,7 +278,7 @@ for ax in axs:
 fig.legend(ncols = 3,
               loc='outside upper center',frameon = False)
 
-figname = f'{fig_folder}Subplot_EhD_VS_x'
+figname = f'{fig_folder}Subplot_EhD_VS_x_two_lines_geophones'
 plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.svg', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')
