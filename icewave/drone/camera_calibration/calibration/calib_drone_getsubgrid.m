@@ -1,7 +1,5 @@
-function M = calib_drone_getsubgrid(im,Xout,Yout,name)
+function M = calib_drone_getsubgrid(im,Xout,Yout,name,folder)
 % 
-
-
 
 figure(1) % show image 
 hold off
@@ -56,7 +54,7 @@ while isempty(s)
 
     M(c).m.corners = corners; % initially commented by Stephane 
     
-    save(['transient_' name],'M')
+    save([folder 'transient_' name],'M')
     axis([1,nx,1,ny])
     getframe();
 
