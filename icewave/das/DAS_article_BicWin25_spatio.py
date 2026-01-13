@@ -186,9 +186,9 @@ offset_text = cbar.ax.yaxis.get_offset_text()
 offset_text.set_x(1)
 
 figname = f'{fig_folder}spatio_temporal_{label_UTC0}_chunk_{chunk}_ZEN'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
 
 #%% Show zoomed on flexural wave spatio-temporal
 
@@ -241,9 +241,9 @@ offset_text = cbar.ax.yaxis.get_offset_text()
 offset_text.set_x(1)
 
 figname = f'{fig_folder}spatio_temporal_{label_UTC0}_chunk_{chunk}_Z_zoomed'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
 
 
 #%% Create a subplot of three graphs
@@ -355,7 +355,7 @@ for ax_key in axd.keys():
         # offset_text.set_x(1)
 
 
-figname = f'{fig_folder}montage_spatio_temporal_{label_UTC0}_chunk_{chunk}'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
+# figname = f'{fig_folder}montage_spatio_temporal_{label_UTC0}_chunk_{chunk}'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')

@@ -203,6 +203,7 @@ for i,key in enumerate(data_h.keys()):
 
 model_key = '20250210'
 markersize = 8
+x_boarder = np.array([170,310])
 
 full_blues = mpl.colormaps['Blues'].resampled(256)
 new_blues = colors.ListedColormap(full_blues(np.linspace(0.2,1,256)))
@@ -228,6 +229,9 @@ axs[0].set_xlabel(r'$x \; \mathrm{(m)}$')
 axs[0].set_ylabel(r'$E \; \mathrm{(GPa)}$')
 axs[0].set_ylim([4,6])
 
+# add vertical lines 
+
+
 # plot h VS x
 # plot drilling
 axs[1].errorbar(avg_data[:,0,0],avg_data[:,0,1],xerr = avg_data[:,1,0],yerr = avg_data[:,1,1],
@@ -252,6 +256,10 @@ axs[1].plot(np.mean(sub_results[model_key]['x'][1:3]),np.mean(sub_results[model_
 
 axs[1].set_xlabel(r'$x \; \mathrm{(m)}$')
 axs[1].set_ylabel(r'$h \; \mathrm{(m)}$')
+axs[1].set_ylim([0.22,0.82])
+
+# add vertical lines 
+
 
 # plot D VS x
 # plot DAS active
@@ -270,6 +278,13 @@ axs[2].plot(np.mean(sub_results[model_key]['x'][1:3]),np.mean(sub_results[model_
 
 axs[2].set_xlabel(r'$x \; \mathrm{(m)}$')
 axs[2].set_ylabel(r'$D \; \mathrm{(J)}$')
+axs[2].set_ylim([-1.1e6,1.5e8])
+
+# add vertical lines 
+axs[0].vlines(x_boarder,1, 10,linestyles = '--',colors = 'k',lw = 1)
+axs[1].vlines(x_boarder,0, 10,linestyles = '--',colors = 'k',lw = 1)
+axs[2].vlines(x_boarder,0, 1e9,linestyles = '--',colors = 'k',lw = 1)
+
 
 for ax in axs:
     ax.set_xlim([0,600])
@@ -278,7 +293,7 @@ for ax in axs:
 fig.legend(ncols = 3,
               loc='outside upper center',frameon = False)
 
-figname = f'{fig_folder}Subplot_EhD_VS_x_two_lines_geophones'
+figname = f'{fig_folder}Subplot_EhD_VS_x_with_ice_boarder'
 plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.svg', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')

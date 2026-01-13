@@ -30,7 +30,6 @@ import alphashape
 from shapely.geometry import MultiPoint
 from shapely.geometry import Point, Polygon
 from scipy.interpolate import griddata
-import cartopy.io.shapereader as shpreader
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
@@ -50,7 +49,7 @@ import icewave.field.gps as field_gps
 
 
 import icewave.analysis.bathy as bathy
-import stephane.display.graphes as graphes
+# import stephane.display.graphes as graphes
 import icewave.gps.gps as gps
 
 # PARULA COLORMAP 
@@ -202,9 +201,9 @@ ax.set_xlabel(r'Longitude (°)')
 ax.set_ylabel(r'Latitude (°)')
 
 figname = f'{fig_folder}Haha_bathymetry_DAS_GPS_superposition'
-plt.savefig(figname + '.pdf', bbox_inches='tight',dpi = 600)
-plt.savefig(figname + '.svg', bbox_inches='tight',dpi = 600)
-plt.savefig(figname + '.png', bbox_inches='tight',dpi = 600)
+# plt.savefig(figname + '.pdf', bbox_inches='tight',dpi = 600)
+# plt.savefig(figname + '.svg', bbox_inches='tight',dpi = 600)
+# plt.savefig(figname + '.png', bbox_inches='tight',dpi = 600)
 
 #%% Try Chatgpt method
 
@@ -340,3 +339,56 @@ ax.set_xlabel(r'Longitude (°)')
 ax.set_ylabel(r'Latitude (°)')
 
 
+#%%
+
+
+# 1. Configuration de la zone (Region du Bic / Baie du Ha! Ha!)
+# Coordonnées approximatives lues sur votre carte
+lat_min, lat_max = 48.30, 48.38  # ~ 48°18' à 48°23'
+lon_min, lon_max = -68.90, -68.80 # ~ 68°54' à 68°48'
+
+# 2. Création de la figure avec une projection
+# La projection Mercator est souvent utilisée pour les cartes marines, 
+# mais Lambert Conformal est mieux pour le Canada à grande échelle.
+# Ici, PlateCarree suffit pour une petite zone, ou Mercator pour le look "carte marine".
+projection = ccrs.Mercator()
+fig, ax = plt.subplots(figsize=(10, 8), subplot_kw={'projection': projection})
+
+# Définir l'étendue de la carte
+ax.set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
+
+# --- SIMULATION DE VOS DONNÉES DE BATHYMÉTRIE ---
+# (Remplacez ceci par votre code d'interpolation / pcolormesh)
+# Je crée un gradient simple pour l'exemple
+x = np.linspace(lon_min, lon_max, 100)
+y = np.linspace(lat_min, lat_max, 100)
+X, Y = np.meshgrid(x, y)
+Z = -1 * (np.sin((X+68.9)*20) * np.cos((Y-48.3)*20) * 30) # Fausse bathymétrie
+# Affichage de la bathymétrie
+cmap = plt.cm.viridis_r  # Palette similaire à votre image
+bathy = ax.pcolormesh(X, Y, Z, transform=ccrs.PlateCarree(), cmap=cmap, shading='auto', vmin=0, vmax=25)
+# ------------------------------------------------
+
+# 3. Ajout de la LIGNE DE CÔTE HAUTE PRÉCISION
+# 'scale' peut être: 'c' (crude), 'l' (low), 'i' (intermediate), 'h' (high), 'f' (full)
+# Pour votre échelle (quelques km), utilisez 'f' (full) si installé, sinon 'h'.
+high_res_land = cfeature.GSHHSFeature(scale='f', levels=[1], facecolor='lightgray', edgecolor='black')
+
+# Ajout des terres. IMPORTANT : zorder élevé pour cacher l'interpolation sous la terre.
+ax.add_feature(high_res_land, zorder=10) 
+
+# # 4. Ajout de la grille (Gridlines)
+# gl = ax.gridlines(draw_labels=True, dms=True, x_inline=False, y_inline=False, linestyle='--')
+# gl.top_labels = False
+# gl.right_labels = False
+# gl.xlabel_style = {'size': 10}
+# gl.ylabel_style = {'size': 10}
+
+# 5. Barre de couleur (Colorbar)
+cbar = plt.colorbar(bathy, ax=ax, orientation='horizontal', pad=0.05, shrink=0.5)
+cbar.set_label('Profondeur (m)')
+
+# Titre
+plt.title("Bathymétrie - Parc national du Bic (Baie du Ha! Ha!)")
+
+plt.show()

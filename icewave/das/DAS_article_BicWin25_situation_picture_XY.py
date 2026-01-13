@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt 
 import matplotlib.cm as cm
 from matplotlib.collections import LineCollection
+from matplotlib.font_manager import FontProperties
 import matplotlib.colors as colors
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -288,6 +289,16 @@ for i in range(len(MS_gps[MS_date]['h'])):
     ax.plot(Y_MS[i],X_MS[i],'p',color = current_color,mec = 'k',
             ms = 8,zorder = 3)
     
+areas_properties = FontProperties(family = 'Times New Roman')
+# add ice areas
+x_boarder = np.array([170,310])    
+ax.vlines(x_boarder,-122, 110,linestyles = '--',colors = 'k',lw = 1)
+ytext = 70
+xtext = [100,240,450]
+for i in range(len(xtext)):
+    region_label = r'R$' + '_' + str(i+1) + '$'
+    ax.text(xtext[i],ytext,region_label,family = 'serif',fontweight = 'bold')
+    
 divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="2%", pad=0.1)
 
@@ -304,7 +315,7 @@ ax.set_ylim(np.array([-120,120]) - X0) # [-120,120]
 ax.legend(ncols = 3, bbox_to_anchor = (0.11, 1),
               loc='lower left')
 
-figname = fig_folder + 'Camera_coord_YX_situation_picture_0205_18_doc_010_without_tomo_colorbar_h' 
+figname = fig_folder + 'Camera_coord_YX_situation_picture_0205_18_doc_010_notomo_ice_labels' 
 plt.savefig(figname + '.pdf', bbox_inches='tight',dpi = 600)
 plt.savefig(figname + '.svg', bbox_inches='tight',dpi = 600)
 plt.savefig(figname + '.png', bbox_inches='tight',dpi = 600)
