@@ -21,7 +21,7 @@ Different steps :
     
 N.B. : The inversion of the ice thickness can then be done using the averaged value of E and nu from both directions 
 
-
+smartgit test
 """
 
 # %matplotlib qt
