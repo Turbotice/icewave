@@ -102,13 +102,21 @@ def csv2dict(table,headerindex=0,symbol='#'):
         keys = table[0][1:]
         #print(keys)
         for tab in table[1:]:
+            try:
+                #try to convert to int the key
+                tab[0]=int(tab[0])
+            except:
+                pass #do nothing
             #print(tab)
             data[tab[0]]={}
             for (t,key) in zip(tab[1:],keys):
                 if '.' in t:
                     data[tab[0]][key]=float(t)
                 else:
-                    data[tab[0]][key]=int(t)
+                    try:
+                        data[tab[0]][key]=int(t)
+                    except:
+                        data[tab[0]][key]=str(t)
     else:
         header = table[headerindex]
         data = {}
