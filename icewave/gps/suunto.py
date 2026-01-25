@@ -2,6 +2,7 @@ import numpy as np
 import glob
 import os
 from pprint import pprint
+import subprocess
 
 import sqlite3
 
@@ -22,10 +23,20 @@ if not os.path.isdir(savefolder):
     os.makedirs(savefolder)
 
 def download_data(date=''):
+    retrieve()
     rows = read_database()
     data = convert_data(rows)
     save(data,date=date)
 
+def retrieve():
+    # get the database in the Suunto app folder using adb
+    #only work if only one adb device is connected
+
+    android_folder = '/storage/emulated/0/Android/data/com.stt.android.suunto/files/'
+    filename = android_folder+'stt-dump/amer_app.db'
+    outputfile = '~/Downloads/SuntooWatch/stt-dump/amer_app.db'
+    out = subprocess.run(['adb','pull',filename,outputfile],capture_output=True)
+    
 def read_database():
     conn = sqlite3.connect(database)
     cur = conn.cursor()
@@ -115,3 +126,6 @@ def get_traj(filename,tmin=None,tmax=None):
     d = decode(filename)
     X,Y = convert_traj(d,tmin=tmin,tmax=tmax)
     return X,Y,d
+
+if __name__ == '__main__':
+    download_data()
