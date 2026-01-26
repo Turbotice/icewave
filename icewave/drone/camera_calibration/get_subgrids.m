@@ -71,7 +71,7 @@ if ~isfolder(save_folder)
     mkdir(save_folder)
 end
 
-for i=8:length(M)
+for i=1:length(M)
     name = M(i).m.name;
     imname = M(i).m.imname;
     load(fullfile(folder,name))

@@ -4,7 +4,7 @@ close all
 %%
 % f=rdir('Images/*.tiff')
 path2tiff = 'W:/Banquise/Calibration_PMMH_2026/20251216/calib_video_4K/frame_selection/';
-f = dir([path2tiff '*.tiff']);
+f = dir([path2tiff 'Binarisation/' '*.tiff']);
 
 path2save = [ path2tiff 'Binarisation/'];
 if ~isfolder(path2save) 
@@ -67,7 +67,7 @@ for i=1:length(f)
     
     %
     BW=BW2;
-    save(filename,'BW')
+    % save(filename,'BW')
 
 end
 
