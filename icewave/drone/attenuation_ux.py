@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Sep  8 11:48:27 2025
+Created on Tue Jan 27 16:09:51 2026
 
 @author: sebas
+
+This script enables to compute waves attenuation law alpha(f) from the computation of 
+horizontal velocity field ux(x,y,t)
+
 """
 
 import numpy as np
@@ -40,7 +44,6 @@ new_blues = colors.ListedColormap(full_blues(np.linspace(0.2,1,256)))
 
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif', serif='Computer Modern')
-
 
 #%% FUNCTION SECTION 
 
@@ -320,6 +323,61 @@ def fit_peaks_by_lorentzian(signal,x,peaks,signal_model,rel_height, figname):
 
 #------------------------------------------------------------------------------------------------------------------
 
+def attenuation_from_FK_spectrum(E,peaks_properties,x_range,y_range,signal_model,rel_height,sub_folder):
+    """ Compute peak width using peaks detected from an FK spectrum
+    Inputs: - E, dictionnary with following keys: 
+                    - E: array like, [nx,ny], FK spectrum
+                    - x: array like, [nx,], x coordinates values
+                    - y: array like, [ny,], y coordinates values
+            - peaks_properties, dictionnary with following keys:
+                    - peaks: array like, indices of detected peaks
+                    - x: array like, x coordinate of detected peaks
+                    - y: array like, y coordinate of detected peaks 
+            - x_range,y_range : arrays like (2,) range of coordinate values over which we try to fit each detected peak
+            - signal_model : array like, model signal used for convolution in lorentzian fit
+            - rel_height, float, relative height used to compute width, see function indices2fit 
+            - sub_folder, string, folder where figures of each fit will be saved 
+    Output : - m, dictionnary, contains all results 
+    """
+    mask_x = np.where(np.logical_and(E['x'] < x_range[1],E['x'] > x_range[0]))[0]
+    mask_y = np.where(np.logical_and(E['y'] < y_range[1],E['y'] > y_range[0]))[0]
+    
+    x = E['x'][mask_x]
+    y = E['y'][mask_y]
+    M = E['E'][np.ix_(mask_x,mask_y)]
+    
+    m = {'A':[],'x':[],'y':[],'alpha':[],'err_x':[],'err_alpha':[],'d':[]}
+        
+    for idx, current_y in enumerate(y):
+        
+        # select peaks detected at current wavevector
+        mask = np.where(peaks_properties['y'] == current_y)[0]
+        peaks = peaks_properties['peaks'][mask]
+        
+        if len(peaks) > 0:
+        
+            y_txt = f'{current_y:.2f}'.replace('.','p')
+            figname = f'{sub_folder}Lorentzian_fit_y_{y_txt}'
+            
+            # compute attenuation 
+            current_results = fit_peaks_by_lorentzian(M[:,idx], x, peaks, signal_model, rel_height, figname)
+            m['A'].append(current_results['A'])
+            m['x'].append(current_results['x0'])
+            m['err_x'].append(current_results['err_x0'])
+            m['y'].append(current_y)
+            m['alpha'].append(current_results['alpha'])
+            m['err_alpha'].append(current_results['err_alpha'])
+            m['d'].append(current_results['d'])
+        
+    for key in m.keys():
+        m[key] = np.array(m[key])
+        m[key] = np.squeeze(m[key])
+        
+    return m
+
+#---------------------------------------------------------------------------------------------------------------------
+
+
 def temporal_attenuation_from_FK_spectrum(Efk,peaks_properties,f_range,k_range,rel_height,sub_folder):
     """ Compute temporal attenuation of detected peaks from a FK spectrum. 
     Inputs : - Efk, dictionnary, contains follwoing keys :+ E, array like [nf,nk], space-time spectrum 
@@ -333,8 +391,8 @@ def temporal_attenuation_from_FK_spectrum(Efk,peaks_properties,f_range,k_range,r
     
     
     # select area of FK where we want to compute attenuation
-    mask_f = np.where(np.logical_and(Efk['f'] < frequency_range[1],Efk['f'] > frequency_range[0]))[0]
-    mask_k = np.where(np.logical_and(Efk['k'] > wavevector_range[0],Efk['k'] < wavevector_range[1]))[0]
+    mask_f = np.where(np.logical_and(Efk['f'] < f_range[1],Efk['f'] > f_range[0]))[0]
+    mask_k = np.where(np.logical_and(Efk['k'] > k_range[0],Efk['k'] < k_range[1]))[0]
 
     f = Efk['f'][mask_f]
     k = Efk['k'][mask_k]
@@ -383,135 +441,53 @@ def fit_water_height(f,k,fun,err_f = None):
     err_hw = np.sqrt(np.diag(pcov)[0])  
     return hw,err_hw
 
+#----------------------------------------------------------------------------------------------------------
+def affine(x,a,b):
+    y = a*x + b
+    return y
 
-
-
-
-
-
+def powerlaw_fit(x,y,err_y):
+    """ Fit data using a power law, taking into account standard deviation of y """
+    log_x = np.log(x)
+    log_y = np.log(y)
+    err_log_y = err_y/y
+    
+    popt,pcov = scipy.optimize.curve_fit(lambda x,a,b : affine(log_x,a,b),log_x,log_y,sigma = err_log_y,absolute_sigma = True)
+    err_affine = np.sqrt(np.diag(pcov))
+    beta = popt[0]
+    err_beta = err_affine[0]
+    B = np.exp(popt[1])
+    err_B = B*err_affine[1]
+    
+    coeffs = (beta,B)
+    err_coeffs = (err_beta,err_B)
+    return coeffs,err_coeffs
 
 #%% Import data
 
-base = 'E:/Rimouski_2024/Data/'
+base = 'F:/Rimouski_2024/Data/'
 date = '0226'
 drone_ID = 'mesange'
 exp_ID = '10-waves_005'
 
 path2data = f'{base}{date}/Drones/{drone_ID}/matData/{exp_ID}/'
-filelist = glob.glob(f'{path2data}*scaled.mat')
+suffixe = f'{date}_{drone_ID}_{exp_ID}'
+filelist = glob.glob(f'{path2data}uz_ux*scaled.h5')
 print(filelist)
 
-idx_file = 0
-file2load = filelist[idx_file]
+file2load = filelist[0]
+S = rw.load_dict_from_h5(file2load)
 
-# load file 
-with h5py.File(file2load, 'r') as fmat:
-    S = {}
-    print('Top-level keys : ', list(fmat.keys()))
-    S = mat2py.mat_to_dict(fmat['m'],fmat['m'])
-    S = mat2py.transpose_PIVmat_fields(S)
-    
-#%%  Supress quadratic noise
+#%% Set fig_folder 
 
-Vx = FT.supress_quadratic_noise(np.transpose(S['Vx'],(1,0,2)),S['x'],S['y'])
-Vy = FT.supress_quadratic_noise(np.transpose(S['Vy'],(1,0,2)),S['x'],S['y'])
-Vx = np.transpose(Vx,(1,0,2))
-Vy = np.transpose(Vy,(1,0,2))
-# Vx = np.flip(Vx,(0,1))
-# Vy = np.flip(Vy,(0,1))
-
-print('Quadratic field supressed')
-
-#%% Define fig_folder
-
-fig_folder = f'{path2data}Figures_attenuation_ux_uz/'
+fig_folder = f'{path2data}Figures_attenuation_ux/'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
+    
+#%% Compute space-time spectrum for ux
 
-#%% Show apparent velocity fields Vx and Vy
-
-frame = 0
-extents_meter = np.array([S['x'].min(),S['x'].max(),S['y'].min(),S['y'].max()])
-extents_pix = np.array([S['PIXEL']['x_pix'].min(),S['PIXEL']['x_pix'].max(),
-                    S['PIXEL']['y_pix'].min(),S['PIXEL']['y_pix'].max()])
-
-set_graphs.set_matplotlib_param('single')
-fig, axs = plt.subplots(ncols = 2,sharey = True, figsize = (12,8))
-imsh = axs[0].imshow(Vx[:,:,frame].T,cmap = parula_map,origin = 'lower',aspect = 'equal',extent = extents_meter)
-divider = make_axes_locatable(axs[0])
-cax = divider.append_axes("right", size="2%", pad=0.1)
-cbar = plt.colorbar(imsh,cax = cax)
-cbar.set_label(r'$V_x \; \mathrm{(m.s^{-1})}$')
-
-imsh = axs[1].imshow(Vy[:,:,frame].T,cmap = parula_map,origin = 'lower',aspect = 'equal',extent = extents_meter)
-divider = make_axes_locatable(axs[1])
-cax = divider.append_axes("right", size="2%", pad=0.1)
-cbar = plt.colorbar(imsh,cax = cax)
-cbar.set_label(r'$V_y \; \mathrm{(m.s^{-1})}$')
-
-axs[0].set_ylabel(r'$y \; \mathrm{(m)}$')
-for ax in axs:
-    ax.set_xlabel(r'$x \; \mathrm{(m)}$')
-
-plt.tight_layout()
-
-#%% Compute ux and uz 
-
-uz,ux,err_uz = dp.get_uz_ux_from_structure(Vx,Vy,S)
-
-#%% Show spatio for uz and err_uz
-
-extents_spatio = [S['t'][0],S['t'][-1],S['x'][0],S['x'][-1]]
-fig,ax = plt.subplots()
-imsh = ax.imshow(uz,origin = 'lower',aspect = 'auto',cmap = 'seismic',
-          interpolation = 'gaussian',extent = extents_spatio)
-divider = make_axes_locatable(ax)
-cax = divider.append_axes("right", size="2%", pad=0.1)
-cbar = plt.colorbar(imsh,cax = cax)
-cbar.set_label(r'$u_z \; \mathrm{(m.s^{-1})}$')
-
-ax.set_xlabel(r'$t \; \mathrm{(s)}$',labelpad = 5)
-ax.set_ylabel(r'$x \; \mathrm{(m)}$',labelpad = 5)
-
-extents_spatio = [S['t'][0],S['t'][-1],S['x'][0],S['x'][-1]]
-fig,ax = plt.subplots()
-imsh = ax.imshow(err_uz,origin = 'lower',aspect = 'auto',cmap = parula_map,
-          interpolation = 'gaussian',extent = extents_spatio)
-divider = make_axes_locatable(ax)
-cax = divider.append_axes("right", size="2%", pad=0.1)
-cbar = plt.colorbar(imsh,cax = cax)
-cbar.set_label(r'$u_z \; \mathrm{(m.s^{-1})}$')
-
-ax.set_xlabel(r'$t \; \mathrm{(s)}$',labelpad = 5)
-ax.set_ylabel(r'$x \; \mathrm{(m)}$',labelpad = 5)
-
-
-#%% Show field for ux
-
-frame = 800
-fig, axs = plt.subplots(ncols = 2,sharey = True,figsize = (12,9))
-imsh = axs[0].imshow(ux[:,:,frame].T,cmap = parula_map,origin = 'lower',extent = extents_meter)
-divider = make_axes_locatable(axs[0])
-cax = divider.append_axes("right", size="2%", pad=0.1)
-cbar = plt.colorbar(imsh,cax = cax)
-cbar.set_label(r'$u_x \; \mathrm{(m.s^{-1})}$')
-
-imsh = axs[1].imshow(Vx[:,:,frame].T,cmap = parula_map,origin = 'lower',extent = extents_meter)
-divider = make_axes_locatable(axs[1])
-cax = divider.append_axes("right", size="2%", pad=0.1)
-cbar = plt.colorbar(imsh,cax = cax)
-cbar.set_label(r'$V_x \; \mathrm{(m.s^{-1})}$')
-
-axs[0].set_ylabel(r'$y \; \mathrm{(m)}$')
-axs[0].set_xlabel(r'$x \; \mathrm{(m)}$')
-axs[1].set_xlabel(r'$x \; \mathrm{(m)}$')
-
-plt.tight_layout()
-
-#%% Compute space-time spectrum 
-
-N = ux.shape[2]
-Efk = FT.space_time_spectrum(ux,1/S['SCALE']['fx'],S['SCALE']['facq_t'],add_pow2 = [0,0,0])
+N = S['ux'].shape[2]
+Efk = FT.space_time_spectrum(S['ux'],1/S['SCALE']['fx'],S['SCALE']['facq_t'],add_pow2 = [0,0,0])
 
 #%% Plot space time spectrum 
 
@@ -536,12 +512,12 @@ ax.set_ylabel(r'$f \; \mathrm{(Hz)}$', labelpad = 5)
 cbar = plt.colorbar(c,ax = ax)
 cbar.set_label(r'$|\hat{u}_x| (k,\omega) \; \mathrm{(u.a.)}$',labelpad = 5)
 
-figname = f'{fig_folder}ux_spacetime_spectrum_raw_{date}_{drone_ID}_{exp_ID}'
+figname = f'{fig_folder}ux_spacetime_spectrum_raw_{suffixe}'
 plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.svg', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')
 
-#%% Compute temporal attenuation 
+#%% Detect peaks from dispersion relation curve
 
 # Build Gaussian to be convoluted (can change gaussian width to detect more or less peaks)
 gaussian_width = 6
@@ -551,18 +527,18 @@ detec_param = {'prominence':1e-2,'rel_height':0.6} # parameters for find_peaks
 wavevector_range = [0.01,2.5] # range of wavevector spanned
 frequency_range = [0,1.5] # range of frequency over which we look for peaks
 
-S = matrix_peak_correlation_detection(Efk['E'], Efk['k'], Efk['f'], wavevector_range, frequency_range, 
+Speaks = matrix_peak_correlation_detection(Efk['E'], Efk['k'], Efk['f'], wavevector_range, frequency_range, 
                                       gaussian, detec_param)
 # change key name
-S['k'] = S['x']
-S['f'] = S['y']
-del S['x']
-del S['y']
+Speaks['k'] = Speaks['x']
+Speaks['f'] = Speaks['y']
+del Speaks['x']
+del Speaks['y']
 
-#%% Filter detected points and plot results
+#%% Filter detected points, plot results and save filtered peaks
 
 set_graphs.set_matplotlib_param('single')
-filtered_x,filtered_y,filtered_properties = scatter_filter.interactive_scatter_filter(S['k'], S['f'],S)
+filtered_x,filtered_y,filtered_properties = scatter_filter.interactive_scatter_filter(Speaks['k'], Speaks['f'],Speaks)
 
 fig, ax = plt.subplots()
 ax.plot(filtered_properties['k'],filtered_properties['f'],'o')
@@ -582,21 +558,43 @@ cbar = plt.colorbar(c,ax = ax)
 cbar.set_label(r'$|\hat{V}_x| (k,\omega) \; \mathrm{(u.a.)}$',labelpad = 5)
 
 # save filtered_properties
-file2save = f'{fig_folder}Filtered_peaks_respectto_f_fixed_k_{date}_{drone_ID}_{exp_ID}.h5'
+file2save = f'{fig_folder}Filtered_peaks_time_fixed_k_{suffixe}.h5'
 rw.save_dict_to_h5(filtered_properties, file2save)
 print('DONE.')
 
 
 #%% Compute temporal attenuation from Efk using Lorentzian fit 
 
-rel_height = detec_param['rel_height']
+E = {}
+E['E'] = Efk['E']
+E['x'] = 2*np.pi*Efk['f']
+E['y'] = Efk['k']
 
-sub_folder = f'{fig_folder}Lorentzian_fit/'
+peaks_dico = {}
+peaks_dico['peaks'] = filtered_properties['peaks']
+peaks_dico['x'] = 2*np.pi*filtered_properties['f']
+peaks_dico['y'] = filtered_properties['k']
+
+x_range = 2*np.pi*np.array(frequency_range)
+y_range = wavevector_range
+
+rel_height = detec_param['rel_height']
+sub_folder = f'{fig_folder}time_lorentzian_fit/'
 if not os.path.isdir(sub_folder):
     os.mkdir(sub_folder)
-
-m = temporal_attenuation_from_FK_spectrum(Efk,filtered_properties,frequency_range,wavevector_range,rel_height,sub_folder)
     
+m = attenuation_from_FK_spectrum(E, peaks_dico, x_range, y_range, gaussian, rel_height, sub_folder)
+
+del E
+del peaks_dico
+
+m['f'] = m.pop('x')/2/np.pi
+m['err_f'] = m.pop('err_x')/2/np.pi
+m['k'] = m.pop('y')
+m['lambda'] = m.pop('alpha')
+m['err_lambda'] = m.pop('err_alpha')
+print(m.keys())
+
 #%% Compute water depth hw
 
 fun = lambda k,hw : bound_harmonicN(k, 1, hw)/2/np.pi
@@ -627,20 +625,13 @@ ax.plot(k_fit,y_exp,'r',label = title)
 ax.legend()
 
 hw_txt = f'{hw:.2f}'.replace('.','p')
-figname = f'{fig_folder}ux_spacetime_spectrum_fit_hw_{hw_txt}_{date}_{drone_ID}_{exp_ID}'
+figname = f'{fig_folder}ux_FK_spectrum_time_detection_hw_{hw_txt}_{suffixe}'
 plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')
 
 # save water depth measurement
 m['hw'] = hw
 m['err_hw'] = err_hw
-
-
-
-
-
-
-
 
     
 #%% Compute spatial attenuation coefficient 
@@ -670,7 +661,7 @@ ax.set_xlim(xbounds)
 ax.set_ylim(ybounds)
 ax.legend()
 
-figname = f'{fig_folder}Spatial_attenuation_from_temporal_attenuation_{date}_{drone_ID}_{exp_ID}'
+figname = f'{fig_folder}Spatial_attenuation_from_time_detection_{suffixe}'
 plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.svg', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')  
@@ -684,27 +675,167 @@ m['power_law']['err_B'] = err_coeffs[1]
 m['power_law']['beta'] = coeffs[0]
 m['power_law']['err_beta'] = err_coeffs[0]
 
-file2save = f'{save_folder}attenuation_from_Efk_fixed_k_respect2f_{date}_{drone_ID}_{exp_ID}.pkl'
+file2save = f'{fig_folder}attenuation_data_time_detection_{suffixe}.pkl'
 with open(file2save,'wb') as pf :
     pickle.dump(m,pf)
     
     
-#%% Create main_results structure and save it 
+# =============================================================================
+# %% Detect peaks using fixed frequency and dtermining directly spatial attenuation
+# =============================================================================
 
-main_results = {}
-main_results['date'] = date
-main_results['drone_ID'] = drone_ID
-main_results['exp_ID'] = exp_ID
-main_results['DRONE'] = data['DRONE']
-main_results['SCALE'] = data['SCALE']
-main_results['GPS'] = data['GPS']
-main_results['t0_UTC'] = data['t0_UTC']
+#%% Detect peaks from dispersion relation curve
 
-main_results['FFT_spectrum'] = FFT_spectrum
-main_results['attenuation'] = m
+gaussian_width = 2
+N = 6
+gaussian = scipy.signal.windows.gaussian(M = gaussian_width * N,std = gaussian_width)
+detec_param = {'prominence':1e-2,'rel_height':0.4} # parameters for find peaks function
+frequency_range = [0.1,1.0] 
+wavevector_range = [0.05,3.0]
 
-file2save = f'{save_folder}main_results_{date}_{drone_ID}_{exp_ID}.pkl'
+Speaks = matrix_peak_correlation_detection(Efk['E'].T, Efk['f'], Efk['k'], frequency_range, wavevector_range, 
+                                           gaussian, detec_param)
+# change key name
+Speaks['f'] = Speaks['x']
+Speaks['k'] = Speaks['y']
+del S['x']
+del S['y']
+
+#%% Filter detected points, plot results and save filtered peaks
+
+set_graphs.set_matplotlib_param('single')
+filtered_x,filtered_y,filtered_properties = scatter_filter.interactive_scatter_filter(Speaks['k'], Speaks['f'],Speaks)
+
+fig, ax = plt.subplots()
+ax.plot(filtered_properties['k'],filtered_properties['f'],'o')
+c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = Amin,vmax = Amax,
+              origin = 'lower', interpolation = 'gaussian',
+              extent = (Efk['k'].min(),Efk['k'].max(),Efk['f'].min(),Efk['f'].max()))
+
+# ax.set_xscale('log')
+# ax.set_yscale('log')
+ax.set_xlim(kbounds)
+ax.set_ylim(fbounds)
+
+ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$', labelpad = 5)
+ax.set_ylabel(r'$f \; \mathrm{(Hz)}$', labelpad = 5)
+
+cbar = plt.colorbar(c,ax = ax)
+cbar.set_label(r'$|\hat{V}_x| (k,\omega) \; \mathrm{(u.a.)}$',labelpad = 5)
+
+# save filtered_properties
+file2save = f'{fig_folder}Filtered_peaks_space_fixed_f_{suffixe}.h5'
+rw.save_dict_to_h5(filtered_properties, file2save)
+print('DONE.')
+
+
+#%% Compute temporal attenuation from Efk using Lorentzian fit 
+
+E = {}
+E['E'] = Efk['E'].T
+E['x'] = Efk['k']
+E['y'] = 2*np.pi*Efk['f']
+
+
+peaks_dico = {}
+peaks_dico['peaks'] = filtered_properties['peaks']
+peaks_dico['y'] = 2*np.pi*filtered_properties['f']
+peaks_dico['x'] = filtered_properties['k']
+
+y_range = 2*np.pi*np.array(frequency_range)
+x_range = wavevector_range
+
+rel_height = detec_param['rel_height']
+sub_folder = f'{fig_folder}space_lorentzian_fit/'
+if not os.path.isdir(sub_folder):
+    os.mkdir(sub_folder)
+    
+m = attenuation_from_FK_spectrum(E, peaks_dico, x_range, y_range, gaussian, rel_height, sub_folder)
+
+del E
+del peaks_dico
+
+m['k'] = m.pop('x')
+m['err_k'] = m.pop('err_x')
+m['f'] = m.pop('y')/2/np.pi
+print(m.keys())
+
+#%% Compute water depth hw
+
+fun = lambda k,hw : bound_harmonicN(k, 1, hw)/2/np.pi
+hw,err_hw = fit_water_height(m['f'], m['k'], fun)
+
+set_graphs.set_matplotlib_param('single')
+fig, ax = plt.subplots()
+ax.errorbar(m['k'],m['f'],xerr = m['err_k'],fmt = '.',color = 'w')
+c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = Amin,vmax = Amax,
+              origin = 'lower', interpolation = 'gaussian',
+              extent = (Efk['k'].min(),Efk['k'].max(),Efk['f'].min(),Efk['f'].max()))
+
+# ax.set_xscale('log')
+# ax.set_yscale('log')
+ax.set_xlim(kbounds)
+ax.set_ylim(fbounds)
+ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$', labelpad = 5)
+ax.set_ylabel(r'$f \; \mathrm{(Hz)}$', labelpad = 5)
+cbar = plt.colorbar(c,ax = ax)
+cbar.set_label(r'$|\hat{u}_x| (k,\omega) \; \mathrm{(u.a.)}$',labelpad = 5)
+
+title = r'$H = ' + f'{hw:.2f}' + '\pm' + f' {err_hw:.2f}' +'$'
+
+k_fit = np.linspace(kbounds[0],kbounds[1],100)
+y_exp = bound_harmonicN(k_fit, 1, hw)/2/np.pi
+
+ax.plot(k_fit,y_exp,'r',label = title)
+ax.legend()
+
+hw_txt = f'{hw:.2f}'.replace('.','p')
+figname = f'{fig_folder}ux_FK_spectrum_space_detection_hw_{hw_txt}_{suffixe}'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
+
+# save water depth measurement
+m['hw'] = hw
+m['err_hw'] = err_hw
+
+    
+#%% Compute spatial attenuation coefficient 
+
+xbounds = [0.1,1]
+ybounds = [1e-3,1e0]
+x_fit = np.linspace(xbounds[0],xbounds[1],100)
+
+# fit by a powerlaw
+coeffs,err_coeffs = powerlaw_fit(m['f'], m['alpha'], m['err_alpha'])
+yth = coeffs[1]*x_fit**coeffs[0]
+
+label_th = r'$y = ' + f'{coeffs[1]:.2f}'+ 'f^{' + f'{coeffs[0]:.3f}' + '}$'
+
+fig, ax = plt.subplots()
+ax.errorbar(m['f'],m['alpha'],yerr = m['err_alpha'],fmt = 'o')
+ax.plot(x_fit,yth,linewidth = 2,label = label_th)
+ax.set_xlabel(r'$f \; \mathrm{(Hz)}$')
+ax.set_ylabel(r'$\alpha \; \mathrm{(m^{-1})}$')
+ax.set_xscale('log')
+ax.set_yscale('log')
+ax.set_xlim(xbounds)
+ax.set_ylim(ybounds)
+ax.legend()
+
+figname = f'{fig_folder}Spatial_attenuation_from_spatial_detection_{suffixe}'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.svg', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')  
+
+# Save data 
+m['power_law'] = {}
+m['power_law']['B'] = coeffs[1]
+m['power_law']['err_B'] = err_coeffs[1]
+m['power_law']['beta'] = coeffs[0]
+m['power_law']['err_beta'] = err_coeffs[0]
+
+file2save = f'{fig_folder}attenuation_data_space_detection_{suffixe}.pkl'
 with open(file2save,'wb') as pf :
-    pickle.dump(main_results,pf)
+    pickle.dump(m,pf)
+    
 
-print('Main results file saved !')

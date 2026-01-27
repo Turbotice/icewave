@@ -29,6 +29,7 @@ import icewave.tools.Fourier_tools as FT
 import icewave.drone.drone_projection as dp
 import icewave.tools.rw_data as rw
 
+global parula_map
 parula_map = matcmaps.parula()
 
 def load_mat_structure(base,date,drone_ID,exp_ID, idx_file = 0):
@@ -87,6 +88,58 @@ def plot_Vx_Vy(Vx,Vy,S,frame,cmap = parula_map):
 
     return fig, axs
 
+def plot_uz(uz,S,cmap = 'seismic'):
+    """ Create spatio-temporal plot of vertical velocity uz:
+        Inputs : - uz : array like [nx,nt], array of vertical velocity
+                 - S : dictionnary containing keys 't' and 'x' wich are time and x coordinate
+    """
+    
+    extents_spatio = [S['t'][0],S['t'][-1],S['x'][0],S['x'][-1]]
+    fig,ax = plt.subplots()
+    imsh = ax.imshow(uz,origin = 'lower',aspect = 'auto',cmap = cmap,
+              interpolation = 'gaussian',extent = extents_spatio)
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="2%", pad=0.1)
+    cbar = plt.colorbar(imsh,cax = cax)
+    cbar.set_label(r'$u_z \; \mathrm{(m.s^{-1})}$')
+
+    ax.set_xlabel(r'$t \; \mathrm{(s)}$',labelpad = 5)
+    ax.set_ylabel(r'$x \; \mathrm{(m)}$',labelpad = 5)
+    
+    return fig,ax
+
+def compare_ux_Vx(ux,Vx,S,frame):
+    """ Compare measured velocity field Vx and compute field ux after pinhole projection 
+    Inputs: - ux,array like [nx,ny,nt] horizontal velocity field computed after projection
+            - Vx, array like [nx,ny,nt] horizontal velocity field, measured on the camera sensor
+            - S, dictionnary containing keys 'x' and 'y', metric coordinates of the observed zone
+            - frame, int, frame that will be used to show fields 
+    """
+    
+    extents_meter = np.array([S['x'].min(),S['x'].max(),S['y'].min(),S['y'].max()])
+    
+    fig, axs = plt.subplots(ncols = 2,sharey = True,figsize = (12,9))
+    imsh = axs[0].imshow(ux[:,:,frame].T,cmap = parula_map,origin = 'lower',extent = extents_meter)
+    divider = make_axes_locatable(axs[0])
+    cax = divider.append_axes("right", size="2%", pad=0.1)
+    cbar = plt.colorbar(imsh,cax = cax)
+    cbar.set_label(r'$u_x \; \mathrm{(m.s^{-1})}$')
+
+    imsh = axs[1].imshow(Vx[:,:,frame].T,cmap = parula_map,origin = 'lower',extent = extents_meter)
+    divider = make_axes_locatable(axs[1])
+    cax = divider.append_axes("right", size="2%", pad=0.1)
+    cbar = plt.colorbar(imsh,cax = cax)
+    cbar.set_label(r'$V_x \; \mathrm{(m.s^{-1})}$')
+
+    axs[0].set_ylabel(r'$y \; \mathrm{(m)}$')
+    axs[0].set_xlabel(r'$x \; \mathrm{(m)}$')
+    axs[1].set_xlabel(r'$x \; \mathrm{(m)}$')
+
+    plt.tight_layout()
+    
+    return fig, axs
+
+
 def process_file(base,date,drone_ID,exp_ID, flip_field = 0, idx_file = 0):
     """ Load structure obtained from PIVlab, supress quadratic noise, plot the apparent velocity field and compute 
     real velocity fields (uz,ux) vertical and along wave field propagation, and save resulting structure. 
@@ -99,6 +152,12 @@ def process_file(base,date,drone_ID,exp_ID, flip_field = 0, idx_file = 0):
     """
     
     S, file2load = load_mat_structure(base, date, drone_ID, exp_ID, idx_file = idx_file)
+    path2data = f'{base}{date}/Drones/{drone_ID}/matData/{exp_ID}/'
+    fig_folder = f'{path2data}/Figures_ux_uz/'
+    if not os.path.isdir(fig_folder):
+        os.mkdir(fig_folder)
+        
+    suffixe = f'{date}_{drone_ID}_{exp_ID}'
     
     Vx = FT.supress_quadratic_noise(np.transpose(S['Vx'],(1,0,2)),S['x'],S['y'])
     Vy = FT.supress_quadratic_noise(np.transpose(S['Vy'],(1,0,2)),S['x'],S['y'])
@@ -111,9 +170,27 @@ def process_file(base,date,drone_ID,exp_ID, flip_field = 0, idx_file = 0):
     
     frame = 0
     fig, axs = plot_Vx_Vy(Vx, Vy, S, frame)
+    figname = f'{fig_folder}Vx_Vy_frame{str(frame)}_{suffixe}'
+    plt.savefig(figname + '.pdf', bbox_inches='tight')
+    plt.savefig(figname + '.png', bbox_inches='tight')
     
     uz,ux,err_uz = dp.get_uz_ux_from_structure(Vx,Vy,S)
-
+    
+    fig,ax = plot_uz(uz,S)
+    figname = f'{fig_folder}uz_spatio_{suffixe}'
+    plt.savefig(figname + '.pdf', bbox_inches='tight')
+    plt.savefig(figname + '.png', bbox_inches='tight')
+    
+    fig,ax = plot_uz(err_uz,S,cmap = parula_map)
+    figname = f'{fig_folder}err_uz_spatio_{suffixe}'
+    plt.savefig(figname + '.pdf', bbox_inches='tight')
+    plt.savefig(figname + '.png', bbox_inches='tight')
+    
+    fig, axs = compare_ux_Vx(ux, Vx, S, frame)
+    figname = f'{fig_folder}comparison_ux_Vx_{suffixe}'
+    plt.savefig(figname + '.pdf', bbox_inches='tight')
+    plt.savefig(figname + '.png', bbox_inches='tight')
+    
     data = S.copy()
     data['uz'] = uz
     data['ux'] = ux
@@ -126,7 +203,6 @@ def process_file(base,date,drone_ID,exp_ID, flip_field = 0, idx_file = 0):
     mat_name = file2load.split('\\')[-1]
     filename = mat_name.replace('.mat','.h5')
     filename = filename.replace('PIV_processed','uz_ux')
-    path2data = f'{base}{date}/Drones/{drone_ID}/matData/{exp_ID}/'
     
     print('Saving data...')
     rw.save_dict_to_h5(data, f'{path2data}{filename}')
@@ -140,8 +216,8 @@ def main():
 
     date = '0226'
     drone_ID = 'mesange'
-    exp_ID = '12-FRAC_001'
-    flip_field = 1
+    exp_ID = '10-waves_005'
+    flip_field = 0
     
     process_file(base, date, drone_ID, exp_ID, flip_field = flip_field)
 
