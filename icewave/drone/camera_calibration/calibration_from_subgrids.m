@@ -12,8 +12,9 @@
 %% Load data 
 
 % path2data = ['Z:/skuchly/Codes/' 'matrix_points_bernache.mat'];
+% main_path = 'Y:/Banquise/Sebastien/Calibration_intrinseque/Calib_PMMH/';
 main_path = 'W:/Banquise/Calibration_PMMH_2026/20251216/calib_video_4K/frame_selection/';
-path2data = [main_path 'matrix_points.mat'];
+path2data = [main_path 'matrix_points_V2.mat'];
 load(path2data)
 
 %% Show a given subgrid
@@ -28,7 +29,7 @@ Mtab = sort_points(Mp,nx,ny);
 
 %% Save Mtab
 
-filename = [main_path 'matrix_points_sorted.mat'];
+filename = [main_path 'matrix_points_sorted_V2.mat'];
 
 save(filename,'Mtab','-v7.3')
 
@@ -51,11 +52,11 @@ stereoParams = estimateCameraParameters(imagePoints,worldPoints,ImageSize=imageS
 
 %% Save stereoParams and show extrinsics parameters
 
-figure(5)
+figure,
 showExtrinsics(stereoParams)
 
-file_stereo = [main_path 'stereoParams_Tourterelle_4K.mat'];
-save(file_stereo,'stereoParams','-v7.3')
+% file_stereo = [main_path 'stereoParams_Tourterelle_4K_V2.mat'];
+% save(file_stereo,'stereoParams','-v7.3')
 
 
 

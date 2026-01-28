@@ -71,7 +71,7 @@ if ~isfolder(save_folder)
     mkdir(save_folder)
 end
 
-for i=1:length(M)
+for i=10:length(M)
     name = M(i).m.name;
     imname = M(i).m.imname;
     load(fullfile(folder,name))
@@ -99,14 +99,14 @@ matlist = dir([save_folder 'transient_im_*.mat']);
 nx = 9;
 ny = 7;
 c=0; % counter
-for i=1:length(matlist)
+for i=7:length(matlist)
     Msub = load([save_folder matlist(i).name]);
 
     for k=1:length(Msub.M)
         n = length(Msub.M(k).m.Xsub);
         if n == nx*ny
             c=c+1;
-            Mp(c).m=Mref(i).m;
+            Mp(c).m=M(i).m;
             Mp(c).m.X = Msub.M(k).m.Xsub;
             Mp(c).m.Y = Msub.M(k).m.Ysub;
             % Mp(c).m.corners = Msub.M(k).m.corners;
@@ -117,5 +117,5 @@ end
 
 %% Save structure Mp
 
-file2save = [main_path 'matrix_points.mat'];
+file2save = [main_path 'matrix_points_V2.mat'];
 save(file2save,'Mp','-v7.3')

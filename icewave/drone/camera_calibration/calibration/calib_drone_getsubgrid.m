@@ -58,5 +58,5 @@ while isempty(s)
     axis([1,nx,1,ny])
     getframe();
 
-    s=input('Select another subgrid ?')
+    s = input('Select another subgrid ?')
 end
