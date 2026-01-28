@@ -53,6 +53,7 @@ def matrix_peak_correlation_detection(M,x,y,x_range,y_range,model_signal,detec_p
     
     delta_y = np.diff(y)[0]
     
+    print(M.shape)
     mask_y = np.where(np.logical_and(y < y_range[1],y > y_range[0]))[0]
     y = y[mask_y]
     M = M[mask_y,:]
