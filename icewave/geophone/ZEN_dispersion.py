@@ -34,7 +34,7 @@ import icewave.geophone.package_geophone as geopack
 
 #%% Set parameters 
 year = '2025'
-date = '0204' #date format, 'mmdd'
+date = '0210' #date format, 'mmdd'
 acqu_numb = '0001' #acquisition number 
 
 path2data = os.path.join('U:/Data/',date,'Geophones/')
@@ -95,7 +95,7 @@ seismic_data_streams,datetime_values,fs = geopack.build_data_streams(path2data +
  
 channel = 0 #0 for E, 1 for N, 2 for Z. 
 
-selected_indices = range(channel, len(seismic_data_streams),6)
+selected_indices = range(channel, len(seismic_data_streams),6) # change step of arange if needed!! 
 fig, ax = plt.subplots(figsize = fig_size)
 for k, idx in enumerate(selected_indices):
     current_stream = seismic_data_streams[idx]
@@ -145,7 +145,7 @@ t3 = loaded_data.get('d' + date + 'a' + acqu_numb + 'tS' + S3 + composante)
 t1_values = [t1,t2,t3]
 
 # Create a matrix to store the seismic data
-selected_indices = np.arange(channel, len(seismic_data_streams),6)
+selected_indices = np.arange(channel, len(seismic_data_streams),6) # change step of arange !! 
 ta = t1 + signal_length 
 num_samples = int(signal_length * fs) # Number of points generated in time_vector 
 time_vector = np.linspace(t1.timestamp, ta.timestamp, num_samples) # timestamp gets the number of sec in ta, t1

@@ -24,7 +24,7 @@ import icewave.geophone.package_geophone as geopack
 #%% Import data 
 
 year = '2025'
-date = '0204' #date format, 'mmdd'
+date = '0210' #date format, 'mmdd'
 acqu_numb = '0001' #acquisition number 
 
 path2data = os.path.join('U:/Data/',date,'Geophones/')
@@ -116,7 +116,7 @@ kQS = np.nanmean([kQS1_interp, kQS2_interp], axis=0)
 # Plot the results
 fig, ax = plt.subplots()
 ax.plot(s['dir1']['k'], s['dir1']['f'],  'bo', label='kQS1')
-ax.plot(s['dir2']['k'], s['dir2']['f'],  'bo', label='kQS2')
+ax.plot(s['dir2']['k'], s['dir2']['f'],  'go', label='kQS2')
 ax.plot(kQS1_interp, freq,  'b--', label='kQS1 interpolated')
 ax.plot(kQS2_interp, freq, 'g--', label='kQS2 interpolated')
 ax.plot(kQS, freq, 'r--', label='Average kQS')
@@ -138,7 +138,7 @@ h_ice = h[np.argmin(l2_norm)] # keep thickness of ice that minimizes the error
 print(h_ice)
 
 #%% computes wavevectors k 
-k_mode_synthetic, k_QS0, k_SH0, cphQS = geopack.wavenumbers_stein(results['rho_ice'], 0.7, 
+k_mode_synthetic, k_QS0, k_SH0, cphQS = geopack.wavenumbers_stein(results['rho_ice'], h_ice, 
                                                           results['E'], results['nu'],freq,c_w,rho_w)
 
 fig, ax = plt.subplots()
