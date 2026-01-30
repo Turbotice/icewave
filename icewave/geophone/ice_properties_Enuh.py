@@ -21,14 +21,23 @@ import pickle
 import scipy
 
 import icewave.geophone.package_geophone as geopack
+import icewave.sebastien.set_graphs as set_graphs
+
+plt.rc('text', usetex=True)
+plt.rc('font', family='serif', serif='Computer Modern')
 #%% Import data 
 
-year = '2025'
-date = '0210' #date format, 'mmdd'
-acqu_numb = '0001' #acquisition number 
+year = '2026'
+date = '0129' #date format, 'mmdd'
+acqu_numb = '0003' #acquisition number 
 
-path2data = os.path.join('U:/Data/',date,'Geophones/')
+path2data = os.path.join('F:/Rimouski_2026/',date,'Geophones/')
 signal_length = 1
+
+fig_folder = path2data + acqu_numb + '/Results/' # folder where figures are saved 
+
+if not os.path.isdir(fig_folder):
+    os.mkdir(fig_folder)
 
 # load c_QS0 and c_SH0
 file2load = f'{path2data}Phase_velocity_dictionnary_acqu_{acqu_numb}_sig_length_' + str(signal_length).replace('.','p') + '.pkl'
@@ -100,7 +109,7 @@ h = np.arange(0.1,1.0,h_precision) # array of height tested
 mini = max(min(s['dir1']['f']),min(s['dir2']['f']))
 maxi = min(max(s['dir1']['f']),max(s['dir2']['f']))
 
-freq = np.linspace(mini,maxi , 15)
+freq = np.linspace(mini,maxi , 30)
 
 # Interpolate kQS1 at the new frequency points, without extrapolation
 interpolator1 = scipy.interpolate.interp1d(s['dir1']['f'], s['dir1']['k'])
@@ -111,17 +120,18 @@ interpolator2 = scipy.interpolate.interp1d(s['dir2']['f'], s['dir2']['k'])
 kQS2_interp = interpolator2(freq)
 
 # Calculate the average values, ignoring NaNs
-kQS = np.nanmean([kQS1_interp, kQS2_interp], axis=0)
+# kQS = np.nanmean([kQS1_interp, kQS2_interp], axis=0)
+kQS = kQS1_interp
 
 # Plot the results
 fig, ax = plt.subplots()
-ax.plot(s['dir1']['k'], s['dir1']['f'],  'bo', label='kQS1')
-ax.plot(s['dir2']['k'], s['dir2']['f'],  'go', label='kQS2')
-ax.plot(kQS1_interp, freq,  'b--', label='kQS1 interpolated')
-ax.plot(kQS2_interp, freq, 'g--', label='kQS2 interpolated')
-ax.plot(kQS, freq, 'r--', label='Average kQS')
+ax.plot(s['dir1']['k'], s['dir1']['f'], '.',color = 'tab:blue', label='kQS1')
+ax.plot(s['dir2']['k'], s['dir2']['f'],  '.',color = 'tab:orange', label='kQS2')
+ax.plot(kQS1_interp, freq,  '--',color = 'tab:blue', label='kQS1 interpolated')
+ax.plot(kQS2_interp, freq, '--', color = 'tab:orange',label='kQS2 interpolated')
+ax.plot(kQS, freq, 'r^', label='Average kQS')
 ax.set_xlabel(r'$k_{QS} \: \mathrm{(rad.m^{-1})}$')
-ax.set_ylabel(r'$f \: \mathrm{rad.m^{(-1})}$')
+ax.set_ylabel(r'$f \: \mathrm{(Hz)}$')
 ax.legend()
 
 #%% Find ice thickness
@@ -137,20 +147,41 @@ for i in range(len(h)):
 h_ice = h[np.argmin(l2_norm)] # keep thickness of ice that minimizes the error
 print(h_ice)
 
-#%% computes wavevectors k 
+#%% Save clean graph
+
 k_mode_synthetic, k_QS0, k_SH0, cphQS = geopack.wavenumbers_stein(results['rho_ice'], h_ice, 
                                                           results['E'], results['nu'],freq,c_w,rho_w)
 
+set_graphs.set_matplotlib_param('single')
+
+label_th = r'$h = ' + f'{h_ice:.2f}' '\; \mathrm{m}$'
 fig, ax = plt.subplots()
-ax.plot(k_mode_synthetic,freq,color = 'g')
-ax.plot(kQS,freq,linestyle = '--', color = 'r')
+ax.plot(k_mode_synthetic,freq,color = 'tab:orange',label = label_th)
+ax.plot(kQS,freq,'o', color = 'tab:blue',mec = 'k')
+ax.set_xlabel('$k \; \mathrm{(rad.m^{-1})}$')
+ax.set_ylabel('$f \; \mathrm{(Hz)}$')
+ax.legend()
+
+# ax.set_xscale('log')
+# ax.set_yscale('log')
+
+figname = f'{fig_folder}hice_inversion_{date}_acq_{acqu_numb}'
+plt.savefig(figname + '.pdf', bbox_inches = 'tight')
+plt.savefig(figname + '.png', bbox_inches = 'tight')
 
 results['h_ice'] = h_ice
 
-#%%
+#%% Save results 
 
+file2save = f'{path2data}{year}_{date}_acq{acqu_numb}_results_inversion.pkl'
+with open(file2save,'wb') as pfile:
+    pickle.dump(results,pfile)
+
+#%% Check evolution of fit with ice thickness
 fig, ax = plt.subplots()
 ax.plot(h,l2_norm)
+ax.set_xlabel('$h \; \mathrm{(m)}$')
+ax.set_ylabel('$||k_{th} - k_{exp}||_2$')
 
 
     

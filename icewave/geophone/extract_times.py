@@ -28,12 +28,15 @@ from matplotlib.patches import PathPatch
 import time
 import csv 
 
-#%% Set parameters 
-year = '2025'
-date = '0204' #date format, 'mmdd'
-acqu_numb = '0001' #acquisition number 
+import icewave.geophone.package_geophone as geopack
 
-path2data = os.path.join('U:/Data/',date,'Geophones/')
+
+#%% Set parameters 
+year = '2026'
+date = '0129' #date format, 'mmdd'
+acqu_numb = '0003' #acquisition number 
+
+path2data = os.path.join('F:/Rimouski_2026/',date,'Geophones/')
 
 # set path to geophone correspondence table
 geophones_table_path = 'C:/Users/sebas/git/icewave/sebastien/geophones/geophones_table'
@@ -41,7 +44,7 @@ geophones_table_path = 'C:/Users/sebas/git/icewave/sebastien/geophones/geophones
 
 #files need to be organised as: data/0210/Geophones/0001/minised files
 
-geophones_spacing = 3 # space between geophones, in meter 
+geophones_spacing = 6 # space between geophones, in meter 
 signal_length = 1 # duration in seconds 
 channel_dic = {
     1: "N",
@@ -81,9 +84,9 @@ seismic_data_streams,datetime_values,fs = geopack.build_data_streams(path2data +
 #%%----------------------- PLOTTING SELECTED CHANNEL FOR ALL GEOPHONES ------------------ 
 ##############################################################################################
  
-channel = 0 #0 for E, 1 for N, 2 for Z. 
+channel = 1 #0 for E, 1 for N, 2 for Z. 
 
-selected_indices = range(channel, len(seismic_data_streams),6)
+selected_indices = range(channel, len(seismic_data_streams),3)
 fig, ax = plt.subplots(figsize = fig_size)
 for k, idx in enumerate(selected_indices):
     current_stream = seismic_data_streams[idx]
@@ -120,19 +123,19 @@ composante = 'N' #Z , E or N -> direction de la source
 
 # S101, S102, S103
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '101' + composante 
-time_dict[key] = UTCDateTime("2025-02-12T21:08:48.20")
+time_dict[key] = UTCDateTime("2026-01-29T17:21:48.00")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '102' + composante 
-time_dict[key] = UTCDateTime("2025-02-12T21:09:53.50")
+time_dict[key] = UTCDateTime("2026-01-29T17:23:05.68")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '103' + composante 
-time_dict[key] = UTCDateTime("2025-02-12T21:10:55.80")
+time_dict[key] = UTCDateTime("2026-01-29T17:24:23.20")
 
 # # S104, S105, S106
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '104' + composante 
-time_dict[key] = UTCDateTime("2025-02-12T21:13:12.50")
+time_dict[key] = UTCDateTime("2026-01-29T17:45:24.85")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '105' + composante 
-time_dict[key] = UTCDateTime("2025-02-12T21:14:08.40")
+time_dict[key] = UTCDateTime("2026-01-29T17:18:59.75")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '106' + composante 
-time_dict[key] = UTCDateTime("2025-02-12T21:15:08.85")
+time_dict[key] = UTCDateTime("2026-01-29T17:20:05.80")
 
 # S107 , S108 , S109
 # key = 'd' + date + 'a' + acqu_numb + 'tS' + '107' + composante 
@@ -187,7 +190,7 @@ t3 = loaded_data.get('d' + date + 'a' + acqu_numb + 'tS' + S3 + composante)
 t1_values = [t1,t2,t3]
 
 # Create a matrix to store the seismic data
-selected_indices = np.arange(channel, len(seismic_data_streams),6)
+selected_indices = np.arange(channel, len(seismic_data_streams),3)
 ta = t1 + signal_length 
 num_samples = int(signal_length * fs) # Number of points generated in time_vector 
 time_vector = np.linspace(t1.timestamp, ta.timestamp, num_samples) # timestamp gets the number of sec in ta, t1

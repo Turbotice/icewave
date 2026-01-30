@@ -33,11 +33,11 @@ import math
 import icewave.geophone.package_geophone as geopack
 
 #%% Set parameters 
-year = '2025'
-date = '0210' #date format, 'mmdd'
-acqu_numb = '0001' #acquisition number 
+year = '2026'
+date = '0129' #date format, 'mmdd'
+acqu_numb = '0003' #acquisition number 
 
-path2data = os.path.join('U:/Data/',date,'Geophones/')
+path2data = os.path.join('F:/Rimouski_2026/',date,'Geophones/')
 
 # set path to geophone correspondence table
 geophones_table_path = 'C:/Users/sebas/git/icewave/sebastien/geophones/geophones_table'
@@ -71,7 +71,7 @@ img_quality = 1000 # dpi to save images
 plt.rcParams.update({
     "text.usetex": True}) # use latex
 
-fig_folder = path2data + acqu_numb + '/Results_short_line/' # folder where figures are saved 
+fig_folder = path2data + acqu_numb + '/Results/' # folder where figures are saved 
 
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
@@ -95,7 +95,7 @@ seismic_data_streams,datetime_values,fs = geopack.build_data_streams(path2data +
  
 channel = 0 #0 for E, 1 for N, 2 for Z. 
 
-selected_indices = range(channel, len(seismic_data_streams),6) # change step of arange if needed!! 
+selected_indices = range(channel, len(seismic_data_streams),3) # change step of arange if needed!! 
 fig, ax = plt.subplots(figsize = fig_size)
 for k, idx in enumerate(selected_indices):
     current_stream = seismic_data_streams[idx]
@@ -114,9 +114,9 @@ for k, idx in enumerate(selected_indices):
 signal_length = 1 # duration in seconds
 
 # load data of intial times 
-composante = 'Z'
-channel = 2
-direction = 1 # 1 ou 2
+composante = 'N'
+channel = 1
+direction = 2 # 1 ou 2
 
 flexure_wave = composante == 'Z' # 1 to pick the dispersion curves of the flexure wave, 0 to pick those of the other 2 modes
 horizontal_wave = not flexure_wave
@@ -143,12 +143,13 @@ t1 = loaded_data.get('d' + date + 'a' + acqu_numb + 'tS' + S1 + composante)
 t2 = loaded_data.get('d' + date + 'a' + acqu_numb + 'tS' + S2 + composante)
 t3 = loaded_data.get('d' + date + 'a' + acqu_numb + 'tS' + S3 + composante)
 t1_values = [t1,t2,t3]
+# t1_values = [t2,t3]
 
 # Create a matrix to store the seismic data
-selected_indices = np.arange(channel, len(seismic_data_streams),6) # change step of arange !! 
-ta = t1 + signal_length 
+selected_indices = np.arange(channel, len(seismic_data_streams),3) # change step of arange !! 
+ta = t2 + signal_length 
 num_samples = int(signal_length * fs) # Number of points generated in time_vector 
-time_vector = np.linspace(t1.timestamp, ta.timestamp, num_samples) # timestamp gets the number of sec in ta, t1
+time_vector = np.linspace(t2.timestamp, ta.timestamp, num_samples) # timestamp gets the number of sec in ta, t1
 
 num_traces = len(selected_indices)
 
@@ -205,7 +206,7 @@ elif direction == 2:
     FK_normalized = np.flipud(FK / np.max(FK))
 
 # Unwrapping Spectrum
-nb_stacking = 1 # number of times we want to stack the FK plot horizontally
+nb_stacking = 2 # number of times we want to stack the FK plot horizontally
 idx_stacking = 1
 FK_uwp = np.vstack((FK_normalized, FK_normalized))
 while idx_stacking < nb_stacking :
@@ -248,7 +249,7 @@ if flexure_wave:
     ax1.set_title('Spectrum with SVD filter')
     plt.colorbar(c1, ax=ax1, label='Spectrum Magnitude')
 
-    ax1.set_ylim([0, 100])
+    ax1.set_ylim([0, 200])
     print(f"Select {nb_points} points on the graph")
     points = plt.ginput(nb_points, timeout=-1)
 
@@ -435,7 +436,7 @@ elif flexure_wave:
     plt.savefig(figname + '.pdf', dpi = 300, bbox_inches = 'tight')
     plt.savefig(figname + '.png', dpi = 300, bbox_inches = 'tight')
     
-#%% Save data in a dictionnary  
+#%% Save phase velocity data in a dictionnary  
 
 if horizontal_wave :
     pkl_file = path2data + 'Phase_velocity_dictionnary_acqu_' + acqu_numb + '_sig_length_' + str(signal_length).replace('.','p') + '.pkl'

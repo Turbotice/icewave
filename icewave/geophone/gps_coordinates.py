@@ -144,3 +144,34 @@ def compute_avg_logs(GPS_logs):
     
     return avg_logs
 
+def build_GPS_array(gps_dict):
+    """ Build an array of geophones GPS coordinates for a given day. 
+    Input: - gps_dict, dictionnary of GPS recording for each geophones, obtained using function 
+    get_GPS_coordinates
+    Output : - GPS_geoph, array like, dimensions : [geo_idx,acqu_idx,GPS_coord] containing avaraged geophones GPS coordinates
+    for all acquisitions of a given day. """
+    
+    GPS_geoph = np.zeros((len(gps_dict.keys()),len(gps_dict['G01'].keys()),2))
+
+    for i,geo_key in enumerate(gps_dict.keys()):
+        for j,acqu_key in enumerate(gps_dict[geo_key].keys()):
+            GPS_logs = gps_dict[geo_key][acqu_key]
+            print(GPS_logs)
+            
+            if  GPS_logs['num_GPS_logs'] > 1:
+                GPS_logs = geophone_gps.compute_avg_logs(GPS_logs)
+                
+                GPS_geoph[i,j,0] = GPS_logs['longitude']
+                GPS_geoph[i,j,1] = GPS_logs['latitude']
+                
+            elif GPS_logs['num_GPS_logs'] == 1:
+                
+                GPS_geoph[i,j,0] = GPS_logs['longitude'][0]
+                GPS_geoph[i,j,1] = GPS_logs['latitude'][0]
+                                
+            else:
+                GPS_geoph[i,j,0] = None
+                GPS_geoph[i,j,1] = None
+    
+    return GPS_geoph
+
