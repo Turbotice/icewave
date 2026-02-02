@@ -11,6 +11,7 @@ from datetime import datetime
 import pytz
 import time
 from scipy.interpolate import RegularGridInterpolator
+from scipy.interpolate import LinearNDInterpolator, griddata
  
 import icewave.tools.rw_data as rw_data
 import icewave.tools.datafolders as df
@@ -593,6 +594,8 @@ def get_ux_from_VxVy(Vx,Vy,theta,phi):
     
     return ux
 
+#-------------------------------------------------------------------------------------------
+
 def get_uz_ux_from_structure(Vx,Vy,S):
     """ Compute vertical velocity profile as well as horizontal velocity field (uz,ux) from apparent velocity field obtained from 
     Digital Image Correlation (Vx,Vy).
@@ -611,3 +614,27 @@ def get_uz_ux_from_structure(Vx,Vy,S):
     
     return uz,ux,err_uz
 
+#--------------------------------------------------------------------------------------------
+
+def get_zstar(H,alpha,Y):
+    """ Compute distance z_star in the projection geometry (distance between the camera and the plane 
+    orthogonal to optical axis and crossing the observed point on the ice, which coordinate is Y in the reference 
+    frame work of the drone) 
+    
+    Inputs : - H, drone height in meter
+             - alpha, angle with respect to horizontal (in rad)
+             - Y array like or float """
+             
+    z_star = H/np.sin(alpha) + np.cos(alpha)*Y
+    return z_star
+
+#------------------------------------------------------------------------------------------------
+
+def interpolate_field(known_points,field,grid_x,grid_y):
+    """ Interpolate a 2D field, known on a set of coordinates known_points, onto coordinates grid_x,grid_y 
+    Inputs : """
+
+    gridded_field = griddata(known_points, field.ravel(), 
+                              (grid_x,grid_y),method = 'linear')
+    
+    return gridded_field
