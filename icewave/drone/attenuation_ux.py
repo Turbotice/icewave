@@ -44,6 +44,34 @@ plt.rc('font', family='serif', serif='Computer Modern')
 
 #%% FUNCTION SECTION 
 
+def extract_peaks_fixed_k(gaussian,wavevector_range,freuqency_range,file2save,detect_param):
+    """ Extract peaks of the wave FK spectrum using fixed values of wavevector k, 
+    peaks are detected using fit over frequencies. Detected peaks are then filtered using scatter_filter.py module. 
+    Inputs : - gaussian, array like, gaussian signal used to perform convolution over frequencies and detect peaks
+             - wavevector_range, array like, range of wavevectors over which we will detect peaks
+             - frequency_range, array like, range of frequencies over which we will detect peaks 
+             - file2save, string, path where detected peaks properties will be saved 
+             - detec_param, dictionnary, collects parameters used to detect maximum convolution peaks
+             
+    Outputs : - filtered properties, dict, contains peaks properties, it is also saved as a .h5 file"""
+    
+    Speaks = att_mod.matrix_peak_correlation_detection(Efk['E'], Efk['k'], Efk['f'], wavevector_range, frequency_range, 
+                                          gaussian, detec_param)
+    # change key name
+    Speaks['k'] = Speaks['x']
+    Speaks['f'] = Speaks['y']
+    del Speaks['x']
+    del Speaks['y']
+
+    # Filter detected points, plot results and save filtered peaks
+    set_graphs.set_matplotlib_param('single')
+    filtered_x,filtered_y,filtered_properties = scatter_filter.interactive_scatter_filter(Speaks['k'], Speaks['f'],Speaks)
+
+    # save filtered_properties
+    rw.save_dict_to_h5(filtered_properties, file2save)
+    print('DONE.')
+    
+    return filtered_properties
 
 def bound_harmonicN(k,N,h_w):
     """ Compute waves omegaN associated to bound wave of order N"""
@@ -151,35 +179,8 @@ detec_param = {'prominence':1e-2,'rel_height':0.6} # parameters for find_peaks
 wavevector_range = [0.01,2.5] # range of wavevector spanned
 frequency_range = [0,1.5] # range of frequency over which we look for peaks
 
-def extract_peaks_fixed_k(gaussian,wavevector_range,freuqency_range,file2save,detect_param):
-    """ Extract peaks of the wave FK spectrum using fixed values of wavevector k, 
-    peaks are detected using fit over frequencies. Detected peaks are then filtered using scatter_filter.py module. 
-    Inputs : - gaussian, array like, gaussian signal used to perform convolution over frequencies and detect peaks
-             - wavevector_range, array like, range of wavevectors over which we will detect peaks
-             - frequency_range, array like, range of frequencies over which we will detect peaks 
-             - file2save, string, path where detected peaks properties will be saved 
-             - detec_param, dictionnary, collects parameters used to detect maximum convolution peaks
-             
-    Outputs : - filtered properties, dict, contains peaks properties, it is also saved as a .h5 file"""
-    
-    Speaks = att_mod.matrix_peak_correlation_detection(Efk['E'], Efk['k'], Efk['f'], wavevector_range, frequency_range, 
-                                          gaussian, detec_param)
-    # change key name
-    Speaks['k'] = Speaks['x']
-    Speaks['f'] = Speaks['y']
-    del Speaks['x']
-    del Speaks['y']
+file2save = f'{fig_folder}Filtered_peaks_time_fixed_k_{suffixe}.h5'
 
-    # Filter detected points, plot results and save filtered peaks
-    set_graphs.set_matplotlib_param('single')
-    filtered_x,filtered_y,filtered_properties = scatter_filter.interactive_scatter_filter(Speaks['k'], Speaks['f'],Speaks)
-
-    # save filtered_properties
-    file2save = f'{fig_folder}Filtered_peaks_time_fixed_k_{suffixe}.h5'
-    rw.save_dict_to_h5(filtered_properties, file2save)
-    print('DONE.')
-    
-    return filtered_properties
 
 
 #%% Detect peaks from dispersion relation curve
