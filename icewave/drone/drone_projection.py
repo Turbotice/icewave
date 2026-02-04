@@ -420,8 +420,30 @@ def georeference_from_param(img,H,alpha_0,focale,GPS_D):
     return Lat,Long
 
 
+#----------------------------------------------------------------------------------------------------------------
 
+def image_center_gps(GPS_D,H,alpha_0):
+    """ Compute gps coordinates (Lat,Long) of image center based on flight parameters:
+     - GPS_D = (Lat,Long,azimuth) or (Lat,Long) of drone, in degrees
+     - H = drone altitude, in meters
+     - alpha_0 = camera pitch angle, in rad """
+    
+    if len(GPS_D) == 2:
+        GPS_D = (GPS_D[0],GPS_D[1],0) # set artificially azimuth to zero
 
+    Lat_D,Long_D,azimuth = GPS_D
+
+    if alpha_0 != np.pi/2:
+    
+        dist2drone = H/np.tan(alpha_0)
+        Lat0,Long0 = LatLong_coords_from_referencepoint(Lat_D,Long_D,
+                                                        azimuth,dist2drone)
+    else : 
+        Lat0 = Lat_D
+        Long0 = Long_D
+
+    return Lat0,Long0
+    
 
 #-------------------------------------------------------------------------------------------------------------------------------
 

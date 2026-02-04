@@ -23,6 +23,8 @@ import sys
 sys.path.append('C:/Users/sebas/git')
 
 import icewave.tools.datafolders as df
+import icewave.drone.drone_tools as drone_tools
+import icewave.tools.weather as weather 
 import icewave.tools.matlab2python as mat2py
 import icewave.tools.matlab_colormaps as matcmaps
 import icewave.sebastien.set_graphs as set_graphs
@@ -42,9 +44,9 @@ plt.rc('font', family='serif', serif='Computer Modern')
 
 #%% Import data
 
-base = 'D:/Rimouski_2025/Data/'
+base = 'F:/Rimouski_2025/Data/'
 date = '0214'
-drone_ID = 'mesange'
+drone_ID = 'bernache'
 exp_ID = '05-waves_003'
 
 fig_folder = f'{base}{date}/Drones/{drone_ID}/matData/{exp_ID}/Figures/'
@@ -75,6 +77,13 @@ ax.set_aspect(1)
 ax.set_xlabel('$X \; \mathrm{(m)}$')
 ax.set_ylabel('$Y \; \mathrm{(m)}$')
 
+#%% get real water height 
+path2SRT = f'{base}{date}/Drones/{drone_ID}/{exp_ID}/'
+UTC_t0 = drone_tools.get_UTC0_from_SRT(path2SRT,drone_ID,exp_ID)
+
+GPS_D = (S['GPS']['latitude'],S['GPS']['longitude'])
+GPS_coords = dp.image_center_gps(GPS_D,S['DRONE']['h_drone'],S['DRONE']['alpha_0'])
+real_hw = weather.get_water_height(GPS_coords,UTC_t0,disk = 'Backup25',year = '2025')
 
 #%% Compute FK spectrum 
 # i_start = 0
@@ -105,7 +114,7 @@ cbar = plt.colorbar(c,ax = ax)
 cbar.set_label(r'$|\hat{u}_z| (k,\omega) \; \mathrm{(u.a.)}$',labelpad = 5)
 
 # show gravity dispersion relation
-hw = 4.0
+hw = real_hw
 k_th = np.linspace(0,2.0,100)
 omega_grav = disp_rel.shallow_water(k_th,hw)
 f_grav = omega_grav/2/np.pi
@@ -113,7 +122,7 @@ label_grav = '$h_w = ' + f'{hw:.1f}'+ '\; \mathrm{m}$'
 ax.plot(k_th,f_grav,'r-',label = label_grav)
 
 # show heavy hydroelastic 
-h_ice = 0.3
+h_ice = 0.35
 E = 3e9
 nu = 0.3
 rho_ice = 917
