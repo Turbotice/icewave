@@ -352,6 +352,7 @@ def attenuation_from_FK_spectrum(E,peaks_properties,x_range,y_range,signal_model
             current_results = fit_peaks_by_lorentzian(M[:,idx], x, peaks, signal_model, rel_height, figname)
             m['A'].append(current_results['A'])
             m['x'].append(current_results['x0'])
+            # m['x'].append(x[peaks])
             m['err_x'].append(current_results['err_x0'])
             m['y'].append(current_y)
             m['alpha'].append(current_results['alpha'])
