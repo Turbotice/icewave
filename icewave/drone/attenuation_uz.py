@@ -24,8 +24,9 @@ import glob
 import sys
 sys.path.append('C:/Users/sebas/git')
 
-import icewave.tools.datafolders as df
-import icewave.tools.matlab2python as mat2py
+import icewave.tools.weather as weather
+import icewave.drone.drone_projection as dp
+import icewave.drone.drone_tools as drone_tools
 import icewave.tools.matlab_colormaps as matcmaps
 import icewave.sebastien.set_graphs as set_graphs
 import icewave.tools.Fourier_tools as FT
@@ -120,35 +121,191 @@ k_pos = k[len(k)//2:]
 omega_pos = omega[len(omega)//2:]
 f_pos = omega_pos/2/np.pi
 
-
-#%% 
-
-Amin = 1e-4
-Amax = 2e-2
-
-fig, ax = plt.subplots()
-ax.imshow(abs(shift).T,origin = 'lower', norm = 'log',cmap = parula_map,vmin = Amin, vmax = Amax)
+Efk = {}
+Efk['E'] = FK.T
+Efk['k'] = k_pos
+Efk['f'] = f_pos
 
 
 #%% Plot FK spectrum
-Amin = 1e-4
-Amax = 2e-2
 
-kbounds = np.array([0,2])
-fbounds = np.array([0,1])
+fig,ax,c,cbar = att_mod.plot_FK_spectrum(Efk)
+c.set_clim(vmin = 2e-5,vmax = 2e-2)
+cbar.set_label('$|\hat{u}_z| (k,\omega) \; \mathrm{(u.a.)}$',labelpad = 5)
 
-fig, ax = plt.subplots()
-imsh = ax.imshow(FK.T, cmap = parula_map, aspect = 'auto', norm = 'log', origin = 'lower',
-                 vmin = Amin, vmax = Amax, extent = (k_pos[0],k_pos[-1],f_pos[0],f_pos[-1]))
-ax.set_xlim(kbounds)
-ax.set_ylim(fbounds)
+figname = f'{fig_folder}uz_spacetime_spectrum_raw_{suffixe}'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.svg', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
 
-divider = make_axes_locatable(ax)
-cax = divider.append_axes("right", size="2%", pad=0.1)
-cbar = plt.colorbar(imsh,cax = cax)
+#%% Detect peaks from FK spectrum, for fixed k, fit over frequencies
 
-ax.set_xlabel('$k \; \mathrm{(rad.m^{-1})}$')
-ax.set_ylabel('$f \; \mathrm{(Hz)}$')
+gaussian_width = 6
+N = 8
+gaussian = scipy.signal.windows.gaussian(M = gaussian_width * N,std = gaussian_width)
+detec_param = {'prominence':1e-2,'rel_height':0.6} # parameters for find_peaks
+wavevector_range = [0.01,2.0] # range of wavevector spanned
+frequency_range = [0,1.0] # range of frequency over which we look for peaks
+
+file2save = f'{fig_folder}Filtered_peaks_time_fixed_k_{suffixe}.h5'
+
+filtered_properties = att_mod.extract_peaks_fixed_k(Efk,gaussian,wavevector_range,
+                                            frequency_range,file2save,detec_param)
+
+#%% Get temporal attenuation from FK spectrum 
+m = att_mod.temporal_attenuation(Efk, filtered_properties, frequency_range, wavevector_range, 
+                         gaussian, detec_param, fig_folder)
+
+# Fit water height from dispersion relation curve
+
+fun = lambda k,hw : bound_harmonicN(k, 1, hw)/2/np.pi
+hw,err_hw = fit_water_height(m['f'], m['k'], fun, err_f = m['err_f'])
+
+fig, ax, c, cbar = att_mod.plot_FK_spectrum(Efk)
+title = r'$H = ' + f'{hw:.2f}' + '\pm' + f' {err_hw:.2f}' +'$'
+k_fit = np.linspace(wavevector_range[0],wavevector_range[1],100)
+y_exp = bound_harmonicN(k_fit, 1, hw)/2/np.pi
+
+ax.plot(k_fit,y_exp,'r',label = title)
+ax.legend()
+
+hw_txt = f'{hw:.2f}'.replace('.','p')
+figname = f'{fig_folder}uz_FK_spectrum_time_detection_hw_{hw_txt}_{suffixe}'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
+
+# save water depth measurement
+m['hw'] = hw
+m['err_hw'] = err_hw
+    
+m = att_mod.structure_space_attenuation(m)
+
+xbounds = [0.1,1]
+ybounds = [1e-3,1e0]
+figname = f'{fig_folder}Spatial_attenuation_from_time_detection_{suffixe}'
+att_mod.plot_attenuation_power_law(m, xbounds, ybounds, figname)
+
+# save structure
+file2save = f'{fig_folder}attenuation_data_time_detection_{suffixe}.pkl'
+with open(file2save,'wb') as pf :
+    pickle.dump(m,pf)
+    
+# =============================================================================
+# %% Detect peaks using fixed frequency and determining directly spatial attenuation
+# =============================================================================
+
+gaussian_width = 6
+N = 6
+gaussian = scipy.signal.windows.gaussian(M = gaussian_width * N,std = gaussian_width)
+detec_param = {'prominence':1e-2,'rel_height':0.4} # parameters for find peaks function
+frequency_range = [0.1,1.0] 
+wavevector_range = [0.05,2.5]
+file2save = f'{fig_folder}Filtered_peaks_space_fixed_f_{suffixe}.h5'
+
+filtered_properties = att_mod.extract_peaks_fixed_f(Efk, gaussian, wavevector_range, frequency_range, 
+                                            file2save, detec_param)    
+
+#%% Compute spatial attenuation 
+
+m = att_mod.spatial_attenuation(Efk, filtered_properties, gaussian, wavevector_range,
+                        frequency_range, detec_param, fig_folder)
+
+# Fit water height from dispersion relation curve
+
+fun = lambda k,hw : bound_harmonicN(k, 1, hw)/2/np.pi
+hw,err_hw = fit_water_height(m['f'], m['k'], fun)
+
+fig, ax, c, cbar = att_mod.plot_FK_spectrum(Efk)
+title = r'$H = ' + f'{hw:.2f}' + '\pm' + f' {err_hw:.2f}' +'$'
+k_fit = np.linspace(wavevector_range[0],wavevector_range[1],100)
+y_exp = bound_harmonicN(k_fit, 1, hw)/2/np.pi
+
+ax.plot(k_fit,y_exp,'r',label = title)
+ax.legend()
+
+# save water depth measurement
+m['hw'] = hw
+m['err_hw'] = err_hw
+
+hw_txt = f'{hw:.2f}'.replace('.','p')
+figname = f'{fig_folder}uz_FK_spectrum_space_detection_hw_{hw_txt}_{suffixe}'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
+
+# fit attenuation law by a power law 
+coeffs,err_coeffs = att_mod.powerlaw_fit(m['f'], m['alpha'], m['err_alpha'])
+
+# Save data 
+m['power_law'] = {}
+m['power_law']['B'] = coeffs[1]
+m['power_law']['err_B'] = err_coeffs[1]
+m['power_law']['beta'] = coeffs[0]
+m['power_law']['err_beta'] = err_coeffs[0]
+
+# plot power law
+xbounds = [0.1,1]
+ybounds = [1e-3,1e0]
+figname = f'{fig_folder}Spatial_attenuation_from_spatial_detection_{suffixe}'
+att_mod.plot_attenuation_power_law(m, xbounds, ybounds, figname)
+
+file2save = f'{fig_folder}attenuation_data_space_detection_{suffixe}.pkl'
+with open(file2save,'wb') as pf :
+    pickle.dump(m,pf)
+    
+    
+# =============================================================================
+# %% Collect attenuation structure and build a main structure
+# =============================================================================
+
+# load both set of coordinates (f,k)
+m = {}
+file2save = f'{fig_folder}attenuation_data_time_detection_{suffixe}.pkl'
+with open(file2save,'rb') as pf:
+    m['time'] = pickle.load(pf)
+
+file2save = f'{fig_folder}attenuation_data_space_detection_{suffixe}.pkl'
+with open(file2save,'rb') as pf:
+    m['space'] = pickle.load(pf)
+
+file2save = f'{path2data}main_results_{suffixe}.pkl'
+if os.path.isfile(file2save):
+    print(f'{file2save} already exists, loading..')
+    with open(file2save,'rb') as pf :
+        main_results = pickle.load(pf)
+
+else:
+    print(f'{file2save} does not exits, creation in progress..')
+    main_results = {}
+    main_results['date'] = date
+    main_results['drone_ID'] = drone_ID
+    main_results['exp_ID'] = exp_ID
+    main_results['DRONE'] = S['DRONE']
+    main_results['SCALE'] = S['SCALE']
+    main_results['GPS'] = S['GPS']
+
+    # get real water height from bathymetry and tides data
+    path2SRT = f'{base}{date}/Drones/{drone_ID}/{exp_ID}/'
+    UTC_t0 = drone_tools.get_UTC0_from_SRT(path2SRT,drone_ID,exp_ID)
+    main_results['t0_UTC'] = UTC_t0
+    
+    # convert string to datetime object 
+    GPS_D = (main_results['GPS']['latitude'],main_results['GPS']['longitude'])
+    GPS_coords = dp.image_center_gps(GPS_D,main_results['DRONE']['h_drone'],main_results['DRONE']['alpha_0'])
+    real_hw = weather.get_water_height(GPS_coords,UTC_t0,disk = 'Elements',year = '2024')
+    main_results['real_hw'] = real_hw
+
+# main_results['Efk'] = Efk
+main_results['attenuation_uz'] = m
+
+file2save = f'{path2data}main_results_{suffixe}.pkl'
+with open(file2save,'wb') as pf :
+    pickle.dump(main_results,pf)
+
+print(f'{file2save} file saved !')
+    
+    
+
+
 
 #%% Detect peaks on FK spectrum 
 

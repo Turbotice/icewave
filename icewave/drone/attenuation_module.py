@@ -5,6 +5,7 @@ Created on Tue Jan 27 20:24:03 2026
 @author: sebas
 
 Python module gathering all functions useful to determine waves attenuation
+from an FK spectrum 
 """
 
 import numpy as np
@@ -171,7 +172,6 @@ def indices2fit(y,x,p,rel_height):
 def lorentzian(x,x0,alpha):
     y = 1/np.sqrt(1 + ((x - x0)/alpha)**2)
     return y
-
 
 #----------------------------------------------------------------------------------------------------------------
 
@@ -360,6 +360,7 @@ def attenuation_from_FK_spectrum(E,peaks_properties,x_range,y_range,signal_model
             m['d'].append(current_results['d'])
         
     for key in m.keys():
+        print(m[key])
         m[key] = np.array(m[key])
         m[key] = np.squeeze(m[key])
         
@@ -367,53 +368,344 @@ def attenuation_from_FK_spectrum(E,peaks_properties,x_range,y_range,signal_model
 
 #---------------------------------------------------------------------------------------------------------------------
 
+def plot_FK_spectrum(Efk):
+    """ Plot FK spectrum """
+    
+    set_graphs.set_matplotlib_param('single')
+    fig, ax = plt.subplots()
+    Amin = 6e-6 # change to adjust colormap
+    Amax = 2e-3 # change to adjust colormap
+    c = ax.imshow(Efk['E'], cmap = parula_map , aspect = 'auto', norm = 'log', vmin = Amin,vmax = Amax,
+                  origin = 'lower', interpolation = 'gaussian',
+                  extent = (Efk['k'].min(),Efk['k'].max(),Efk['f'].min(),Efk['f'].max()))
 
-def temporal_attenuation_from_FK_spectrum(Efk,peaks_properties,f_range,k_range,signal_model,rel_height,sub_folder):
-    """ Compute temporal attenuation of detected peaks from a FK spectrum. 
-    Inputs : - Efk, dictionnary, contains follwoing keys :+ E, array like [nf,nk], space-time spectrum 
-                                                          + f, array like (nf,), frequency array 
-                                                          + k, array like (nk,), wavevector array 
-             - peaks_properties, dictionnary, containing at least keys : 'f','k' and 'peaks'. Contains peaks indices 
-             and their associate coordinates (f,k). 
-             - rel_height, float, relative height used to compute width, see function indices2fit 
-             - sub_folder, string, folder where figures of each fit will be saved 
-    Output : - m, dictionnary, contains all results """
-    
-    
-    # select area of FK where we want to compute attenuation
-    mask_f = np.where(np.logical_and(Efk['f'] < f_range[1],Efk['f'] > f_range[0]))[0]
-    mask_k = np.where(np.logical_and(Efk['k'] > k_range[0],Efk['k'] < k_range[1]))[0]
+    # ax.set_xscale('log')
+    # ax.set_yscale('log')
+    kbounds = [0.05,3.3] # bounds for k axis on Efk plot
+    fbounds = [0.05,1.5] # bounds for f axis on Efk plot
+    ax.set_xlim(kbounds)
+    ax.set_ylim(fbounds)
 
-    f = Efk['f'][mask_f]
-    k = Efk['k'][mask_k]
-    M = Efk['E'][np.ix_(mask_f,mask_k)]
+    ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$', labelpad = 5)
+    ax.set_ylabel(r'$f \; \mathrm{(Hz)}$', labelpad = 5)
+
+    cbar = plt.colorbar(c,ax = ax)
+    cbar.set_label(r'$|\hat{u}_x| (k,\omega) \; \mathrm{(u.a.)}$',labelpad = 5)
     
-    m = {'A':[],'f':[],'k':[],'lambda':[],'err_f':[],'err_lambda':[],'d':[]}
+    return fig, ax, c, cbar
+
+#-------------------------------------------------------------------------------------------
+
+def extract_peaks_fixed_k(Efk,gaussian,wavevector_range,frequency_range,file2save,detec_param):
+    """ Extract peaks of the wave FK spectrum using fixed values of wavevector k, 
+    peaks are detected using fit over frequencies. Detected peaks are then filtered using scatter_filter.py module. 
+    Inputs : - Efk, dictionary, with keys: + 'E' = array like [nf,nk], FK spectrum
+                                           + 'f' = array like, frequencies
+                                           + 'k' = array like, wavevectors
+             - gaussian, array like, gaussian signal used to perform convolution over frequencies and detect peaks
+             - wavevector_range, array like, range of wavevectors over which we will detect peaks
+             - frequency_range, array like, range of frequencies over which we will detect peaks 
+             - file2save, string, path where detected peaks properties will be saved 
+             - detec_param, dictionnary, collects parameters used to detect maximum convolution peaks
+             
+    Outputs : - filtered properties, dict, contains peaks properties, it is also saved as a .h5 file"""
+    
+    Speaks = matrix_peak_correlation_detection(Efk['E'], Efk['k'], Efk['f'], wavevector_range, frequency_range, 
+                                          gaussian, detec_param)
+    # change key name
+    Speaks['k'] = Speaks['x']
+    Speaks['f'] = Speaks['y']
+    del Speaks['x']
+    del Speaks['y']
+    
+    print('Filter undesired points')
+    # Filter detected points, plot results and save filtered peaks
+    filtered_x,filtered_y,filtered_properties = scatter_filter.interactive_scatter_filter(Speaks['k'], Speaks['f'],Speaks)
+
+    # plot detected peaks
+    fig, ax, c, cbar = plot_FK_spectrum(Efk)
+    ax.plot(filtered_properties['k'],filtered_properties['f'],'r.')
+    
+    # save filtered_properties
+    rw.save_dict_to_h5(filtered_properties, file2save)
+    print('DONE.')
+    
+    return filtered_properties
+
+#-------------------------------------------------------------------------------------------------------
+
+def extract_peaks_fixed_f(Efk,gaussian,wavevector_range,frequency_range,file2save,detec_param):
+    """ Extract peaks of the wave FK spectrum using fixed values of frequency f, 
+    peaks are detected using fit over wavevectors. Detected peaks are then filtered using scatter_filter.py module. 
+    Inputs : - Efk, dictionary, with keys: + 'E' = array like [nf,nk], FK spectrum
+                                           + 'f' = array like, frequencies
+                                           + 'k' = array like, wavevectors
+             - gaussian, array like, gaussian signal used to perform convolution over frequencies and detect peaks
+             - wavevector_range, array like, range of wavevectors over which we will detect peaks
+             - frequency_range, array like, range of frequencies over which we will detect peaks 
+             - file2save, string, path where detected peaks properties will be saved 
+             - detec_param, dictionnary, collects parameters used to detect maximum convolution peaks
+             
+    Outputs : - filtered properties, dict, contains peaks properties, it is also saved as a .h5 file"""
+    
+    Speaks = matrix_peak_correlation_detection(Efk['E'].T, Efk['f'], Efk['k'], frequency_range, wavevector_range, 
+                                               gaussian, detec_param)
+    # change key name
+    Speaks['f'] = Speaks['x']
+    Speaks['k'] = Speaks['y']
+    del Speaks['x']
+    del Speaks['y']
+    
+    print('Filter undesired points')
+    filtered_x,filtered_y,filtered_properties = scatter_filter.interactive_scatter_filter(Speaks['k'], Speaks['f'],Speaks)
+    
+    fig,ax,c,cbar = plot_FK_spectrum(Efk)
+    ax.plot(filtered_properties['k'],filtered_properties['f'],'r.')
+    
+    # save filtered_properties
+    rw.save_dict_to_h5(filtered_properties, file2save)
+    print('DONE.')
+
+    return filtered_properties
+
+#----------------------------------------------------------------------------------------
+
+def temporal_attenuation(Efk,filtered_properties,frequency_range,wavevector_range,
+                         gaussian,detec_param,fig_folder):
+    """ Compute temporal attenuation from FK spectrum, based on a Lorentzian fit over 
+    frequencies. 
+    
+    Inputs : - Efk, dictionary, with keys: + 'E' = array like [nf,nk], FK spectrum
+                                           + 'f' = array like, frequencies
+                                           + 'k' = array like, wavevectors
+             - filtered_properties, dictionary, properties of detected peaks of FK spectrum, with keys:
+                 + 'peaks' = indices of detected peaks
+                 + 'f' = array like, frequencies
+                 + 'k' = array like, wavevectors
+             - gaussian, array like, gaussian signal used to perform convolution over frequencies and detect peaks
+             - wavevector_range, array like, range of wavevectors over which we will detect peaks
+             - frequency_range, array like, range of frequencies over which we will detect peaks 
+             - detec_param, dictionnary, collects parameters used to detect maximum convolution peaks
+             - fig_folder, string, path where figures of fit are saved 
+             
+    Outputs : - m, dictionary, contains results of temporal attenuation """
+    
+    # get time 
+    E = {}
+    E['E'] = Efk['E']
+    E['x'] = 2*np.pi*Efk['f']
+    E['y'] = Efk['k']
+
+    peaks_dico = {}
+    peaks_dico['peaks'] = filtered_properties['peaks']
+    peaks_dico['x'] = 2*np.pi*filtered_properties['f']
+    peaks_dico['y'] = filtered_properties['k']
+
+    x_range = 2*np.pi*np.array(frequency_range)
+    y_range = wavevector_range
+
+    rel_height = detec_param['rel_height']
+    sub_folder = f'{fig_folder}time_lorentzian_fit/'
+    if not os.path.isdir(sub_folder):
+        os.mkdir(sub_folder)
         
-    for idx, current_k in enumerate(k):
-        
-        # select peaks detected at current wavevector
-        mask = np.where(peaks_properties['k'] == current_k)[0]
-        peaks = peaks_properties['peaks'][mask]
-        
-        if len(peaks) > 0:
-        
-            k_txt = f'{current_k:.2f}'.replace('.','p')
-            figname = f'{sub_folder}Lorentzian_fit_respectto_f_fixed_k_{k_txt}'
-            
-            # compute attenuation 
-            current_results = fit_peaks_by_lorentzian(M[:,idx], f*2*np.pi, peaks, signal_model, rel_height, figname)
-            m['A'].append(current_results['A'])
-            m['f'].append(current_results['x0']/2/np.pi)
-            m['err_f'].append(current_results['err_x0']/2/np.pi)
-            m['k'].append(current_k)
-            m['lambda'].append(current_results['alpha'])
-            m['err_lambda'].append(current_results['err_alpha'])
-            m['d'].append(current_results['d'])
-        
-    for key in m.keys():
-        m[key] = np.array(m[key])
-        m[key] = np.squeeze(m[key])
-        
+    m = attenuation_from_FK_spectrum(E, peaks_dico, x_range, y_range, gaussian, rel_height, sub_folder)
+
+    del E
+    del peaks_dico
+
+    m['f'] = m.pop('x')/2/np.pi
+    m['err_f'] = m.pop('err_x')/2/np.pi
+    m['k'] = m.pop('y')
+    m['lambda'] = m.pop('alpha')
+    m['err_lambda'] = m.pop('err_alpha')
+    print(m.keys())
+    
     return m
+
+#------------------------------------------------------------------------------------------------
+
+def spatial_attenuation(Efk,filtered_properties,gaussian,wavevector_range,frequency_range,
+                        detec_param,fig_folder):
+    """ Compute space attenuation from FK spectrum, based on a Lorentzian fit over 
+    wavevectors. 
+    
+    Inputs : - Efk, dictionary, with keys: + 'E' = array like [nf,nk], FK spectrum
+                                           + 'f' = array like, frequencies
+                                           + 'k' = array like, wavevectors
+             - filtered_properties, dictionary, properties of detected peaks of FK spectrum, with keys:
+                 + 'peaks' = indices of detected peaks
+                 + 'f' = array like, frequencies
+                 + 'k' = array like, wavevectors
+             - gaussian, array like, gaussian signal used to perform convolution over frequencies and detect peaks
+             - wavevector_range, array like, range of wavevectors over which we will detect peaks
+             - frequency_range, array like, range of frequencies over which we will detect peaks 
+             - detec_param, dictionnary, collects parameters used to detect maximum convolution peaks
+             - fig_folder, string, path where figures of fit are saved 
+             
+    Outputs : - m, dictionary, contains results of temporal attenuation """
+    
+    E = {}
+    E['E'] = Efk['E'].T
+    E['x'] = Efk['k']
+    E['y'] = 2*np.pi*Efk['f']
+
+
+    peaks_dico = {}
+    peaks_dico['peaks'] = filtered_properties['peaks']
+    peaks_dico['y'] = 2*np.pi*filtered_properties['f']
+    peaks_dico['x'] = filtered_properties['k']
+
+    y_range = 2*np.pi*np.array(frequency_range)
+    x_range = wavevector_range
+
+    rel_height = detec_param['rel_height']
+    sub_folder = f'{fig_folder}space_lorentzian_fit/'
+    if not os.path.isdir(sub_folder):
+        os.mkdir(sub_folder)
+        
+    m = attenuation_from_FK_spectrum(E, peaks_dico, x_range, y_range, 
+                                             gaussian, rel_height, sub_folder)
+
+    del E
+    del peaks_dico
+
+    m['k'] = m.pop('x')
+    m['err_k'] = m.pop('err_x')
+    m['f'] = m.pop('y')/2/np.pi
+    print(m.keys())
+    
+    return m
+
+#----------------------------------------------------------------------------------------------------------
+def affine(x,a,b):
+    y = a*x + b
+    return y
+
+def powerlaw_fit(x,y,err_y):
+    """ Fit data using a power law, taking into account standard deviation of y """
+    log_x = np.log(x)
+    log_y = np.log(y)
+    err_log_y = err_y/y
+    
+    popt,pcov = scipy.optimize.curve_fit(lambda x,a,b : affine(log_x,a,b),log_x,log_y,sigma = err_log_y,absolute_sigma = True)
+    err_affine = np.sqrt(np.diag(pcov))
+    beta = popt[0]
+    err_beta = err_affine[0]
+    B = np.exp(popt[1])
+    err_B = B*err_affine[1]
+    
+    coeffs = (beta,B)
+    err_coeffs = (err_beta,err_B)
+    return coeffs,err_coeffs
+
+#----------------------------------------------------------------------------------------
+
+
+def structure_space_attenuation(m):
+    """ Add space attenuation computed from temporal attenuation to an existing structure m """
+    
+    time_att = np.column_stack((m['lambda'],m['err_lambda'])) # time attenuation coefficient and standard deviation
+    water_depth = [m['hw'] , m['err_hw']] # water depth and standard deviation
+    alpha,err_alpha = time2space_attenuation(time_att, m['k'], water_depth) # compute spatial attenuation
+
+    # fit by a powerlaw
+    coeffs,err_coeffs = powerlaw_fit(m['f'], alpha, err_alpha)
+    
+    # Save data 
+    m['alpha'] = alpha
+    m['err_alpha'] = err_alpha
+    m['power_law'] = {}
+    m['power_law']['B'] = coeffs[1]
+    m['power_law']['err_B'] = err_coeffs[1]
+    m['power_law']['beta'] = coeffs[0]
+    m['power_law']['err_beta'] = err_coeffs[0]
+
+    return m
+
+#----------------------------------------------------------------------------------------------
+
+def plot_attenuation_power_law(m,xbounds,ybounds,figname):
+    """ Plot power law fit of attenuation law alpha VS frequency """
+    
+    x_fit = np.linspace(xbounds[0],xbounds[1],100)
+
+    # get powerlaw fit
+    coeffs = (m['power_law']['beta'],m['power_law']['B'])
+    yth = coeffs[1]*x_fit**coeffs[0]
+
+    label_th = r'$y = ' + f'{coeffs[1]:.2f}'+ 'f^{' + f'{coeffs[0]:.3f}' + '}$'
+    
+    list_key = list(m.keys())
+    if 'err_f' not in list_key:
+        m['err_f'] = None
+
+    fig, ax = plt.subplots()
+    ax.errorbar(m['f'],m['alpha'],yerr = m['err_alpha'],xerr = m['err_f'],fmt = 'o')
+    ax.plot(x_fit,yth,linewidth = 2,label = label_th)
+    ax.set_xlabel(r'$f \; \mathrm{(Hz)}$')
+    ax.set_ylabel(r'$\alpha \; \mathrm{(m^{-1})}$')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlim(xbounds)
+    ax.set_ylim(ybounds)
+    ax.legend()
+
+    plt.savefig(figname + '.pdf', bbox_inches='tight')
+    plt.savefig(figname + '.svg', bbox_inches='tight')
+    plt.savefig(figname + '.png', bbox_inches='tight')  
+
+
+
+
+
+
+# def temporal_attenuation_from_FK_spectrum(Efk,peaks_properties,f_range,k_range,signal_model,rel_height,sub_folder):
+#     """ Compute temporal attenuation of detected peaks from a FK spectrum. 
+#     Inputs : - Efk, dictionnary, contains follwoing keys :+ E, array like [nf,nk], space-time spectrum 
+#                                                           + f, array like (nf,), frequency array 
+#                                                           + k, array like (nk,), wavevector array 
+#              - peaks_properties, dictionnary, containing at least keys : 'f','k' and 'peaks'. Contains peaks indices 
+#              and their associate coordinates (f,k). 
+#              - rel_height, float, relative height used to compute width, see function indices2fit 
+#              - sub_folder, string, folder where figures of each fit will be saved 
+#     Output : - m, dictionnary, contains all results """
+    
+    
+#     # select area of FK where we want to compute attenuation
+#     mask_f = np.where(np.logical_and(Efk['f'] < f_range[1],Efk['f'] > f_range[0]))[0]
+#     mask_k = np.where(np.logical_and(Efk['k'] > k_range[0],Efk['k'] < k_range[1]))[0]
+
+#     f = Efk['f'][mask_f]
+#     k = Efk['k'][mask_k]
+#     M = Efk['E'][np.ix_(mask_f,mask_k)]
+    
+#     m = {'A':[],'f':[],'k':[],'lambda':[],'err_f':[],'err_lambda':[],'d':[]}
+        
+#     for idx, current_k in enumerate(k):
+        
+#         # select peaks detected at current wavevector
+#         mask = np.where(peaks_properties['k'] == current_k)[0]
+#         peaks = peaks_properties['peaks'][mask]
+        
+#         if len(peaks) > 0:
+        
+#             k_txt = f'{current_k:.2f}'.replace('.','p')
+#             figname = f'{sub_folder}Lorentzian_fit_respectto_f_fixed_k_{k_txt}'
+            
+#             # compute attenuation 
+#             current_results = fit_peaks_by_lorentzian(M[:,idx], f*2*np.pi, peaks, signal_model, rel_height, figname)
+#             m['A'].append(current_results['A'])
+#             m['f'].append(current_results['x0']/2/np.pi)
+#             m['err_f'].append(current_results['err_x0']/2/np.pi)
+#             m['k'].append(current_k)
+#             m['lambda'].append(current_results['alpha'])
+#             m['err_lambda'].append(current_results['err_alpha'])
+#             m['d'].append(current_results['d'])
+        
+#     for key in m.keys():
+#         m[key] = np.array(m[key])
+#         m[key] = np.squeeze(m[key])
+        
+#     return m
 
