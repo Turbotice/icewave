@@ -45,8 +45,8 @@ from scipy.interpolate import interp1d
 
 #%% Set parameters 
 year = '2026'
-date = '0203' #date format, 'mmdd'
-acqu_numb = '0003' #acquisition number 
+date = '0209' #date format, 'mmdd'
+acqu_numb = '0002' #acquisition number 
 
 ordi = 'dell_vasco'
 
@@ -75,11 +75,11 @@ elif ordi=='adour':
     #geophones_table_path = f'/media/turbots/DATA/thiou/storageshared/Banquise/Vasco/Startup_kit_Stage_MSIM/data/geophones_table'
 
 channel = 1  # 0 for E, 1 for N, 2 for Z. 
-composante = 'N'
+composante = 'Z'
 
 #files need to be organised as: data/0210/Geophones/0001/minised files
 
-geophones_spacing = 5 # space between geophones, in meters 
+geophones_spacing = 6 # space between geophones, in meters 
 signal_length = 1 # duration in seconds 
 channel_dic = {
     1: "N",
@@ -601,62 +601,62 @@ else:
     print('No time dictionnary saved yet')
     time_dict = {}
 
-"""
+
 composante = 'Z'
 # S101, S102, S103
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '101' + composante 
-time_dict[key] = UTCDateTime("2026-02-03T16:29:19.70")
+time_dict[key] = UTCDateTime("2026-02-03T21:06:34.70")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '102' + composante 
-time_dict[key] = UTCDateTime("2026-02-03T16:30:08.60")
+time_dict[key] = UTCDateTime("2026-02-03T21:08:07.70")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '103' + composante 
-time_dict[key] = UTCDateTime("2026-02-03T16:31:02.50")
+time_dict[key] = UTCDateTime("2026-02-03T21:09:49.50")
 
 # # S104, S105, S106
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '104' + composante 
-time_dict[key] = UTCDateTime("2026-02-03T16:32:32.60")
+time_dict[key] = UTCDateTime("2026-02-03T21:13:24.10")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '105' + composante 
-time_dict[key] = UTCDateTime("2026-02-03T16:33:30.10")
+time_dict[key] = UTCDateTime("2026-02-03T21:15:44.30")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '106' + composante 
-time_dict[key] = UTCDateTime("2026-02-03T16:34:37.10")
-"""
+time_dict[key] = UTCDateTime("2026-02-03T21:17:36.00")
+
 """
 composante = 'E' #Z , E or N -> direction de la source
 
 # S101, S102, S103
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '101' + composante 
-time_dict[key] = UTCDateTime("2026-02-03T16:29:33.40")
+time_dict[key] = UTCDateTime("2026-02-03T21:06:59.70")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '102' + composante 
-time_dict[key] = UTCDateTime("2026-02-03T16:30:27.20")
+time_dict[key] = UTCDateTime("2026-02-03T21:08:27.40")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '103' + composante 
-time_dict[key] = UTCDateTime("2026-02-03T16:31:19.30")
+time_dict[key] = UTCDateTime("2026-02-03T21:10:18.40")
 
 # # S104, S105, S106
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '104' + composante 
-time_dict[key] = UTCDateTime("2026-02-03T16:32:58.60")
+time_dict[key] = UTCDateTime("2026-02-03T21:13:54.20")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '105' + composante 
-time_dict[key] = UTCDateTime("2026-02-03T16:33:52.00")
+time_dict[key] = UTCDateTime("2026-02-03T21:16:04.20")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '106' + composante 
-time_dict[key] = UTCDateTime("2026-02-03T16:34:46.90")
+time_dict[key] = UTCDateTime("2026-02-03T21:17:56.10")
 """
-
+"""
 composante = 'N' #Z , E or N -> direction de la source
 
 # S101, S102, S103
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '101' + composante 
-time_dict[key] = UTCDateTime("2026-02-03T16:29:50.70")
+time_dict[key] = UTCDateTime("2026-02-03T21:07:19.30")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '102' + composante 
-time_dict[key] = UTCDateTime("2026-02-03T16:30:37.20")
+time_dict[key] = UTCDateTime("2026-02-03T21:08:45.80")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '103' + composante 
-time_dict[key] = UTCDateTime("2026-02-03T16:31:33.80")
+time_dict[key] = UTCDateTime("2026-02-03T21:10:31.40")
 
 # # S104, S105, S106
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '104' + composante 
-time_dict[key] = UTCDateTime("2026-02-03T16:33:09.30")
+time_dict[key] = UTCDateTime("2026-02-03T21:14:12.20")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '105' + composante 
-time_dict[key] = UTCDateTime("2026-02-03T16:34:03.90")
+time_dict[key] = UTCDateTime("2026-02-03T21:16:23.50")
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '106' + composante 
-time_dict[key] = UTCDateTime("2026-02-03T16:35:12.40")
-
+time_dict[key] = UTCDateTime("2026-02-03T21:18:17.70")
+"""
 
 # Save t0 dictionnary in pickle file 
 
@@ -682,7 +682,7 @@ signal_length = 1 # duration in seconds
 # ch = channel_dic[channel]
 flexure_wave = composante == 'Z' # 1 to pick the dispersion curves of the flexure wave, 0 to pick those of the other 2 modes
 horizontal_wave = not flexure_wave
-direction = 1 # 1 ou 2 
+direction =  2 # 1 ou 2 
 # assign a string to S values depending on the direction
 if direction == 1 :
     S1 = '101' 

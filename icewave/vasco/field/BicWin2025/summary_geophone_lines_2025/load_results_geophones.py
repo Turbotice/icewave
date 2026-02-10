@@ -15,7 +15,7 @@ plt.close('all')
 
 year = '2026'
 date = '0203' #date format, 'mmdd'
-acqu_numb = '0003' #acquisition number 
+acqu_numb = '0005' #acquisition number 
 equation = 'stein'
 
 ordi = 'dell_vasco'
@@ -74,7 +74,7 @@ kQS = np.nanmean([kQS1_interp, kQS2_interp], axis=0)
 
 
 ##################
-# rajouté par vasco pour fitte vite fait hydroelastic
+# rajouté par vasco pour fitte vite fait hydroelastic en eau profonde
 def hydroelastic(k,D):
     g=9.81
     rho=900
