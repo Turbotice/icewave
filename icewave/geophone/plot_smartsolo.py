@@ -18,10 +18,10 @@ import numpy as np
 
 
 
-path2data = '/Users/moreaul/Desktop/Geophones/Grenoble_20240118_dehors'
+path2data = 'C:\\Canada_2024\\2024\\0206\\Geophones\\TEST'
 acqu_numb = '0001'
-geophones_table_path = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/geophones_table'
-geophones_table_path = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/geophones_table'
+geophones_table_path = 'C:/Canada_2024/tables/geophones_table'
+geophones_table_path = 'C:/Canada_2024/tables/geophones_table'
 
 
 def read_data(path2data):

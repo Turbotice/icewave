@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-path2logfile = '/Geophones/Toit_ISTerre_17012024'
+path2logfile = 'C:\Canada_2024\\2024\\0206\\Geophones\\TEST'
 
 
 def find_coordinates(log_content):

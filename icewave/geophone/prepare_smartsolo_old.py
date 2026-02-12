@@ -9,12 +9,10 @@ import os
 import shutil
 
 
-year = '2026'
-date = '0207'
-path2data = f'C:\\SOLODATA\\Bicwin2024_12dB\\Bicwin2024_12dB\\BicWin{year}{date}\\'
+
+path2data = 'C:\\SOLODATA\\Bicwin2024_12dB\\Bicwin2024_12dB\\BicWin20260210\\'
 #path2data = 'C:\\SOLODATA\\Bicwin2024_12dB\\BicWin2025\\0131\\'
 geophones_table_path = 'C:/Canada_2026/tables/geophones_table'
-
 
 
 # Read geophones_table into a dictionary
@@ -47,31 +45,6 @@ for filename in os.listdir(miniseed_directory):
             print(f'Geophone serial number {geophone_serial_number} not found in geophones_table.')
 
 
-for filename in os.listdir(path2data):
-    if filename.endswith(".miniseed"):
-        new_filename = filename.replace('..', '.', 2)
-        full_path_old = os.path.join(path2data, filename)
-        full_path_new = os.path.join(path2data, new_filename)
-        os.rename(full_path_old, full_path_new)
-
-
-files = os.listdir(path2data)
-
-# Iterate through each file
-for filename in files:
-    print(filename[:3 ])
-    # Check if the file has the specified pattern
-    if filename[:2].isdigit() and filename[2] == '.' and filename[3].isdigit() and filename[4] == '.':
-        # Replace the second dot with two zeros
-        new_filename = filename[:4 ] + '00' + filename[5:]
-        
-        # Construct the full paths
-        old_path = os.path.join(path2data, filename)
-        new_path = os.path.join(path2data, new_filename)
-        
-        # Rename the file
-        os.rename(old_path, new_path)
-        print(f'Renamed: {filename} to {new_filename}')
 
 
 # Create a dictionary to store files based on acq_number
@@ -115,9 +88,8 @@ def find_2_digit_number(geo_table_path, serial_number):
 
 def process_files(files_directory, geo_table_path):
     for filename in os.listdir(files_directory):
-        if filename.endswith(".txt"):
+        if filename.endswith(".LOG"):
             file_path = os.path.join(files_directory, filename)
-            print(file_path)
             serial_number = find_serial_number(file_path)
             if serial_number:
                 two_digit_number = find_2_digit_number(geo_table_path, serial_number)
@@ -134,9 +106,7 @@ def process_files(files_directory, geo_table_path):
 
                     print(f"Renamed {filename} to {new_filename}")
 
-# path2data = f'/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/{year}_BICWIN/{date}/Geophones'
 
-
-# process_files(path2data, geophones_table_path)
+process_files(path2data, geophones_table_path)
             
             
