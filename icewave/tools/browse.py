@@ -70,5 +70,5 @@ def folders(date,folder='Banquise/Rimouski_2023/Data/Geophones/'):
 
     return base,folder,savefolder
     
-    
+
 

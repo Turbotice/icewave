@@ -6,8 +6,15 @@ import icewave.pyphone_v2.connect as connect
 
 import subprocess
 
-def download(date='',folder=''):
-    phonedict= get_datalist(date=date,folder=folder)
+def download(type,date='',folder=''):
+    if type == 'Photographies':
+        print('Photographies')
+        phonedict= get_datalist(date=date,folder='storage/self/primary/DCIM/Camera/',sep='')
+        savefolder = 'Photographies/'
+    if type == 'Phyphox':
+        phonedict= get_datalist(date=date,folder='storage/self/primary/')
+        savefolder = 'Phyphox/'
+
     
     base = df.instrument_folder(key='T')
     for phone in phonedict.keys():
@@ -17,14 +24,14 @@ def download(date='',folder=''):
         folderlist = phonedict[phone]['foldersave']
 
         for i,folder in enumerate(folderlist):
-            dest_folder = base+df.ndigit(i,n=4)+'/T'+str(df.ndigit(phone,n=2))+''#+folder.split('/')[-1]
+            dest_folder = base+savefolder+df.ndigit(i,n=4)+'/T'+str(df.ndigit(phone,n=2))+''#+folder.split('/')[-1]
             browse.create_folder(dest_folder)
             print(base_adb+folder,dest_folder)
             exemple = ['adb','pull',base_adb+folder+'',dest_folder]
             output = subprocess.run(exemple)#,stdout=subprocess.PIPE)
 
 
-def get_datalist(date='',folder=''):
+def get_datalist(date='',folder='',sep='_'):
     if folder=='':
         phonedict = ls_all()
     else:
@@ -32,7 +39,11 @@ def get_datalist(date='',folder=''):
     if date=='':
         date = df.get_current_date()
     date = df.date_phox(date)
-    
+    if not sep=='_':
+        date = date.replace('-',sep)
+
+    print(date)
+    print()
 
     for phone in phonedict.keys():
         phonedict[phone]['foldersave']=[]
@@ -42,7 +53,7 @@ def get_datalist(date='',folder=''):
                 phonedict[phone]['foldersave'].append(folder)
     return phonedict
 
-def ls_all(folder='storage/self/primary/phyphox/'):
+def ls_all(folder='storage/self/primary/'):#/phyphox/'):
     phonedict = connect.get_connected()    
 
     for phone in phonedict.keys():

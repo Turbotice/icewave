@@ -1,0 +1,42 @@
+<phyphox version="1.6" locale="en">
+  <title>Test</title>
+  <category>** interactif **</category>
+  <icon>1m</icon>
+  <description>
+Test.
+    </description>
+
+   <data-containers>
+	<container size="1">time1</container>
+	<container size="1">time2</container>
+  </data-containers>
+    <network>
+    <connection interval="4.9" address="" id="submit" service="http/post" conversion="json" privacy="https://phyphox.org/disclaimer/" autoConnect="true">
+      <send id="data1" type="buffer" clear="true">time1</send>
+      <send id="data2" type="buffer" clear="false">time2</send>
+    </connection>
+  </network>
+ 
+  <views>
+    <view label="Data">
+      <value label="time 1" unit="s">
+        <input>time1</input>
+      </value>
+       <value label="time 2" unit="s">
+        <input>time2</input>
+      </value>
+    </view>   
+  </views>
+  
+  
+  <analysis sleep="0.1" timedRun="true" timedRunStartDelay="2" timedRunStopDelay="5">
+  <timer linearTime="true">
+    <output>time1</output>
+  </timer>
+   <timer linearTime="true">
+    <output>time2</output>
+  </timer>
+ 
+  </analysis>
+
+</phyphox>

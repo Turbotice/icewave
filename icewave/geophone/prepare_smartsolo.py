@@ -8,14 +8,20 @@ Created on Wed Jan 24 18:35:07 2024
 import os
 import shutil
 
+#%% 
+#####################################################################
+## Change miniseed files name, using geophone correspondance table
+#####################################################################
+
 
 year = '2026'
 date = '0207'
 path2data = f'C:\\SOLODATA\\Bicwin2024_12dB\\Bicwin2024_12dB\\BicWin{year}{date}\\'
 #path2data = 'C:\\SOLODATA\\Bicwin2024_12dB\\BicWin2025\\0131\\'
 geophones_table_path = 'C:/Canada_2026/tables/geophones_table'
-
-
+#path2data = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/2024_BICWIN/0206/Geophones'
+path2data = 'F:Data/0227/Geophones/'
+geophones_table_path = 'D:/PC Seb/These PMMH/Rimouski_2024/Geophones/geophones_table'
 
 # Read geophones_table into a dictionary
 geophones_dict = {}
@@ -45,7 +51,13 @@ for filename in os.listdir(miniseed_directory):
             print(f'Renamed: {filename} -> {new_filename}')
         else:
             print(f'Geophone serial number {geophone_serial_number} not found in geophones_table.')
+            
+#%% 
+####################################
+## Sort miniseed files into folders
+####################################
 
+#path2data = 'C:/Users/sebas/OneDrive/Bureau/These PMMH/Rimouski_2024/Data/0210/geophones/'
 
 for filename in os.listdir(path2data):
     if filename.endswith(".miniseed"):
@@ -55,6 +67,17 @@ for filename in os.listdir(path2data):
         os.rename(full_path_old, full_path_new)
 
 
+<<<<<<< HEAD
+for filename in os.listdir(path2data):
+    if filename.endswith(".miniseed"):
+        new_filename = filename.replace('..', '.', 2)
+        full_path_old = os.path.join(path2data, filename)
+        full_path_new = os.path.join(path2data, new_filename)
+        os.rename(full_path_old, full_path_new)
+
+
+=======
+>>>>>>> af2e58d2125e6a1b4cd59640df3090e7b185b32c
 files = os.listdir(path2data)
 
 # Iterate through each file
@@ -97,7 +120,10 @@ for filename in os.listdir(path2data):
 
 
 
-
+#%% 
+###########################################################################
+## Rename miniseed files using .LOG files and geophone correspondance table
+###########################################################################
 
 def find_serial_number(file_path):
     with open(file_path, 'r') as file:

@@ -5,21 +5,23 @@ import os
 import shutil
 from pprint import pprint
 
+import fitdecode
 try:
     import garmin
-    import fitdecode
 except:
-    print('Please install garmin and fitdecode package')
+    print('Please install garmin package')
 
 import icewave.tools.datafolders as df
 
-base = df.path_GPSdata()
-
+#base = df.path_GPSdata()
+#print('')
+#print(base)
+base =''
 folderactivity = base+'GARMIN/Garmin/Activities/' # on macOS X
 folderwpts = base+'GARMIN/Garmin/GPX/' # on macOS X
 
-destfolder = '/Users/stephane/Documents/Rimouski 2023/Data/GPS/'
-serveurfolder = '/Volumes/labshared2/Banquise/Rimouski 2023/Data/GPS/'
+#destfolder = '/Users/stephane/Documents/Rimouski 2023/Data/GPS/'
+#serveurfolder = '/Volumes/labshared2/Banquise/Rimouski 2023/Data/GPS/'
 
 def ls_date(date=''):
     if date=='':
@@ -152,6 +154,7 @@ def convert_traj(d,tmin=None,tmax=None):
         y = a.get_value('position_lat')
         if x is not None:
             if tmin is not None:
+                #print(a.get_value('timestamp').time())
                 b1 = a.get_value('timestamp').time()>tmin
                 b2 = a.get_value('timestamp').time()<tmax
                 if not (b1 and b2):
@@ -166,8 +169,14 @@ def convert_traj(d,tmin=None,tmax=None):
 def compare_times(t1,t2,comp = '>'):
     if comp == '>':
         t1.i
-        
+
+def get_time(waypoint):
+    import datetime
+    t1 = waypoint.time
+    t = datetime.time(t1.hour,t1.minute,t1.second)
+    return t
+
 def get_traj(filename,tmin=None,tmax=None):
     d = decode(filename)
     X,Y = convert_traj(d,tmin=tmin,tmax=tmax)
-    return X,Y
+    return X,Y,d
