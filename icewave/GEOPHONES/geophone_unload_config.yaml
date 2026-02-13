@@ -1,0 +1,6 @@
+all_data_output_path: C:\Canada_2026\0213\Geophones
+geophone_drives:
+- H:\
+- G:\
+- D:\
+sololite_data_export_path: C:\SOLODATA\Bicwin2024_12dB\BicWin20260213
