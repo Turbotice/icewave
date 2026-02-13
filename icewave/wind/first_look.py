@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
 from read_trisonica import *
+from compute_flux import *
 
 file_path="/home/jacqhugo/BicWin26/terrain/0206/Wind/"
 file="20260205_1558_4.txt"
@@ -18,8 +19,7 @@ date='12/02/2026'
 
 ds =  parse_log_to_xarray(file_path+file, reference_date=date, verbose=True)
 
-
-
+ds = compute_mean_X(ds, 'U', period=600)
 
 # Note:
 # - enlever les spikes
@@ -30,6 +30,10 @@ ds =  parse_log_to_xarray(file_path+file, reference_date=date, verbose=True)
 # - periode de moyenne: voir HDR JE-Sicart figure 1.23
 #    et tester à posteriori si la moyenne est adaptée
 # - rotation du système pour avoir <V> = <W> = <v'w'> = 0
+
+# - récupérer les caractéristiques des anémo (height, location)
+#
+# - récupérer le context (gobanos+notes)
 
 # First look
 fig, ax = plt.subplots(1,1,figsize = (3,3),constrained_layout=True,dpi=100)

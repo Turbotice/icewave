@@ -2,12 +2,24 @@ import numpy as np
 import xarray as xr
 
 
-def compute_mean_X(ds, X='U', period=600):
+def compute_mean_X(ds, X='U', period=600, method='block'):
     """
     Computes the average of the variables in ds, with a period of 10 min by defaults.
     period in secondes.
     Returns the dataset with a variable 'mean_X' added.
     """
+
+    if method!='block':
+        print('This method (%s) isnt coded', method)
+
+    t0 = ds.time[0]
+    t1 = t0 + np.timedelta64(period, 's')
+    
+    mean_x = ds[X].sel(time=slice(t0, t1)).mean('time').values
+    
+    ds['mean_'+X] = 0.    
+
+
     raise Exception('to do')
 
 
@@ -31,7 +43,7 @@ def compute_all_operator(ds, function, period=600):
     ds1 = ds
     liste_variables = ['S','U','V','W','T']
     for var in liste_variables:
-        ds1 = function(ds, X=var, period)
+        ds1 = function(ds, X=var, period=period)
 
     return ds1
 

@@ -4,6 +4,14 @@ import pandas as pd
 import os
 from datetime import datetime, time
 
+
+# TODO:
+# - create a class for anemometer ?
+# - get the location of the anemometers
+# - get the height of each anemometers
+# - get the notes associated with the measurement
+
+
 def parse_log_to_xarray(filename, 
                         reference_date=None, 
                         verbose=False,
@@ -34,6 +42,8 @@ def parse_log_to_xarray(filename,
     timestamps = []
     data_dict = {}
     errors = []  # List to store error information
+    
+    get_date(filename)
 
     with open(filename, 'r') as f:
         for line_num, line in enumerate(f, 1):
@@ -176,7 +186,38 @@ def parse_log_to_xarray(filename,
 
 
 
+def get_date(filename):
+    """
+    Get date from filename, output is string of format DD/MM/YYYY
 
+    Raise an exception if the format isnt recognized.
+    """    
+    fichier = filename.split('/')[-1].split('_')[1]
+    day, month, year = fichier[6:], fichier[4:6], fichier[0:4]
+    reference_date = day+'/'+month+'/'+year 
+    default_date = '01/01/2000'
+    stop = False
+    # sanity check
+    if not fichier.isdigit():
+        print(f'Error in filename: not a date ({fichier})')
+        print(' expected format YYYYMMDD')
+        reference_date = default_date
+    else:
+        if year != '2026':
+            stop=True
+            print(f'year is not 2026 ({year}), check the file ...')
+
+        if month != '02':
+            stop=True
+            print(f'month is not Februrary ({month}), check the file ...')
+        if int(day) < 1 or int(day) > 31:
+            stop=True
+            print(f'day is not inside [1,31] ({day}), check the file ...')
+
+    if stop:
+        raise Exception(f'Filename format is not recognized,\n filename is:\n {filename}')
+    else:
+        return reference_date
 
 
 def trisonica_infos():
