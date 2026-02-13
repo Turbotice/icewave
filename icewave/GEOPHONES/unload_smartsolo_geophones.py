@@ -52,13 +52,40 @@ DEFAULT_DRIVES = ["H:\\", "G:\\", "D:\\"]
 DIGISOLO_PATTERN = re.compile(r"DigiSolo", re.IGNORECASE)
 MINISEED_EXT = ".miniseed"
 
-# Colours for terminal output (ANSI, works on modern Windows 10+ too)
-C_RESET = "\033[0m"
-C_BOLD = "\033[1m"
-C_GREEN = "\033[92m"
-C_YELLOW = "\033[93m"
-C_RED = "\033[91m"
-C_CYAN = "\033[96m"
+
+# Colours for terminal output — auto-disabled when not supported
+def _supports_ansi() -> bool:
+    """Return True if the terminal likely supports ANSI escape codes."""
+    if not hasattr(sys.stdout, "isatty") or not sys.stdout.isatty():
+        return False
+    if sys.platform == "win32":
+        # Windows 10 build 14393+ supports ANSI via Virtual Terminal Processing.
+        # Try to enable it; if it fails, fall back to no-colour.
+        try:
+            import ctypes
+
+            kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
+            handle = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE
+            mode = ctypes.c_ulong()
+            kernel32.GetConsoleMode(handle, ctypes.byref(mode))
+            # ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004
+            if not (mode.value & 0x0004):
+                kernel32.SetConsoleMode(handle, mode.value | 0x0004)
+            return True
+        except Exception:
+            return False
+    return True  # Unix / macOS
+
+
+if _supports_ansi():
+    C_RESET = "\033[0m"
+    C_BOLD = "\033[1m"
+    C_GREEN = "\033[92m"
+    C_YELLOW = "\033[93m"
+    C_RED = "\033[91m"
+    C_CYAN = "\033[96m"
+else:
+    C_RESET = C_BOLD = C_GREEN = C_YELLOW = C_RED = C_CYAN = ""
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -198,7 +225,11 @@ def load_geophones_table(path: str) -> dict[str, str]:
             stripped = line.strip()
             if not stripped:
                 continue
-            parts = stripped.split()
+            # Support both CSV (comma) and TSV (tab / whitespace)
+            if "," in stripped:
+                parts = [p.strip() for p in stripped.split(",")]
+            else:
+                parts = stripped.split()
             if len(parts) < 2:
                 warn(f"geophones_table line {lineno}: malformed → {stripped!r}")
                 continue
