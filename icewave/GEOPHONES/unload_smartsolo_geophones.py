@@ -7,7 +7,7 @@ Unified geophone data unloading script.
 
 Replaces the fragmented Move_data.py and prepare_smartsolo.py scripts with one interactive, transparent, two-phase workflow:
 
-  Phase 1 — Metadata: Copy DigiSolo/LOG files from geophone SD cards,
+  Phase 1 — Metadata: Copy LOG files from geophone SD cards,
             3 geophones at a time, renaming them by geophone number.
 
   Phase 2 — Seismic data: Rename .miniseed files exported by Sololite
@@ -49,7 +49,6 @@ except ImportError:
 # ──────────────────────────────────────────────────────────────────────
 CONFIG_PATH = Path.home() / "geophone_unload_config.yaml"
 DEFAULT_DRIVES = ["H:\\", "G:\\", "D:\\"]
-DIGISOLO_PATTERN = re.compile(r"DigiSolo", re.IGNORECASE)
 MINISEED_EXT = ".miniseed"
 
 
@@ -361,9 +360,8 @@ def run_phase1(cfg: dict, geo_table: dict[str, str]) -> str:
         textwrap.dedent(
             """\
         Plug in 3 geophones at a time. This phase will:
-          • scan the mounted drives for DigiSolo / LOG files
-          • parse each file to extract serial number + acquisition info
-          • copy the files to the output folder, renamed by geophone number
+          • scan the mounted drives for .LOG files
+          • extract serial number → rename by geophone number → copy to output
     """
         )
     )
@@ -416,94 +414,50 @@ def run_phase1(cfg: dict, geo_table: dict[str, str]) -> str:
 
             found_any = False
             for fname in os.listdir(drive):
-                # Match DigiSolo*.txt or *.LOG files
-                is_digisolo = DIGISOLO_PATTERN.search(fname)
-                is_log = fname.upper().endswith(".LOG")
-                if not (is_digisolo or is_log):
+                if not fname.upper().endswith(".LOG"):
                     continue
 
                 found_any = True
                 src = os.path.join(drive, fname)
-                info(f"  Found: {src}")
-
-                # Parse to get serial number
                 meta = parse_digisolo(src)
                 serial = meta["serial_number"]
-                if serial:
-                    geo_num = serial_to_geophone(serial, geo_table)
-                else:
-                    geo_num = None
+                geo_num = serial_to_geophone(serial, geo_table) if serial else None
 
                 if geo_num:
-                    # Determine destination filename
-                    if is_digisolo:
-                        dest_name = f"DigiSolo_{geo_num}.txt"
-                    else:
-                        dest_name = f"LOG_{geo_num}{os.path.splitext(fname)[1]}"
+                    dest_name = f"LOG_{geo_num}{os.path.splitext(fname)[1]}"
                     dest = os.path.join(metadata_dir, dest_name)
-
-                    # Check for overwrite
                     if os.path.exists(dest):
-                        warn(f"  Destination already exists: {dest}")
+                        warn(f"LOG_{geo_num} already exists")
                         if not confirm("  Overwrite?"):
-                            warn(f"  Skipped: {fname}")
                             continue
-
                     shutil.copy2(src, dest)
-                    action(
-                        f"COPY  {src}\n"
-                        f"         → {dest}\n"
-                        f"         (serial {serial} → geophone {geo_num})"
+                    n_acq = len(meta.get("acquisitions", []))
+                    info(
+                        f"Extracted log from geophone {geo_num} (SN: {serial}, {n_acq} acq)"
                     )
                     batch_copied += 1
                 else:
-                    if serial:
-                        warn(
-                            f"  Serial {serial} not found in geophones table "
-                            f"— copying with original name."
-                        )
-                    else:
-                        warn(
-                            f"  Could not extract serial number from {fname} "
-                            f"— copying with original name."
-                        )
-                    dest = os.path.join(metadata_dir, fname)
-                    shutil.copy2(src, dest)
-                    action(f"COPY  {src}  →  {dest}  (unmatched)")
+                    shutil.copy2(src, os.path.join(metadata_dir, fname))
+                    warn(f"Unknown serial in {fname} — copied as-is")
                     batch_copied += 1
 
-                # Print acquisition info
-                if meta["acquisitions"]:
-                    n_acq = len(meta["acquisitions"])
-                    info(f"  Parsed {n_acq} acquisition(s) in this file:")
-                    for j, acq in enumerate(meta["acquisitions"], 1):
-                        d = acq.get("date", "?")
-                        t = acq.get("time", "?")
-                        n_gps = len(acq.get("latitudes", []))
-                        print(f"      acq {j}: date={d}  time={t}  GPS_points={n_gps}")
-
             if not found_any:
-                warn(f"  No DigiSolo or LOG files found on {drive}")
+                warn(f"No .LOG file found on {drive}")
 
         # Warn if fewer than 3 geophones found in this batch
-        accessible_drives = [d for d in drives if os.path.isdir(d)]
-        geophones_found = 0
-        for d in accessible_drives:
-            has_data = any(
-                DIGISOLO_PATTERN.search(f) or f.upper().endswith(".LOG")
-                for f in os.listdir(d)
-            )
-            if has_data:
-                geophones_found += 1
+        geophones_found = sum(
+            1
+            for d in drives
+            if os.path.isdir(d)
+            and any(f.upper().endswith(".LOG") for f in os.listdir(d))
+        )
         if geophones_found < 3:
-            warn(
-                f"Only {geophones_found} geophone(s) with data found across "
-                f"{len(drives)} drive(s). Expected 3."
-            )
+            warn(f"Only {geophones_found} geophone(s) with .LOG data (expected 3)")
 
         total_files_copied += batch_copied
-        info(f"Batch #{batch_number} complete: {batch_copied} file(s) copied.")
-        info(f"Total metadata files copied so far: {total_files_copied}")
+        info(
+            f"Batch #{batch_number}: {batch_copied} log(s) copied ({total_files_copied} total)"
+        )
 
         print()
         choice = (
@@ -518,9 +472,7 @@ def run_phase1(cfg: dict, geo_table: dict[str, str]) -> str:
         if choice in ("done", "d", "quit", "q", "exit"):
             break
 
-    info(
-        f"Metadata phase complete. {total_files_copied} files copied to {metadata_dir}"
-    )
+    info(f"Phase 1 complete — {total_files_copied} log file(s) saved to {metadata_dir}")
     return output_path
 
 
@@ -643,8 +595,10 @@ def fix_malformed_filenames(directory: str) -> int:
 def sort_into_acquisition_folders(source_dir: str, dest_base: str) -> int:
     """Step 2c: move .miniseed files into per-acquisition sub-folders.
 
-    The acquisition number is extracted as the second dot-separated field:
-        01.0001.2024.02.11...E.miniseed  →  acq_number = '0001'
+    The acquisition number is the dot-separated field immediately before
+    the 4-digit year (20xx) in the filename:
+        01.000.1.2026.02.13...E.miniseed  →  acq '001'
+        01.000.2.2026.02.13...E.miniseed  →  acq '002'
 
     Files are moved from source_dir into dest_base/<acq_number>/.
 
@@ -660,10 +614,19 @@ def sort_into_acquisition_folders(source_dir: str, dest_base: str) -> int:
 
         parts = fname.split(".")
         if len(parts) < 3:
-            warn(f"  Cannot determine acquisition number from: {fname} — skipping")
+            warn(f"  Cannot parse: {fname} — skipping")
             continue
 
-        acq_number = parts[1]  # e.g. '0001'
+        # Find the acquisition number: field just before the 4-digit year
+        acq_number = None
+        for idx in range(2, len(parts)):
+            if len(parts[idx]) == 4 and parts[idx].startswith("20"):
+                acq_number = parts[idx - 1].zfill(3)
+                break
+
+        if acq_number is None:
+            # Fallback: use parts[1]
+            acq_number = parts[1]
 
         acq_folder = os.path.join(dest_base, acq_number)
         os.makedirs(acq_folder, exist_ok=True)
@@ -672,26 +635,36 @@ def sort_into_acquisition_folders(source_dir: str, dest_base: str) -> int:
         dst_path = os.path.join(acq_folder, fname)
 
         if os.path.exists(dst_path):
-            warn(f"  Already exists in destination: {dst_path} — skipping")
+            warn(f"  Already exists: {dst_path} — skipping")
             continue
 
         shutil.move(src_path, dst_path)
-        action(f"MOVE    {fname}  →  {acq_folder}/")
         count += 1
 
     # Report what acquisition folders were created
     acq_folders = sorted(
         d
         for d in os.listdir(dest_base)
-        if os.path.isdir(os.path.join(dest_base, d)) and d.isdigit()
+        if os.path.isdir(os.path.join(dest_base, d)) and d != "metadata"
     )
-    if acq_folders:
-        info(
-            f"  {count} file(s) sorted into {len(acq_folders)} acquisition folder(s): "
-            f"{', '.join(acq_folders)}"
+    acq_with_data = [
+        (
+            d,
+            sum(
+                1
+                for f in os.listdir(os.path.join(dest_base, d))
+                if f.lower().endswith(MINISEED_EXT)
+            ),
         )
+        for d in acq_folders
+    ]
+    acq_with_data = [(d, n) for d, n in acq_with_data if n > 0]
+    if acq_with_data:
+        info(f"Sorted {count} file(s) into {len(acq_with_data)} acquisition folder(s):")
+        for folder, n in acq_with_data:
+            print(f"    {folder}/  — {n} file(s)")
     else:
-        info(f"  {count} file(s) moved.")
+        info(f"{count} file(s) moved.")
     return count
 
 
@@ -817,7 +790,7 @@ def main() -> None:
         textwrap.dedent(
             """\
         This script consolidates the geophone data unloading workflow:
-          Phase 1 — Copy metadata (DigiSolo / LOG files) from geophone drives
+          Phase 1 — Copy metadata (LOG files) from geophone drives
           Phase 2 — Rename & sort .miniseed files exported by Sololite
 
         Paths are saved to a config file for next time. Tab-completion is
@@ -850,32 +823,11 @@ def main() -> None:
 
     geo_table = load_geophones_table(geo_table_path)
 
-    # ── Choose what to run ──
-    print()
-    print("What would you like to do?")
-    print("  1  — Run both phases (metadata + seismic data)")
-    print("  2  — Phase 1 only (metadata extraction)")
-    print("  3  — Phase 2 only (seismic data renaming/sorting)")
-    choice = pt_prompt("Choice [1/2/3]: ", default="1").strip()
+    # ── Phase 1: Metadata ──
+    output_path = run_phase1(cfg, geo_table)
 
-    output_path = cfg.get("all_data_output_path", "")
-
-    if choice in ("1", "2"):
-        output_path = run_phase1(cfg, geo_table)
-
-    if choice in ("1", "3"):
-        if choice == "3" and not output_path:
-            # Need to ask for output path since Phase 1 didn't run
-            output_path = ask_path(
-                "Output folder (where metadata was saved / where data will go)",
-                default=cfg.get("all_data_output_path", ""),
-                only_directories=True,
-                must_exist=False,
-            )
-            cfg["all_data_output_path"] = output_path
-            save_config(cfg)
-
-        run_phase2(cfg, geo_table, output_path)
+    # ── Phase 2: Seismic data ──
+    run_phase2(cfg, geo_table, output_path)
 
     if output_path and os.path.isdir(output_path):
         print_summary(output_path)
