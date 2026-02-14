@@ -1,5 +1,24 @@
 # Geophone Data Unloading Tool
 
+1. Open SoloLite software AS ADMINISTRATOR
+2. Click `Open Project` and open the corresponding project
+3. Connect first batch of geophones
+4. Launch `python unload_smartsolo_geophones.py` in a terminal
+5. Follow the steps to copy metadata (set path, press enter to copy metadata and repeat for next set of geophones)
+6. Type `done` to pass to the seismic data phase 
+7. In SoloLite, click the blue circle "Export seismic data"
+Set: 
+- A job name
+- Output Data Component `All Components in separate file`
+- Output Data Format `MiniSEED`
+- Sample Interval: `1ms`
+- Start and End time corresponding to your acquisition date
+8. Click `Prepare`, make sure everything is as expected (No. of acquisitions, geophones, etc.) then click `Run`
+9. When finished, find the output folder (probably something like `C:\SOLODATA\project_name\job_name`) and copy the path to the terminal 
+10. The script will move the files to the path that you first set and rename them appropriately. Then move them onto the server for safekeeping.
+
+
+
 **Script:** `unload_smartsolo_geophones.py`
 
 A unified, interactive script that replaces the old fragmented workflow (`Move_data.py`, `prepare_smartsolo.py`, and their many variants) with a single two-phase pipeline for unloading SmartSolo geophone data after a day of field work.
@@ -28,7 +47,7 @@ Copies **DigiSolo / LOG files** from the geophone SD cards to a central folder, 
 | Step | What happens |
 |------|-------------|
 | 1 | You specify an **output folder** (created if it doesn't exist). |
-| 2 | The script reads the **geophone drives** from `~/geophone_unload_config.yaml` (no prompt — edit the YAML to change them). |
+| 2 | The script reads the **geophone drives** from `~/geophone_unload_config.yaml` (edit the YAML to change them). |
 | 3 | The script scans each drive for DigiSolo/LOG files, parses the serial number, and copies them to `<output>/metadata/DigiSolo_<geophone_number>.txt`. |
 | 4 | A **warning** is shown if fewer than 3 geophones with data are found across the configured drives. |
 | 5 | You're prompted to plug in the next batch of 3 geophones and press Enter, or type `done` when all geophones are processed. |
