@@ -43,7 +43,7 @@ def parse_log_to_xarray(filename,
     data_dict = {}
     errors = []  # List to store error information
     
-    get_date(filename)
+    
 
     with open(filename, 'r') as f:
         for line_num, line in enumerate(f, 1):
@@ -96,10 +96,14 @@ def parse_log_to_xarray(filename,
     # ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
     # Assuming timestamps are time-only (HH:MM:SS.fff)
     # We'll use today's date as a reference
-    if reference_date:
-        ref_date = pd.to_datetime(reference_date, format='%d/%m/%Y').date()
-    else:
-        ref_date = pd.Timestamp.now().date()
+    # if reference_date:
+    #     ref_date = pd.to_datetime(reference_date, format='%d/%m/%Y').date()
+    # else:
+    #     ref_date = pd.Timestamp.now().date()
+
+
+    reference_date = get_date(filename)
+    ref_date = pd.to_datetime(reference_date, format='%d/%m/%Y').date()
     time_objects = pd.to_datetime(timestamps, format='%H:%M:%S.%f').time
     datetime_index = pd.to_datetime([
         pd.Timestamp.combine(ref_date, t) for t in time_objects])
