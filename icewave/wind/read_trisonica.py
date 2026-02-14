@@ -12,7 +12,7 @@ from datetime import datetime, time
 # - get the notes associated with the measurement
 
 
-def parse_log_to_xarray(filename, 
+def parse_trisonica_to_xarray(filename, 
                         reference_date=None, 
                         verbose=False,
                         log_errors=True,
