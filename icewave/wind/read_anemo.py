@@ -4,19 +4,11 @@ import pandas as pd
 import os
 from datetime import datetime, time
 
-
-# TODO:
-# - create a class for anemometer ?
-# - get the location of the anemometers
-# - get the height of each anemometers
-# - get the notes associated with the measurement
-
-
-def parse_trisonica_to_xarray(filename, 
-                        reference_date=None, 
+def parse_anemo_to_xarray(filename, 
                         verbose=False,
                         log_errors=True,
                         check_gaps=True,
+                        kind='trisonica',
                         sampling_rate_hz=5):
     """
     Parse a log file with timestamped variable measurements into an xarray Dataset.
@@ -25,35 +17,48 @@ def parse_trisonica_to_xarray(filename,
     -----------
     filename : str
         Path to the log file
-    reference_date : str
-        date of the log, format 'DD/MM/YYYY'
     verbose: bool
     log_errors: bool
-    
+    check_gaps: bool
+    kind: str
+        Name of the instrument (trisonica or thies)
+    sampling_rate_hz: float
+        the sampling rate of the recording
+
     Returns:
     --------
     xr.Dataset
         Dataset with variables indexed by timestamp
     
-    Example line format:
+    Example line format (Trisonica):
     10:30:33.493 S  04.41 D  321 U  02.69 V -03.30 W -01.18 T -00.60 H  36.69 P  1011.82 PI  000.1 RO -001.7 MD  106
+    
+    Example line format (Thies):
+    2026-02-13 22:44:15.378 b'41\r\x03\x02-000.60;-000.11;+001.28;-06.8;0E;':
     """
     
     timestamps = []
     data_dict = {}
     errors = []  # List to store error information
     
-    
+    if kind=='trisonica':
+        index_hour = 0
+    elif kind=='thies':
+        index_hour = 1
 
     with open(filename, 'r') as f:
         for line_num, line in enumerate(f, 1):
+
+            if line_num==20000:
+                break
+
             line = line.strip()
             if not line:
                 continue
             
             # Line Validation
             # ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-            is_valid, error_msg, parts = validate_line(line, line_num)
+            is_valid, error_msg, parts = validate_line(line, line_num, kind=kind)
 
             if not is_valid:
                 # Log not valid line
@@ -70,27 +75,27 @@ def parse_trisonica_to_xarray(filename,
                 # Process valid line
                 # ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
                 # First part is the timestamp
-                timestamp_str = parts[0]
+                timestamp_str = parts[index_hour]
                 timestamps.append(timestamp_str)
                 
                 # Parse the remaining parts as variable-value pairs
-                i = 1
-                while i < len(parts):
-                    var_name = parts[i]
-                    if i + 1 < len(parts):
-                        try:
-                            value = float(parts[i + 1])
-                            
-                            # Initialize list for this variable if not exists
-                            if var_name not in data_dict:
-                                data_dict[var_name] = []
-                            
-                            data_dict[var_name].append(value)
-                        except ValueError:
-                            # If we can't convert to float, skip this pair
-                            pass
-                    
-                    i += 2
+                
+                data_dict = read_data(data_dict, parts, kind=kind)
+                #print(data_dict)
+                # i = 1
+                # while i < len(parts):
+                #     var_name = parts[i]
+                #     if i + 1 < len(parts):
+                #         try:
+                #             value = float(parts[i + 1])
+                #
+                #             # Initialize list for this variable if not exists
+                #             if var_name not in data_dict:
+                #                 data_dict[var_name] = []
+                #
+                #             data_dict[var_name].append(value)
+                #
+                #     i += 2
     
     # Convert timestamps to pandas datetime
     # ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
@@ -102,7 +107,7 @@ def parse_trisonica_to_xarray(filename,
     #     ref_date = pd.Timestamp.now().date()
 
 
-    reference_date = get_date(filename)
+    reference_date = get_date(filename, kind=kind)
     ref_date = pd.to_datetime(reference_date, format='%d/%m/%Y').date()
     time_objects = pd.to_datetime(timestamps, format='%H:%M:%S.%f').time
     datetime_index = pd.to_datetime([
@@ -182,21 +187,55 @@ def parse_trisonica_to_xarray(filename,
     return ds
 
 
+def read_data(data_dict, parts, kind='trisonica'):
+    """
+    Parsing of the line, depending on the intrument.
+    Takes as input a lines already split in parts,
+    returns a dictionnary with keys=variables and values are values
+    """
 
+    if kind=='trisonica':
+        i = 1
+        while i < len(parts):
+            var_name = parts[i]
+            if i + 1 < len(parts):
+                value = float(parts[i + 1])
+                
+                # Initialize list for this variable if not exists
+                if var_name not in data_dict:
+                    data_dict[var_name] = []
+                
+                data_dict[var_name].append(value)
+            
+            i += 2
+    elif kind=='thies':
+        data = parts[2].split(';')
+        data[0] = data[0].split('\\')[-1][3:] # remove the b'40\r\x03\x02 
+        
+        for var_name in ['U','V','W','T']:
+            if var_name not in data_dict:
+                data_dict[var_name] = []
 
+        # Note:
+        # I assume that the order is U,V,W,T
+        data_dict['U'].append(data[0])
+        data_dict['V'].append(data[1])
+        data_dict['W'].append(data[2])
+        data_dict['T'].append(data[3])
+    return data_dict
 
-
-
-
-
-
-def get_date(filename):
+def get_date(filename, kind='trisonica'):
     """
     Get date from filename, output is string of format DD/MM/YYYY
-
     Raise an exception if the format isnt recognized.
     """    
-    fichier = filename.split('/')[-1].split('_')[1]
+    
+    if kind=='trisonica':
+        index_date = 1 # skip the 'serial' in the filename
+    elif kind=='thies':
+        index_date = 0
+
+    fichier = filename.split('/')[-1].split('_')[index_date]
     day, month, year = fichier[6:], fichier[4:6], fichier[0:4]
     reference_date = day+'/'+month+'/'+year 
     default_date = '01/01/2000'
@@ -222,7 +261,6 @@ def get_date(filename):
         raise Exception(f'Filename format is not recognized,\n filename is:\n {filename}')
     else:
         return reference_date
-
 
 def trisonica_infos():
     dict = {'description':'Anemometer trisonica mini',
@@ -296,7 +334,6 @@ def check_missing_data(ds, sampling_rate_hz=5, tolerance_ms=50):
                 'gap_duration_ms': gap_duration,
                 'missing_samples': missing_samples
             })
-    
     result = {
         'has_gaps': len(gaps) > 0,
         'expected_interval_ms': expected_interval_ms,
@@ -306,7 +343,6 @@ def check_missing_data(ds, sampling_rate_hz=5, tolerance_ms=50):
         'total_samples': len(ds['time']),
         'expected_samples': len(ds['time']) + total_missing
     }
-    
     return result
 
 def print_gap_report(gap_info):
@@ -337,7 +373,7 @@ def print_gap_report(gap_info):
         print("\n✓ No gaps detected!")
 
 
-def validate_line(line, line_num):
+def validate_line(line, line_num, kind='trisonica'):
     """
     Validate a single line from the log file.
     
@@ -347,6 +383,8 @@ def validate_line(line, line_num):
         The line to validate
     line_num : int
         Line number in the file
+    kind: str
+        Kind of instrument (trisonica or thies)
     
     Returns:
     --------
@@ -355,32 +393,41 @@ def validate_line(line, line_num):
         error_message: str or None, description of the error if invalid
         parts: list or None, split line parts if valid
     """
+    
+    
 
-    N_total = 23 # the file should have 23 parts for each line
+    if kind=='trisonica':
+        N_total = 23 # the file should have 23 parts for each line
+        index_time = 0
+    elif kind=='thies':
+        N_total = 3
+        index_time = 1
+
 
     if not line:
         return False, "Empty line", None
     
     parts = line.split()
-    
-    # Check minimum number of elements
+
+    # Rough check of number of elements
     if len(parts) < N_total:
         return False, f"Too few elements ({len(parts)} parts)", None
     
     if len(parts) > N_total:
         return False, f"Too much elements ({len(parts)} parts)", None
-
-    # Check if number of parts is odd (timestamp + pairs of var-value)
-    if len(parts) % 2 != 1:
-        return False, f"Odd number of elements ({len(parts)} parts)", None
-    
-    
+    if kind=='trisonica':         
+        # Check if number of parts is odd (timestamp + pairs of var-value)
+        if len(parts) % 2 == 1:
+            return False, f"Odd number of elements ({len(parts)} parts)", None
+    if kind=='thies':
+        if len(parts) % 2 ==0:
+            return False, f"Even number of elements ({len(parts)} parts)", None
 
     # Validate timestamp format (HH:MM:SS.fff)
-    timestamp_str = parts[0]
+    timestamp_str = parts[index_time]
     try:
         pd.to_datetime(timestamp_str, format='%H:%M:%S.%f')
     except ValueError:
         return False, f"Invalid timestamp format '{timestamp_str}'", None
-    
+
     return True, None, parts
