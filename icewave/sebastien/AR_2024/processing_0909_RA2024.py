@@ -53,8 +53,9 @@ import math
 ##############################################################
 date = '0909'
 year = '2024'
-path2data = os.path.join('C:/Users/sebas/Desktop/Amundsen_RA_2024/Data/',year,date,'Geophones/')
-geophones_table_path = 'C:/Users/sebas/git/icewave/sebastien/geophones/geophones_table'
+#path2data = os.path.join('C:/Users/sebas/Desktop/Amundsen_RA_2024/Data/',year,date,'Geophones/')
+path2data = os.path.join('E:/Amundsen_RA_2024/Data/',date,'Geophones/')
+geophones_table_path = 'C:/Users/sebas/Github/icewave/icewave/sebastien/geophones/geophones_table'
 
 #----------------------- SELECTING ACQ NUMBER AND CHANNEL ------------------ 
 
@@ -77,6 +78,7 @@ plt.rc('figure', titlesize=font_size_medium)  # fontsize of the figure title
 
 fig_size = (12,9)
 img_quality = 1000 # dpi to save images 
+plt.rcParams['text.usetex'] = True
 
 
 fig_folder = path2data + 'Figures/' + acqu_numb + '/' # folder where figures are saved 
@@ -537,9 +539,9 @@ channel =  2#0 for E, 1 for N, 2 for Z.
 seismic_data_G16 = seismic_data_streams[45:]
 current_stream  = seismic_data_G16[channel] 
 print(current_stream[0])
-ax.plot(datetime_values, 
-        current_stream[0].data / max(np.abs(current_stream[0].data) ), 
-        label=f"Stream {k}")
+# ax.plot(datetime_values, 
+#         current_stream[0].data / max(np.abs(current_stream[0].data) ), 
+#         label=f"Stream {k}")
 
 selected_indices = range(channel, len(seismic_data_streams) - 3,3)
 
@@ -599,7 +601,7 @@ if direction == 2:
     S3 = '106'
 
 # load time dictionnary 
-base = 'C:/Users/sebas/Desktop/Amundsen_RA_2024/Data/2024/0909/Geophones/'
+base = 'E:/Amundsen_RA_2024/Data/0909/Geophones/'
 pkl_path = base + 't1_to_time_' + date + '_' + year + '.pkl'
 with open(pkl_path, 'rb') as f:
     loaded_data = pickle.load(f)
@@ -691,8 +693,8 @@ ax.set_ylim([0 , fs/4])
 file_figname = '2D_FFT_ch_' + channel_correspondance[channel] + '_t0_' + t1.strftime("%Y-%m-%dT%H_%M_%S_%fZ") + '_sig_length_' + str(signal_length).replace('.','p')
 
 
-plt.savefig(fig_folder + file_figname + '.png', bbox_inches='tight')
-plt.savefig(fig_folder + file_figname + '.pdf', bbox_inches='tight')
+# plt.savefig(fig_folder + file_figname + '.png', bbox_inches='tight')
+# plt.savefig(fig_folder + file_figname + '.pdf', bbox_inches='tight')
 
 #%% Select points on the curve 
 
