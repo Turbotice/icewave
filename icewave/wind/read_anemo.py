@@ -49,8 +49,8 @@ def parse_anemo_to_xarray(filename,
     with open(filename, 'r') as f:
         for line_num, line in enumerate(f, 1):
 
-            if line_num==20000:
-                break
+            # if line_num==20000:
+            #     break
 
             line = line.strip()
             if not line:
@@ -210,18 +210,27 @@ def read_data(data_dict, parts, kind='trisonica'):
             i += 2
     elif kind=='thies':
         data = parts[2].split(';')
-        data[0] = data[0].split('\\')[-1][3:] # remove the b'40\r\x03\x02 
+
+        # Cleanup whats in front of the numerics
+        # like b'40\r\x03\x02 
+        #
+        # We use the fact that for wind only 7 digits are logged
+        #  and for temperature only 5
+        for k in range(0,3):
+            data[k] = data[k][-7:]
+        data[3] = data[3][-5:]
         
+        # Initialize the dict
         for var_name in ['U','V','W','T']:
             if var_name not in data_dict:
                 data_dict[var_name] = []
-
+        
         # Note:
         # I assume that the order is U,V,W,T
-        data_dict['U'].append(data[0])
-        data_dict['V'].append(data[1])
-        data_dict['W'].append(data[2])
-        data_dict['T'].append(data[3])
+        data_dict['U'].append(float(data[0]))
+        data_dict['V'].append(float(data[1]))
+        data_dict['W'].append(float(data[2]))
+        data_dict['T'].append(float(data[3]))
     return data_dict
 
 def get_date(filename, kind='trisonica'):
@@ -415,13 +424,9 @@ def validate_line(line, line_num, kind='trisonica'):
     
     if len(parts) > N_total:
         return False, f"Too much elements ({len(parts)} parts)", None
-    if kind=='trisonica':         
-        # Check if number of parts is odd (timestamp + pairs of var-value)
-        if len(parts) % 2 == 1:
-            return False, f"Odd number of elements ({len(parts)} parts)", None
-    if kind=='thies':
-        if len(parts) % 2 ==0:
-            return False, f"Even number of elements ({len(parts)} parts)", None
+    # Check if number of parts is odd (timestamp + pairs of var-value)
+    if len(parts) % 2 ==0:
+        return False, f"Even number of elements ({len(parts)} parts)", None
 
     # Validate timestamp format (HH:MM:SS.fff)
     timestamp_str = parts[index_time]
