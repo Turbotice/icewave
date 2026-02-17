@@ -8,6 +8,15 @@ from read_trisonica import *
 from compute_flux import *
 from read_anemo import *
 
+
+# Notes:
+# - SAR images 29/02, 3/02, 10/02, 15/02
+
+
+test_tri = False
+test_thies = True
+
+
 file_path="/home/jacqhugo/BicWin26/terrain/0206/Wind/"
 file="20260205_1558_4.txt"
 
@@ -27,12 +36,22 @@ date='12/02/2026'
 
 #ds =  parse_trisonica_to_xarray(file_path+tri_file, reference_date=date, verbose=True)
 
-ds = parse_anemo_to_xarray(thies_file, 
+if test_thies:
+    ds = parse_anemo_to_xarray(thies_file, 
                         verbose=True,
                         log_errors=True,
                         check_gaps=True,
                         kind='thies',
+                        sampling_rate_hz=20)
+if test_tri:
+    ds = parse_anemo_to_xarray(file_path+tri_file, 
+                        verbose=True,
+                        log_errors=True,
+                        check_gaps=True,
+                        kind='trisonica',
                         sampling_rate_hz=5)
+
+
 
 # Thies: todo = remove '+' sign that can sometimes be in front of numerics
 
@@ -79,7 +98,7 @@ if False:
 
 fig, ax = plt.subplots(1,1,figsize = (3,3), constrained_layout=True, dpi=100)
 ax.set_ylabel('U (m/s)')
-ax.plot(ds.time, ds.U,  c='blue')
+ax.scatter(ds.time, ds.U,  c='b', marker='+')
 #ax.set_ylim([0,12.0])
 ax.set_xlabel('time '+date)
 ax.set_title('Thies')
