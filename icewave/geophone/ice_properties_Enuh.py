@@ -27,12 +27,12 @@ plt.rc('text', usetex=True)
 plt.rc('font', family='serif', serif='Computer Modern')
 #%% Import data 
 
-year = '2026'
-date = '0129' #date format, 'mmdd'
-acqu_numb = '0003' #acquisition number 
+year = '2024'
+date = '0909' #date format, 'mmdd'
+acqu_numb = '0001' #acquisition number 
 
-path2data = os.path.join('F:/Rimouski_2026/',date,'Geophones/')
-signal_length = 1
+path2data = os.path.join('E:/Amundsen_RA_2024/Data/',date,'Geophones/')
+signal_length = 0.3
 
 fig_folder = path2data + acqu_numb + '/Results/' # folder where figures are saved 
 
@@ -97,8 +97,6 @@ results['uE'] = compute_uE(results['C_longi'],results['nu'],results['rho_ice'],
 
 c_w = 1450 # sound celerity in water 
 rho_w = 1027 # density of water 
-h_precision = 0.01 # precision on ice thickness (in meter)
-h = np.arange(0.1,1.0,h_precision) # array of height tested 
 
 # direction = 1
 # key_dir = f'dir{str(direction)}'
@@ -120,8 +118,8 @@ interpolator2 = scipy.interpolate.interp1d(s['dir2']['f'], s['dir2']['k'])
 kQS2_interp = interpolator2(freq)
 
 # Calculate the average values, ignoring NaNs
-# kQS = np.nanmean([kQS1_interp, kQS2_interp], axis=0)
-kQS = kQS1_interp
+kQS = np.nanmean([kQS1_interp, kQS2_interp], axis=0)
+# kQS = kQS1_interp
 
 # Plot the results
 fig, ax = plt.subplots()
@@ -135,6 +133,8 @@ ax.set_ylabel(r'$f \: \mathrm{(Hz)}$')
 ax.legend()
 
 #%% Find ice thickness
+h_precision = 0.05 # precision on ice thickness (in meter)
+h = np.arange(0.5,8.0,h_precision) # array of height tested 
 
 # find h_ice that minimzes distance to data points 
 l2_norm = np.zeros(len(h))

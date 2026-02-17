@@ -273,7 +273,7 @@ def wavenumbers_stein( rho_ice, h, E, nu,freq,c_w,rho_w):
     cSH0 = np.sqrt(G/rho_ice) # celerity of shear wave 
     D = E*pow(h,3)/(12*(1-nu**2)) # flexural modulus
 
-    k = np.linspace(1e-6,20,200000)
+    k = np.linspace(1e-6,20,100000)
     
     idx_zero = np.zeros(len(freq)) 
     flag = 0
@@ -291,8 +291,8 @@ def wavenumbers_stein( rho_ice, h, E, nu,freq,c_w,rho_w):
             
             func[func.imag != 0] = -1
             func = func.real # keep only real part 
-            print(np.where(np.diff(np.signbit(func)))[0])
-            idx_zero[kf] = (np.where(np.diff(np.signbit(func)))[0]) # index of the array k at which func(k) = 0
+            print(np.where(np.diff(np.signbit(func)))[0][0])
+            idx_zero[kf] = np.where(np.diff(np.signbit(func)))[0][0] # index of the array k at which func(k) = 0
             
     idx_zero = idx_zero.astype(int)        
     k_QS =  k[idx_zero] # wave vector associated to flexural mode 
@@ -305,4 +305,17 @@ def wavenumbers_stein( rho_ice, h, E, nu,freq,c_w,rho_w):
 
     
     return k_QS, k_QS0, k_SH0, cphQS
+
+
+def build_FK_structure(FK,f,k,f_mode,k_mode):
+    """ Build a structure containing FK spectrum data and deyected points """
+    
+    FK_data = {}
+    FK_data['FK'] = FK
+    FK_data['f'] = f
+    FK_data['k'] = k
+    FK_data['k_points'] = k_mode
+    FK_data['f_points'] = f_mode
+    
+    return FK_data
     
