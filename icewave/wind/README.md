@@ -42,6 +42,10 @@ that both require the `kind` argument.
 
 To do
 
+### Monin-Obukov (log law)
+
+To do
+
 ## Reading IR120
 
 ### Principle of measure
@@ -68,7 +72,9 @@ that parses the data from the file. To convert the raw data to a temperature,
 the script `sensorIR120.py` is used, with calibration constant from the
 manufacturer (A,B,C,X,Y,Z).
 
-
+```
+python test_marmotte.py
+```
 
 ## Method
 
