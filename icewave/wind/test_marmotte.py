@@ -9,8 +9,14 @@ from read_marmotte import *
 file_path = "/home/jacqhugo/BicWin26/icewave/icewave/wind/marmotte/"
 filename = "20260217_141524.203_marmotte.txt"
 
+file_path="/home/jacqhugo/BicWin26/terrain/calib_thermique/marmotte/"
+filename="20260217_175931.335_marmotte.txt"
+
+
 # .txt -> .nc
 ds = parse_marmotte(file_path+filename)
+
+ds.to_netcdf(file_path+filename[:-3]+"nc")
 
 # plot
 fig, ax = plt.subplots(1,1,figsize = (3,3), constrained_layout=True, dpi=100)
