@@ -10,7 +10,20 @@ matplotlib
 ```
 You can use a pip env or a conda env.
 
-## Code example
+## Reading anemometers
+
+### Principle of measure
+
+An anemometer measure the wind speed in the three directions of space, and the
+temperature at a high sampling rate (from 5Hz to 20Hz). A sound wave is emitted
+to a receptor at some distance. From delay between the speed of sound (computed
+separately) and the speed of the sound wave a wind speed is deduced. A large (20cm) 
+distance between emitter and receiver and a high sampling rate (20Hz) allow for
+a precise detection of the turbulence. The closer to the ground, the smaller and
+higher frequency you need to adapt to the size of the coherent structures
+(scales as the distance to the wall).
+
+### Code example
 
 Take a look at `first_look.py` for a example of data processing for the wind
 sensors (Trisonica and Thies). You can write the path to the file and name to
@@ -18,6 +31,43 @@ the file inside the script. Then, simply run
 ```
 python first_look.py
 ```
+
+The script mainly uses the *parse_anemo_to_xarray* function inside
+`read_anemo.py`. We use one function for both anemometers as the global
+structure of the data file is the same. The difference is in the line validation
+function (*validate_line*) and the actual line parsing function (*read_data*)
+that both require the `kind` argument.
+
+### Eddy covariance
+
+To do
+
+## Reading IR120
+
+### Principle of measure
+
+We measure a flux in long wave radiations. The sensor (thermopile) is emitting
+heat, influencing its own measurement. To counter this, a resistor (the
+thermistor) with a know thermal behavior is set up to be able to deduce how much
+the flux measure is modified by the body of the sensor. Alongside the flux, we
+need to measure the resistance of the thermistor from which we deduce the
+temperature of the thermistor. Then, we can also correct for the IR flux
+received by the sensor from the ambiant air. Finally, with a known emissivity we
+get the surface temperature.
+
+The surface temperature is used as:
+- context of the day: clouds, coldness of the day, . ..
+- reference temperature for the computation of turbulent fluxes
+
+
+### Code example
+
+You can look at `test_marmotte.py` where you can build a temperature evolution
+plot from a data file. This script is build upon the `read_marmotte.py` script
+that parses the data from the file. To convert the raw data to a temperature,
+the script `sensorIR120.py` is used, with calibration constant from the
+manufacturer (A,B,C,X,Y,Z).
+
 
 
 ## Method
