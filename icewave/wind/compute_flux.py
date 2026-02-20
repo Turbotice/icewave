@@ -4,7 +4,8 @@ import xarray as xr
 
 def compute_mean_X(file_nc, 
                    X='U', 
-                   period=600, 
+                   period=600,
+                   sampling=5,
                    method='block',
                    update_nc=True):
     """
@@ -14,16 +15,16 @@ def compute_mean_X(file_nc,
     """
     
     ds = xr.open_dataset(file_nc)
-
+    length_window = 10 * int(period / sampling)
     # Check if work has been done
     if 'mean_'+X in ds.keys():
         print(f'Mean for {X} already in the file, skipping ...')
         return
     
-    ds['mean_'+X] = ds[X]*0.
-    time = ds.coords['time']
+    
     
     if method=='block':
+        ds['mean_'+X] = ds[X]*0.
         t0 = ds.time[0]
         tlast = ds.time[-1]
         delta =  np.timedelta64(period, 's')
@@ -39,6 +40,12 @@ def compute_mean_X(file_nc,
             # next iteration
             t0 = t1
             t1 = t1 + delta  
+
+    elif method=='moving':
+        length_window = int(period * sampling)
+        ds['mean_'+X] = ds[X].rolling(time=length_window, center=True).mean('time')
+
+
     else:
         raise Exception(f'This method {method} isnt coded') 
 
@@ -62,17 +69,5 @@ def compute_flux_wx(ds, X='U', period=600):
     raise Exception('to do')
 
     return ds1
-
-def compute_all_operator(ds, function, period=600):
-    """
-    Computes all f(X) quantities and returns an updated dataset
-    """
-    ds1 = ds
-    liste_variables = ['U','V','W','T']
-    for var in liste_variables:
-        ds1 = function(ds, X=var, period=period)
-
-    return ds1
-
 
 

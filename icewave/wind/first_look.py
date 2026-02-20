@@ -46,7 +46,7 @@ from read_anemo import *
 # ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾ 
 # > CHOOSE SENSOR
 sensor = 'thies'        # 'trisonica' or 'thies'
-avg_method = 'block'        # how to compute average quantities
+avg_method = 'moving'        # 'block' or 'moving'
 avg_period = 600            # (s), Time average period
 
 verbose = True              # speaks more
@@ -101,7 +101,12 @@ file_nc = parse_anemo_to_xarray(file_to_parse,
                     save_nc=save_nc,
                     force_save=force_save)
 
+# > Motion correct of the mast
+
 # > GPS Data
+
+# > Footprint analysis (see Aubinet et al. 2012 Chapter 8 "Eddy Covariance: A
+# Practical Guide to Measurement and Data Analysis")
 
 
 
@@ -113,12 +118,24 @@ for var in ['U','V','W','T']:
     compute_mean_X(file_nc, 
                 X=var, 
                 period=avg_period, 
+                sampling=sampling,
                 method=avg_method,
                 update_nc=True)
 
+# > Tilt correction 
+
 # > Fluctuations
 
-# > Flux
+# > Flux (eddy covariance)
+
+
+
+# > u* and z0
+#
+# See Foken et al. 2024 "Micrometeorology" part 4
+#
+#   - profile method (4.1)
+#   - direct using eddy covariance (4.2)
 
 
 
