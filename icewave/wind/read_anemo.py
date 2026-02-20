@@ -9,7 +9,6 @@ def parse_anemo_to_xarray(filename,
                         verbose=False,
                         log_errors=True,
                         check_gaps=True,
-                        #kind='trisonica',
                         sampling_rate_hz=5,
                         save_nc=False,
                         force_save=False,
@@ -24,12 +23,12 @@ def parse_anemo_to_xarray(filename,
     verbose: bool
     log_errors: bool
     check_gaps: bool
-    kind: str
-        Name of the instrument (trisonica or thies)
     sampling_rate_hz: float
         the sampling rate of the recording
     save_nc: bool
         save or not the .nc
+    anemo: class Anemometers
+        Instrument (trisonica or thies)
     Returns:
     --------
     xr.Dataset
@@ -115,15 +114,13 @@ def parse_anemo_to_xarray(filename,
         for var_name, values in data_dict.items():
             data_vars[var_name] = (['time'], values)
         
-        if kind=="trisonica":
-            attrs = trisonica_infos() 
-        elif kind=="thies":
-            attrs = thies_infos()
-        else:
-            raise Exception(f'Anemometer name ({kind}) not recognized')
-        
-        attrs['file'] = ncname
 
+
+        attrs = {'fs':anemo.fs,
+            'raw_files':anemo.files,
+            'description':anemo.description}
+        attrs['nc_file'] = ncname
+        
         ds = xr.Dataset(
             data_vars=data_vars,
             coords={'time': datetime_index},
