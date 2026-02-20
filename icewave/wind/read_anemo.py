@@ -9,10 +9,11 @@ def parse_anemo_to_xarray(filename,
                         verbose=False,
                         log_errors=True,
                         check_gaps=True,
-                        kind='trisonica',
+                        #kind='trisonica',
                         sampling_rate_hz=5,
                         save_nc=False,
-                        force_save=False):
+                        force_save=False,
+                        anemo=None):
     """
     Parse a log file with timestamped variable measurements into an xarray Dataset.
     
@@ -53,10 +54,15 @@ def parse_anemo_to_xarray(filename,
         data_dict = {}
         errors = []  # List to store error information
         
-        if kind=='trisonica':
-            index_hour = 0
-        elif kind=='thies':
-            index_hour = 1
+        # if kind=='trisonica':
+        #     index_hour = 0
+        # elif kind=='thies':
+        #     index_hour = 1
+        
+        if anemo.name=='trisonica':
+            index_hour=0
+        elif anemo.name=='thies':
+            index_hour=1
 
         with open(filename, 'r') as f:
             for line_num, line in enumerate(f, 1):
@@ -70,7 +76,7 @@ def parse_anemo_to_xarray(filename,
                 
                 # Line Validation
                 # ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-                is_valid, error_msg, parts = validate_line(line, line_num, kind=kind)
+                is_valid, error_msg, parts = validate_line(line, line_num, kind=anemo.name)
 
                 if not is_valid:
                     # Log not valid line
@@ -91,12 +97,12 @@ def parse_anemo_to_xarray(filename,
                     timestamps.append(timestamp_str)
                     
                     # Parse the remaining parts as variable-value pairs
-                    data_dict = read_data(data_dict, parts, kind, filename, line_num)
+                    data_dict = read_data(data_dict, parts, anemo.name, filename, line_num)
                     
         
         # Convert timestamps to pandas datetime
         # ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-        reference_date = get_date(filename, kind=kind)
+        reference_date = get_date(filename, kind=anemo.name)
         ref_date = pd.to_datetime(reference_date, format='%d/%m/%Y').date()
         time_objects = pd.to_datetime(timestamps, format='%H:%M:%S.%f').time
         datetime_index = pd.to_datetime([
@@ -109,8 +115,14 @@ def parse_anemo_to_xarray(filename,
         for var_name, values in data_dict.items():
             data_vars[var_name] = (['time'], values)
         
-
-        attrs = trisonica_infos() # to do: fetch right sensor
+        if kind=="trisonica":
+            attrs = trisonica_infos() 
+        elif kind=="thies":
+            attrs = thies_infos()
+        else:
+            raise Exception(f'Anemometer name ({kind}) not recognized')
+        
+        attrs['file'] = ncname
 
         ds = xr.Dataset(
             data_vars=data_vars,
@@ -271,6 +283,15 @@ def trisonica_infos():
             'height':'',
             'notes':''}
 
+def thies_infos():
+    dict = {'description':'Anemometer Thies',
+            'frequency':'20hz',
+            'location':'',
+            'height':'',
+            'notes':'Top of the mast'}
+
+
+
 def flag_trisonica(ds):
     """
     Flag the uncorrect data from ds
@@ -279,6 +300,7 @@ def flag_trisonica(ds):
     - unphysical value
     - 
     """
+    raise Exception('To do')
     return ds
 
 def check_missing_data(ds, sampling_rate_hz=5, tolerance_ms=50):

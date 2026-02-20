@@ -14,14 +14,21 @@ import matplotlib.dates as mdates
 from read_trisonica import *
 from compute_flux import *
 from read_anemo import *
-
+from sensors import *
 
 # Notes ____________________________________________
 # ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
 """
+> TRANSFER FILES
+
+- find files:
+  lz **/Mat_portatif/Trisonica/*.txt (on zsh, not bsh)
+
+
+
+
 > PREPROC
 - enlever les spikes
-
 
 > CONTEXT
 - SAR images 29/02, 3/02, 10/02, 15/02
@@ -38,7 +45,6 @@ from read_anemo import *
 - rotation du système pour avoir <V> = <W> = <v'w'> = 0
 
 """
-
 
 
 # 
@@ -71,35 +77,45 @@ tri_file="Trisonica/serial_20260213_125151.txt"
 #thies_file=f"{HOME}/BicWin26/terrain/0213/Autruche/Thies/20260213_2244_thies.txt"
 thies_file=f"{HOME}/BicWin26/terrain/0218/Autruche/Thies/20260218_0737_thies.txt"
 
-# > SENSOR INFOS
-dict_sensor = {
-            'trisonica':{
-                'file':file_path+tri_file,
-                'kind':'trisonica',
-                'sampling':5},
-            'thies':{
-                'file':thies_file,
-                'kind':'thies',
-                'sampling':20},
-            }
-
 # Preprocessing _____________________________________
 # ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
 
+# > initialize sensors
+
+w_Thies = Anemometer(fs=20, 
+                     files=[thies_file],
+                     name='thies', 
+                     description='Top of the mast', 
+                     notes='')
+w_Trisonica_portable = Anemometer(fs=5, 
+                                  files=[file_path+tri_file],
+                                  name='trisonica', 
+                                  description='Front of the edge', 
+                                  notes='')
+T_IR120 = T_sensor(fs=1, 
+                   files=[],
+                   name='marmotte', 
+                   kind='IR120')
+
+if sensor=='thies':
+    anemo = w_Thies
+elif sensor=='trisonica':
+    anemo = w_Trisonica_portable
 
 # > Data Parsing
-file_to_parse = dict_sensor[sensor]['file']
-kind = dict_sensor[sensor]['kind']
-sampling = dict_sensor[sensor]['sampling']
+file_to_parse = anemo.files[0] 
+kind = anemo.name
+sampling = anemo.fs
 
 file_nc = parse_anemo_to_xarray(file_to_parse, 
                     verbose=True,
                     log_errors=True,
                     check_gaps=True,
-                    kind=kind,
+                    #kind=kind,
                     sampling_rate_hz=sampling,
                     save_nc=save_nc,
-                    force_save=force_save)
+                    force_save=force_save,
+                    anemo = anemo)
 
 # > Motion correct of the mast
 
@@ -123,6 +139,8 @@ for var in ['U','V','W','T']:
                 update_nc=True)
 
 # > Tilt correction 
+
+
 
 # > Fluctuations
 
