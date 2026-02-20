@@ -19,11 +19,20 @@ Copying one by one can be tedious, so one way to speed up this is to gather all
 files of interest in a directory on the server, then copy every files from this
 directory onto the local machine.
 
-On a zsh shell, if you want to get all data from the Trisonica that was mounted
-on the mobile mast, just type
+If you want to get all data from the Trisonica that was mounted
+on the mobile mast, just type (zsh)
 ```
 ls **/Mat_portatif/Trisonica/*.txt
 ```
+or use the little script (bsh)
+```
+./gather_files.sh
+```
+or you can use rsync (not tested)
+```
+rsync -av user@hostname:'/path/to/root/**/Mat_portatif/Trisonica/*.txt' /home/jacqhugo/BicWin26/terrain/data_trisonica_portable/
+```
+
 
 ## Reading anemometers
 
