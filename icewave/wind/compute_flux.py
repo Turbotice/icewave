@@ -71,3 +71,39 @@ def compute_flux_wx(ds, X='U', period=600):
     return ds1
 
 
+def rotation(file_nc, update_nc=True):
+    """
+    Rotation of the reference frame.
+    INPUTS:
+        file_nc: str, the netcdf file to update
+        update_nc: bool, force overwrite
+
+    Goal is to have:
+    <V> = <W> = <v'w'> = 0
+
+    Old wind speed: U,V,W
+    New wind speed: U1,V1,W1
+    """
+    raise Exception('To do')
+
+    # Saving 
+    if update_nc:
+        ds.load()
+        ds.close() # <- required, else cant append to file
+        ds.to_netcdf(file_nc, mode="a")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
