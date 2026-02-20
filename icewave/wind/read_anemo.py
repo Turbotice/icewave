@@ -2,6 +2,7 @@ import numpy as np
 import xarray as xr
 import pandas as pd
 import os
+import re
 from datetime import datetime, time
 
 def parse_anemo_to_xarray(filename, 
@@ -45,7 +46,7 @@ def parse_anemo_to_xarray(filename,
     if os.path.isfile(ncname) and not force_save:
         print("File already exist ! No need to parse ...")
         print(f'-> {ncname}')
-        return xr.open_dataset(ncname)
+        return ncname
     else:
     # The file doesnt exist, processing ...
         timestamps = []
@@ -90,7 +91,7 @@ def parse_anemo_to_xarray(filename,
                     timestamps.append(timestamp_str)
                     
                     # Parse the remaining parts as variable-value pairs
-                    data_dict = read_data(data_dict, parts, kind=kind)
+                    data_dict = read_data(data_dict, parts, kind, filename, line_num)
                     
         
         # Convert timestamps to pandas datetime
@@ -108,11 +109,13 @@ def parse_anemo_to_xarray(filename,
         for var_name, values in data_dict.items():
             data_vars[var_name] = (['time'], values)
         
+
+        attrs = trisonica_infos() # to do: fetch right sensor
+
         ds = xr.Dataset(
             data_vars=data_vars,
             coords={'time': datetime_index},
-            attrs=trisonica_infos(),
-        )
+            attrs=attrs,)
         
         # Error logging
         # ‾‾‾‾‾‾‾‾‾‾‾‾‾
@@ -174,10 +177,11 @@ def parse_anemo_to_xarray(filename,
         if save_nc:
             print(f'Saving at: {ncname}')
             ds.to_netcdf(ncname)
-    return ds
+            ds.close()
+    return ncname # ds
 
 
-def read_data(data_dict, parts, kind='trisonica'):
+def read_data(data_dict, parts, kind, filename, line_num):
     """
     Parsing of the line, depending on the intrument.
     Takes as input a lines already split in parts,
@@ -206,10 +210,8 @@ def read_data(data_dict, parts, kind='trisonica'):
         #
         # We use the fact that for wind only 7 digits are logged
         #  and for temperature only 5
-        for k in range(0,3):
-            data[k] = data[k][-7:]
-        data[3] = data[3][-5:]
-        
+        data = re.findall(r'[+-]\d+\.\d+', parts[-1])
+
         # Initialize the dict
         for var_name in ['U','V','W','T']:
             if var_name not in data_dict:
@@ -217,10 +219,11 @@ def read_data(data_dict, parts, kind='trisonica'):
         
         # Note:
         # I assume that the order is U,V,W,T
-        data_dict['U'].append(float(data[0]))
-        data_dict['V'].append(float(data[1]))
-        data_dict['W'].append(float(data[2]))
-        data_dict['T'].append(float(data[3]))
+        for k, var in enumerate(['U','V','W','T']):
+            try:
+                data_dict[var].append(float(data[k]))
+            except ValueError:
+                raise Exception(f'{filename}\nl{line_num}: Error in conversion from string to numeric')
     return data_dict
 
 def get_date(filename, kind='trisonica'):
@@ -417,6 +420,13 @@ def validate_line(line, line_num, kind='trisonica'):
     # Check if number of parts is odd (timestamp + pairs of var-value)
     if len(parts) % 2 ==0:
         return False, f"Even number of elements ({len(parts)} parts)", None
+        
+    #
+    if kind=='thies':
+        values = re.findall(r'[+-]\d+\.\d+', parts[-1])
+        if len(values)!=4:
+            return False, f"Wrong number of element ({len(values)}!=4) for data part", None
+
 
     # Validate timestamp format (HH:MM:SS.fff)
     timestamp_str = parts[index_time]
