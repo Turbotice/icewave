@@ -2,6 +2,8 @@
 
 ## Requirements
 
+### Python packages
+
 You will need the following packages:
 ```
 xarray
@@ -9,6 +11,19 @@ numpy
 matplotlib
 ```
 You can use a pip env or a conda env.
+
+### Files
+
+You need to download from the server `canots` the files.
+Copying one by one can be tedious, so one way to speed up this is to gather all
+files of interest in a directory on the server, then copy every files from this
+directory onto the local machine.
+
+On a zsh shell, if you want to get all data from the Trisonica that was mounted
+on the mobile mast, just type
+```
+ls **/Mat_portatif/Trisonica/*.txt
+```
 
 ## Reading anemometers
 
