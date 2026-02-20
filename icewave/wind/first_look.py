@@ -45,7 +45,10 @@ from read_anemo import *
 # INPUTS____________________________________________
 # ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾ 
 # > CHOOSE SENSOR
-sensor = 'trisonica'        # 'trisonica' or 'thies'
+sensor = 'thies'        # 'trisonica' or 'thies'
+avg_method = 'block'        # how to compute average quantities
+avg_period = 600            # (s), Time average period
+
 verbose = True              # speaks more
 log_errors = True           # in the parsing
 check_gaps = True           # in the original file
@@ -87,9 +90,9 @@ dict_sensor = {
 # > Data Parsing
 file_to_parse = dict_sensor[sensor]['file']
 kind = dict_sensor[sensor]['kind']
-sampling = dict_sensor[sensor]['sampling'
+sampling = dict_sensor[sensor]['sampling']
 
-ds = parse_anemo_to_xarray(file_to_parse, 
+file_nc = parse_anemo_to_xarray(file_to_parse, 
                     verbose=True,
                     log_errors=True,
                     check_gaps=True,
@@ -106,6 +109,12 @@ ds = parse_anemo_to_xarray(file_to_parse,
 # ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
 
 # > Mean
+for var in ['U','V','W','T']:
+    compute_mean_X(file_nc, 
+                X=var, 
+                period=avg_period, 
+                method=avg_method,
+                update_nc=True)
 
 # > Fluctuations
 
@@ -116,20 +125,16 @@ ds = parse_anemo_to_xarray(file_to_parse,
 # PLOTS _____________________________________________
 # ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
 
+ds = xr.open_dataset(file_nc)
+
 # > First look
 if True:
     if sensor=='trisonica':
         fig, ax = plt.subplots(1,1,figsize = (3,3), constrained_layout=True, dpi=100)
         ax.set_ylabel('Wind speed (m/s)')
-        ax2= ax.twinx()
-        ax2.plot(ds.time, ds.D, label='d', c='orange')
-        ax.plot(ds.time, ds.S, label='S', c='blue')
-        ax2.spines['left'].set_color('blue')
-        ax2.spines['right'].set_color('orange')
-        ax2.set_ylim([0,360])
+        ax.plot(ds.time, ds.U, label='U', c='blue')
+        ax.plot(ds.time, ds.mean_U, label='<U>', c='navy')
         ax.set_ylim([0,12])
-        ax2.set_ylabel('Direction (°) from north')
-        ax.set_xlabel('time')
         ax.set_title('LI-550 portable')
 
         # Format the x-axis for time
@@ -140,16 +145,19 @@ if True:
     if sensor=='thies':
         fig, ax = plt.subplots(1,1,figsize = (3,3), constrained_layout=True, dpi=100)
         ax.set_ylabel('U (m/s)')
-        ax.scatter(ds.time, ds.U,  c='b', marker='+')
-        ax.set_xlabel('time')
+        ax.scatter(ds.time, ds.U,  c='b', marker='+', label='U')
+        ax.plot(ds.time, ds.mean_U, label='<U>', c='navy')
         ax.set_title('Thies')
 
         # Format the x-axis for time
         ax.xaxis.set_major_locator(mdates.MinuteLocator(interval=30))  # Every 5 minutes
         ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))  # Format as HH:MM:SS
         plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')  # Rotate labels
+    
 
-
+    date = pd.Timestamp(ds.time.values[0]).strftime('%d/%m/%Y')
+    ax.set_xlabel(f'time {date}')
+    plt.legend()
 
 
 
