@@ -51,7 +51,7 @@ from sensors import *
 # INPUTS____________________________________________
 # ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾ 
 # > CHOOSE SENSOR
-sensor = 'thies'        # 'trisonica' or 'thies'
+sensor = 'trisonica'        # 'trisonica' or 'thies'
 avg_method = 'moving'        # 'block' or 'moving'
 avg_period = 600            # (s), Time average period
 
@@ -62,17 +62,24 @@ save_nc = True              # save dataset as nc in same location
 force_save = False          # overwrite the .nc if already here
 
 # > FILE PATHS
+# ToDo:
+#  get all the file in 1 folder, for each sensor
+
 HOME = "/home/jacqhugo"
 # file_path=f"{HOME}/BicWin26/terrain/0206/Wind/"
 # file="20260205_1558_4.txt"
-#
+
 # file_path=f"{HOME}/BicWin26/terrain/0212/Mat_portatif/Trisonica/"
 # file="serial_20260212_103030.txt"
 # file="serial_20260212_103339.txt"
 # file="serial_20260212_185053.txt"
-file_path=f"{HOME}/BicWin26/terrain/0213/Mat_portatif/"
-gps_file="Gobannos/2026-02-13T12_57_36-gps-1-610609801644-611509640581.csv"
-tri_file="Trisonica/serial_20260213_125151.txt"
+
+# file_path=f"{HOME}/BicWin26/terrain/0213/Mat_portatif/"
+# gps_file="Gobannos/2026-02-13T12_57_36-gps-1-610609801644-611509640581.csv"
+# tri_file="Trisonica/serial_20260213_125151.txt"
+
+file_path=f"{HOME}/BicWin26/terrain/0220/Mat_portatif/"
+tri_file="Trisonica/serial_20260220_124915.txt"
 
 #thies_file=f"{HOME}/BicWin26/terrain/0213/Autruche/Thies/20260213_2244_thies.txt"
 thies_file=f"{HOME}/BicWin26/terrain/0218/Autruche/Thies/20260218_0737_thies.txt"
@@ -111,7 +118,6 @@ file_nc = parse_anemo_to_xarray(file_to_parse,
                     verbose=True,
                     log_errors=True,
                     check_gaps=True,
-                    #kind=kind,
                     sampling_rate_hz=sampling,
                     save_nc=save_nc,
                     force_save=force_save,
@@ -130,7 +136,7 @@ file_nc = parse_anemo_to_xarray(file_to_parse,
 # ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
 
 # > Mean
-for var in ['U','V','W','T']:
+for var in ['U1','V1','W1','T1']:
     compute_mean_X(file_nc, 
                 X=var, 
                 period=avg_period, 
@@ -169,7 +175,7 @@ if True:
         ax.set_ylabel('Wind speed (m/s)')
         ax.plot(ds.time, ds.U, label='U', c='blue')
         ax.plot(ds.time, ds.mean_U, label='<U>', c='navy')
-        ax.set_ylim([0,12])
+        ax.set_ylim([-5,10])
         ax.set_title('LI-550 portable')
 
         # Format the x-axis for time

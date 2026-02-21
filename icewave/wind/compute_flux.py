@@ -71,20 +71,63 @@ def compute_flux_wx(ds, X='U', period=600):
     return ds1
 
 
-def rotation(file_nc, update_nc=True):
+def rotation(file_nc, mean_kwargs={}, update_nc=True):
     """
-    Rotation of the reference frame.
+    Rotation of the reference frame
+
     INPUTS:
         file_nc: str, the netcdf file to update
         update_nc: bool, force overwrite
 
     Goal is to have:
-    <V> = <W> = <v'w'> = 0
+        <V> = <W> = <v'w'> = 0
+    So we need:
+    - a rotation around z1 axis (eta) => <V> = 0
+    - a rotation around y1 axis (theta) => <W> = 0
+    
 
-    Old wind speed: U,V,W
-    New wind speed: U1,V1,W1
+    We use the convention by Lee et al. [1]:
+        Intrument reference frame: U1
+        Intermediate frame <V>=<W>=0: U2
+        Natural wind frame <V>=<W>=<w'v'>=0: U
+    
+    REFERENCES:
+
+    [1] Lee, X., Massman, W., & Law, B. (Eds.). (2005). 
+        Handbook of Micrometeorology (Vol. 29). Springer Netherlands. 
+        https://doi.org/10.1007/1-4020-2265-4
+
     """
-    raise Exception('To do')
+    ds = xr.open_dataset(file_nc)
+
+    # precompute some values
+    CE = (ds.mean_U1 / np.sqrt(ds.mean_U1**2+ds.mean_V1**2)).values
+    SE = (ds.mean_V1 / np.sqrt(ds.mean_U1**2+ds.mean_V1**2)).values
+    CT = (np.sqrt(ds.mean_U1**2+ds.mean_V1**2)
+          /
+          np.sqrt(ds.mean_U1**2+ds.mean_V1**2+ds.mean_W1**2)).values
+    ST = ( ds.mean_W1
+            /
+          np.sqrt(ds.mean_U1**2+ds.mean_V1**2+ds.mean_W1**2)).values
+        
+    # Rotation <V>=<W>=0 in one go
+    ds['U2'] = ds.U1*CT*CE +
+                ds.V1*CT*SE +
+                ds.W1*ST
+    ds['V2'] = ds.V1*CE - ds.U1*SE
+    ds['W2'] = ds.W1*CT - ds.U1*ST*CE - ds.V1*ST*SE
+
+    # Rotation for <u'w'>=0
+    compute_mean_X(file_nc, 
+                X=var, 
+                period=avg_period, 
+                sampling=sampling,
+                method=avg_method,
+                update_nc=True)
+    mean_w2v2 = 0
+    beta = 0.5*np.tan()
+
+    raise Exception('WIPPPP')
 
     # Saving 
     if update_nc:

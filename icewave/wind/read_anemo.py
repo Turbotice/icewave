@@ -200,7 +200,7 @@ def read_data(data_dict, parts, kind, filename, line_num):
     if kind=='trisonica':
         i = 1
         while i < len(parts):
-            var_name = parts[i]
+            var_name = parts[i]+'1'
             if i + 1 < len(parts):
                 value = float(parts[i + 1])
                 
@@ -222,13 +222,13 @@ def read_data(data_dict, parts, kind, filename, line_num):
         data = re.findall(r'[+-]\d+\.\d+', parts[-1])
 
         # Initialize the dict
-        for var_name in ['U','V','W','T']:
+        for var_name in ['U1','V1','W1','T1']:
             if var_name not in data_dict:
                 data_dict[var_name] = []
         
         # Note:
         # I assume that the order is U,V,W,T
-        for k, var in enumerate(['U','V','W','T']):
+        for k, var in enumerate(['U1','V1','W1','T1']):
             try:
                 data_dict[var].append(float(data[k]))
             except ValueError:
