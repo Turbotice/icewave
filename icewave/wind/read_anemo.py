@@ -40,7 +40,7 @@ def parse_anemo_to_xarray(filename,
     Example line format (Thies):
     2026-02-13 22:44:15.378 b'41\r\x03\x02-000.60;-000.11;+001.28;-06.8;0E;':
     """
-    ncname = filename[:-3]+'nc'
+    ncname = filename[:-3]+'parsed.nc'
 
     # Does the file already exist ?
     if os.path.isfile(ncname) and not force_save:
@@ -233,6 +233,7 @@ def read_data(data_dict, parts, kind, filename, line_num):
                 data_dict[var].append(float(data[k]))
             except ValueError:
                 raise Exception(f'{filename}\nl{line_num}: Error in conversion from string to numeric')
+    
     return data_dict
 
 def get_date(filename, kind='trisonica'):

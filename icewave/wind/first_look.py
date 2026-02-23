@@ -51,10 +51,13 @@ from sensors import *
 # INPUTS____________________________________________
 # ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾ 
 # > CHOOSE SENSOR
-sensor = 'trisonica'        # 'trisonica' or 'thies'
-avg_method = 'moving'        # 'block' or 'moving'
-avg_period = 600            # (s), Time average period
+sensor = 'thies'        # 'trisonica' or 'thies'
 
+mean_kwargs={'method':'block', # 'block' or 'moving'
+             'period':600,      # (s), Time average period
+             }
+# avg_method = 'moving'        
+# avg_period = 600            
 verbose = True              # speaks more
 log_errors = True           # in the parsing
 check_gaps = True           # in the original file
@@ -113,6 +116,7 @@ elif sensor=='trisonica':
 file_to_parse = anemo.files[0] 
 kind = anemo.name
 sampling = anemo.fs
+mean_kwargs['sampling'] = sampling
 
 file_nc = parse_anemo_to_xarray(file_to_parse, 
                     verbose=True,
@@ -130,25 +134,26 @@ file_nc = parse_anemo_to_xarray(file_to_parse,
 # > Footprint analysis (see Aubinet et al. 2012 Chapter 8 "Eddy Covariance: A
 # Practical Guide to Measurement and Data Analysis")
 
-
+# > Tilt correction 
+compute_and_save(file_nc, 
+                update_nc=True,
+                operator=rotation_operator,
+                 mean_kwargs=mean_kwargs)
 
 # COMPUTES __________________________________________
 # ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
 
+
 # > Mean
-for var in ['U1','V1','W1','T1']:
-    compute_mean_X(file_nc, 
-                X=var, 
-                period=avg_period, 
-                sampling=sampling,
-                method=avg_method,
-                update_nc=True)
+for var in ['U','V','W','T']:
+    compute_and_save(file_nc,
+                    update_nc=True,
+                    operator=mean_operator,
+                    X=var, 
+                    period=mean_kwargs['period'], 
+                    sampling=mean_kwargs['sampling'],
+                    method=mean_kwargs['method'])
 
-# > Tilt correction 
-
-
-
-# > Fluctuations
 
 # > Flux (eddy covariance)
 
@@ -169,12 +174,12 @@ for var in ['U1','V1','W1','T1']:
 ds = xr.open_dataset(file_nc)
 
 # > First look
-if True:
+if False:
     if sensor=='trisonica':
         fig, ax = plt.subplots(1,1,figsize = (3,3), constrained_layout=True, dpi=100)
         ax.set_ylabel('Wind speed (m/s)')
-        ax.plot(ds.time, ds.U, label='U', c='blue')
-        ax.plot(ds.time, ds.mean_U, label='<U>', c='navy')
+        ax.plot(ds.time, ds.U1, label='U', c='blue')
+        ax.plot(ds.time, ds.mean_U1, label='<U>', c='navy')
         ax.set_ylim([-5,10])
         ax.set_title('LI-550 portable')
 
@@ -186,8 +191,8 @@ if True:
     if sensor=='thies':
         fig, ax = plt.subplots(1,1,figsize = (3,3), constrained_layout=True, dpi=100)
         ax.set_ylabel('U (m/s)')
-        ax.scatter(ds.time, ds.U,  c='b', marker='+', label='U')
-        ax.plot(ds.time, ds.mean_U, label='<U>', c='navy')
+        ax.scatter(ds.time, ds.U1,  c='b', marker='+', label='U')
+        ax.plot(ds.time, ds.mean_U1, label='<U>', c='navy')
         ax.set_title('Thies')
 
         # Format the x-axis for time
@@ -200,7 +205,15 @@ if True:
     ax.set_xlabel(f'time {date}')
     plt.legend()
 
-
+# > test the rotation part
+if True:
+    fig, ax = plt.subplots(1,1,figsize = (3,3), constrained_layout=True, dpi=100)
+    ax.plot(ds.time, ds.U1, label='U1', ls='-')
+    ax.plot(ds.time, ds.U2, label='U2', ls='-')
+    ax.plot(ds.time, ds.U, label='U',ls='--')
+    ax.set_xlabel('time')
+    ax.set_ylabel('')
+    plt.legend()
 
 
 

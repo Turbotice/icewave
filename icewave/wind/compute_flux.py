@@ -2,27 +2,27 @@ import numpy as np
 import xarray as xr
 
 
-def compute_mean_X(file_nc, 
-                   X='U', 
+def mean_operator(ds, X='U', 
                    period=600,
                    sampling=5,
-                   method='block',
-                   update_nc=True):
+                  method='block'):
     """
     Computes the average of the variables in ds, with a period of 10 min by defaults.
     period in secondes.
-    Returns the dataset with a variable 'mean_X' added.
+
+    INPUTS:
+        ds: xr.Dataset
+        X: str, variable to average
+        sampling: float, sampling rate of the instrument
+        method: str, what kind of average to use
+    OUPUTS:
+        xr.DataArray of the average variable
     """
-    
-    ds = xr.open_dataset(file_nc)
-    length_window = 10 * int(period / sampling)
     # Check if work has been done
     if 'mean_'+X in ds.keys():
         print(f'Mean for {X} already in the file, skipping ...')
-        return
-    
-    
-    
+        return ds['mean_'+X]
+
     if method=='block':
         ds['mean_'+X] = ds[X]*0.
         t0 = ds.time[0]
@@ -47,38 +47,22 @@ def compute_mean_X(file_nc,
 
 
     else:
-        raise Exception(f'This method {method} isnt coded') 
+        raise Exception(f'This method ({method}) isnt coded')
+    return ds['mean_'+X]
 
 
-    # Saving
-    if update_nc:
-        ds.load()
-        ds.close() # <- required, else cant append to file
-        ds.to_netcdf(file_nc, mode="a")
 
 
-def compute_flux_wx(ds, X='U', period=600):
-    """
-    Compute the flux w'x' with x in [U,V,W,T]
-    Returns the dataset with a variable 'flux_wx' added.
-    """
-    ds1 = ds
-    if 'mean_'+X not in ds.keys():
-        ds1 = compute_mean(ds, period)
-    
-    raise Exception('to do')
 
-    return ds1
-
-
-def rotation(file_nc, mean_kwargs={}, update_nc=True):
+def rotation_operator(ds, mean_kwargs={}):
     """
     Rotation of the reference frame
 
     INPUTS:
-        file_nc: str, the netcdf file to update
-        update_nc: bool, force overwrite
-
+        ds: xr.Dataset 
+        mean_kwargs: dict, passed to mean_operator
+    OUTPUTS:
+        ds: xr.Dataset, updated dataset with rotation applied
     Goal is to have:
         <V> = <W> = <v'w'> = 0
     So we need:
@@ -91,6 +75,10 @@ def rotation(file_nc, mean_kwargs={}, update_nc=True):
         Intermediate frame <V>=<W>=0: U2
         Natural wind frame <V>=<W>=<w'v'>=0: U
     
+    and: 
+        <U>  <=>  mean_U
+        u'   <=>  up
+
     REFERENCES:
 
     [1] Lee, X., Massman, W., & Law, B. (Eds.). (2005). 
@@ -98,8 +86,18 @@ def rotation(file_nc, mean_kwargs={}, update_nc=True):
         https://doi.org/10.1007/1-4020-2265-4
 
     """
-    ds = xr.open_dataset(file_nc)
+    # first compute averages in instrument reference frame
+    for var in ['U1','V1','W1']:
+        if 'mean_'+var not in ds.keys():
+            print(var+f' not in the dataset, computing mean_{var} ...')
 
+            # ds['mean_'+var]
+            ds1 = mean_operator(ds, 
+                                            X=var,
+                                            period=mean_kwargs['period'], 
+                                            sampling=mean_kwargs['sampling'], 
+                                            method=mean_kwargs['method'] )
+    
     # precompute some values
     CE = (ds.mean_U1 / np.sqrt(ds.mean_U1**2+ds.mean_V1**2)).values
     SE = (ds.mean_V1 / np.sqrt(ds.mean_U1**2+ds.mean_V1**2)).values
@@ -111,30 +109,88 @@ def rotation(file_nc, mean_kwargs={}, update_nc=True):
           np.sqrt(ds.mean_U1**2+ds.mean_V1**2+ds.mean_W1**2)).values
         
     # Rotation <V>=<W>=0 in one go
-    ds['U2'] = ds.U1*CT*CE +
+    ds['U2'] = (ds.U1*CT*CE +
                 ds.V1*CT*SE +
-                ds.W1*ST
+                ds.W1*ST )
     ds['V2'] = ds.V1*CE - ds.U1*SE
     ds['W2'] = ds.W1*CT - ds.U1*ST*CE - ds.V1*ST*SE
 
     # Rotation for <u'w'>=0
-    compute_mean_X(file_nc, 
-                X=var, 
-                period=avg_period, 
-                sampling=sampling,
-                method=avg_method,
-                update_nc=True)
-    mean_w2v2 = 0
-    beta = 0.5*np.tan()
+    for var in ['V2','W2']:
+        ds['mean_'+var] = mean_operator(ds, 
+                                        X=var,
+                                        period=mean_kwargs['period'], 
+                                        sampling=mean_kwargs['sampling'], 
+                                        method=mean_kwargs['method'] )
+    ds['vp2wp2'] = (ds.V2 - ds.mean_V2)*(ds.W2 - ds.mean_W2)
+    ds['vp2vp2'] = (ds.V2 - ds.mean_V2)*(ds.V2 - ds.mean_V2)
+    ds['wp2wp2'] = (ds.W2 - ds.mean_W2)*(ds.W2 - ds.mean_W2)
 
-    raise Exception('WIPPPP')
+    for var in ['vp2wp2','vp2vp2','wp2wp2']:
+         ds['mean_'+var] = mean_operator(ds, 
+                                        X=var,
+                                        period=mean_kwargs['period'], 
+                                        sampling=mean_kwargs['sampling'], 
+                                        method=mean_kwargs['method'] )
+    # computing beta
+    beta = 2*np.tan(2 * ds.mean_vp2wp2/ (ds.mean_vp2vp2 - ds.mean_wp2wp2))
+    beta = 1/beta
+    
+    CB = np.cos(beta)
+    SB = np.sin(beta)
 
-    # Saving 
+    # Final values
+    ds['U'] = ds['U2']
+    ds['V'] = ds['V2']*CB + ds['W2']*SB
+    ds['W'] = ds['W2']*CB - ds['V2']*SB
+
+    # No rotation for T (scalar)
+    if 'T' not in ds.keys():
+        ds = ds.rename({'T1':'T'})
+
+    return ds
+
+
+def compute_flux_wx(ds, X='U', period=600):
+    """
+    Compute the flux w'x' with x in [U,V,W,T]
+    Returns the dataset with a variable 'flux_wx' added.
+    """
+    raise Exception('to do')
+
+
+    ds1 = ds
+    if 'mean_'+X not in ds.keys():
+        ds1 = compute_mean(ds, period)
+    
+    raise Exception('to do')
+
+    return ds1
+
+
+
+
+# ==================================
+# TOOLBOX
+# ==================================
+#
+def compute_and_save(file_nc, operator, update_nc=True, **kwargs):
+    """
+    Generic wrapper for any operator (mean_operator, rotation_operator, etc.)
+    """
+    ds = xr.open_dataset(file_nc)
+    
+    # Compute
+    ds = operator(ds, **kwargs)
+    
+    # Save
     if update_nc:
         ds.load()
-        ds.close() # <- required, else cant append to file
+        ds.close()
         ds.to_netcdf(file_nc, mode="a")
 
+
+       
 
 
 
