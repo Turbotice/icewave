@@ -11,6 +11,7 @@ Created on Sun Sep 22 11:00:58 2024
 
 
 import numpy as np
+import matplotlib.pyplot as plt 
 import os 
 import glob 
 from datetime import datetime
@@ -46,6 +47,65 @@ def get_height(line):
     
     return height
 
+def process_line(line,data):
+    """ Process a line extracted from a POSMV .log file. 
+    Depending on the header of the line, relevent variables are extracted and added to a dictionnary 
+    given in input. 
+    
+    Input: - line, list of variables obtained from function rw.read_csv
+           - data, dictionnary, containing relevent variables of the POSMV file
+    Output : -data"""
+    
+    header = line[0]
+
+    if header == '$INGGA': # collect vessel position
+        data['time'].append(get_datetime(line))
+        lat,long = get_latlong(line)
+        data['lat'].append(lat)
+        data['long'].append(long)
+        data['height'].append(get_height(line))
+       
+    # get latitude longitude
+    elif header == '$PASHR':
+        data['heading'].append(float(line[2]))
+        data['roll'].append(float(line[4]))
+        data['pitch'].append(float(line[5]))
+        data['heave'].append(float(line[6]))
+        data['roll_prec'].append(float(line[7]))
+        data['pitch_prec'].append(float(line[8]))
+        data['head_prec'].append(float(line[9]))
+    
+    elif header == '$INVTG':
+        data['speed'].append(float(line[7]))
+    
+    return data
+
+def collect_data_from_file(file2load):
+    """ Collect relevant data from POSMV .log file 
+    Input: - file2load, str, path to .log file 
+    Output: - data, dictionnary, containing all relevant variables """    
+    
+    data = {}
+    data['time'] = []
+    data['lat'] = []
+    data['long'] = []
+    data['height'] = []
+    data['heading'] = []
+    data['roll'] = []
+    data['pitch'] = []
+    data['heave'] = []
+    data['roll_prec'] = []
+    data['pitch_prec'] = []
+    data['head_prec'] = []
+    data['speed'] = []
+
+    lines = rw_data.read_csv(file2load)
+    for j in range(len(lines)):
+        line = lines[j]
+        data = process_line(line, data)
+        
+    return data
+
 #%% Read POSMV file 
 
 date = '0921'
@@ -56,56 +116,36 @@ posmv_pattern = f'{path2posmv}posmv_{year}{date}*.log'
 
 filelist = glob.glob(posmv_pattern)
 
-i = 8
+i = 5
 file2load = filelist[i]
+
+data = collect_data_from_file(file2load)
+
+#%% Plot data
+
+fig, ax = plt.subplots()
+ax.plot(data['pitch'])
+
+
+
+
+
+
+
+
+
+
+
+
 
 #%%
 
-datetime_format = '%Y%m%d%H%M%S'
-new_format = ''
-
-data = {}
-data['time'] = []
-data['lat'] = []
-data['long'] = []
-data['height'] = []
-data['heading'] = []
-data['roll'] = []
-data['pitch'] = []
-data['heave'] = []
-data['roll_prec'] = []
-data['pitch_prec'] = []
-data['head_prec'] = []
-data['speed'] = []
-
-lines = rw_data.read_csv(file2load)
-j = 1 
-line = lines[j]
-header = line[0]
-
-
-print(header)
-if header == '$INGGA': # collect vessel position
-    data['time'].append(get_datetime(line))
-    lat,long = get_latlong(line)
-    data['lat'].append(lat)
-    data['long'].append(long)
-    data['height'].append(get_height(line))
-
+# datetime_format = '%Y%m%d%H%M%S'
+# new_format = ''
     
-#%% get latitude longitude
-elif header == '$PASHR':
-    heading = float(line[2])
-    roll = float(line[4])
-    pitch = float(line[5])
-    heave = float(line[6])
-    roll_accu = float(line[7])
-    pitch_accu = float(line[8])
-    head_accu = float(line[9])
-    
-elif header == 'INVTG':
-    speed = float(line[7])
-    
+
+
+
 
 
 # lat = float(lines[j][2])/100
