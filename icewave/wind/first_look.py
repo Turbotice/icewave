@@ -51,7 +51,7 @@ from sensors import *
 # INPUTS____________________________________________
 # ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾ 
 # > CHOOSE SENSOR
-sensor = 'thies'        # 'trisonica' or 'thies'
+sensor = 'trisonica'        # 'trisonica' or 'thies'
 
 mean_kwargs={'method':'block', # 'block' or 'moving'
              'period':600,      # (s), Time average period
@@ -81,12 +81,16 @@ HOME = "/home/jacqhugo"
 # gps_file="Gobannos/2026-02-13T12_57_36-gps-1-610609801644-611509640581.csv"
 # tri_file="Trisonica/serial_20260213_125151.txt"
 
-file_path=f"{HOME}/BicWin26/terrain/0220/Mat_portatif/"
-tri_file="Trisonica/serial_20260220_124915.txt"
+# file_path=f"{HOME}/BicWin26/terrain/0220/Mat_portatif/"
+# tri_file="Trisonica/serial_20260220_124915.txt"
+
+file_path=f"{HOME}/BicWin26/terrain/0223/Autruche/"
+tri_file="Trisonica/20260223_1228_2.txt"
+#tri_file="Trisonica/20260223_1228_1.txt"
 
 #thies_file=f"{HOME}/BicWin26/terrain/0213/Autruche/Thies/20260213_2244_thies.txt"
-thies_file=f"{HOME}/BicWin26/terrain/0218/Autruche/Thies/20260218_0737_thies.txt"
-
+#thies_file=f"{HOME}/BicWin26/terrain/0218/Autruche/Thies/20260218_0737_thies.txt"
+thies_file=f"{HOME}/BicWin26/terrain/0223/Autruche/Thies/20260223_1228_thies.txt"
 # Preprocessing _____________________________________
 # ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
 
@@ -178,8 +182,8 @@ if False:
     if sensor=='trisonica':
         fig, ax = plt.subplots(1,1,figsize = (3,3), constrained_layout=True, dpi=100)
         ax.set_ylabel('Wind speed (m/s)')
-        ax.plot(ds.time, ds.U1, label='U', c='blue')
-        ax.plot(ds.time, ds.mean_U1, label='<U>', c='navy')
+        ax.scatter(ds.time, ds.U1, label='U', c='blue')
+        ax.scatter(ds.time, ds.mean_U1, label='<U>', c='navy')
         ax.set_ylim([-5,10])
         ax.set_title('LI-550 portable')
 
@@ -208,9 +212,9 @@ if False:
 # > test the rotation part
 if True:
     fig, ax = plt.subplots(1,1,figsize = (3,3), constrained_layout=True, dpi=100)
-    ax.plot(ds.time, ds.U1, label='U1', ls='-')
-    ax.plot(ds.time, ds.U2, label='U2', ls='-')
-    ax.plot(ds.time, ds.U, label='U',ls='--')
+    ax.scatter(ds.time, ds.U1, label='U1', ls='-')
+    ax.scatter(ds.time, ds.U2, label='U2', ls='-')
+    ax.scatter(ds.time, ds.U, label='U',ls='--')
     ax.set_xlabel('time')
     ax.set_ylabel('')
     plt.legend()
