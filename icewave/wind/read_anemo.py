@@ -53,25 +53,21 @@ def parse_anemo_to_xarray(filename,
         data_dict = {}
         errors = []  # List to store error information
         
-        # if kind=='trisonica':
-        #     index_hour = 0
-        # elif kind=='thies':
-        #     index_hour = 1
         
-        if anemo.name=='trisonica':
-            index_hour=0
-        elif anemo.name=='thies':
-            index_hour=1
 
         with open(filename, 'r') as f:
             for line_num, line in enumerate(f, 1):
 
                 # if line_num==20000:
                 #     break
-
+                
                 line = line.strip()
                 if not line:
                     continue
+                if line[:3]=='202': # remove the date if present
+                    line = line[11:]
+                index_hour=0
+                
                 
                 # Line Validation
                 # ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
@@ -199,16 +195,20 @@ def read_data(data_dict, parts, kind, filename, line_num):
 
     if kind=='trisonica':
         i = 1
+        if parts[0][:4]=='2026':
+            parts = parts[1:]
         while i < len(parts):
+            if parts[1]=="b'S":
+                parts[1]="S"
             var_name = parts[i]+'1'
-            if i + 1 < len(parts):
-                value = float(parts[i + 1])
+            if (i + 1 < len(parts)) and (var_name in ['S1','D1','U1','V1','W1','T1','H1']):
+                value = parts[i + 1]
                 
                 # Initialize list for this variable if not exists
                 if var_name not in data_dict:
                     data_dict[var_name] = []
                 
-                data_dict[var_name].append(value)
+                data_dict[var_name].append(float(value))
             
             i += 2
     elif kind=='thies':
@@ -418,18 +418,19 @@ def validate_line(line, line_num, kind='trisonica'):
     
     
 
-    if kind=='trisonica':
-        N_total = 23 # the file should have 23 parts for each line
-        index_time = 0
-    elif kind=='thies':
-        N_total = 3
-        index_time = 1
-
+    
 
     if not line:
         return False, "Empty line", None
     
     parts = line.split()
+        
+    if kind=='trisonica':
+        N_total = 23 # the file should have 23 parts for each line
+    elif kind=='thies':
+        N_total = 3
+    
+    index_time = 0
 
     # Rough check of number of elements
     if len(parts) < N_total:
@@ -438,7 +439,7 @@ def validate_line(line, line_num, kind='trisonica'):
     if len(parts) > N_total:
         return False, f"Too much elements ({len(parts)} parts)", None
     # Check if number of parts is odd (timestamp + pairs of var-value)
-    if len(parts) % 2 ==0:
+    if len(parts) % 2 ==0 and N_total%2!=0:
         return False, f"Even number of elements ({len(parts)} parts)", None
         
     #
