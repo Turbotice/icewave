@@ -24,7 +24,7 @@ def mean_operator(ds, X='U',
         return ds['mean_'+X]
 
     if method=='block':
-        ds['mean_'+X] = ds[X]*0.
+        ds['mean_'+X] = ds[X]*0. 
         t0 = ds.time[0]
         tlast = ds.time[-1]
         delta =  np.timedelta64(period, 's')
