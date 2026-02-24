@@ -242,9 +242,9 @@ def get_date(filename, kind='trisonica'):
     Raise an exception if the format isnt recognized.
     """    
     
-    if kind=='trisonica':
+    if filename.split('/')[-1].split('_')[0]=='serial':
         index_date = 1 # skip the 'serial' in the filename
-    elif kind=='thies':
+    else:
         index_date = 0
 
     fichier = filename.split('/')[-1].split('_')[index_date]
