@@ -93,7 +93,7 @@ def powerlaw_fit(x,y,err_y):
 base = 'F:/Rimouski_2024/Data/'
 date = '0226'
 drone_ID = 'mesange'
-exp_ID = '10-waves_005'
+exp_ID = '23-waves_012'
 
 path2data = f'{base}{date}/Drones/{drone_ID}/matData/{exp_ID}/'
 suffixe = f'{date}_{drone_ID}_{exp_ID}'
@@ -145,7 +145,7 @@ N = 8
 gaussian = scipy.signal.windows.gaussian(M = gaussian_width * N,std = gaussian_width)
 detec_param = {'prominence':1e-2,'rel_height':0.6} # parameters for find_peaks
 wavevector_range = [0.01,2.0] # range of wavevector spanned
-frequency_range = [0,1.0] # range of frequency over which we look for peaks
+frequency_range = [0,0.8] # range of frequency over which we look for peaks
 
 file2save = f'{fig_folder}Filtered_peaks_time_fixed_k_{suffixe}.h5'
 
@@ -304,6 +304,20 @@ with open(file2save,'wb') as pf :
 print(f'{file2save} file saved !')
     
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

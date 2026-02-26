@@ -50,7 +50,7 @@ plt.rc('font', family='serif', serif='Computer Modern')
 base = 'F:/Rimouski_2024/Data/'
 date = '0226'
 drone_ID = 'mesange'
-exp_ID = '10-waves_005'
+exp_ID = '23-waves_012'
 
 path2data = f'{base}{date}/Drones/{drone_ID}/matData/{exp_ID}/'
 suffixe = f'{date}_{drone_ID}_{exp_ID}'

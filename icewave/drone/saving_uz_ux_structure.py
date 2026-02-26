@@ -163,6 +163,10 @@ def process_file(base,date,drone_ID,exp_ID, flip_field = 0, idx_file = 0):
     Vy = FT.supress_quadratic_noise(np.transpose(S['Vy'],(1,0,2)),S['x'],S['y'])
     Vx = np.transpose(Vx,(1,0,2))
     Vy = np.transpose(Vy,(1,0,2))
+    
+    Vx = np.flip(Vx,1)
+    Vy = np.flip(Vy,1)
+    
     if flip_field:
         Vx = np.flip(Vx,(0,1))
         Vy = np.flip(Vy,(0,1))
@@ -212,11 +216,11 @@ def process_file(base,date,drone_ID,exp_ID, flip_field = 0, idx_file = 0):
 
 
 def main():
-    base = 'F:/Rimouski_2024/Data/'
+    base = 'K:/Share_hublot/Data/'
 
     date = '0226'
     drone_ID = 'mesange'
-    exp_ID = '10-waves_005'
+    exp_ID = '23-waves_012'
     flip_field = 0
     
     process_file(base, date, drone_ID, exp_ID, flip_field = flip_field)
