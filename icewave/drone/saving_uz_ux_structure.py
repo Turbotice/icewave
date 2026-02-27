@@ -164,8 +164,9 @@ def process_file(base,date,drone_ID,exp_ID, flip_field = 0, idx_file = 0):
     Vx = np.transpose(Vx,(1,0,2))
     Vy = np.transpose(Vy,(1,0,2))
     
-    Vx = np.flip(Vx,1)
-    Vy = np.flip(Vy,1)
+    if not flip_field:
+        Vx = np.flip(Vx,1)
+        Vy = np.flip(Vy,1)
     
     if flip_field:
         Vx = np.flip(Vx,(0,1))
@@ -216,12 +217,12 @@ def process_file(base,date,drone_ID,exp_ID, flip_field = 0, idx_file = 0):
 
 
 def main():
-    base = 'K:/Share_hublot/Data/'
+    base = 'F:/Rimouski_2024/Data/'
 
     date = '0226'
     drone_ID = 'mesange'
-    exp_ID = '23-waves_012'
-    flip_field = 0
+    exp_ID = '14-waves_007'
+    flip_field = 1
     
     process_file(base, date, drone_ID, exp_ID, flip_field = flip_field)
 

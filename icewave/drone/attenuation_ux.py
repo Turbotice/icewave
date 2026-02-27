@@ -73,7 +73,7 @@ def fit_water_height(f,k,fun,err_f = None):
 base = 'F:/Rimouski_2024/Data/'
 date = '0226'
 drone_ID = 'mesange'
-exp_ID = '23-waves_012'
+exp_ID = '14-waves_007'
 
 path2data = f'{base}{date}/Drones/{drone_ID}/matData/{exp_ID}/'
 suffixe = f'{date}_{drone_ID}_{exp_ID}'
@@ -97,7 +97,7 @@ Efk = FT.space_time_spectrum(S['ux'],1/S['SCALE']['fx'],S['SCALE']['facq_t'],add
 #%% Plot space time spectrum 
 
 fig,ax,c,cbar = att_mod.plot_FK_spectrum(Efk)
-
+c.set_clim([1e-6,1e-3])
 figname = f'{fig_folder}ux_spacetime_spectrum_raw_{suffixe}'
 plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.svg', bbox_inches='tight')
@@ -111,7 +111,7 @@ N = 8
 gaussian = scipy.signal.windows.gaussian(M = gaussian_width * N,std = gaussian_width)
 detec_param = {'prominence':1e-2,'rel_height':0.6} # parameters for find_peaks
 wavevector_range = [0.01,2.5] # range of wavevector spanned
-frequency_range = [0,1.5] # range of frequency over which we look for peaks
+frequency_range = [0,1.2] # range of frequency over which we look for peaks
 
 file2save = f'{fig_folder}Filtered_peaks_time_fixed_k_{suffixe}.h5'
 

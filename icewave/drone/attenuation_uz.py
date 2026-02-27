@@ -93,7 +93,7 @@ def powerlaw_fit(x,y,err_y):
 base = 'F:/Rimouski_2024/Data/'
 date = '0226'
 drone_ID = 'mesange'
-exp_ID = '23-waves_012'
+exp_ID = '13-waves_006'
 
 path2data = f'{base}{date}/Drones/{drone_ID}/matData/{exp_ID}/'
 suffixe = f'{date}_{drone_ID}_{exp_ID}'
@@ -130,7 +130,7 @@ Efk['f'] = f_pos
 #%% Plot FK spectrum
 
 fig,ax,c,cbar = att_mod.plot_FK_spectrum(Efk)
-c.set_clim(vmin = 2e-5,vmax = 2e-2)
+c.set_clim(vmin = 1e-4,vmax = 5e-2)
 cbar.set_label('$|\hat{u}_z| (k,\omega) \; \mathrm{(u.a.)}$',labelpad = 5)
 
 figname = f'{fig_folder}uz_spacetime_spectrum_raw_{suffixe}'
@@ -144,7 +144,7 @@ gaussian_width = 6
 N = 8
 gaussian = scipy.signal.windows.gaussian(M = gaussian_width * N,std = gaussian_width)
 detec_param = {'prominence':1e-2,'rel_height':0.6} # parameters for find_peaks
-wavevector_range = [0.01,2.0] # range of wavevector spanned
+wavevector_range = [0.01,2.5] # range of wavevector spanned
 frequency_range = [0,0.8] # range of frequency over which we look for peaks
 
 file2save = f'{fig_folder}Filtered_peaks_time_fixed_k_{suffixe}.h5'
@@ -194,11 +194,11 @@ with open(file2save,'wb') as pf :
 # %% Detect peaks using fixed frequency and determining directly spatial attenuation
 # =============================================================================
 
-gaussian_width = 6
+gaussian_width = 4
 N = 6
 gaussian = scipy.signal.windows.gaussian(M = gaussian_width * N,std = gaussian_width)
 detec_param = {'prominence':1e-2,'rel_height':0.4} # parameters for find peaks function
-frequency_range = [0.1,1.0] 
+frequency_range = [0.1,0.8] 
 wavevector_range = [0.05,2.5]
 file2save = f'{fig_folder}Filtered_peaks_space_fixed_f_{suffixe}.h5'
 
