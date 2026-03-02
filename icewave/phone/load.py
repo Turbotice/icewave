@@ -49,16 +49,19 @@ def loads(folderlist,header=False):
             data[phone] = load(folder)
     return data
 
-def load_gobfile(datafile):
+def load_gobfile(datafile,var=None):
     data = {}
     data['coords']=['x','y','z']
     if "-gps-" in datafile:
+        raw = np.loadtxt(datafile,usecols=(0,1,2,3),delimiter=',',skiprows=1)#      
         print('specify gps format')
         return None
     else:
-        name = datafile.split('.')[-2].split('-')[0]
-        #print(name)
-        var = table[name]
+        if var==None:
+            name = datafile.split('.')[-2].split('sensor-')[1].split('-')[0]
+            print(name)
+            var = table[name]
+            
         raw = np.loadtxt(datafile,usecols=(0,1,2,3),delimiter=',',skiprows=1)#
         if np.sum(np.isnan(raw))>0:
             i0 = np.where(np.isnan(raw)[:,1])[0][0]
