@@ -11,6 +11,7 @@ from datetime import datetime
 import pytz
 import time
 from scipy.interpolate import RegularGridInterpolator
+from scipy.interpolate import LinearNDInterpolator, griddata
  
 import icewave.tools.rw_data as rw_data
 import icewave.tools.datafolders as df
@@ -388,6 +389,62 @@ def georeference(key,record,image,flight):
         return None,None,im
     
     return Lat,Long,im
+
+#---------------------------------------------------------------------------------------------------------------
+
+def georeference_from_param(img,H,alpha_0,focale,GPS_D):
+    """ Georeference an aerial image using its parameters :
+        Inputs : - img, image to georeference
+                 - H, drone altitude (in meters)
+                 - alpha_0, absolute value of drone pitch angle (in rad), with respect to the horizontal
+                 - focale, camera focal length (in pixels)
+                 - GPS_D, tuple, containing drone GPS position and orientation (Lat,Long,azimuth) in degrees. 
+                 azimuth is taken between 0° and 360° clockwise from geographic North direction 
+                 
+        Outputs : - Lat,Long, array of latitude and longitude of the images """
+
+    Lat_D,Long_D,azimuth = GPS_D
+    Xreal,Yreal = georectify_image(img, H, alpha_0, focale)
+    
+    if alpha_0 != np.pi/2:
+        
+        dist2drone = H/np.tan(alpha_0)
+        Lat0,Long0 = LatLong_coords_from_referencepoint(Lat_D,Long_D,
+                                                        azimuth,dist2drone)
+    else : 
+        Lat0 = Lat_D
+        Long0 = Long_D
+    
+    Lat,Long = XY2GPS(Xreal,Yreal,Lat0,Long0,azimuth)
+    
+    return Lat,Long
+
+
+#----------------------------------------------------------------------------------------------------------------
+
+def image_center_gps(GPS_D,H,alpha_0):
+    """ Compute gps coordinates (Lat,Long) of image center based on flight parameters:
+     - GPS_D = (Lat,Long,azimuth) or (Lat,Long) of drone, in degrees
+     - H = drone altitude, in meters
+     - alpha_0 = camera pitch angle, in rad """
+    
+    if len(GPS_D) == 2:
+        GPS_D = (GPS_D[0],GPS_D[1],0) # set artificially azimuth to zero
+
+    Lat_D,Long_D,azimuth = GPS_D
+
+    if alpha_0 != np.pi/2:
+    
+        dist2drone = H/np.tan(alpha_0)
+        Lat0,Long0 = LatLong_coords_from_referencepoint(Lat_D,Long_D,
+                                                        azimuth,dist2drone)
+    else : 
+        Lat0 = Lat_D
+        Long0 = Long_D
+
+    return Lat0,Long0
+    
+
 #-------------------------------------------------------------------------------------------------------------------------------
 
 def backward_projection(fun,points,y0,h,alpha_0,focale,fps,Dt):
@@ -559,6 +616,8 @@ def get_ux_from_VxVy(Vx,Vy,theta,phi):
     
     return ux
 
+#-------------------------------------------------------------------------------------------
+
 def get_uz_ux_from_structure(Vx,Vy,S):
     """ Compute vertical velocity profile as well as horizontal velocity field (uz,ux) from apparent velocity field obtained from 
     Digital Image Correlation (Vx,Vy).
@@ -577,3 +636,27 @@ def get_uz_ux_from_structure(Vx,Vy,S):
     
     return uz,ux,err_uz
 
+#--------------------------------------------------------------------------------------------
+
+def get_zstar(H,alpha,Y):
+    """ Compute distance z_star in the projection geometry (distance between the camera and the plane 
+    orthogonal to optical axis and crossing the observed point on the ice, which coordinate is Y in the reference 
+    frame work of the drone) 
+    
+    Inputs : - H, drone height in meter
+             - alpha, angle with respect to horizontal (in rad)
+             - Y array like or float """
+             
+    z_star = H/np.sin(alpha) + np.cos(alpha)*Y
+    return z_star
+
+#------------------------------------------------------------------------------------------------
+
+def interpolate_field(known_points,field,grid_x,grid_y):
+    """ Interpolate a 2D field, known on a set of coordinates known_points, onto coordinates grid_x,grid_y 
+    Inputs : """
+
+    gridded_field = griddata(known_points, field.ravel(), 
+                              (grid_x,grid_y),method = 'linear')
+    
+    return gridded_field

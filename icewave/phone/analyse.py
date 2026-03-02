@@ -291,7 +291,7 @@ def extract_angle(d,dt,tmin,tmax,tstep=0.02,fcut=0.001,order=4):
     yi = np.interp(ti,t,y)
     return ti,yi
 
-def load_timetable(timefile):
+def load_timetable(timefile,old=False):
     import csv
     times={}
     with open(timefile, newline='') as csvfile:
@@ -299,7 +299,10 @@ def load_timetable(timefile):
         for i,row in enumerate(spamreader):
             #print(row)
             if i>0:
-                times[int(row[0])]=float(row[3])#old version : row[1]
+                if old:
+                    times[int(row[0])]=float(row[1])#old version : row[1]
+                else:
+                    times[int(row[0])]=float(row[3])#old version : row[1]
 #        print(', '.join(row))
     return times#pprint(times)
 

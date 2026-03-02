@@ -100,10 +100,11 @@ def later(filelist,directory_save,savename):
 if __name__=='__main__':
 
     # base = df.find_path('Hublot24')
-    base = 'F:/Data/'
-    date = '0219'
+
+    base = 'F:/Rimouski_2025/Data/'
+    date = '0210'
     drone_ID = 'bernache'
-    exp_ID = '02-waves_001'
+    exp_ID = '11-situation_map_geophone_003/movie_1'
     filelist = main(base,date,drone_ID,exp_ID)
     directory_save = base[:-5] + f'/PIV_images/{date}/Drones/{drone_ID}/'
     vid = later(filelist,directory_save,exp_ID)

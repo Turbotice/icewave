@@ -311,7 +311,7 @@ def process_file(file2load,fig_folder,path2DAS_param,date, DAS_water_height):
              - fig_folder, string, folder where plots are saved 
              - date, string, date of acquisition """
              
-    fs,fiber_length,facq_x = DS.set_DAS_parameters(path2DAS_param,date)
+    fs,fiber_length,facq_x = DS.get_DAS_parameters(path2DAS_param,date)
     
     Nb_minutes = 1 # duration of each stack
     stack_strain,stack_time,UTC_stack,s = DS.stack_data_fromfile(file2load, fiber_length, Nb_minutes)

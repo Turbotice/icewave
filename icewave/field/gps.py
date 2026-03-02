@@ -26,21 +26,26 @@ def get_records(date,year='2025'):
     records['gps']={}
     for filename in filelist:
         print(filename)
-        with open(filename,'r') as f:
-            gpx = gpxpy.parse(f)
-        if '_MS.gpx' in filename:
-            key = 'garminMS'
-            reg='MS'
-        elif '_DD.gpx' in filename:
-            key = 'DD'
-            reg='DD'
-        else:
-            key = 'garminSP'
-            reg=''
-            
-        record = get_record_fromgpx(gpx,folder,reg=reg)
-
-        records['gps'][key]=record
+        if '_edited' in filename:
+            print('Warning : An edited gpx file exists...')
+            key = 'edited'
+            records['gps'][key] ={}
+        else :
+            with open(filename,'r') as f:
+                gpx = gpxpy.parse(f)
+            if '_MS.gpx' in filename:
+                key = 'garminMS'
+                reg='MS'
+            elif '_DD.gpx' in filename:
+                key = 'DD'
+                reg='DD'
+            else:
+                key = 'garminSP'
+                reg=''
+                
+            record = get_record_fromgpx(gpx,folder,reg=reg)
+    
+            records['gps'][key]=record
     return records
 
 

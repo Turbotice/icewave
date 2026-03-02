@@ -117,7 +117,7 @@ Haha_coordinates = data_bath[mask,:]
 fig, ax = plt.subplots()
 scatter = ax.scatter(Haha_coordinates[:,1],Haha_coordinates[:,0],s = 10,c = Haha_coordinates[:,2],cmap = parula_map)
 ax.plot(source_wpts['long'],source_wpts['lat'],'r^')
-ax.plot(fiber['long'],fiber['lat'],'k-')
+ax.plot(fiber['long'],fiber['lat'],'k.')
 
 ax.set_xlabel(r'Longitude (°)')
 ax.set_ylabel(r'Latitude (°)')
@@ -134,9 +134,9 @@ fig_folder = f'{path2DAS}Figures/DAS_water_height/'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
 
-figname = f'{fig_folder}DAS_GPS_bathymetry_{date}'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
+# figname = f'{fig_folder}DAS_GPS_bathymetry_{date}'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
 
 #%% Load bathymetry interpolator
 

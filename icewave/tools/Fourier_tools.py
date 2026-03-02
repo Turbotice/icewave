@@ -475,8 +475,8 @@ def space_time_spectrum(V,facq_x,facq_t,add_pow2 = [0,0,0]):
     # compute array of frequencies and wave vectors 
     freq = facq_t*np.arange(0,(padding[2]/2))/padding[2]
     
-    kx = 2*np.pi*facq_x*np.arange(-padding[1]/2,padding[1]/2-1)/padding[1]
-    ky = 2*np.pi*facq_x*np.arange(-padding[0]/2,padding[0]/2-1)/padding[0]
+    kx = 2*np.pi*facq_x*np.arange(-padding[1]/2,padding[1]/2)/padding[1]
+    ky = 2*np.pi*facq_x*np.arange(-padding[0]/2,padding[0]/2)/padding[0]
     
     # keep only positive frequencies 
     FFT_positive = FFT[:,:,:padding[2]//2]

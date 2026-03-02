@@ -187,6 +187,24 @@ def solve_linear_system_all_pos(M,b):
     return solutions
 
 
+def exact_solution_overdetermine_system(M,b):
+
+    solutions = np.zeros((3,b.shape[1],b.shape[2]))
+
+    for i in range(M.shape[2]):
+        for j in range(M.shape[3]):
+            # if ~mask[i,j] :
+            #     solutions[:,i,j] = None
+    
+            # else :
+            A = np.transpose(M[:,:,i,j]) @ M[:,:,i,j]
+            b_prime = np.transpose(M[:,:,i,j]) @ b[:,i,j]
+            sol = np.linalg.solve(A,b_prime)
+            
+            solutions[:,i,j] = sol
+    return solutions
+    
+
 #%% Load data
 
 date = '0211'
@@ -307,7 +325,8 @@ for frame in range(Nb_frames):
     ])
     
     # solve linear system using least square method 
-    solutions = solve_linear_system_all_pos(M,b)
+    # solutions = solve_linear_system_all_pos(M,b)
+    solutions = exact_solution_overdetermine_system(M,b)
     
     u[:,:,:,frame] = solutions
     print(f'Frame {frame} processed !')
@@ -341,7 +360,7 @@ u_struct['param'] = {'ref_drone':param[ref_drone],'projected_drone':param[projec
 u_struct['synchro'] = synchro
 
 
-file2save = f'{path2data}real_field_stereo_{date}_2024_rectangular_grid.h5'
+file2save = f'{path2data}exact_solution_real_field_stereo_{date}_2024_rectangular_grid.h5'
 rw.save_dict_to_h5(u_struct, file2save)
 
 

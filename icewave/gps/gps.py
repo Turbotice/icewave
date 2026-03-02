@@ -6,7 +6,7 @@ import os
 #import stephane.display.graphes as graphes
 import icewave.display.graphes as graphes
 import icewave.gps.garmin as garmin
-import fitdecode
+# import fitdecode
 import gpxpy
 
 # Import the required library
@@ -30,7 +30,7 @@ def tmp_connect():
     t = tilemapbase.tiles.build_OSM()
     return t
 
-def project(Long,Lat,R=6378000,meter=False):
+def project(Long,Lat,R=6378137,meter=False):
     """
     Naive local projection of Long & Lat coordinates on a plane 
     INPUT 
@@ -46,11 +46,13 @@ def project(Long,Lat,R=6378000,meter=False):
     
     xtile = (Long + 180.0) / 360.0
     lat_rad = np.radians(Lat)
-    
+    lon_rad = np.radians(Long)
+
     ytile = (1.0 - np.log(np.tan(lat_rad) + (1 / np.cos(lat_rad))) / np.pi) / 2.0
     if meter:
-        xtile = xtile*R
-        ytile = ytile*R
+        xtile = lon_rad*R
+        ytile = R * np.log(np.tan(np.pi/4 + lat_rad/2))
+        #ytile = 2*np.pi*ytile*R
 #        xtile = xtile-xtile[0]
 #        ytile = ytile-ytile[0]
 
@@ -158,16 +160,17 @@ def display_dictwpts(filename,date,wpts,save=True,scale=0.75):
 #graphes.save_figs(figs,savedir=savefolder,prefix='wpts_'+date+'_',suffix='summary',frmt='pdf')
 
 
-def map_traj(Long,Lat,save=False,scale=0.8,title='',ax=None):
-    BBox = box_data(Long,Lat,scale=scale)
-    print(BBox)
+def map_traj(Long,Lat,save=False,scale=0.8,title='',ext=None,t=None,ax=None):
+    if ext==None:
+        BBox = box_data(Long,Lat,scale=scale)
+        print(BBox)
+
+        print('toto')
+        ext = extent(BBox)
+
+        t = tmp_connect()
     X,Y = project(Long,Lat)
 
-    print('toto')
-    ext = extent(BBox)
-
-    t = tmp_connect()
-    
     if ax==None:
         fig, ax = plt.subplots(figsize=(8, 8), dpi=200)
     ax,figs = display_map(ext,t,ax=ax,width=600)
@@ -292,3 +295,32 @@ def display_mercier(ax,title=''):
     ax,figs = display_map(ext,t,title=title,ax=ax,width=600)
     return ax,figs
 
+
+def waypoints_loc(gpx):
+    """ Extract longitude and latitude of waypoints stored in a GPX file :
+        - Inputs : gpx, a gpxpy.gpx.GPX object
+        - Outputs : Long, array of longitude and Lat, array of latitude """
+        
+    Long,Lat = [],[]
+    for waypoint in gpx.waypoints: # loop over all waypoints 
+        Long.append(waypoint.longitude)
+        Lat.append(waypoint.latitude)
+            
+        
+    return Long, Lat 
+
+#----------------------------------------------------------------------------------------------------
+
+
+def distance_GPS(lat,long,Lat0,Long0,R_earth = 6371e3):
+    """ Computes distance between GPS coordinates. 
+        Inputs : - lat, numpy array of latitude, in degree
+                 - long, numpy array of longitude, in degree
+                 - Lat0, reference latitude, in degree
+                 - Long0, reference longitude, in degree
+        Output : - rho, array of distance between all points of (lat,long) coordinate compared to
+        reference point of coordinate (Lat0,Long0) """
+        
+    rho = R_earth*np.sqrt(((lat - Lat0)*np.pi/180)**2 + np.cos(Lat0*np.pi/180)**2 * ((long - Long0)*np.pi/180)**2)
+    
+    return rho

@@ -31,8 +31,8 @@ import math
 ##############################################################
 date = '0909'
 year = '2024'
-path2data = os.path.join('C:/Users/sebas/Desktop/Amundsen_RA_2024/Data/',year,date,'Geophones/')
-geophones_table_path = 'C:/Users/sebas/git/icewave/sebastien/geophones/geophones_table'
+path2data = os.path.join('E:/Amundsen_RA_2024/Data/',date,'Geophones/')
+geophones_table_path = 'C:/Users/sebas/Github/icewave/icewave/sebastien/geophones/geophones_table'
 
 #----------------------- SELECTING ACQ NUMBER AND CHANNEL ------------------ 
 
@@ -503,8 +503,8 @@ plt.savefig(file2save + '.png',dpi = 400, bbox_inches = 'tight')
 
 #%% Coupe_bande filter 
 
-# fc = [2.3, 8.33, 16.66, 25, 41.66, 2*16.66, 3*16.66] #0909
-fc = [2.955, 8.33, 16.66, 25, 41.66, 2*16.66, 3*16.66] #1009
+fc = [2.3, 8.33, 16.66, 25, 41.66, 2*16.66, 3*16.66] #0909
+# fc = [2.955, 8.33, 16.66, 25, 41.66, 2*16.66, 3*16.66] #1009
 fs = 1000
 Q = 30.0  # Quality factor
 filtered_sig = sig

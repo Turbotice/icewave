@@ -10,13 +10,13 @@ Created on Wed Feb  7 00:08:40 2024
 import os
 # import baptiste.files.file_management as fm
 import shutil as sh
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
-path_DD = 'C:\\Canada_2024\\' #ORDI LUDO
+path_DD = 'C:\\Canada_2026\\' #ORDI LUDO
 
-geo = ['F:\\','E:\\','G:\\']
+geo = ['H:\\','G:\\','D:\\']
 
 metadata = {}
 
@@ -42,6 +42,7 @@ for path_geo in geo :
     files = os.listdir(path_geo)
     for file in files :
         if 'DigiSolo' in file :
+            print(path_geo + file)
             digi = pd.read_csv(path_geo + file, sep = '\t')
             digi = np.asarray(digi)
             num_exp = 0

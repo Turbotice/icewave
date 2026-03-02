@@ -102,13 +102,21 @@ def csv2dict(table,headerindex=0,symbol='#'):
         keys = table[0][1:]
         #print(keys)
         for tab in table[1:]:
+            try:
+                #try to convert to int the key
+                tab[0]=int(tab[0])
+            except:
+                pass #do nothing
             #print(tab)
             data[tab[0]]={}
             for (t,key) in zip(tab[1:],keys):
                 if '.' in t:
                     data[tab[0]][key]=float(t)
                 else:
-                    data[tab[0]][key]=int(t)
+                    try:
+                        data[tab[0]][key]=int(t)
+                    except:
+                        data[tab[0]][key]=str(t)
     else:
         header = table[headerindex]
         data = {}
@@ -134,6 +142,46 @@ def write_dict_h5_rec(h5group,dict_obj):
         if isinstance(value,dict): # if value is a dictionnary
             subgroup = h5group.create_group(key)
             write_dict_h5_rec(subgroup,value)
+            
+        elif isinstance(value, list):# if value is a list
+            list_group = h5group.create_group(key)
+            for i, item in enumerate(value):
+                item_key = str(i)
+
+                # Nested dictionary
+                if isinstance(item, dict):
+                    subgroup = list_group.create_group(item_key)
+                    write_dict_h5_rec(subgroup, item)
+
+                # Nested numpy array
+                elif isinstance(item, np.ndarray):
+                    if item.dtype.kind in {'U','O'} and np.all(np.vectorize(lambda x: isinstance(x,str))(item)):
+                        dt = h5py.string_dtype(encoding='utf-8')
+                        list_group.create_dataset(item_key, data=item.astype(object), dtype=dt)
+                    else:
+                        list_group.create_dataset(item_key, data=item)
+
+                # Nested string
+                elif isinstance(item, str):
+                    dt = h5py.string_dtype(encoding='utf-8')
+                    list_group.create_dataset(item_key, data=item, dtype=dt)
+
+                # Nested scalar
+                elif isinstance(item, (int, float, np.integer, np.floating)):
+                    list_group.create_dataset(item_key, data=item)
+
+                # Nested list => recurse
+                elif isinstance(item, list):
+                    sublist_group = list_group.create_group(item_key)
+                    # recursive list handling
+                    for j, subitem in enumerate(item):
+                        subkey = str(j)
+                        if isinstance(subitem, dict):
+                            g = sublist_group.create_group(subkey)
+                            write_dict_h5_rec(g, subitem)
+                        else:
+                            # call the same handler: wrap the single element as dict
+                            write_dict_h5_rec(sublist_group, {subkey: subitem})    
             
         elif isinstance(value,np.ndarray): # if value is a numpy array
             # case 1 : numpy array of strings
@@ -169,6 +217,36 @@ def load_dict_from_h5(filename):
 def load_dict_h5_rec(h5group):
     """ Load dictionnary from an open h5py.file object. """
     out = {}
+    
+    # First detect if this group represents a LIST
+    # HDF5 groups used to store lists have numeric keys: "0", "1", "2", ...
+    # if all(k.isdigit() for k in h5group.keys()) and len(h5group.keys()) > 0:
+    #     # → This group is a list
+    #     print('This group is a list')
+    #     out_list = []
+    #     for idx in sorted(h5group.keys(), key=lambda x: int(x)):
+    #         item = h5group[idx]
+
+    #         if isinstance(item, h5py.Group):
+    #             out_list.append(load_dict_h5_rec(item))
+
+    #         elif isinstance(item, h5py.Dataset):
+    #             data = item[()]
+
+    #             if isinstance(data, bytes):
+    #                 out_list.append(data.decode("utf-8"))
+
+    #             elif isinstance(data, np.ndarray) and data.dtype.kind in {"U", "S", "O"}:
+    #                 list_string = [
+    #                     x.decode("utf-8") if isinstance(x, bytes) else str(x)
+    #                     for x in data
+    #                 ]
+    #                 out_list.append(np.array(list_string))
+
+    #             else:
+    #                 out_list.append(data)
+
+    #     return out_list
     
     for key,item in h5group.items():
         if isinstance(item,h5py.Group): # if item is a h5 group 

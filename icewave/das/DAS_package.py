@@ -128,8 +128,8 @@ def new_stack_strain_rate(strain_rate,t,fiber_length,Nb_minutes = 1):
         idx_max = int((n + 1)*Nb_seconds)
         
         current_section = strain_rate[idx_min : idx_max, : ,:]
-        spatio_long,s,t_sec = time_stacking(current_section,Nb_seconds,
-                                            fiber_length) # stack for a given duration Nb_minutes
+        spatio_long,s,_ = time_stacking(current_section,Nb_seconds,
+                                        fiber_length) # stack for a given duration Nb_minutes
         stack_strain[n,:,:] = spatio_long
     
         # create array of time

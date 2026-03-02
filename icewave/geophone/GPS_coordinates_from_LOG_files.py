@@ -14,6 +14,7 @@ import pickle
 
 plt.close('all')
 
+
 date = '0221'
 year = '2024'
 path2logfile = f'/YOUR_DATA_PATH_HERE/{year}_BICWIN/{date}/Geophones'
