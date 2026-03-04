@@ -7,6 +7,7 @@ import csv
 #%%
 disk = 'D:'
 force_disp_dict_dir = f"{disk}/manips_BsAs/Summary/tracking_force_displacement/"
+output_path = f"{disk}/manips_BsAs/Summary/dictionaries_alldata/all_force_displacement_dicts.pkl"
 
 def open_single_experiment_result_dict(date, acq, serie,force_disp_dict_dir=force_disp_dict_dir):
     if serie==None:
@@ -63,4 +64,6 @@ all_results_dicts = open_all_experiments_result_dicts(force_disp_dict_dir=force_
 
 # %%
 # save all_results_dicts in a pkl file
-# terminer
+# output_path defined at the beginning of the script
+with open(output_path, 'wb') as file:
+    pickle.dump(all_results_dicts, file)
