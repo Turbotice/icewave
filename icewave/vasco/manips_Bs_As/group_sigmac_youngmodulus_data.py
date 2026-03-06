@@ -55,3 +55,10 @@ for i in range(len(all_force_disp_dicts)):
 matched_data_path = f"{dict_dir}all_sigmac_force_disp_matching_data.pkl"
 with open(matched_data_path, 'wb') as f:
     pickle.dump(matched_data, f)
+
+
+
+################################################
+################################################
+################################################
+# %% 
