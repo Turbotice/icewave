@@ -1,0 +1,13 @@
+prefix=z:/vasco/postprocessing/PIV/.conda/Library
+exec_prefix=z:/vasco/postprocessing/PIV/.conda/Library
+libdir=z:/vasco/postprocessing/PIV/.conda/Library/lib
+sharedlibdir=z:/vasco/postprocessing/PIV/.conda/Library/lib
+includedir=z:/vasco/postprocessing/PIV/.conda/Library/include
+
+Name: zlib
+Description: zlib compression library
+Version: 1.2.13
+
+Requires:
+Libs: -L${libdir} -L${sharedlibdir} -lz
+Cflags: -I${includedir}

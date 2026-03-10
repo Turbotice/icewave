@@ -169,6 +169,8 @@ epsilon_c_avg = dict_all['sigma_c_avg']/dict_all['E']
 # plot epsilonc vs E
 plt.figure()
 plt.plot(dict_all['h_avg'], epsilon_c_avg, 'o')
+plt.xlabel('h')
+plt.ylabel('$\epsilon_c$')
 plt.xlim(0, 8e-3)
 plt.ylim(0,1e-3)
 plt.show()
@@ -224,3 +226,5 @@ plt.plot(dict_all['E'], (1/(2*np.pi))*(K_Ic**2/dict_all['sigma_c_avg']**2),'o')
 plt.show()
 
 
+
+# %%
