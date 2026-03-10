@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 disk = "H"
 date = '0223'
 # Load the data
-data_path = f'{disk}:/data/{date}/Tests_Bresiliens/Summary_samples_tests.csv'
+dir_path = f'{disk}:/data/{date}/Tests_Bresiliens/'
+data_path = f'{dir_path}Summary_samples_tests.csv'
 
 df = pd.read_csv(data_path, sep=';', encoding='latin-1')
 #%%
@@ -42,5 +43,21 @@ plt.figure(figsize=(10, 6))
 plt.scatter(arr_L_mm[indices2plot], arr_sigma_c[indices2plot], color='blue', label='Qualité OK')
 plt.xlabel('L (mm)')
 plt.ylabel('Sigma_c (MPa)')
+plt.xlim(0,np.max(arr_L_mm[indices2plot])*1.1)
+plt.ylim(0,np.nanmax(arr_sigma_c[indices2plot])*1.1)
 plt.title('Sigma_c vs L')
+plt.savefig(f'{dir_path}sigmac_vs_L.pdf', dpi=300)
+plt.show()
+
+
+plt.figure(figsize=(10, 6))
+plt.scatter(arr_T_core_celsius[indices2plot], arr_sigma_c[indices2plot], color='orange', label='Qualité OK')
+plt.xlabel('T (°C)')
+plt.ylabel('Sigma_c (MPa)')
+plt.xlim(-5, 0)
+plt.ylim(0,np.nanmax(arr_sigma_c[indices2plot])*1.1)
+plt.title('Sigma_c vs T')
+plt.savefig(f'{dir_path}sigmac_vs_T.pdf', dpi=300)
+plt.show()
+
 # %%
