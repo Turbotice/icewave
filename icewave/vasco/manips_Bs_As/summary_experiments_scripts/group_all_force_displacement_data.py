@@ -61,9 +61,13 @@ def open_all_experiments_result_dicts(force_disp_dict_dir=force_disp_dict_dir):
 
 all_results_dicts = open_all_experiments_result_dicts(force_disp_dict_dir=force_disp_dict_dir)
 
+# add the info about what are xdata2fit and ydata2fit
+for results_dict in all_results_dicts:
+    results_dict['info_fit'] = 'xdata2fit is the force data (newtons), ydata2fit is the displacement data (meters), and the fit is a linear fit to get the slope and the intercept'
 
 # %%
 # save all_results_dicts in a pkl file
 # output_path defined at the beginning of the script
 with open(output_path, 'wb') as file:
     pickle.dump(all_results_dicts, file)
+

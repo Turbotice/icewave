@@ -48,7 +48,11 @@ dict_all = {
     'mc_avg':[],
     'mc_err':[],
     'dict_epaisseurs':[],
-    'temperatures_samples':[]
+    'temperatures_samples':[],
+    'epsilonc_avg':[],
+    'epsilonc_err':[],
+    'epsilondot_avg':[],
+    'epsilondot_err':[]
     }
 
 for key in all_sigmac_force_disp_matching_data:
@@ -76,6 +80,11 @@ dict_all['time2break_sec'] = np.array(dict_all['time2break_sec'])
 dict_all['L'] = np.array(dict_all['L'])
 dict_all['w'] = np.array(dict_all['w'])
 dict_all['temperatures_samples'] = np.array(dict_all['temperatures_samples'])
+dict_all['epsilonc_avg'] = np.array(dict_all['epsilonc_avg'])
+dict_all['epsilonc_err'] = np.array(dict_all['epsilonc_err'])
+dict_all['epsilondot_avg'] = np.array(dict_all['epsilondot_avg'])
+dict_all['epsilondot_avg'] = np.array(dict_all['epsilondot_avg'])
+
 
 dict_all['sigma_c_avg'] = (3/2) * (1e-3* dict_all['mc_avg']*9.81 * dict_all['L'])/(dict_all['w'] * (dict_all['h_avg']**2))
 dict_all['sigma_c_std'] = 3 * (dict_all['mc_avg']*1e-3*9.81 * dict_all['L'] * dict_all['h_std'])/(dict_all['w'] * (dict_all['h_avg']**3))
@@ -187,9 +196,12 @@ plt.show()
 
 plt.figure()
 plt.title('Critical stress at rupture vs strain rate')
-plt.plot(epsilon_c_avg/dict_all['time2break_sec'], epsilon_c_avg,'o')
+plt.plot(epsilon_c_avg/dict_all['time2break_sec'], epsilon_c_avg,'o',label='epsilonc et epsilondot déduit à partir de E_eff')
+plt.plot(dict_all['epsilondot_avg'], dict_all['epsilonc_avg'],'o',label='epsilonc et epsilondot mesurés direct sur la fin de chaque test')
 plt.xlabel('$\dot{\epsilon}$ [$s^{-1}$]',fontsize=15)
 plt.ylabel('Critical strain $\epsilon_c$',fontsize=15)
+plt.legend()
+plt.loglog()
 plt.show()
 
 plt.figure()
@@ -200,9 +212,14 @@ plt.ylabel('Critical stress [MPa]',fontsize=15)
 plt.show()
 
 plt.figure()
-plt.plot((1e3*epsilon_c_avg*dict_all['L']**2)/(6*dict_all['h_avg'])/(dict_all['time2break_sec']) , 1e-9*dict_all['E'],'o')
-plt.xlabel('vitesse sollicitation (mm/s)')
+#plt.plot((1e3*epsilon_c_avg*dict_all['L']**2)/(6*dict_all['h_avg'])/(dict_all['time2break_sec']) , 1e-9*dict_all['E'],'o')
+plt.plot((1e3*epsilon_c_avg)/(dict_all['time2break_sec']) , 1e-9*dict_all['E'],'o',label='epsilondot estimé à partir de E_eff mesuré')
+plt.plot(1e3*dict_all['epsilondot_avg'] , 1e-9*dict_all['E'],'o',label='epsilondot mesuré sur chaque film')
+plt.xlabel('$\dot\epsilon$ (s$^{-1}$)',fontsize=13)
 plt.ylabel('Youngs modulus (GPa)')
+plt.loglog()
+plt.legend()
+plt.show()
 
 # donnée indicatrice : 
 # vitesse d'un échantillon à 0deg posé sur un plot à 18deg : 0.24mm/min (mesuré le 30/09)
@@ -215,6 +232,19 @@ plt.vlines(0.24, 0, 15)
 plt.loglog()
 plt.xlabel('vitesse sollicitation (mm/min)')
 plt.ylabel('Youngs modulus (GPa)')
+plt.show()
+
+#%%
+colors = np.empty(len(dict_all['temperatures_samples']),dtype=object)
+for i in range(len(dict_all['temperatures_samples'])):
+    if dict_all['temperatures_samples'][i]==0:
+        colors[i] = 'red'
+    else:
+        colors[i] = 'blue'
+Eeff2plot = 8e9 # valeur de Eeff pour tester
+
+
+
 
 # plot the equivalent defect size
 
@@ -222,9 +252,43 @@ plt.ylabel('Youngs modulus (GPa)')
 K_Ic = 1.5 * 1e5
 
 plt.figure()
-plt.plot(dict_all['E'], (1/(2*np.pi))*(K_Ic**2/dict_all['sigma_c_avg']**2),'o')
+plt.title('Red : 0°C, Blue : between -10°C and -15°C')
+plt.errorbar(dict_all['E'], (1/(2*np.pi))*(K_Ic**2/dict_all['sigma_c_avg']**2),xerr=dict_all['E_err'],linestyle='',marker='',ecolor='gray')
+plt.scatter(dict_all['E'], (1/(2*np.pi))*(K_Ic**2/dict_all['sigma_c_avg']**2),c=colors,zorder=2)
+plt.xlabel('$E (Pa)', fontsize=15)
+plt.ylabel('$a_{eff}$ (effective defect size)', fontsize=15)
+plt.legend()
 plt.show()
 
 
+
+plt.figure()
+plt.title('Red : 0°C, Blue : between -10°C and -15°C')
+plt.errorbar(dict_all['epsilonc_avg'], dict_all['sigma_c_avg'],yerr=dict_all['sigma_c_std'],xerr=dict_all['epsilonc_err'],linestyle='',marker='',ecolor='gray')
+plt.scatter(dict_all['epsilonc_avg'], dict_all['sigma_c_avg'],c=colors,zorder=2)
+plt.plot(np.linspace(1e-4,1e-3), Eeff2plot * np.linspace(1e-4,1e-3), label='E_eff='+str(np.round(Eeff2plot*1e-9,decimals=1))+' GPa')
+plt.loglog()
+plt.xlabel('$\epsilon_{c}$', fontsize=15)
+plt.ylabel('$\sigma_{c}$', fontsize=15)
+plt.legend()
+plt.show()
+
+plt.figure()
+plt.title('Red : 0°C, Blue : between -10°C and -15°C')
+plt.errorbar(dict_all['epsilondot_avg'], dict_all['sigma_c_avg'],yerr=dict_all['sigma_c_std'],xerr=dict_all['epsilondot_err'],linestyle='',marker='',ecolor='gray')
+plt.scatter(dict_all['epsilondot_avg'], dict_all['sigma_c_avg'],c=colors,zorder=2)
+plt.loglog()
+plt.xlabel('$\dot\epsilon(t_{frac})$', fontsize=15)
+plt.ylabel('$\sigma_{c}$', fontsize=15)
+plt.legend()
+plt.show()
+
+plt.figure()
+plt.title('Red : 0°C, Blue : between -10°C and -15°C')
+plt.errorbar(dict_all['epsilondot_avg'], dict_all['sigma_c_avg'],yerr=dict_all['sigma_c_std'],xerr=dict_all['epsilondot_err'],linestyle='',marker='',ecolor='gray')
+plt.scatter(dict_all['epsilondot_avg'], dict_all['sigma_c_avg'],c=colors,zorder=2)
+plt.loglog()
+plt.legend()
+plt.show()
 
 # %%
