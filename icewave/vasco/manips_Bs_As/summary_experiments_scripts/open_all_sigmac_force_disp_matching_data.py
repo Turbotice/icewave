@@ -30,6 +30,10 @@ dict_all = {
     'qualite_fit':[],
     'xdata2fit':[],
     'ydata2fit':[],
+    'epsilonc_avg':[],
+    'epsilonc_err':[],
+    'epsilondot_avg':[],
+    'epsilondot_err':[],
     'w':[],
     'L':[],
     'E':[],
@@ -48,11 +52,7 @@ dict_all = {
     'mc_avg':[],
     'mc_err':[],
     'dict_epaisseurs':[],
-    'temperatures_samples':[],
-    'epsilonc_avg':[],
-    'epsilonc_err':[],
-    'epsilondot_avg':[],
-    'epsilondot_err':[]
+    'temperatures_samples':[]
     }
 
 for key in all_sigmac_force_disp_matching_data:
