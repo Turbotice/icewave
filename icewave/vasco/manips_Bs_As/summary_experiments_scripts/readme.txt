@@ -10,7 +10,6 @@ group_all_sigmac_data.py
 le code "force_vs_displacement_from_paramsallacq_2cams_v2.py" qui est dans 
 "D:/manips_BsAs/Summary/tracking_force_displacement/params_acquisitions/")
 
-
 Ensuite il faudra aussi exécuter le code add_epsilonc_epsilondot_in_forcedisp_dicts.py
 (pour ajouter les mesures d'epsilonc et epsilondot, pas faites avant ça)
 

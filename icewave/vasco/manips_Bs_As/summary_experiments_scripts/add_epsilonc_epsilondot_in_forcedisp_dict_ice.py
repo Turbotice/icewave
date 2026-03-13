@@ -14,7 +14,7 @@ with open(path2dict, 'rb') as f:
 
 # %%
 
-def compute_epsilonc_epsilondot_atfracture(i, npts2fit=7, all_force_displacement_dicts=all_force_displacement_dicts):
+def compute_epsilonc_epsilondot_atfracture(i, npts2fit=10, all_force_displacement_dicts=all_force_displacement_dicts):
     L = all_force_displacement_dicts[i]['L']
     w = all_force_displacement_dicts[i]['w']
     h_avg = all_force_displacement_dicts[i]['h_avg']

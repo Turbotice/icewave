@@ -52,20 +52,22 @@ def load_all_available_grainsizes(all_sigmac_dicts = dict, sigmac_dict_dir=sigma
     dates,_,_ = list_experiments_to_load(sigmac_dict_dir=sigmac_dict_dir)
     for i in range(len(dates)):
         print(i)
-        daily_grain_sizes_avg = np.zeros(len(all_sigmac_dicts['date_'+dates[i]]['list_samples']))
-        daily_grain_sizes_std = np.zeros(len(all_sigmac_dicts['date_'+dates[i]]['list_samples']))
+        daily_grain_sizes_avg = np.zeros(len(all_sigmac_dicts['date_'+dates[i]]['dict_epaisseurs'].keys()))
+        daily_grain_sizes_std = np.zeros(len(all_sigmac_dicts['date_'+dates[i]]['dict_epaisseurs'].keys()))
         print('length list_samples',len(all_sigmac_dicts['date_'+dates[i]]['list_samples']))
         print('length list(keys)', len(all_sigmac_dicts['date_'+dates[i]]['dict_epaisseurs'].keys()))
-        for j in range(len(all_sigmac_dicts['date_'+dates[i]]['list_samples'])): # boucle for sur toutes les acquisitions
-            print(all_sigmac_dicts['date_'+dates[i]]['list_samples'])
-            print(all_sigmac_dicts['date_'+dates[i]]['list_samples'][j])
-            sample_name = all_sigmac_dicts['date_'+dates[i]]['list_samples'][j][:3]
+        for j in range(len(all_sigmac_dicts['date_'+dates[i]]['dict_epaisseurs'].keys())): # boucle for sur toutes les acquisitions
+            #print(all_sigmac_dicts['date_'+dates[i]]['list_samples'])
+            #print(all_sigmac_dicts['date_'+dates[i]]['list_samples'][j])
+            #sample_name = all_sigmac_dicts['date_'+dates[i]]['list_samples'][j][:3]
+            print(list(all_sigmac_dicts['date_'+dates[i]]['dict_epaisseurs'].keys())[j])
+            sample_name = list(all_sigmac_dicts['date_'+dates[i]]['dict_epaisseurs'].keys())[j]
             path2grainsizes = f"{disk}/manips_BsAs/Summary/polariseurs/{dates[i]}/{sample_name}_grains_sizes_mm.txt"
             print(path2grainsizes)
             if os.path.exists(path2grainsizes):
-                print(dates[i],sample_name)
+                print(dates[i], sample_name)
                 print('exists')
-                _,grainsizeavg,grainsizestd = load_grain_sizes_byhand(dates[i], sample_name)
+                _, grainsizeavg, grainsizestd = load_grain_sizes_byhand(dates[i], sample_name)
                 daily_grain_sizes_avg[j] = grainsizeavg
                 daily_grain_sizes_std[j] = grainsizestd
             else:

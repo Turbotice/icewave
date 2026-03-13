@@ -52,7 +52,9 @@ dict_all = {
     'mc_avg':[],
     'mc_err':[],
     'dict_epaisseurs':[],
-    'temperatures_samples':[]
+    'temperatures_samples':[],
+    'grain_sizes_avg_mm':[],
+    'grain_sizes_std_mm':[]
     }
 
 for key in all_sigmac_force_disp_matching_data:
@@ -84,7 +86,8 @@ dict_all['epsilonc_avg'] = np.array(dict_all['epsilonc_avg'])
 dict_all['epsilonc_err'] = np.array(dict_all['epsilonc_err'])
 dict_all['epsilondot_avg'] = np.array(dict_all['epsilondot_avg'])
 dict_all['epsilondot_avg'] = np.array(dict_all['epsilondot_avg'])
-
+dict_all['grain_sizes_avg_mm'] = np.array(dict_all['grain_sizes_avg_mm'])
+dict_all['grain_sizes_std_mm'] = np.array(dict_all['grain_sizes_std_mm'])
 
 dict_all['sigma_c_avg'] = (3/2) * (1e-3* dict_all['mc_avg']*9.81 * dict_all['L'])/(dict_all['w'] * (dict_all['h_avg']**2))
 dict_all['sigma_c_std'] = 3 * (dict_all['mc_avg']*1e-3*9.81 * dict_all['L'] * dict_all['h_std'])/(dict_all['w'] * (dict_all['h_avg']**3))
@@ -288,6 +291,15 @@ plt.title('Red : 0°C, Blue : between -10°C and -15°C')
 plt.errorbar(dict_all['epsilondot_avg'], dict_all['sigma_c_avg'],yerr=dict_all['sigma_c_std'],xerr=dict_all['epsilondot_err'],linestyle='',marker='',ecolor='gray')
 plt.scatter(dict_all['epsilondot_avg'], dict_all['sigma_c_avg'],c=colors,zorder=2)
 plt.loglog()
+plt.legend()
+plt.show()
+
+plt.figure()
+plt.title('Red : 0°C, Blue : between -10°C and -15°C')
+plt.errorbar(dict_all['grain_sizes_avg_mm'], dict_all['epsilonc_avg'],yerr=dict_all['epsilonc_err'],xerr=dict_all['grain_sizes_std_mm'],linestyle='',marker='',ecolor='gray')
+plt.scatter(dict_all['grain_sizes_avg_mm'], dict_all['epsilonc_avg'],c=colors,zorder=2)
+plt.xlabel('Grain size (mm)')
+plt.ylabel('$\epsilon_c$')
 plt.legend()
 plt.show()
 
