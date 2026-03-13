@@ -1,5 +1,10 @@
 étape d'execution des codes :
 
+
+lancer add_epsilonc_epsilondot_in_forcedisp_dicts.py si nouvelles données ajoutées 
+pour les fit force vs disp 
+et add_temperatures_in_sigmac_dicts_ice si nécessaire (si nouvelles données sigmac)
+
 d'abord, séparément, exécuter 
 
 group_all_force_displacement_data.py

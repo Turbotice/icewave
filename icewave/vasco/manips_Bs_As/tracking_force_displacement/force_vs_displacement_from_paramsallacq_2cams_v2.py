@@ -11,15 +11,18 @@ import csv
 import os
 from scipy.io import loadmat
 import pickle
+import sys
 from scipy.optimize import curve_fit
 
 import load_matdata_JZmethod
+sys.path.append('..')
+from tools import correspond_samplenum_acqnum
 
-%matplotlib qt
+%matplotlib inline
 
 #%% Load csv data "params_all_acq.csv"
-dates_to_correct_fil = ['1016', '1020'] # date  à corriger (force vs pixel) car fil extensible
-Slopes_correction_fil = np.array([0.15847732, 0.15384155])
+dates_to_correct_fil = ['1020'] # date  à corriger (force vs pixel) car fil extensible
+Slopes_correction_fil = np.array([0.15384155])
 
 
 disk = 'D:'
@@ -64,7 +67,7 @@ data_csv = data_csv_converted
 #print(data_csv_converted)
 
 #%% PART 1 : displacement vs frames
-idx = 43
+idx = 14
 
 method = data_csv[idx, 25]
 
@@ -265,7 +268,6 @@ elif method == 'JZ':
     dict_results['u_field_relative'] = u_field_relative
     dict_results['u_field_relative_mm'] = u_field_relative * dmm/dpx
     dict_results['i0'] = i0
-    dict_results['refimg'] = refimg
     dict_results['frame_frac'] = frame_frac
     dict_results['frame_force_application'] = frame_force_application    
     dict_results['dmm_sur_dpx'] = dmm/dpx
@@ -285,8 +287,8 @@ else:
 
 #%% PART 2 : force vs frames
 
+'''
 frame_frac = data_csv[idx, 12]
-
 if type(serie)==int:
     path2dailydir = f'{disk}/manips_BsAs/Basler_images/{date}/serie{serie}'
 else:
@@ -349,8 +351,11 @@ dict_results['x_px'] = x_px
 dict_results['force_grams'] = x_px * (dm_g/dx_px) - m0
 dict_results['dg_sur_dpx'] = dm_g/dx_px
 dict_results['m0'] = m0 # ref par rapport à laquelle la masse est mesurée
+'''
 
+from functions.load_force_vs_frame import load_force_vs_frames_1balance
 
+dict_results = load_force_vs_frames_1balance(idx=idx, date=date, serie=serie, acq=acq, data_csv=data_csv, plot=True)
 
 force_disp_track_dir = f"{disk}/manips_BsAs/Summary/tracking_force_displacement/"
 
@@ -385,6 +390,11 @@ if np.isnan(frame_ref_cam1):
     common, idx_a, idx_b = np.intersect1d(dict_displacement['frames_piv'], dict_force['frames'], return_indices=True)
 else:
     common, idx_a, idx_b = np.intersect1d(dict_displacement['frames_piv'], dict_force['frames']+frameref_diff, return_indices=True)
+
+common_old = common
+common = common_old[common>=i0]
+idx_a = idx_a[common_old>=i0]
+idx_b = idx_b[common_old>=i0]
 
 print("Common values:", common)
 print("Indices in a:", idx_a)
@@ -436,14 +446,19 @@ plt.show()
 # linear fit of force vs displacement
 # F/displacement = E * 4*w*(h/L)**3
 
-if serie!=None:
-    fd = ((serie-1) * 3+1) + (acq-1)//3
-else:
-    fd = (acq-1)//3 + 1
-sd=acq%3
-if sd==0:
-    sd=3
-print(fd, sd)
+#if serie!=None:
+#    fd = ((serie-1) * 3+1) + (acq-1)//3
+#else:
+#    fd = (acq-1)//3 + 1
+#sd=acq%3
+#if sd==0:
+#    sd=3
+
+
+fd, sd = correspond_samplenum_acqnum(acq=acq, serie=serie)
+
+print(f'acq{acq} and serie{serie} correspond to sample name : M{fd}{sd}')
+
 prefix_filename_thickness = f'M{fd}{sd}'
 
 
@@ -464,7 +479,6 @@ h_std_mm = np.std(data_thickness)
 
 h_avg = 1e-3 * h_avg_mm
 h_std = 1e-3 * h_std_mm
-
 
 # compute young's modulus with the formula for elastic beam
 
@@ -519,9 +533,12 @@ def load_force_displacement_curve(idx=0, disk='D:', data_csv=data_csv,dates_to_c
     n_passages = int(data_csv[idx, 10])
 
     maxforcefit = float(data_csv[idx, 21])
+    minforcefit = float(data_csv[idx, 27])
     qualite_fit = data_csv[idx, 22]
     freq_acq_Hz = float(data_csv[idx, 23])
     time2break_sec = float(data_csv[idx, 24])
+    method = data_csv[idx, 25]
+    imposed_defect = int(data_csv[idx, 26])
 
     force_disp_track_dir = f"{disk}/manips_BsAs/Summary/tracking_force_displacement/"
 
@@ -549,6 +566,12 @@ def load_force_displacement_curve(idx=0, disk='D:', data_csv=data_csv,dates_to_c
     else:
         common, idx_a, idx_b = np.intersect1d(dict_displacement['frames_piv'], dict_force['frames']+frameref_diff, return_indices=True)
 
+    if method=='JZ':
+        common_old = common
+        common = common_old[common>=i0]
+        idx_a = idx_a[common_old>=i0]
+        idx_b = idx_b[common_old>=i0]
+    
     print("Common values:", common)
     print("Indices in a:", idx_a)
     print("Indices in b:", idx_b)
@@ -581,11 +604,21 @@ def load_force_displacement_curve(idx=0, disk='D:', data_csv=data_csv,dates_to_c
     print('maxforcefit',maxforcefit,type(maxforcefit))
     print(qualite_fit,type(qualite_fit))
 
-    if not np.isnan(maxforcefit):
-        xdata2fit = xdata2fit[xdata2fit<=maxforcefit]
-        ydata2fit = ydata2fit[:len(xdata2fit)]
-
-
+    print(minforcefit, type(minforcefit))
+    if (not (np.isnan(maxforcefit)))&(np.isnan(minforcefit)):
+        mask = xdata2fit <= maxforcefit
+        xdata2fit = xdata2fit[mask]
+        ydata2fit = ydata2fit[mask]
+    elif (not (np.isnan(minforcefit))) & (np.isnan(maxforcefit)):
+        mask = xdata2fit >= minforcefit
+        xdata2fit = xdata2fit[mask]
+        ydata2fit = ydata2fit[mask]
+    elif (not (np.isnan(minforcefit))) & (not(np.isnan(maxforcefit))):
+        mask = (xdata2fit >= minforcefit) & (xdata2fit <= maxforcefit)
+        xdata2fit = xdata2fit[mask]
+        ydata2fit = ydata2fit[mask]
+    else:
+        pass
 
     try:
         popt, pcov = curve_fit(lambda x,a,b: a*x+b , xdata2fit, ydata2fit)
@@ -607,17 +640,20 @@ def load_force_displacement_curve(idx=0, disk='D:', data_csv=data_csv,dates_to_c
     # linear fit of force vs displacement
     # F/displacement = E * 4*w*(h/L)**3
 
-    if serie!=None:
-        fd = ((serie-1) * 3 + 1) + acq//3
-    else:
-        fd = (acq)//3
-    sd = acq%3
-    if sd==0:
-        sd=3
-    if fd==0:
-        fd = 1
+    #if serie!=None:
+    #    fd = ((serie-1) * 3 + 1) + acq//3
+    #else:
+    #    fd = (acq)//3
+    #sd = acq%3
+    #if sd==0:
+    #    sd=3
+    #if fd==0:
+    #    fd = 1
+    fd, sd = correspond_samplenum_acqnum(acq=acq,serie=serie)
+    print(f'acq{acq} and serie{serie} correspond to sample name : M{fd}{sd}')
     print(fd)
     print(sd)
+    
     prefix_filename_thickness = f'M{fd}{sd}'
 
 
@@ -675,6 +711,7 @@ def load_force_displacement_curve(idx=0, disk='D:', data_csv=data_csv,dates_to_c
     results_dict['force_newtons_comidx'] = force_newtons_comidx
     results_dict['displacement_meters_comidx'] = displacement_meters_comidx
     results_dict['maxforcefit'] = maxforcefit
+    results_dict['minforcefit'] = minforcefit
     results_dict['qualite_fit'] = qualite_fit
     results_dict['xdata2fit'] = xdata2fit
     results_dict['ydata2fit'] = ydata2fit
@@ -692,6 +729,7 @@ def load_force_displacement_curve(idx=0, disk='D:', data_csv=data_csv,dates_to_c
     results_dict['h_std'] = h_std
     results_dict['freq_acq_Hz'] = freq_acq_Hz
     results_dict['time2break_sec'] = time2break_sec
+    results_dict['imposed_defect'] = imposed_defect
     
     # save results dict in a pkl file for combined displacement and force data
     if serie==None:
@@ -707,6 +745,7 @@ def load_force_displacement_curve(idx=0, disk='D:', data_csv=data_csv,dates_to_c
 
 
 # %%
+%matplotlib inline
 N = len(data_csv[:,0])
 print(N)
 arr_h_avg = np.zeros(N)

@@ -161,12 +161,20 @@ plt.xlim(0, 6e-3)
 plt.show()
 # %%
 
-# plot sigmac vs E
+"""# plot epsilonc vs E
 plt.figure()
 plt.errorbar(dict_all['E'], dict_all['sigma_c_avg']/dict_all['E'], xerr=dict_all['E_err'], yerr=dict_all['sigma_c_std']/dict_all['E'], linestyle='', marker='o', ecolor='k', color='b')
 plt.xlabel('E')
 plt.ylabel('$\epsilon_c$')
+plt.show()"""
+
+# plot epsilonc vs E
+plt.figure()
+plt.errorbar(dict_all['E'], dict_all['epsilonc_avg'], xerr=dict_all['E_err'], yerr=dict_all['epsilonc_err'], linestyle='', marker='o', ecolor='k', color='b')
+plt.xlabel('E')
+plt.ylabel('$\epsilon_c$')
 plt.show()
+
 
 # plot sigmac vs E
 plt.figure()
@@ -177,7 +185,7 @@ plt.show()
 
 
 epsilon_c_avg = dict_all['sigma_c_avg']/dict_all['E']
-
+"""
 # plot epsilonc vs E
 plt.figure()
 plt.plot(dict_all['h_avg'], epsilon_c_avg, 'o')
@@ -186,9 +194,9 @@ plt.ylabel('$\epsilon_c$')
 plt.xlim(0, 8e-3)
 plt.ylim(0,1e-3)
 plt.show()
-
+"""
 # 
-plt.figure()
+"""plt.figure()
 plt.plot(epsilon_c_avg/dict_all['time2break_sec'], 1e-9*dict_all['E'],'o')
 plt.title('Youngs modulus vs strain rate')
 plt.xlabel('$\dot{\epsilon}$ [$s^{-1}$]',fontsize=15)
@@ -196,7 +204,7 @@ plt.ylabel('Fitted Youngs modulus [GPa]',fontsize=15)
 plt.xlim(0,0.0007)
 plt.ylim(0,15)
 plt.show()
-
+"""
 plt.figure()
 plt.title('Critical stress at rupture vs strain rate')
 plt.plot(epsilon_c_avg/dict_all['time2break_sec'], epsilon_c_avg,'o',label='epsilonc et epsilondot déduit à partir de E_eff')
@@ -216,8 +224,8 @@ plt.show()
 
 plt.figure()
 #plt.plot((1e3*epsilon_c_avg*dict_all['L']**2)/(6*dict_all['h_avg'])/(dict_all['time2break_sec']) , 1e-9*dict_all['E'],'o')
-plt.plot((1e3*epsilon_c_avg)/(dict_all['time2break_sec']) , 1e-9*dict_all['E'],'o',label='epsilondot estimé à partir de E_eff mesuré')
-plt.plot(1e3*dict_all['epsilondot_avg'] , 1e-9*dict_all['E'],'o',label='epsilondot mesuré sur chaque film')
+plt.plot(epsilon_c_avg/(dict_all['time2break_sec']) , 1e-9*dict_all['E'],'o',label='epsilondot estimé à partir de E_eff mesuré')
+plt.plot(dict_all['epsilondot_avg'] , 1e-9*dict_all['E'],'o',label='epsilondot mesuré sur chaque film')
 plt.xlabel('$\dot\epsilon$ (s$^{-1}$)',fontsize=13)
 plt.ylabel('Youngs modulus (GPa)')
 plt.loglog()
@@ -292,6 +300,8 @@ plt.errorbar(dict_all['epsilondot_avg'], dict_all['sigma_c_avg'],yerr=dict_all['
 plt.scatter(dict_all['epsilondot_avg'], dict_all['sigma_c_avg'],c=colors,zorder=2)
 plt.loglog()
 plt.legend()
+plt.xlabel('$\dot\epsilon$ (s$^{-1}$)')
+plt.ylabel('$\sigma_c$ (Pa)')
 plt.show()
 
 plt.figure()
