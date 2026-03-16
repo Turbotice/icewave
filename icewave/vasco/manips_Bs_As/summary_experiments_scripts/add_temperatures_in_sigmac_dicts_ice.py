@@ -49,12 +49,14 @@ for pkl_file in list_pkl_files:
             data = pickle.load(f)
         if 'temperatures_samples' not in data:
             length_thickness_avg = len(data['thicknesses_avg'])
+            print(pkl_file)
             data['temperatures_samples'] = T_celsius * np.ones(length_thickness_avg)
             with open(sigmac_dir_path+pkl_file, 'wb') as f:
                 pickle.dump(data, f)
 
 #%%
 # check if it worked for one file
-with open(sigmac_dir_path+list_pkl_files[0], 'rb') as f:
+with open(sigmac_dir_path+list_pkl_files[16], 'rb') as f:
     data = pickle.load(f)
 print(data['temperatures_samples'])
+# %%

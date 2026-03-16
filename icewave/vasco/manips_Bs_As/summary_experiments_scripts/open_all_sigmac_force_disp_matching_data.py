@@ -64,6 +64,8 @@ for key in all_sigmac_force_disp_matching_data:
             NEWKEY = KEY.replace('_mm','')
             dict_all[KEY].append(all_sigmac_force_disp_matching_data[key][NEWKEY])    
         else:
+            print(key)
+            print(KEY)
             dict_all[KEY].append(all_sigmac_force_disp_matching_data[key][KEY])
 
 dict_all['mc_avg'] = np.array(dict_all['mc_avg'])
@@ -85,7 +87,7 @@ dict_all['temperatures_samples'] = np.array(dict_all['temperatures_samples'])
 dict_all['epsilonc_avg'] = np.array(dict_all['epsilonc_avg'])
 dict_all['epsilonc_err'] = np.array(dict_all['epsilonc_err'])
 dict_all['epsilondot_avg'] = np.array(dict_all['epsilondot_avg'])
-dict_all['epsilondot_avg'] = np.array(dict_all['epsilondot_avg'])
+dict_all['epsilondot_err'] = np.array(dict_all['epsilondot_err'])
 dict_all['grain_sizes_avg_mm'] = np.array(dict_all['grain_sizes_avg_mm'])
 dict_all['grain_sizes_std_mm'] = np.array(dict_all['grain_sizes_std_mm'])
 
@@ -173,6 +175,7 @@ plt.figure()
 plt.errorbar(dict_all['E'], dict_all['epsilonc_avg'], xerr=dict_all['E_err'], yerr=dict_all['epsilonc_err'], linestyle='', marker='o', ecolor='k', color='b')
 plt.xlabel('E')
 plt.ylabel('$\epsilon_c$')
+#plt.xlim(0,10e9)
 plt.show()
 
 
@@ -225,7 +228,9 @@ plt.show()
 plt.figure()
 #plt.plot((1e3*epsilon_c_avg*dict_all['L']**2)/(6*dict_all['h_avg'])/(dict_all['time2break_sec']) , 1e-9*dict_all['E'],'o')
 plt.plot(epsilon_c_avg/(dict_all['time2break_sec']) , 1e-9*dict_all['E'],'o',label='epsilondot estimé à partir de E_eff mesuré')
-plt.plot(dict_all['epsilondot_avg'] , 1e-9*dict_all['E'],'o',label='epsilondot mesuré sur chaque film')
+plt.errorbar(dict_all['epsilondot_avg'] , 1e-9*dict_all['E'], xerr=dict_all['epsilonc_err'], yerr=dict_all['E_err']*1e-9, linestyle='',marker='o',ecolor='k',label='epsilondot mesuré sur chaque film')
+#plt.plot(dict_all['epsilondot_avg'] , 1e-9*dict_all['E'],'o',label='epsilondot mesuré sur chaque film')
+
 plt.xlabel('$\dot\epsilon$ (s$^{-1}$)',fontsize=13)
 plt.ylabel('Youngs modulus (GPa)')
 plt.loglog()
@@ -252,7 +257,7 @@ for i in range(len(dict_all['temperatures_samples'])):
         colors[i] = 'red'
     else:
         colors[i] = 'blue'
-Eeff2plot = 8e9 # valeur de Eeff pour tester
+Eeff2plot = 6e9 # valeur de Eeff pour tester
 
 
 
@@ -288,7 +293,7 @@ plt.figure()
 plt.title('Red : 0°C, Blue : between -10°C and -15°C')
 plt.errorbar(dict_all['epsilondot_avg'], dict_all['sigma_c_avg'],yerr=dict_all['sigma_c_std'],xerr=dict_all['epsilondot_err'],linestyle='',marker='',ecolor='gray')
 plt.scatter(dict_all['epsilondot_avg'], dict_all['sigma_c_avg'],c=colors,zorder=2)
-plt.loglog()
+#plt.loglog()
 plt.xlabel('$\dot\epsilon(t_{frac})$', fontsize=15)
 plt.ylabel('$\sigma_{c}$', fontsize=15)
 plt.legend()
@@ -296,12 +301,13 @@ plt.show()
 
 plt.figure()
 plt.title('Red : 0°C, Blue : between -10°C and -15°C')
-plt.errorbar(dict_all['epsilondot_avg'], dict_all['sigma_c_avg'],yerr=dict_all['sigma_c_std'],xerr=dict_all['epsilondot_err'],linestyle='',marker='',ecolor='gray')
-plt.scatter(dict_all['epsilondot_avg'], dict_all['sigma_c_avg'],c=colors,zorder=2)
+maskerr = (dict_all['epsilondot_err']/dict_all['epsilondot_avg']<1/4)&(dict_all['epsilondot_err']>0)
+plt.errorbar(dict_all['epsilondot_avg'][maskerr], dict_all['E'][maskerr],yerr=dict_all['E_err'][maskerr],xerr=dict_all['epsilondot_err'][maskerr],linestyle='',marker='',ecolor='gray')
+plt.scatter(dict_all['epsilondot_avg'][maskerr], dict_all['E'][maskerr],c=colors[maskerr],zorder=2)
 plt.loglog()
 plt.legend()
 plt.xlabel('$\dot\epsilon$ (s$^{-1}$)')
-plt.ylabel('$\sigma_c$ (Pa)')
+plt.ylabel('$E$ (Pa)')
 plt.show()
 
 plt.figure()
@@ -313,4 +319,63 @@ plt.ylabel('$\epsilon_c$')
 plt.legend()
 plt.show()
 
+
+# %%
+plt.figure()
+plt.title('seulement échantillons pour T=0°C')
+plt.plot(dict_all['L'][dict_all['temperatures_samples']==0], dict_all['sigma_c_avg'][dict_all['temperatures_samples']==0],'o')
+plt.show()
+
+#%%
+# maintenant on s'intéresse à une région étroite
+
+hinf = 3.1e-3
+hsup = 4e-3
+
+L2plot = 0.08
+
+# plots :
+indices2plot = np.where((dict_all['h_avg']>=hinf)&(dict_all['h_avg']<=hsup)&(dict_all['L']==L2plot))[0]
+print(indices2plot)
+
+indices2plot_Gre = np.where((dict_all['Gre25_samples']['Thickness']>=hinf*1000)&(dict_all['Gre25_samples']['Thickness']<=hsup*1000))
+
+
+plt.figure()
+plt.title(f'only points between h={1000*hinf}mm and {1000*hsup}mm')
+plt.scatter(dict_all['E'][indices2plot], dict_all['sigma_c_avg'][indices2plot],c=colors[indices2plot],zorder=2)
+plt.errorbar(dict_all['E'][indices2plot], dict_all['sigma_c_avg'][indices2plot], xerr=dict_all['E_err'][indices2plot], yerr=dict_all['sigma_c_std'][indices2plot], linestyle='',ecolor='gray',zorder=1)
+plt.scatter(6e9 * np.ones_like(indices2plot_Gre), dict_all['Gre25_samples']['Critical_stress_MPa'][indices2plot_Gre]*1e6)
+plt.show()
+
+plt.figure()
+plt.title('hstd/havg vs havg')
+plt.scatter(dict_all['h_avg'], dict_all['h_std']/dict_all['h_avg'])
+plt.show()
+
+plt.figure()
+plt.scatter(dict_all['L'][indices2plot], dict_all['sigma_c_avg'][indices2plot],c=colors[indices2plot])
+plt.show()
+
+
+
+plt.figure()
+plt.title('Red : 0°C, Blue : between -10°C and -15°C')
+plt.title(f'only points between h={1000*hinf}mm and {1000*hsup}mm')
+plt.errorbar(dict_all['epsilondot_avg'][indices2plot], dict_all['E'][indices2plot],yerr=dict_all['E_err'][indices2plot],xerr=dict_all['epsilondot_err'][indices2plot],linestyle='',marker='',ecolor='gray')
+plt.scatter(dict_all['epsilondot_avg'][indices2plot], dict_all['E'][indices2plot],c=colors[indices2plot],zorder=2)
+plt.loglog()
+plt.legend()
+plt.xlabel('$\dot\epsilon$ (s$^{-1}$)')
+plt.ylabel('$E$ (Pa)')
+plt.show()
+"""
+maskerr = (dict_all['E_err']/dict_all['E']<=1/5)&(dict_all['E']>0.5e9)&(dict_all['E']<10e9)
+plt.figure()
+#plt.title(f'only points between h={1000*hinf}mm and {1000*hsup}mm')
+plt.scatter(dict_all['L'][maskerr], dict_all['E'][maskerr],c=colors[maskerr],alpha=0.2,zorder=2)
+#plt.errorbar(dict_all['h_avg'][maskerr], dict_all['E'][maskerr], yerr=dict_all['E_err'][maskerr], xerr=dict_all['h_std'][maskerr], linestyle='',ecolor='gray',zorder=1)
+plt.show()
+
+"""
 # %%

@@ -67,7 +67,7 @@ data_csv = data_csv_converted
 #print(data_csv_converted)
 
 #%% PART 1 : displacement vs frames
-idx = 14
+idx = 22
 
 method = data_csv[idx, 25]
 
@@ -455,7 +455,7 @@ plt.show()
 #    sd=3
 
 
-fd, sd = correspond_samplenum_acqnum(acq=acq, serie=serie)
+fd, sd = correspond_samplenum_acqnum(date=date, acq=acq, serie=serie)
 
 print(f'acq{acq} and serie{serie} correspond to sample name : M{fd}{sd}')
 
@@ -634,6 +634,7 @@ def load_force_displacement_curve(idx=0, disk='D:', data_csv=data_csv,dates_to_c
         plt.plot(xdata2fit, slope*xdata2fit+intercept)
         plt.xlabel('Fz (N)')
         plt.ylabel('displacement (m)')
+        plt.title(f'{date}, serie {serie}, acq {acq}')
         plt.savefig(force_disp_track_dir + f'f_N_vs_displacement_m_{date}_serie{serie}_acq{acq}.pdf',dpi=600)
         plt.show()
 
@@ -649,7 +650,7 @@ def load_force_displacement_curve(idx=0, disk='D:', data_csv=data_csv,dates_to_c
     #    sd=3
     #if fd==0:
     #    fd = 1
-    fd, sd = correspond_samplenum_acqnum(acq=acq,serie=serie)
+    fd, sd = correspond_samplenum_acqnum(date=date, acq=acq, serie=serie)
     print(f'acq{acq} and serie{serie} correspond to sample name : M{fd}{sd}')
     print(fd)
     print(sd)
