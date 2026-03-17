@@ -14,6 +14,11 @@ matched_data_path = f"{dict_dir}all_sigmac_force_disp_matching_data.pkl"
 with open(matched_data_path, 'rb') as f:
     all_sigmac_force_disp_matching_data = pickle.load(f)
 
+
+dir2savefig = f'{disk}/General/figures'
+
+
+
 #%%
 # plotting sigma_c vs Young's modulus for all matched data
 
@@ -142,6 +147,21 @@ dict_all['Gre25_samples']['Total_force_N'] = convert_array2floatarray(dict_all['
 dict_all['Gre25_samples']['Critical_stress_MPa'] = convert_array2floatarray(dict_all['Gre25_samples']['Critical_stress_MPa'])
 dict_all['Gre25_samples']['time2break_sec_approx'] = convert_array2floatarray(dict_all['Gre25_samples']['time2break_sec_approx'])
 
+
+##########################################################
+### SAVE dict_all CONTAINING BOTH BsAs and Gre25 data ####
+##########################################################
+
+output_path = f"{dict_dir}dict_BsAs_Gre25_data.pkl"
+with open(output_path, 'wb') as f:
+    pickle.dump(dict_all, f)
+
+##########################################################
+##########################################################
+##########################################################
+
+
+
 mask = dict_all['Gre25_samples']['plot']==1
 
 plt.figure()
@@ -160,6 +180,7 @@ plt.xlabel('Thickness (m)')
 plt.ylabel('Critical stress (Pa)')
 plt.ylim(0, 5e6)
 plt.xlim(0, 6e-3)
+plt.legend()
 plt.show()
 # %%
 
@@ -293,7 +314,7 @@ plt.figure()
 plt.title('Red : 0°C, Blue : between -10°C and -15°C')
 plt.errorbar(dict_all['epsilondot_avg'], dict_all['sigma_c_avg'],yerr=dict_all['sigma_c_std'],xerr=dict_all['epsilondot_err'],linestyle='',marker='',ecolor='gray')
 plt.scatter(dict_all['epsilondot_avg'], dict_all['sigma_c_avg'],c=colors,zorder=2)
-#plt.loglog()
+plt.loglog()
 plt.xlabel('$\dot\epsilon(t_{frac})$', fontsize=15)
 plt.ylabel('$\sigma_{c}$', fontsize=15)
 plt.legend()
@@ -317,6 +338,10 @@ plt.scatter(dict_all['grain_sizes_avg_mm'], dict_all['epsilonc_avg'],c=colors,zo
 plt.xlabel('Grain size (mm)')
 plt.ylabel('$\epsilon_c$')
 plt.legend()
+plt.show()
+
+plt.figure()
+plt.plot(dict_all['h_avg'], dict_all['epsilonc_avg'],'o')
 plt.show()
 
 
@@ -362,20 +387,21 @@ plt.show()
 plt.figure()
 plt.title('Red : 0°C, Blue : between -10°C and -15°C')
 plt.title(f'only points between h={1000*hinf}mm and {1000*hsup}mm')
-plt.errorbar(dict_all['epsilondot_avg'][indices2plot], dict_all['E'][indices2plot],yerr=dict_all['E_err'][indices2plot],xerr=dict_all['epsilondot_err'][indices2plot],linestyle='',marker='',ecolor='gray')
-plt.scatter(dict_all['epsilondot_avg'][indices2plot], dict_all['E'][indices2plot],c=colors[indices2plot],zorder=2)
+plt.errorbar(dict_all['epsilondot_avg'][indices2plot], dict_all['E'][indices2plot],
+             yerr=dict_all['E_err'][indices2plot],
+             xerr=dict_all['epsilondot_err'][indices2plot],
+             linestyle='',marker='',ecolor='gray')
+plt.scatter(dict_all['epsilondot_avg'][indices2plot],
+             dict_all['E'][indices2plot],
+             c=colors[indices2plot],zorder=2)
+plt.scatter([],[],c='red',label='L=8cm, T=0°C')
+plt.scatter([],[],c='blue',label='L=8cm, T=-10°C')
 plt.loglog()
 plt.legend()
 plt.xlabel('$\dot\epsilon$ (s$^{-1}$)')
 plt.ylabel('$E$ (Pa)')
-plt.show()
-"""
-maskerr = (dict_all['E_err']/dict_all['E']<=1/5)&(dict_all['E']>0.5e9)&(dict_all['E']<10e9)
-plt.figure()
-#plt.title(f'only points between h={1000*hinf}mm and {1000*hsup}mm')
-plt.scatter(dict_all['L'][maskerr], dict_all['E'][maskerr],c=colors[maskerr],alpha=0.2,zorder=2)
-#plt.errorbar(dict_all['h_avg'][maskerr], dict_all['E'][maskerr], yerr=dict_all['E_err'][maskerr], xerr=dict_all['h_std'][maskerr], linestyle='',ecolor='gray',zorder=1)
+plt.savefig(f'{dir2savefig}/Eeff_vs_epsilondot_BsAs.pdf', dpi=300)
 plt.show()
 
-"""
+
 # %%

@@ -67,7 +67,7 @@ data_csv = data_csv_converted
 #print(data_csv_converted)
 
 #%% PART 1 : displacement vs frames
-idx = 22
+idx = 28
 
 method = data_csv[idx, 25]
 
