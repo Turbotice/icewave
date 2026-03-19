@@ -57,4 +57,4 @@ def get_frame(disk = 'Backup25',year = '2025', date = None):
 
 if __name__=='__main__':
     
-    get_frame()
+    get_frame(date = '0205')

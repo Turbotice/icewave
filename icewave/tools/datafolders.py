@@ -41,8 +41,9 @@ def find_path(disk='Backup25',year='2025',smb=False,date='0211'):
     if year=='2025':
         if 'macOS' in ostype:
             pass#disk='F-1'
-        elif 'Linux' in ostype:
+        elif 'Linux' in ostype and disk == 'Shack25':
             disk='F'#Shack25'
+        
     #print('OS type : '+str(ostype))
     #print('Computer name : '+str(osname))
     #if year=='2025':
@@ -67,6 +68,9 @@ def find_path(disk='Backup25',year='2025',smb=False,date='0211'):
                     base = '/home/turbots/Documents/Bic25/Data/'
             else:
                 base = '/media/turbots/'+base#home/turbots/Documents/'+base
+        elif 'adour' in osname:
+            if disk == 'Backup25':
+                base = f'media/turbots/DATA/{disk}/Data/'
         else:
             print('computer unknown, define the path folder')
             base = ''
