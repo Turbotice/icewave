@@ -67,7 +67,7 @@ data_csv = data_csv_converted
 #print(data_csv_converted)
 
 #%% PART 1 : displacement vs frames
-idx = 28
+idx = 63
 
 method = data_csv[idx, 25]
 
@@ -287,71 +287,6 @@ else:
 
 #%% PART 2 : force vs frames
 
-'''
-frame_frac = data_csv[idx, 12]
-if type(serie)==int:
-    path2dailydir = f'{disk}/manips_BsAs/Basler_images/{date}/serie{serie}'
-else:
-    path2dailydir = f'{disk}/manips_BsAs/Basler_images/{date}'
-
-lisdir = os.listdir(path2dailydir)
-for acqname in lisdir:
-    if f'acq{acq}_' in acqname:
-        acqname_found = acqname
-
-path2csv = f'{path2dailydir}/{acqname_found}/pixel_balance_vs_frame.csv'
-
-with open(path2csv, mode ='r')as file:
-    csvFile = csv.reader(file, delimiter=',')
-    count=0
-    data_forcepx = []
-    for lines in csvFile:
-        if count==0:
-            header = lines
-        else:
-            data_forcepx.append(lines)
-        count+=1
-print(header)
-
-data_forcepx = np.array(data_forcepx)
-
-frames = data_forcepx[:,-1]
-frames_int = [np.round(float(f)).astype(int) for f in frames]
-frames_int = np.array(frames_int)
-
-x_px = data_forcepx[:,-2]
-x_px = [np.round(float(j)).astype(int) for j in x_px]
-x_px = np.array(x_px)
-
-if date in dates_to_correct_fil: # ici on corrige en utilisant la pente calibrée dans le cas où le fil était déformable
-    ind_date_correct_fil = np.where(np.array(dates_to_correct_fil)==date)[0][0]
-    x_px = x_px * (1 - Slopes_correction_fil[ind_date_correct_fil])
-    print('correction effectuée (en prenant en compte alongement fil)')
-    
-
-# and load the dg/dpx also:
-dg_sur_dpx = float(data_csv[idx, 13])
-dm_g = dg_sur_dpx
-dx_px = 1
-
-# asssume the firrst frame is for m0 = 0 grams
-
-m0 = (x_px * (dm_g/dx_px))[0]
-
-plt.figure(figsize=(12,9))
-plt.plot(frames_int, x_px * (dm_g/dx_px) - m0, '.')
-plt.xlabel('frames')
-plt.ylabel('force applied (in grams)')
-plt.show()
-
-# save data (force vs frames):
-dict_results = {}
-dict_results['frames'] = frames_int
-dict_results['x_px'] = x_px
-dict_results['force_grams'] = x_px * (dm_g/dx_px) - m0
-dict_results['dg_sur_dpx'] = dm_g/dx_px
-dict_results['m0'] = m0 # ref par rapport à laquelle la masse est mesurée
-'''
 
 from functions.load_force_vs_frame import load_force_vs_frames_1balance
 
@@ -815,4 +750,3 @@ plt.ylim(0,11)
 plt.xlim(0,5)
 plt.show()
 """
-# %%

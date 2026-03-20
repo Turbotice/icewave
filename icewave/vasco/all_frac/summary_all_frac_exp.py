@@ -138,3 +138,16 @@ plt.ylabel('$\epsilon_c$', fontsize=13)
 plt.legend()
 plt.loglog()
 plt.savefig(f'{dir2savefig}/epsilonc_vs_h_Gre25_wavetank_3pts_loglog.pdf', dpi=300)
+
+# %%
+
+plt.errorbar(dict_BsAs_Gre25['h_avg'][indices2plotBsAs],
+              dict_BsAs_Gre25['sigma_c_avg'][indices2plotBsAs],
+                yerr=dict_BsAs_Gre25['sigma_c_std'][indices2plotBsAs],
+                  xerr=dict_BsAs_Gre25['h_std'][indices2plotBsAs],
+                    linestyle='',ecolor='gray')
+for i in range(len(colors)):
+    if i in indices2plotBsAs:
+        plt.scatter(dict_BsAs_Gre25['h_avg'][i],
+                    dict_BsAs_Gre25['sigma_c_avg'][i],zorder=2,
+                    edgecolors=colors[i],c='white', marker=symbols[i])

@@ -379,7 +379,7 @@ plt.scatter(dict_all['h_avg'], dict_all['h_std']/dict_all['h_avg'])
 plt.show()
 
 plt.figure()
-plt.scatter(dict_all['L'][indices2plot], dict_all['sigma_c_avg'][indices2plot],c=colors[indices2plot])
+plt.scatter(dict_all['L'], dict_all['sigma_c_avg'],c=colors)
 plt.show()
 
 
