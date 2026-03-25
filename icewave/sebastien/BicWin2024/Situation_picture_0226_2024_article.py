@@ -102,20 +102,28 @@ POS['real'] = np.zeros(POS['pix'].shape)
 POS['real'][:,0] = POS_realx
 POS['real'][:,1] = POS_realy
 
+# flip image and inverse position of buoys
+img = np.flip(img,axis = (0,1))
+POS['real'][:,0] = - POS['real'][:,0] 
+
 #%% PLot image in metric coordinates 
+
+X0 = Xreal.min()
+Y0 = Yreal.max()
 
 set_graphs.set_matplotlib_param('single')
 fig, ax = plt.subplots()
 # c = ax.pcolormesh(Xreal,Yreal,img[:,:,2],shading = 'auto', cmap = 'gray')
 #c.set_rasterized(True)
-extents = [Xreal.min(),Xreal.max(),Yreal.min(),Yreal.max()]
+extents = [Xreal[:,0].min() - X0,Xreal[:,-1].max() - X0,Y0 - Yreal[0,:].min(),Y0 - Yreal[-1,:].max()]
 ax.imshow(img,extent = extents)
-ax.plot(POS['real'][:,0],POS['real'][:,1],'o',markerfacecolor = 'r',markeredgecolor = 'k',markersize = 7)
+ax.plot(POS['real'][:,0] - X0,Y0 - POS['real'][:,1],'o',
+        markerfacecolor = 'r',markeredgecolor = 'k',markersize = 7)
 ax.set_xlabel(r'$X \; \mathrm{(m)}$',labelpad = 5)
 ax.set_ylabel(r'$Y \; \mathrm{(m)}$',labelpad = 5)
 ax.set_aspect(1) # set aspect ratio to 1 
 
-figname = f'{fig_folder}situation_picture_XY_{drone_ID}_{exp_ID}'
+figname = f'{fig_folder}situation_picture_XY_{drone_ID}_{exp_ID}_origin_lower_left'
 plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.svg', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')
