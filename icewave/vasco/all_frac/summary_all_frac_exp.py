@@ -44,7 +44,7 @@ indices2plotGre = np.where(maskplotGre)[0]
 mask_samples8cm = dict_BsAs_Gre25['L']==0.08
 mask_samples12cm = dict_BsAs_Gre25['L']==0.12
 
-mask_samples_size = mask_samples8cm | mask_samples12cm
+mask_samples_size = mask_samples8cm #| mask_samples12cm
 #mask_temperature = dict_BsAs_Gre25['temperatures_samples']==0
 mask_positive = dict_BsAs_Gre25['epsilonc_avg']>0
 mask_errBsAs = dict_BsAs_Gre25['epsilonc_err']/dict_BsAs_Gre25['epsilonc_avg']<1/5
@@ -151,3 +151,12 @@ for i in range(len(colors)):
         plt.scatter(dict_BsAs_Gre25['h_avg'][i],
                     dict_BsAs_Gre25['sigma_c_avg'][i],zorder=2,
                     edgecolors=colors[i],c='white', marker=symbols[i])
+
+plt.scatter([], [], edgecolors='red', facecolors='white',
+            marker='s', label='BsAs, L=8cm, T=0°C')
+plt.scatter([], [], edgecolors='blue', facecolors='white',
+            marker='s', label='BsAs, L=8cm, T=-10°C')
+plt.scatter([], [], edgecolors='red', facecolors='white',
+            marker='^', label='BsAs, L=12cm, T=0°C')
+plt.legend()
+# %%

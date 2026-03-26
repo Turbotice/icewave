@@ -39,6 +39,10 @@ dict_all = {
     'epsilonc_err':[],
     'epsilondot_avg':[],
     'epsilondot_err':[],
+    'epsilondot_frac_avg':[],
+    'epsilondot_frac_err':[],
+    'vz':[],
+    'vz_err':[],
     'w':[],
     'L':[],
     'E':[],
@@ -93,6 +97,11 @@ dict_all['epsilonc_avg'] = np.array(dict_all['epsilonc_avg'])
 dict_all['epsilonc_err'] = np.array(dict_all['epsilonc_err'])
 dict_all['epsilondot_avg'] = np.array(dict_all['epsilondot_avg'])
 dict_all['epsilondot_err'] = np.array(dict_all['epsilondot_err'])
+dict_all['epsilondot_frac_avg'] = np.array(dict_all['epsilondot_frac_avg'])
+dict_all['epsilondot_frac_err'] = np.array(dict_all['epsilondot_frac_err'])
+dict_all['vz'] = np.array(dict_all['vz'])
+dict_all['vz_err'] = np.array(dict_all['vz_err'])
+
 dict_all['grain_sizes_avg_mm'] = np.array(dict_all['grain_sizes_avg_mm'])
 dict_all['grain_sizes_std_mm'] = np.array(dict_all['grain_sizes_std_mm'])
 
@@ -209,30 +218,11 @@ plt.show()
 
 
 epsilon_c_avg = dict_all['sigma_c_avg']/dict_all['E']
-"""
-# plot epsilonc vs E
-plt.figure()
-plt.plot(dict_all['h_avg'], epsilon_c_avg, 'o')
-plt.xlabel('h')
-plt.ylabel('$\epsilon_c$')
-plt.xlim(0, 8e-3)
-plt.ylim(0,1e-3)
-plt.show()
-"""
-# 
-"""plt.figure()
-plt.plot(epsilon_c_avg/dict_all['time2break_sec'], 1e-9*dict_all['E'],'o')
-plt.title('Youngs modulus vs strain rate')
-plt.xlabel('$\dot{\epsilon}$ [$s^{-1}$]',fontsize=15)
-plt.ylabel('Fitted Youngs modulus [GPa]',fontsize=15)
-plt.xlim(0,0.0007)
-plt.ylim(0,15)
-plt.show()
-"""
+
 plt.figure()
 plt.title('Critical stress at rupture vs strain rate')
 plt.plot(epsilon_c_avg/dict_all['time2break_sec'], epsilon_c_avg,'o',label='epsilonc et epsilondot déduit à partir de E_eff')
-plt.plot(dict_all['epsilondot_avg'], dict_all['epsilonc_avg'],'o',label='epsilonc et epsilondot mesurés direct sur la fin de chaque test')
+plt.plot(dict_all['epsilondot_frac_avg'], dict_all['epsilonc_avg'],'o',label='epsilonc et epsilondot mesurés direct sur la fin de chaque test')
 plt.xlabel('$\dot{\epsilon}$ [$s^{-1}$]',fontsize=15)
 plt.ylabel('Critical strain $\epsilon_c$',fontsize=15)
 plt.legend()
@@ -249,7 +239,7 @@ plt.show()
 plt.figure()
 #plt.plot((1e3*epsilon_c_avg*dict_all['L']**2)/(6*dict_all['h_avg'])/(dict_all['time2break_sec']) , 1e-9*dict_all['E'],'o')
 plt.plot(epsilon_c_avg/(dict_all['time2break_sec']) , 1e-9*dict_all['E'],'o',label='epsilondot estimé à partir de E_eff mesuré')
-plt.errorbar(dict_all['epsilondot_avg'] , 1e-9*dict_all['E'], xerr=dict_all['epsilonc_err'], yerr=dict_all['E_err']*1e-9, linestyle='',marker='o',ecolor='k',label='epsilondot mesuré sur chaque film')
+plt.errorbar(dict_all['epsilondot_avg'] , 1e-9*dict_all['E'], xerr=dict_all['epsilondot_err'], yerr=dict_all['E_err']*1e-9, linestyle='',marker='o',ecolor='k',label='epsilondot mesuré sur chaque film')
 #plt.plot(dict_all['epsilondot_avg'] , 1e-9*dict_all['E'],'o',label='epsilondot mesuré sur chaque film')
 
 plt.xlabel('$\dot\epsilon$ (s$^{-1}$)',fontsize=13)
@@ -278,7 +268,7 @@ for i in range(len(dict_all['temperatures_samples'])):
         colors[i] = 'red'
     else:
         colors[i] = 'blue'
-Eeff2plot = 6e9 # valeur de Eeff pour tester
+Eeff2plot = 4e9 # valeur de Eeff pour tester
 
 
 
@@ -303,7 +293,7 @@ plt.figure()
 plt.title('Red : 0°C, Blue : between -10°C and -15°C')
 plt.errorbar(dict_all['epsilonc_avg'], dict_all['sigma_c_avg'],yerr=dict_all['sigma_c_std'],xerr=dict_all['epsilonc_err'],linestyle='',marker='',ecolor='gray')
 plt.scatter(dict_all['epsilonc_avg'], dict_all['sigma_c_avg'],c=colors,zorder=2)
-plt.plot(np.linspace(1e-4,1e-3), Eeff2plot * np.linspace(1e-4,1e-3), label='E_eff='+str(np.round(Eeff2plot*1e-9,decimals=1))+' GPa')
+plt.plot(np.linspace(1e-4,2e-3), Eeff2plot*np.linspace(1e-4,2e-3))
 plt.loglog()
 plt.xlabel('$\epsilon_{c}$', fontsize=15)
 plt.ylabel('$\sigma_{c}$', fontsize=15)
@@ -312,8 +302,8 @@ plt.show()
 
 plt.figure()
 plt.title('Red : 0°C, Blue : between -10°C and -15°C')
-plt.errorbar(dict_all['epsilondot_avg'], dict_all['sigma_c_avg'],yerr=dict_all['sigma_c_std'],xerr=dict_all['epsilondot_err'],linestyle='',marker='',ecolor='gray')
-plt.scatter(dict_all['epsilondot_avg'], dict_all['sigma_c_avg'],c=colors,zorder=2)
+plt.errorbar(dict_all['epsilondot_frac_avg'], dict_all['sigma_c_avg'],yerr=dict_all['sigma_c_std'],xerr=dict_all['epsilondot_frac_err'],linestyle='',marker='',ecolor='gray')
+plt.scatter(dict_all['epsilondot_frac_avg'], dict_all['sigma_c_avg'],c=colors,zorder=2)
 plt.loglog()
 plt.xlabel('$\dot\epsilon(t_{frac})$', fontsize=15)
 plt.ylabel('$\sigma_{c}$', fontsize=15)
@@ -340,9 +330,33 @@ plt.ylabel('$\epsilon_c$')
 plt.legend()
 plt.show()
 
+#%%
+
 plt.figure()
-plt.plot(dict_all['h_avg'], dict_all['epsilonc_avg'],'o')
+plt.title('Red : 0°C, Blue : between -10°C and -15°C')
+maskerr = (dict_all['epsilondot_err']/dict_all['epsilondot_avg']<1/4)&(dict_all['epsilondot_err']>0)
+plt.errorbar(dict_all['h_avg'][maskerr], dict_all['epsilondot_avg'][maskerr],yerr=dict_all['epsilondot_err'][maskerr],xerr=dict_all['epsilondot_err'][maskerr],linestyle='',marker='',ecolor='gray')
+plt.scatter(dict_all['h_avg'][maskerr], dict_all['epsilondot_avg'][maskerr],c=colors[maskerr],zorder=2)
+plt.loglog()
+plt.legend()
+plt.ylabel('$\dot\epsilon$ (s$^{-1}$)')
+plt.xlabel('h (m)')
 plt.show()
+
+
+
+
+plt.figure()
+plt.title('Red : 0°C, Blue : between -10°C and -15°C')
+#maskerr = (dict_all['epsilondot_err']/dict_all['epsilondot_avg']<1/4)&(dict_all['epsilondot_err']>0)
+plt.errorbar(dict_all['h_avg'], dict_all['E'],yerr=dict_all['E_err'],xerr=dict_all['h_std'],linestyle='',marker='',ecolor='gray')
+plt.scatter(dict_all['h_avg'], dict_all['E'],c=colors,zorder=2)
+plt.yscale('log')
+plt.legend()
+plt.ylabel('E (Pa)')
+plt.xlabel('h (m)')
+plt.show()
+
 
 
 # %%
@@ -351,11 +365,62 @@ plt.title('seulement échantillons pour T=0°C')
 plt.plot(dict_all['L'][dict_all['temperatures_samples']==0], dict_all['sigma_c_avg'][dict_all['temperatures_samples']==0],'o')
 plt.show()
 
+
+
+
+
+
+mask_size_temp = (dict_all['L']==0.08)&(dict_all['temperatures_samples']==0)
+
+plt.figure()
+plt.errorbar(dict_all['h_avg'][mask_size_temp], dict_all['E'][mask_size_temp],yerr=dict_all['E_err'][mask_size_temp],xerr=dict_all['h_std'][mask_size_temp],linestyle='',marker='',ecolor='gray')
+# Scatter
+sc = plt.scatter(dict_all['h_avg'][mask_size_temp], dict_all['E'][mask_size_temp],c=dict_all['epsilondot_avg'][mask_size_temp],vmax=0.002,zorder=2)
+
+# Valeurs uniques
+vals = np.unique(dict_all['epsilondot_avg'])
+
+# Récupérer le cmap et normalisation
+cmap = sc.cmap
+norm = sc.norm
+
+# Créer une entrée de légende par valeur unique
+handles = [
+    plt.Line2D(
+        [], [], 
+        marker="o", linestyle="", 
+        color=cmap(norm(v)), 
+        label=str(v)
+    )
+    for v in vals
+]
+plt.colorbar()
+#plt.xlim(0, np.nanmax(thicknesses_avg_normalized)*1.1)
+#plt.ylim(0, np.nanmax(sigmac_array)*1.1)
+#plt.xlabel('normalized thickness h/L')
+plt.ylabel('E [Pa]')
+plt.xlabel('h [m]')
+#plt.legend(handles=handles, title="epsilon_dot")
+plt.yscale('log')
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
 #%%
 # maintenant on s'intéresse à une région étroite
 
-hinf = 3.1e-3
-hsup = 4e-3
+hinf = 3e-3
+hsup = 3.5e-3
 
 L2plot = 0.08
 
@@ -403,5 +468,23 @@ plt.ylabel('$E$ (Pa)')
 plt.savefig(f'{dir2savefig}/Eeff_vs_epsilondot_BsAs.pdf', dpi=300)
 plt.show()
 
-
+plt.figure()
+plt.title('Red : 0°C, Blue : between -10°C and -15°C')
+plt.title(f'only points between h={1000*hinf}mm and {1000*hsup}mm')
+plt.errorbar(dict_all['vz'][indices2plot], dict_all['E'][indices2plot],
+             yerr=dict_all['E_err'][indices2plot],
+             xerr=dict_all['vz_err'][indices2plot],
+             linestyle='',marker='',ecolor='gray')
+plt.scatter(dict_all['vz'][indices2plot],
+             dict_all['E'][indices2plot],
+             c=colors[indices2plot],zorder=2)
+plt.scatter([],[],c='red',label='L=8cm, T=0°C')
+plt.scatter([],[],c='blue',label='L=8cm, T=-10°C')
+plt.loglog()
+plt.legend()
+plt.xlabel('$v_z$ [m.s$^{-1}$]')
+plt.ylabel('$E$ [Pa]')
+plt.savefig(f'{dir2savefig}/Eeff_vs_vz_BsAs.pdf', dpi=300)
+plt.show()
 # %%
+path2

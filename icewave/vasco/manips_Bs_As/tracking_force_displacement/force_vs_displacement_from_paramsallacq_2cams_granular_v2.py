@@ -252,7 +252,7 @@ else:
 #csv_filename_px_single_balance = 'pixel_balance_vs_frame.csv'
 #csv_filename_px_ref = 'pixel_vs_frame_ref.csv' # this file doesn't necessarily exist
 
-from functions.load_force_vs_frame import load_force_vs_frames_1balance
+from functions.load_force_vs_frame import *
 
 
 
@@ -260,7 +260,8 @@ if os.path.exists(f'{path2dailydir}/{acqname_found}/pixel_balance_vs_frame.csv')
     # cas où il y avait besoin d'une seule balance
     dict_results = load_force_vs_frames_1balance(idx=idx, date=date, serie=serie, acq=acq, data_csv=data_csv)
 else:
-    # cas où il y avait beosin de plusieurs balances
+    dict_results = load_force_vs_frames_2balances(idx=idx, date=date, serie=serie, acq=acq, data_csv=data_csv)
+"""    # cas où il y avait beosin de plusieurs balances
     list_balances_maxweights = []
     list_dg_sur_dpx = []
     for fname in os.listdir(f'{path2dailydir}/{acqname_found}'):
@@ -280,7 +281,7 @@ else:
         dict_results['force_grams'] = force_grams
     else:
         print("Code non adapté pour le cas où il y a + de 2 balances !")
-
+"""
 # et on plot la force grams vs frames (au cas où on a fait la somme de 2 balances temps)
 plt.figure(figsize=(12,9))
 plt.plot(dict_results['frames'], dict_results['force_grams'], '.')
