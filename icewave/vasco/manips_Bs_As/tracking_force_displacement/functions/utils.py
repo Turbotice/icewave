@@ -111,3 +111,28 @@ def load_displacement_data_PIV(matfile):
         v = np.concatenate((np.zeros((1,v.shape[1],v.shape[2])), v))
 
     return u, v, xpix, ypix, concat_with_zero
+
+def load_data_PIV_without_coord(matfile):
+
+    mat_dict = loadmat(matfile)
+
+    if 'u_original' in mat_dict:
+        u_original = mat_dict['u_original'][:,0]
+        v_original = mat_dict['v_original'][:,0]
+        u = reshape_array(u_original)
+        v = reshape_array(v_original)
+
+        concat_with_zero = True
+    else:
+        u = clean_array(mat_dict['u'])
+        v = clean_array(mat_dict['v'])
+
+        concat_with_zero = False
+
+
+    # pour ajouter un zero au début (dans le cas imgref et piv faite à la mains, car  sinon ca décale par rapport aux mesures de forces)
+    if concat_with_zero:
+        u = np.concatenate((np.zeros((1,u.shape[1],u.shape[2])), u))
+        v = np.concatenate((np.zeros((1,v.shape[1],v.shape[2])), v))
+
+    return u, v, concat_with_zero

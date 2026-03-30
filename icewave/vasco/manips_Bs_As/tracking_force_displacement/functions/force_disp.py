@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
-from tools import str_to_float, correspond_samplenum_acqnum, load_csv_params_allacq
+from utils import str_to_float, correspond_samplenum_acqnum, load_csv_params_allacq
 import os
 from scipy.optimize import curve_fit
 
@@ -168,18 +168,7 @@ def load_force_displacement_curve(idx=0, disk=disk_example, data_csv=data_csv_ex
         plt.savefig(force_disp_track_dir + f'f_N_vs_displacement_m_{date}_serie{serie}_acq{acq}.pdf',dpi=600)
         plt.show()
 
-    # linear fit of force vs displacement
-    # F/displacement = E * 4*w*(h/L)**3
 
-    #if serie!=None:
-    #    fd = ((serie-1) * 3 + 1) + acq//3
-    #else:
-    #    fd = (acq)//3
-    #sd = acq%3
-    #if sd==0:
-    #    sd=3
-    #if fd==0:
-    #    fd = 1
     fd, sd = correspond_samplenum_acqnum(date=date, acq=acq, serie=serie)
     print(f'acq{acq} and serie{serie} correspond to sample name : M{fd}{sd}')
     print(fd)
@@ -275,5 +264,5 @@ def load_force_displacement_curve(idx=0, disk=disk_example, data_csv=data_csv_ex
     else:
         print('pkl file not saved')
 
-    return (h_avg, h_std, E_beam, E_err,prefix_filename_thickness,date)
+    return (results_dict, h_avg, h_std, E_beam, E_err,prefix_filename_thickness,date)
 

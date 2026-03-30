@@ -16,7 +16,7 @@ from scipy.optimize import curve_fit
 
 
 sys.path.append('functions')
-from tools import load_csv_params_allacq, str_to_float, correspond_samplenum_acqnum, reshape_array, clean_array, load_displacement_data_PIV
+from utils import load_csv_params_allacq, str_to_float, correspond_samplenum_acqnum, reshape_array, clean_array, load_displacement_data_PIV
 from load_force_vs_frame import *
 from load_displacement_vs_frame import load_disp_vs_frame
 
@@ -288,10 +288,10 @@ qualite_fit = df['qualite_fit'].values
 for i in range(N):
     print('index',i)
     if (qualite_fit[i]!='ok') and (qualite_fit[i]!='moyen'):
-        arr_h_avg[i], arr_h_std[i], arr_E[i], arr_Eerr[i],arr_prefix_filename_thickness[i],arr_dates[i] = np.nan,np.nan,np.nan,np.nan,np.nan,np.nan
+        _, arr_h_avg[i], arr_h_std[i], arr_E[i], arr_Eerr[i],arr_prefix_filename_thickness[i],arr_dates[i] = np.nan,np.nan,np.nan,np.nan,np.nan,np.nan
     else:
         print(qualite_fit[i])
-        arr_h_avg[i], arr_h_std[i], arr_E[i], arr_Eerr[i],arr_prefix_filename_thickness[i],arr_dates[i] = load_force_displacement_curve(idx=i,data_csv=data_csv,plot=True)
+        _, arr_h_avg[i], arr_h_std[i], arr_E[i], arr_Eerr[i],arr_prefix_filename_thickness[i],arr_dates[i] = load_force_displacement_curve(idx=i,data_csv=data_csv,plot=True)
 
 
 #mask = (arr_Eerr/arr_E < 1/2) & (arr_E>0) # on garde que les points pour lesquels l'erreur sur E est inférieure à 50% et E positif
