@@ -20,7 +20,7 @@ date = '0223'
 outputdir = f'{disk}/data/{date}/Tests_Bresiliens/results'
 
 
-acqnum = '1-B'
+acqnum = '56'
 %matplotlib inline
 dict_single_test = load_single_test_curve(acqnum=acqnum,plot=True,disk=disk)
 
@@ -121,8 +121,9 @@ fp = f"{outputdir}/fits_force_displacement.pkl"
 all_results = pickle.load(open(fp, "rb")) if os.path.exists(fp) else {}
 all_results[acqnum] = dict_fits
 ecr = input('Ecraser les données précédentes pour cette acquisition? (y/n)')
-if ecr=='y':
+if (ecr=='y') or (ecr==''):
     pickle.dump(all_results, open(fp, "wb"))
+    print('données enregistrées')
 else:
     pass
 # %%

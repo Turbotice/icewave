@@ -2,7 +2,11 @@
 import os
 import numpy as np
 import pandas as pd
+import pickle
 import matplotlib.pyplot as plt
+import sys
+sys.path.append('../../..')
+from tools import graphes
 
 #%%
 disk = "H"
@@ -27,6 +31,7 @@ def convert_to_arrayoffloats(values):
 # Display the first few rows of the DataFrame
 print(df.head())
 
+arr_acqnum = df['acq_num'].values
 arr_L_mm = df['L_mm'].values
 arr_L_err_mm = df['L_err_mm'].values
 arr_qualite_test = df['qualite_test'].values
@@ -89,3 +94,60 @@ plt.title('Sigma_c vs T')
 plt.savefig(f'{dir_path}sigmac_vs_T.pdf', dpi=300)
 plt.legend()
 plt.show()
+
+
+dict_fig1 = graphes.defaults_params_errorbar_categories()
+
+dict_fig1['x'] = arr_T_core_celsius
+dict_fig1['y'] = arr_sigma_c
+dict_fig1['z'] = np.empty(len(arr_T_core_celsius),dtype=object)
+dict_fig1['z'][mask_HaHa] = 'HaHa'
+dict_fig1['z'][mask_Hatee] = 'Hatee'
+dict_fig1['z'][mask_Capelans_beach] = 'Capelans beach'
+dict_fig1['z'][mask_Capelans_floating_ice] = 'Capelans floating'
+dict_fig1['ylabel'] = '$\sigma_c$ [MPa]'
+dict_fig1['xlabel'] = 'T [°C]'
+dict_fig1['savefig'] = False
+dict_fig1['title'] = 'sigma_c vs T for cores in different locations'
+#dict_fig1['symbols'] = {'HaHa':'o','Hatee':'o','Capelans beach':'o','Capelans floating':'o'}
+
+
+graphes.errorbar_categories(dict_params=dict_fig1)
+
+
+
+
+# %% load fits rigidity cores
+with open(r"H:\data\0223\Tests_Bresiliens\results\fits_force_displacement.pkl", 'rb') as f:
+    dict_allfits  = pickle.load(f)
+
+
+
+# %%
+
+acqnums_2 = np.empty(len(dict_allfits.keys()), dtype=object)
+slopes_2 = np.empty(len(dict_allfits.keys()), dtype=object)
+intercepts_2 = np.empty(len(dict_allfits.keys()), dtype=object)
+slopeserr_2 = np.empty(len(dict_allfits.keys()), dtype=object)
+interceptserr_2 = np.empty(len(dict_allfits.keys()), dtype=object)
+
+for i in range(len(dict_allfits.keys())):
+    acqnum_key = list(dict_allfits.keys())[i]
+    acqnums_2[i] = acqnum_key
+    slopes_2[i] = dict_allfits[acqnum_key]['fit_1']['a']
+    intercepts_2[i] = dict_allfits[acqnum_key]['fit_1']['b']
+    slopeserr_2[i] = np.diag(dict_allfits[acqnum_key]['fit_1']['cov'])[0]
+    interceptserr_2[i] = np.diag(dict_allfits[acqnum_key]['fit_1']['cov'])[1]
+
+slopes_2_usi = 1e6 * slopes_2 # units : N/m
+slopeserr_2_usi = 1e6 * slopeserr_2
+intercepts_2_usi = 1e3 * intercepts_2 # units : N
+interceptserr_2_usi = 1e3 * interceptserr_2
+
+
+common, a_ind, b_ind = np.intersect1d(arr_acqnum, acqnums_2, return_indices=True)
+
+plt.figure()
+plt.plot(arr_T_core_celsius[b_ind], slopes_2_usi*16/(9*arr_L_mm[b_ind]*1e-3), 'o')
+plt.yscale('log')
+# %%

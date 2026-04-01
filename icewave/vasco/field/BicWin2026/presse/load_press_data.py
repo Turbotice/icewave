@@ -30,9 +30,3 @@ def load_single_test_curve(acqnum='4', date='0223', disk='H:',plot=False):
         plt.show()
     return dict_single_test 
 
-#%%
-# exemple pour afficher les données
-"""%matplotlib qt
-
-
-"""
