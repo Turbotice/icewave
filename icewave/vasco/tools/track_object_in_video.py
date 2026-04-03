@@ -279,11 +279,15 @@ def plot_variable(results, var_name="x", fps=1):
 
     plt.show()
 
+    return t, values
+
 #%%
 if __name__ == "__main__":
-
-    folder = "C:/Users/Vasco Zanchi/Desktop/piv_brazilian_test/P1047763/image_sequence"  # dossier contenant les images
-    image_files = load_image_sequence(folder, "jpg")
+    saveresults = True
+    plotresults = True
+    gendir = "C:/Users/Vasco Zanchi/Desktop/piv_brazilian_test/P1047763"
+    base = f"{gendir}/image_sequence"  # dossier contenant les images
+    image_files = load_image_sequence(base, "jpg")
 
     initial_bbox = (1030, 110, 1840, 1840)
     angle_range = (-1, 1, 21)
@@ -293,12 +297,12 @@ if __name__ == "__main__":
         initial_bbox=initial_bbox,
         angle_range=angle_range
     )
-# %%
-plot_variable(results, "x")
-plot_variable(results, "y")
-plot_variable(results, "theta")
-plot_variable(results, "score")
-output_file = "C:/Users/Vasco Zanchi/Desktop/piv_brazilian_test/P1047763/results.pkl"
-with open(output_file, 'wb') as file:
-    pickle.dump(results, file)
-# %%
+    if plotresults:
+        plot_variable(results, "x")
+        plot_variable(results, "y")
+        plot_variable(results, "theta")
+        plot_variable(results, "score")
+    if saveresults:
+        output_file = f"{gendir}/results.pkl"
+        with open(output_file, 'wb') as file:
+            pickle.dump(results, file)

@@ -148,6 +148,27 @@ interceptserr_2_usi = 1e3 * interceptserr_2
 common, a_ind, b_ind = np.intersect1d(arr_acqnum, acqnums_2, return_indices=True)
 
 plt.figure()
-plt.plot(arr_T_core_celsius[b_ind], slopes_2_usi*16/(9*arr_L_mm[b_ind]*1e-3), 'o')
+plt.plot(arr_T_core_celsius[b_ind], slopes_2_usi*16/(3*np.pi*arr_L_mm[b_ind]*1e-3*arr_D_mm[b_ind]*1e-3), 'o')
 plt.yscale('log')
 # %%
+def Weibull_cdf(x, x0=1, m=1):
+    return 1 - np.exp(-(x/x0)**m)
+
+
+plt.figure()
+plt.hist(arr_sigma_c[mask_quality],bins=15,density=True,cumulative=True)
+xvals = np.linspace(0,0.8,100)
+x0=0.3
+m=3.3
+plt.plot(xvals, Weibull_cdf(xvals, x0=x0, m=m),label=f'Weibull, $\sigma_0$={x0}, m={m}')
+x0=0.25
+m=3
+plt.plot(xvals, Weibull_cdf(xvals, x0=x0, m=m),label=f'Weibull, $\sigma_0$={x0}, m={m}')
+x0=0.3
+m=5
+plt.plot(xvals, Weibull_cdf(xvals, x0=x0, m=m),label=f'Weibull, $\sigma_0$={x0}, m={m}')
+
+plt.ylabel('Cumulative distribution function')
+plt.xlabel('$\sigma_c$ [MPa]')
+plt.legend()
+plt.grid()
