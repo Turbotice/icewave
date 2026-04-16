@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import matplotlib
 import os
 import pickle
+
+matplotlib.rcParams['font.sans-serif'] = "Times New Roman"
 # %%
 
 disk = 'D:'
@@ -125,6 +127,7 @@ plt.show()
 #%% même plot mais avec differentes couleurs suivant les temperatures
 
 Lsample2plot = 8e-2
+legendeachserie=False
 
 plt.figure()
 for i in range(len(dates)):
@@ -134,16 +137,27 @@ for i in range(len(dates)):
     else:
         color = 'r'
     if L_samples[i]==Lsample2plot:
-        plt.errorbar(dict_all_results['dict_results_'+dates[i]]['thicknesses_avg'], dict_all_results['dict_results_'+dates[i]]['mc_avg_eff'], yerr=dict_all_results['dict_results_'+dates[i]]['mc_err'], xerr=dict_all_results['dict_results_'+dates[i]]['thicknesses_std'],linestyle='',marker='o', color=color,ecolor='k',label=dates[i]+' , T = '+str(temperature_samples[i])+' °C')
+        if legendeachserie:
+            plt.errorbar(dict_all_results['dict_results_'+dates[i]]['thicknesses_avg'], dict_all_results['dict_results_'+dates[i]]['mc_avg_eff'], yerr=dict_all_results['dict_results_'+dates[i]]['mc_err'], xerr=dict_all_results['dict_results_'+dates[i]]['thicknesses_std'],linestyle='',marker='o', color=color,ecolor='k',label=dates[i]+' , T = '+str(temperature_samples[i])+' °C')
+        else:
+            plt.errorbar(dict_all_results['dict_results_'+dates[i]]['thicknesses_avg'], dict_all_results['dict_results_'+dates[i]]['mc_avg_eff'], yerr=dict_all_results['dict_results_'+dates[i]]['mc_err'], xerr=dict_all_results['dict_results_'+dates[i]]['thicknesses_std'],linestyle='',marker='o', color=color,ecolor='k')
 
-plt.xlabel('thickness (mm)')
-plt.ylabel('$m_c$ effective (g)')
+if legendeachserie==False:
+    plt.errorbar([],[],linestyle='',marker='o',color='b',ecolor='k',label='T$\simeq$-10°C')
+    plt.errorbar([],[],linestyle='',marker='o',color='r',ecolor='k',label='T = 0°C')
+
+
+
+plt.xlabel('$h$ [mm]', fontsize=15)
+plt.ylabel('$m_c$ [g]', fontsize=15)
 plt.ylim(100,8000)
 plt.xlim(1,10)
 plt.loglog()
-plt.title('critical "force" (in grams) vs thickness (mm)')
+plt.title('Critical force at fracture vs thickness', fontsize=15)
 plt.legend()
 plt.savefig(sigmac_dir_path + f'mc_eff_vs_h_all_results_labeled_loglog.pdf',dpi=300)
+plt.savefig('C:/Users/Vasco Zanchi/Desktop/presentations/interfreeze_2026/mc_eff_vs_h_all_results_labeled_loglog.pdf',dpi=300)
+
 plt.show()
 
 #%% même plot mais avec differentes couleurs suivant les tailles d'échantillons
@@ -201,9 +215,14 @@ handles = [
 ]
 #plt.colorbar()
 plt.loglog()
-#plt.xlim(0,11)
+#plt.xlim(0.9,14)
 #plt.ylim(0, 6000)
-plt.legend(handles=handles, title="array_L")
+plt.ylabel('$m_c$ [g]', fontsize=15)
+plt.xlabel('$h$ [mm]', fontsize=15)
+plt.legend(handles=handles, title="Sample length [m]")
+plt.title('Critical force at fracture vs thickness', fontsize=15)
+plt.savefig('C:/Users/Vasco Zanchi/Desktop/presentations/interfreeze_2026/mc_vs_h_allsamples.pdf', dpi=300)
+
 plt.show()
 
 #%% contrainte vs h avec differentes couleurs suivant les tailles d'échantillons
@@ -245,7 +264,8 @@ plt.xlim(0, np.nanmax(thicknesses_avg)*1.1)
 plt.ylim(0, np.nanmax(sigmac_array)*1.1)
 plt.xlabel('thickness (mm)')
 plt.ylabel('$\sigma_c$ (Pa)')
-plt.legend(handles=handles, title="array_L")
+plt.legend(handles=handles, title="Sample length [m]")
+plt.savefig('C:/Users/Vasco Zanchi/Desktop/presentations/interfreeze_2026/sigmac_vs_h_variousL_allexp.pdf', dpi=300)
 plt.show()
 
 #%% contrainte vs h avec differentes couleurs suivant les tailles d'échantillons
@@ -281,7 +301,9 @@ plt.xlim(0, np.nanmax(thicknesses_avg_normalized)*1.1)
 plt.ylim(0, np.nanmax(sigmac_array)*1.1)
 plt.xlabel('normalized thickness h/L')
 plt.ylabel('$\sigma_c$ (Pa)')
-plt.legend(handles=handles, title="array_L")
+plt.legend(handles=handles, title="Sample length [m]")
+plt.savefig('C:/Users/Vasco Zanchi/Desktop/presentations/interfreeze_2026/sigmac_vs_hsurL_variousL_allexp.pdf', dpi=300)
+
 plt.show()
 
 #%%

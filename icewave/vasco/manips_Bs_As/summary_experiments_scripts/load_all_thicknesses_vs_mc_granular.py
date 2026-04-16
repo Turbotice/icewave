@@ -192,13 +192,14 @@ for i in range(len(thicknesses_avg)):
 
 plt.xlabel('thickness (mm)')
 plt.ylabel('sigma_c (Pa)')
-#plt.loglog()
+plt.loglog()
 plt.title('critical stress (in grams) vs thickness (mm)')
 #plt.legend()
 #plt.savefig(sigmac_dir_path + f'mc_eff_vs_h_all_results_granular_labeled_loglog.pdf',dpi=300)
 sm = matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap)
 sm.set_array([])   # nécessaire pour certaines versions de matplotlib
 plt.colorbar(sm, ax=plt.gca(), label='Temperature of sample (°C)')
+#plt.grid(which='both')
 plt.show()
 
 #%% contrainte vs T

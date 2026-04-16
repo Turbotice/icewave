@@ -16,8 +16,8 @@ with open(matched_data_path, 'rb') as f:
 
 
 dir2savefig = f'{disk}/General/figures'
-
-
+saveplots = False
+plotgre = False
 
 #%%
 # plotting sigma_c vs Young's modulus for all matched data
@@ -43,6 +43,8 @@ dict_all = {
     'epsilondot_frac_err':[],
     'vz':[],
     'vz_err':[],
+    'vz_frac':[],
+    'vz_frac_err':[],
     'w':[],
     'L':[],
     'E':[],
@@ -101,6 +103,8 @@ dict_all['epsilondot_frac_avg'] = np.array(dict_all['epsilondot_frac_avg'])
 dict_all['epsilondot_frac_err'] = np.array(dict_all['epsilondot_frac_err'])
 dict_all['vz'] = np.array(dict_all['vz'])
 dict_all['vz_err'] = np.array(dict_all['vz_err'])
+dict_all['vz_frac'] = np.array(dict_all['vz_frac'])
+dict_all['vz_frac_err'] = np.array(dict_all['vz_frac_err'])
 
 dict_all['grain_sizes_avg_mm'] = np.array(dict_all['grain_sizes_avg_mm'])
 dict_all['grain_sizes_std_mm'] = np.array(dict_all['grain_sizes_std_mm'])
@@ -109,10 +113,9 @@ dict_all['sigma_c_avg'] = (3/2) * (1e-3* dict_all['mc_avg']*9.81 * dict_all['L']
 dict_all['sigma_c_std'] = 3 * (dict_all['mc_avg']*1e-3*9.81 * dict_all['L'] * dict_all['h_std'])/(dict_all['w'] * (dict_all['h_avg']**3))
 
 
-#dict_all['epsilon_c_avg'] = 
-
 #%%
-Summary_Gre25_samples_path = f"{disk}/Grenoble/Gre25/Summary/flexion_3pts/Summary_flexion3pts_2025.csv"
+disk_Gre = 'R:'
+Summary_Gre25_samples_path = f"{disk_Gre}/Gre25/Summary/flexion_3pts/Summary_flexion3pts_2025.csv"
 
 dict_all['Gre25_samples'] = {}
 df = pd.read_csv(Summary_Gre25_samples_path,sep=';',encoding='latin-1')
@@ -331,6 +334,26 @@ plt.legend()
 plt.show()
 
 #%%
+plt.figure()
+plt.title('Red : 0°C, Blue : between -10°C and -15°C')
+maskerr = (dict_all['h_std']/dict_all['h_avg']<1/4)&(dict_all['h_std']>0)
+mask_size = dict_all['L']==0.12
+
+mask_plot = maskerr&mask_size
+
+xdata = dict_all['h_avg'][mask_plot]/dict_all['L'][mask_plot]
+ydata = dict_all['epsilonc_avg'][mask_plot]
+xerrdata = dict_all['h_std'][mask_plot]/dict_all['L'][mask_plot]
+yerrdata = dict_all['epsilonc_err'][mask_plot]
+plt.errorbar(xdata, ydata,yerr=yerrdata,xerr=xerrdata,linestyle='',marker='',ecolor='gray')
+plt.scatter(xdata, ydata,c=colors[mask_plot],zorder=2)
+plt.loglog()
+plt.legend()
+plt.ylabel('$\epsilon_c$')
+plt.xlabel('h/L')
+plt.show()
+
+
 
 plt.figure()
 plt.title('Red : 0°C, Blue : between -10°C and -15°C')
@@ -370,7 +393,7 @@ plt.show()
 
 
 
-mask_size_temp = (dict_all['L']==0.08)&(dict_all['temperatures_samples']==0)
+mask_size_temp = (dict_all['L']==0.08)&(dict_all['temperatures_samples']<0)
 
 plt.figure()
 plt.errorbar(dict_all['h_avg'][mask_size_temp], dict_all['E'][mask_size_temp],yerr=dict_all['E_err'][mask_size_temp],xerr=dict_all['h_std'][mask_size_temp],linestyle='',marker='',ecolor='gray')
@@ -420,23 +443,23 @@ plt.show()
 # maintenant on s'intéresse à une région étroite
 
 hinf = 3e-3
-hsup = 3.5e-3
+hsup = 4e-3
 
 L2plot = 0.08
 
 # plots :
 indices2plot = np.where((dict_all['h_avg']>=hinf)&(dict_all['h_avg']<=hsup)&(dict_all['L']==L2plot))[0]
 print(indices2plot)
+if plotgre:
+    indices2plot_Gre = np.where((dict_all['Gre25_samples']['Thickness']>=hinf*1000)&(dict_all['Gre25_samples']['Thickness']<=hsup*1000))
 
-indices2plot_Gre = np.where((dict_all['Gre25_samples']['Thickness']>=hinf*1000)&(dict_all['Gre25_samples']['Thickness']<=hsup*1000))
 
-
-plt.figure()
-plt.title(f'only points between h={1000*hinf}mm and {1000*hsup}mm')
-plt.scatter(dict_all['E'][indices2plot], dict_all['sigma_c_avg'][indices2plot],c=colors[indices2plot],zorder=2)
-plt.errorbar(dict_all['E'][indices2plot], dict_all['sigma_c_avg'][indices2plot], xerr=dict_all['E_err'][indices2plot], yerr=dict_all['sigma_c_std'][indices2plot], linestyle='',ecolor='gray',zorder=1)
-plt.scatter(6e9 * np.ones_like(indices2plot_Gre), dict_all['Gre25_samples']['Critical_stress_MPa'][indices2plot_Gre]*1e6)
-plt.show()
+    plt.figure()
+    plt.title(f'only points between h={1000*hinf}mm and {1000*hsup}mm')
+    plt.scatter(dict_all['E'][indices2plot], dict_all['sigma_c_avg'][indices2plot],c=colors[indices2plot],zorder=2)
+    plt.errorbar(dict_all['E'][indices2plot], dict_all['sigma_c_avg'][indices2plot], xerr=dict_all['E_err'][indices2plot], yerr=dict_all['sigma_c_std'][indices2plot], linestyle='',ecolor='gray',zorder=1)
+    plt.scatter(6e9 * np.ones_like(indices2plot_Gre), dict_all['Gre25_samples']['Critical_stress_MPa'][indices2plot_Gre]*1e6)
+    plt.show()
 
 plt.figure()
 plt.title('hstd/havg vs havg')
@@ -465,7 +488,8 @@ plt.loglog()
 plt.legend()
 plt.xlabel('$\dot\epsilon$ (s$^{-1}$)')
 plt.ylabel('$E$ (Pa)')
-plt.savefig(f'{dir2savefig}/Eeff_vs_epsilondot_BsAs.pdf', dpi=300)
+if saveplots:
+    plt.savefig(f'{dir2savefig}/Eeff_vs_epsilondot_BsAs.pdf', dpi=300)
 plt.show()
 
 plt.figure()
@@ -484,7 +508,8 @@ plt.loglog()
 plt.legend()
 plt.xlabel('$v_z$ [m.s$^{-1}$]')
 plt.ylabel('$E$ [Pa]')
-plt.savefig(f'{dir2savefig}/Eeff_vs_vz_BsAs.pdf', dpi=300)
+if saveplots:
+    plt.savefig(f'{dir2savefig}/Eeff_vs_vz_BsAs.pdf', dpi=300)
 plt.show()
 # %%
 path2
