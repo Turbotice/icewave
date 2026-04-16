@@ -406,7 +406,7 @@ def georeference_from_param(img,H,alpha_0,focale,GPS_D):
     Lat_D,Long_D,azimuth = GPS_D
     Xreal,Yreal = georectify_image(img, H, alpha_0, focale)
     
-    if alpha_0 != np.pi/2:
+    if alpha_0 != np.pi/2:  
         
         dist2drone = H/np.tan(alpha_0)
         Lat0,Long0 = LatLong_coords_from_referencepoint(Lat_D,Long_D,
@@ -417,7 +417,7 @@ def georeference_from_param(img,H,alpha_0,focale,GPS_D):
     
     Lat,Long = XY2GPS(Xreal,Yreal,Lat0,Long0,azimuth)
     
-    return Lat,Long
+    return Lat,Long,Lat0,Long0
 
 
 #----------------------------------------------------------------------------------------------------------------
