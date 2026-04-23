@@ -58,7 +58,7 @@ if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
 
 # load velocity data 
-file2load = f'{path2data}data_buoys_velocity_{date}_{drone_ID}_{exp_ID}.pkl'
+file2load = f'{path2data}data_buoys_velocity_{date}_{drone_ID}_{exp_ID}_V2.pkl'
 with open(file2load,'rb') as pf:
     data = pickle.load(pf)
 # data = rw.load_dict_from_h5(file2load)
@@ -250,8 +250,10 @@ ax.plot(t_drone, data['drone'][key_buoy][1,:], color = 'k')
 ax.set_title(f'Drone - Buoy {key_buoy}')
 
 #%% Compare both signals
-shift = {'B4':+3489.89 + 1.5,
+shift = { 'B4':+3489.89 + 1.5,
+         # 'B4': +3489.89 + 17,
          'B2':total_shift}
+key_buoy = 'B4'
 
 fig, ax = plt.subplots()
 ax.plot(t_buoy[key_buoy][key_acq],
@@ -319,6 +321,22 @@ rw.save_dict_to_h5(sub,file2save + '.h5')
 # =============================================================================
 #%% Further tests 
 # =============================================================================
+
+# check velocity field obtained from interpolation over buoys tracking trajectories
+
+fig, axs = plt.subplots(nrows = 3, sharex = True)
+for i,key_buoy in enumerate(data['drone'].keys()):
+    axs[i].plot(t_drone - t_drone[0],data['drone'][key_buoy][1,:],label = key_buoy)
+    axs[i].legend()
+    axs[i].set_ylim([-0.25,0.25])
+    
+
+
+
+
+
+
+
 
 #%% Concatenate all acquisitions
 
