@@ -57,8 +57,8 @@ fig_folder = f'{path2data}Figures/'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
 
-# load data 
-file2load = f'{path2data}data_buoys_velocity_{date}_{drone_ID}_{exp_ID}.pkl'
+# load velocity data 
+file2load = f'{path2data}data_buoys_velocity_{date}_{drone_ID}_{exp_ID}_V2.pkl'
 with open(file2load,'rb') as pf:
     data = pickle.load(pf)
 # data = rw.load_dict_from_h5(file2load)
@@ -116,9 +116,9 @@ axs[0].legend(ncols = 3, bbox_to_anchor = (0.11, 1),
               loc='lower left')
 
 figname = f'{fig_folder}Comparison_buoys_acquisition'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
 
 #%% Compare Drone/buoys signals
 
@@ -163,6 +163,10 @@ for i,key_buoy in enumerate(data['drone'].keys()):
     axs[i].set_ylim([-0.5,0.5])
 
 axs[0].set_title(key_acq)
+
+# =============================================================================
+#%% Match drone signal and buoy signal for buoy B2 
+# =============================================================================
 
 #%% Compute correlations between drone signal and buoys acquisitions
 
@@ -210,9 +214,9 @@ ax.legend()
 fig, ax = plt.subplots(figsize = (12,6))
 key_buoy = 'B2'
 
-ax.plot(t_drone + total_shift,data['drone'][key_buoy][0,:],color = color_dict[key_buoy],label = 'drone')
+ax.plot(t_drone + total_shift,data['drone'][key_buoy][1,:],color = color_dict[key_buoy],label = 'drone')
 # ax.plot(down_t[key_buoy][key_acq],down_buoys[key_buoy][key_acq][2,:],'k-',lw = 0.5,label = 'buoy')
-ax.plot(t_buoy[key_buoy][key_acq],data['buoy'][key_buoy][key_acq][0,:],'k-',lw = 0.5,label = 'buoy')
+ax.plot(t_buoy[key_buoy][key_acq],data['buoy'][key_buoy][key_acq][2,:],'k-',lw = 0.5,label = 'buoy')
 ax.set_ylim([-0.25,0.25])
 ax.set_xlim([1708975160,1708975480])
 
@@ -226,25 +230,106 @@ ax.legend()
 # plt.savefig(figname + '.svg', bbox_inches='tight')
 # plt.savefig(figname + '.png', bbox_inches='tight')
 
-#%% Apply time shift to all buoys, using 
+
+# =============================================================================
+#%% Match Drone signal and buoy signal for buoy B4
+# =============================================================================
+
+color_dict = {'B4':'tab:orange','B2':'tab:green','B1':'tab:blue'}
+
+key_buoy = 'B4'
 key_acq = 'acq_1'
-key_buoy = 'B1'
+fig, ax = plt.subplots()
+ax.plot(t_buoy[key_buoy][key_acq],
+        data['buoy'][key_buoy][key_acq][2,:], color = color_dict[key_buoy])
+
+ax.set_title(f'{key_buoy} - {key_acq}')
 
 fig, ax = plt.subplots()
-ax.plot(data['buoy'][key_buoy][key_acq][2,:])
+ax.plot(t_drone, data['drone'][key_buoy][1,:], color = 'k')
+ax.set_title(f'Drone - Buoy {key_buoy}')
+
+#%% Compare both signals
+shift = { 'B4':+3489.89 + 1.5,
+         # 'B4': +3489.89 + 17,
+         'B2':total_shift}
+key_buoy = 'B4'
+
+fig, ax = plt.subplots()
+ax.plot(t_buoy[key_buoy][key_acq],
+        data['buoy'][key_buoy][key_acq][2,:], color = 'k',lw = 0.5, 
+        label = 'buoy')
+ax.plot(t_drone + shift[key_buoy],data['drone'][key_buoy][1,:], color = color_dict[key_buoy], 
+        label = 'drone')
+ax.set_xlim([1708978800 , 1708979100])
+ax.set_ylim([-0.25,0.25])
+
+ax.set_title(f'{key_buoy} - {key_acq}')
+ax.set_xlabel(r'$t_{epoch} \; \mathrm{(s)}$')
+ax.set_ylabel(r'$u_z \; \mathrm{(m.s^{-1})}$')
+ax.legend()
+
+
+# =============================================================================
+#%% I did not succeed in matching drone and buoys signal for buoy B1
+# =============================================================================
+
+# =============================================================================
+#%% Saving drone and buoys subsignal for later illustration  
+# =============================================================================
+
+# define time range over which we want to keep buoys signals 
+time_range = {'B2':[1708975160,1708975480],
+              'B4':[1708978800 , 1708979100]}
+
+# create structure of sub signals
+sub = {'B2':{},'B4':{}}
+key_acq = 'acq_1'
+
+for key_buoy in sub.keys():
+    sub[key_buoy]['drone'] = {'u':data['drone'][key_buoy],
+                              't_stamp':t_drone,
+                              'shift':shift[key_buoy],
+                              'fs':30}
+    sub[key_buoy]['buoy'] = {'u':data['buoy'][key_buoy][key_acq][:,],
+                             't_stamp':t_buoy[key_buoy][key_acq],
+                             'fs':50}
+    sub[key_buoy]['time_range'] = time_range[key_buoy]
+    
+sub['structure'] = {'drone':
+                    {'u':'interp velocity on buoy traj: u[0,:] = ux, u[1,:] = uz',
+                     't_stamp': 'time stamp from UAV flightrecords',
+                     'shift': 'time shift to apply to drone time stamp to match buoys and drone signals',
+                     'fs': 'sampling frequency'},
+                    'buoy':
+                        {'u': 'buoy velocity (u[0,:],u[1,:],u[2,:]) = (ux,uy,uz), filtered',
+                         't_stamp':'buoy time stamp',
+                         'fs': 'sampling frequency'},
+                    'time_range': 'time intervals within signals are matching. Buoy timestamp as ref'}
+        
+
+file2save =  f'{path2data}sub_signals_matching_B2_B4_{date}_{drone_ID}_{exp_ID}'
+with open(file2save + '.pkl','wb') as pf:
+    pickle.dump(sub,pf)
+    
+rw.save_dict_to_h5(sub,file2save + '.h5')
 
 
 
 
 
-#%%
-key_acq = 'acq_0'
-fig, axs = plt.subplots(nrows = 3,ncols = 1)
+# =============================================================================
+#%% Further tests 
+# =============================================================================
+
+# check velocity field obtained from interpolation over buoys tracking trajectories
+
+fig, axs = plt.subplots(nrows = 3, sharex = True)
 for i,key_buoy in enumerate(data['drone'].keys()):
-    axs[i].plot(down_buoys[key_buoy][key_acq][2,:],color = color_dict[key_buoy])
-    axs[i].plot(data['buoy'][key_buoy][key_acq][2,:],'k-')
-    axs[i].set_ylim([-0.5,0.5])
-
+    axs[i].plot(t_drone - t_drone[0],data['drone'][key_buoy][1,:],label = key_buoy)
+    axs[i].legend()
+    axs[i].set_ylim([-0.25,0.25])
+    
 
 
 
