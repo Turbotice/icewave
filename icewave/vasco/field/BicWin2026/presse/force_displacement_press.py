@@ -115,7 +115,7 @@ plt.show()
 #%% save in dictionary of all acqs for this acqnum value
 
 
-os.makedirs("results", exist_ok=True)
+#os.makedirs("results", exist_ok=True)
 fp = f"{outputdir}/fits_force_displacement.pkl"
 
 all_results = pickle.load(open(fp, "rb")) if os.path.exists(fp) else {}
@@ -126,4 +126,5 @@ if (ecr=='y') or (ecr==''):
     print('données enregistrées')
 else:
     pass
+
 # %%

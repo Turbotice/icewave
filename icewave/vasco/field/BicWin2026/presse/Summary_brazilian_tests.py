@@ -39,6 +39,7 @@ arr_Fc_kN = convert_to_arrayoffloats(df['Fc_kN'].values)
 arr_D_mm = df['D_mm'].values
 arr_T_core_celsius = convert_to_arrayoffloats(df['T_core_celsius'].values)
 arr_mass_kg = 1e-3 * df['mass_g'].values
+arr_mass_kg_deduced = convert_to_arrayoffloats(df['mass_kg_deduced'].values)
 arr_loc_core = df['loc_core'].values
 
 #indices2plot = np.where((arr_qualite_test == 'ok')|(arr_qualite_test=='perfect'))[0]
@@ -136,8 +137,8 @@ for i in range(len(dict_allfits.keys())):
     acqnums_2[i] = acqnum_key
     slopes_2[i] = dict_allfits[acqnum_key]['fit_1']['a']
     intercepts_2[i] = dict_allfits[acqnum_key]['fit_1']['b']
-    slopeserr_2[i] = np.diag(dict_allfits[acqnum_key]['fit_1']['cov'])[0]
-    interceptserr_2[i] = np.diag(dict_allfits[acqnum_key]['fit_1']['cov'])[1]
+    slopeserr_2[i] = np.sqrt(np.diag(dict_allfits[acqnum_key]['fit_1']['cov'])[0])
+    interceptserr_2[i] = np.sqrt(np.diag(dict_allfits[acqnum_key]['fit_1']['cov'])[1])
 
 slopes_2_usi = 1e6 * slopes_2 # units : N/m
 slopeserr_2_usi = 1e6 * slopeserr_2
@@ -148,8 +149,46 @@ interceptserr_2_usi = 1e3 * interceptserr_2
 common, a_ind, b_ind = np.intersect1d(arr_acqnum, acqnums_2, return_indices=True)
 
 plt.figure()
-plt.plot(arr_T_core_celsius[b_ind], slopes_2_usi*16/(3*np.pi*arr_L_mm[b_ind]*1e-3*arr_D_mm[b_ind]*1e-3), 'o')
+plt.xlabel('Temperature [°C]')
+plt.ylabel('Effective modulus [Pa]')
+plt.plot(arr_T_core_celsius[a_ind], slopes_2_usi*16/(3*np.pi*arr_L_mm[a_ind]*1e-3*arr_D_mm[a_ind]*1e-3), 'o')
 plt.yscale('log')
+
+#%% Load corrected data (due to presence of wood)
+with open(r"H:\data\0223\Tests_Bresiliens\results\fits_force_displacement_correcwood.pkl", 'rb') as f:
+    dict_allfits_correcwood = pickle.load(f)
+
+Eice_approx_arr = np.empty(len(dict_allfits.keys()), dtype=object)
+
+for i in range(len(dict_allfits_correcwood.keys())):
+    acqnum_key = list(dict_allfits.keys())[i]
+    Eice_approx = dict_allfits_correcwood[acqnum_key]['fit_1_correc_wood']['Eice_approx']
+
+    Eice_approx_arr[i] = Eice_approx
+
+
+Eeff = slopes_2_usi*16/(3*np.pi*arr_L_mm[a_ind]*1e-3*arr_D_mm[a_ind]*1e-3)
+
+plt.figure()
+plt.xlabel('Temperature [°C]')
+plt.ylabel('Effective modulus [Pa]')
+plt.plot(arr_T_core_celsius[a_ind], Eeff, 'o', label='fit on raw data')
+plt.plot(arr_T_core_celsius[a_ind], Eice_approx_arr, 'o', label='correction due to presence of wood sticks')
+plt.yscale('log')
+plt.legend()
+
+plt.figure()
+plt.xlabel('Lineic density m/L [kg/m]')
+plt.ylabel('Effective modulus [Pa]')
+#plt.plot(arr_mass_kg_deduced[a_ind]/(arr_L_mm[a_ind]*1e-3), Eeff, 'o', label='fit on raw data')
+plt.plot(arr_mass_kg_deduced[a_ind]/(arr_L_mm[a_ind]*1e-3), Eice_approx_arr, 'o', label='correction due to presence of wood sticks')
+plt.yscale('log')
+Eavg = np.mean(Eice_approx_arr)
+Estd = np.std(Eice_approx_arr)
+plt.title('Average effective modulus with this method : Eice_ieff = '+str(np.round(Eavg/1e9,2))+' +- '+str(np.round(Estd/1e9,2))+ ' GPa')
+plt.legend()
+
+
 # %%
 def Weibull_cdf(x, x0=1, m=1):
     return 1 - np.exp(-(x/x0)**m)
@@ -172,3 +211,4 @@ plt.ylabel('Cumulative distribution function')
 plt.xlabel('$\sigma_c$ [MPa]')
 plt.legend()
 plt.grid()
+# %%

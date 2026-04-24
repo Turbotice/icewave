@@ -485,9 +485,24 @@ plt.loglog()
 plt.show()
 
 # %%
-"""
-dict_path = f"{disk}/manips_BsAs/Summary/dictionaries_alldata/dict_all_results_sigmac_1.pkl"
+
+
+dict_path = f"{disk}/manips_BsAs/Summary/dictionaries_alldata/dict_all_results_1darrays.pkl"
+
+dict2save = {}
+
+dict2save['thicknesses_avg'] = thicknesses_avg
+dict2save['thicknesses_std'] = thicknesses_std
+dict2save['mc_avg'] = mc_avg
+dict2save['mc_err'] = mc_avg
+dict2save['mass_balance'] = mass_balance
+dict2save['mass_pilar'] = mass_pilar
+dict2save['sigmac_array'] = sigmac_array
+dict2save['sigmac_err_array'] = sigmac_err_array
+dict2save['array_L'] = array_L
+dict2save['array_temperatures_samples'] = array_temperatures_samples
+dict2save['array_defect_sizes'] = array_defect_sizes
+dict2save['mask_nodefect'] = mask_nodefect
 
 with open(dict_path, 'wb') as f:
-    pickle.dump(dict_all_results, f)
-"""
+    pickle.dump(dict2save, f)

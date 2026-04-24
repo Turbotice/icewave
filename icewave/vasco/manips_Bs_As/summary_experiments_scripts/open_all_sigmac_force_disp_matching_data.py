@@ -163,11 +163,11 @@ dict_all['Gre25_samples']['time2break_sec_approx'] = convert_array2floatarray(di
 ##########################################################
 ### SAVE dict_all CONTAINING BOTH BsAs and Gre25 data ####
 ##########################################################
-
+"""
 output_path = f"{dict_dir}dict_BsAs_Gre25_data.pkl"
 with open(output_path, 'wb') as f:
     pickle.dump(dict_all, f)
-
+"""
 ##########################################################
 ##########################################################
 ##########################################################
