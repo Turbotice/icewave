@@ -53,7 +53,11 @@ S = rw.load_dict_from_h5(file2load)
 
 #%% Define fig_folder
 
-fig_folder = f'{base}Summary/SWIIFT_article/'
+# fig_folder = f'{base}Summary/SWIIFT_article/'
+# if not os.path.isdir(fig_folder):
+#     os.mkdir(fig_folder)
+
+fig_folder = f'F:/PhD_Manuscript/ch4/'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
     
@@ -124,9 +128,9 @@ ax.set_ylabel(r'$Y \; \mathrm{(m)}$',labelpad = 5)
 ax.set_aspect(1) # set aspect ratio to 1 
 
 figname = f'{fig_folder}situation_picture_XY_{drone_ID}_{exp_ID}_origin_lower_left'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
 
 #%% Compute GPS coordinates 
 
