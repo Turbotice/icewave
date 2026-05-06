@@ -37,12 +37,12 @@ def load_csv_params_allacq(csv_file_path = f"{disk_example}/manips_BsAs/Summary/
     return data_csv
 
 def correspond_samplenum_acqnum(date='1111', acq=1,serie=1, disk='D:'):
-    if serie==None:
+    if (serie==None)|(np.isnan(serie)):
         q = (acq - 1) //3
         r = (acq - 1) % 3
         sample_num_found = str(int(10 * (q + 1) + (r + 1)))
         fd = sample_num_found[0]
-        sd = sample_num_found[1]        
+        sd = sample_num_found[1]
     else:
         infos_series_path = f'{disk}/manips_BsAs/epaisseurs/{date}/infos_series.txt'
         data_infos_series = np.loadtxt(infos_series_path, skiprows=1)

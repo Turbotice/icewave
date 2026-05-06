@@ -96,6 +96,23 @@ plt.savefig(f'{dir_path}sigmac_vs_T.pdf', dpi=300)
 plt.legend()
 plt.show()
 
+plt.figure(figsize=(10, 6))
+plt.scatter((arr_mass_kg_deduced/(arr_L_mm*np.pi*(arr_D_mm/2)**2))[mask_quality&mask_HaHa], arr_sigma_c[mask_quality&mask_HaHa], color='tab:blue', label='Ha!Ha!')
+plt.scatter((arr_mass_kg_deduced/(arr_L_mm*np.pi*(arr_D_mm/2)**2))[mask_quality&mask_Hatee], arr_sigma_c[mask_quality&mask_Hatee], color='tab:orange', label='Hatée')
+plt.scatter((arr_mass_kg_deduced/(arr_L_mm*np.pi*(arr_D_mm/2)**2))[mask_quality&mask_Capelans_beach], arr_sigma_c[mask_quality&mask_Capelans_beach], color='tab:green', label='Capelans beach')
+plt.scatter((arr_mass_kg_deduced/(arr_L_mm*np.pi*(arr_D_mm/2)**2))[mask_quality&mask_Capelans_floating_ice], arr_sigma_c[mask_quality&mask_Capelans_floating_ice], color='tab:red', label='Capelans floating ice')
+
+plt.xlabel('density [kg/m$^3$]')
+plt.ylabel('Sigma_c (MPa)')
+#plt.xlim(-5, 0)
+plt.ylim(0,np.nanmax(arr_sigma_c[mask_quality])*1.1)
+plt.title('Sigma_c vs T')
+#plt.savefig(f'{dir_path}sigmac_vs_T.pdf', dpi=300)
+plt.legend()
+plt.show()
+
+
+#%% Plot plus joli
 
 dict_fig1 = graphes.defaults_params_errorbar_categories()
 

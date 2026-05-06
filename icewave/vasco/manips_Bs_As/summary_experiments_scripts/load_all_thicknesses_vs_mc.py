@@ -28,7 +28,9 @@ mc_avg = []
 mc_err = []
 array_L = []
 array_temperatures_samples = []
+array_date = []
 array_defect_sizes = []
+array_time_at_warm_sec = []
 
 for i in range(len(dates)):
     date = dates[i]
@@ -53,6 +55,8 @@ for i in range(len(dates)):
         array_defect_sizes.append(np.ones(len(dict_all_results['dict_results_'+date]['thicknesses_avg'])) * np.nan)
 
     array_temperatures_samples.append(temperature_samples[i] * np.ones(len(dict_all_results['dict_results_'+date]['thicknesses_avg'])))
+    array_date.append(np.full(len(dict_all_results['dict_results_'+date]['thicknesses_avg']), date))
+    array_time_at_warm_sec.append(dict_all_results['dict_results_'+date]['time_at_warm_sec'])
 
 thicknesses_avg = [item for sublist in thicknesses_avg for item in sublist]
 thicknesses_std = [item for sublist in thicknesses_std for item in sublist]
@@ -60,7 +64,9 @@ mc_avg = [item for sublist in mc_avg for item in sublist]
 mc_err = [item for sublist in mc_err for item in sublist]
 array_L = [item for sublist in array_L for item in sublist]
 array_temperatures_samples = [item for sublist in array_temperatures_samples for item in sublist]
+array_date = [item for sublist in array_date for item in sublist]
 array_defect_sizes = [item for sublist in array_defect_sizes for item in sublist]
+array_time_at_warm_sec = [item for sublist in array_time_at_warm_sec for item in sublist]
 
 thicknesses_avg = np.array(thicknesses_avg)
 thicknesses_std = np.array(thicknesses_std)
@@ -68,7 +74,9 @@ mc_avg = np.array(mc_avg)
 mc_err = np.array(mc_err)
 array_L = np.array(array_L)
 array_temperatures_samples = np.array(array_temperatures_samples)
+array_date = np.array(array_date)
 array_defect_sizes = np.array(array_defect_sizes)
+array_time_at_warm_sec = np.array(array_time_at_warm_sec)
 
 mask_nodefect = (np.isnan(array_defect_sizes)==True)
 
@@ -501,8 +509,10 @@ dict2save['sigmac_array'] = sigmac_array
 dict2save['sigmac_err_array'] = sigmac_err_array
 dict2save['array_L'] = array_L
 dict2save['array_temperatures_samples'] = array_temperatures_samples
+dict2save['array_date'] = array_date
 dict2save['array_defect_sizes'] = array_defect_sizes
 dict2save['mask_nodefect'] = mask_nodefect
+dict2save['time_at_warm_sec'] = array_time_at_warm_sec
 
 with open(dict_path, 'wb') as f:
     pickle.dump(dict2save, f)

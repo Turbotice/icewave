@@ -222,6 +222,36 @@ plt.ylabel('Deflection at the center (m)')
 plt.legend()
 plt.show()
 # %%
+
+"""def beam_profile_theory(x, F=1, E=1e9, L=8e-2, w=4e-2, h=4e-3):
+    I=(1/12)*w*h**3
+    if x<=(L/2):
+        return ((F*x)/(48*E*I)) * (3*L**2 - 4*x**3)
+    elif x>L/2:
+        return ((F*(L/2-x))/(48*E*I)) * (3*L**2 - 4*(L/2-x)**3)
+"""
+
+def beam_profile_theory(x, F=1, E=1e9, L=8e-2, w=4e-2, h=4e-3):
+    x = np.asarray(x)
+    I = (1/12) * w * h**3
+    x_sym = L - x  # mirror of x with respect to x=L/2
+    y1 = (F * x) / (48 * E * I) * (3 * L**2 - 4 * x**2)
+    y2 = (F * x_sym) / (48 * E * I) * (3 * L**2 - 4 * x_sym**2)
+    return np.where(x <= L/2, y1, y2)
+
+%matplotlib inline
+plt.figure()
+plt.plot(dict_results['plate_E3.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['xmean'], dict_results['plate_E3.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['uz_mean'],'.')#/np.max(np.abs(dict_results['plate_E3.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['uz_mean'])),'.')
+hval=4e-3
+wval=4e-2
+Lval=8e-2
+Eval=3e9
+xvals=np.linspace(0,Lval)
+plt.plot(xvals, beam_profile_theory(xvals, F=-10, E=Eval, L=Lval, w=wval, h=hval))#/np.abs(beam_profile_theory(Lval/2,  F=-10, E=Eval, L=Lval, w=wval, h=hval)))
+
+
+
+#%%
 # verif que pour 2 modules d'young differents la forme de la plaque déformée est qualitativement la même
 # pour ca on normalise les 2 courbes qu'on compare
 %matplotlib qt

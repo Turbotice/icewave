@@ -283,7 +283,7 @@ def plot_variable(results, var_name="x", fps=1):
 
 #%%
 if __name__ == "__main__":
-    saveresults = True
+    saveresults = False
     plotresults = True
     gendir = "C:/Users/Vasco Zanchi/Desktop/piv_brazilian_test/P1047763"
     base = f"{gendir}/image_sequence"  # dossier contenant les images

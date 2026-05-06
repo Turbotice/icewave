@@ -148,9 +148,10 @@ def str_to_float(value):
         print(value)
         return float(value)
 def convert_array2floatarray(arr):
+    arr_new = np.zeros(len(arr))
     for i in range(len(arr)):
-        arr[i] = str_to_float(arr[i])
-    return arr
+        arr_new[i] = str_to_float(arr[i])
+    return arr_new
 
 dict_all['Gre25_samples']['Thickness'] = convert_array2floatarray(dict_all['Gre25_samples']['Thickness'])
 dict_all['Gre25_samples']['Thickness_err'] = convert_array2floatarray(dict_all['Gre25_samples']['Thickness_err'])

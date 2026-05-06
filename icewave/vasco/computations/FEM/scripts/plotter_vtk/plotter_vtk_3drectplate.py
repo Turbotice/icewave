@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 # -----------------------------
 # 1. Load the SfePy result
 # -----------------------------
-disk = 'E:'
+disk = 'D:'
 
 def make_filename(E_GPa, L_mm, w_mm, h_mm, Fz):
     """
