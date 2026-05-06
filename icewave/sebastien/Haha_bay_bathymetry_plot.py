@@ -128,7 +128,7 @@ coast = zones_gdf.drop(index = 1) # keep only land
 
 #%% Georeference picture
 GPS_D = (S['GPS']['latitude'],S['GPS']['longitude'],S['GPS']['azimuth'])
-img_lat,img_long = dp.georeference_from_param(img,S['DRONE']['h_drone'],S['DRONE']['alpha_0'],
+img_lat,img_long,lat0,long0 = dp.georeference_from_param(img,S['DRONE']['h_drone'],S['DRONE']['alpha_0'],
                                               S['DRONE']['focale'],GPS_D)
 
 img_extent = [img_long.min(), img_long.max(), img_lat.min(),img_lat.max()]
@@ -170,8 +170,8 @@ cbar.set_label('Depth (m)')
 coast.plot(ax=ax, facecolor='whitesmoke', edgecolor='black', linewidth=1.8, zorder=2)
 
 # Add UAV picture 
-#ax.pcolormesh(img_long,img_lat,img[:,:,2],shading = 'auto',cmap = 'gray',zorder = 1)
-ax.plot(img_long.mean(),img_lat.mean(),'s',color = 'k')
+ax.pcolormesh(img_long,img_lat,img[:,:,2],shading = 'auto',cmap = 'gray',zorder = 1)
+# ax.plot(img_long.mean(),img_lat.mean(),'s',color = 'k')
 
 ax.set_xlim([long_min,long_max])
 ax.set_ylim([lat_min,lat_max])
@@ -182,9 +182,9 @@ ax.set_ylabel('Latitude (°)')
 
 figname = f'{fig_folder}Haha_bathymetry_SWIIFT_BicWin24'
 
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
 
 
 

@@ -33,19 +33,20 @@ import math
 import icewave.geophone.package_geophone as geopack
 
 #%% Set parameters 
-year = '2026'
-date = '0129' #date format, 'mmdd'
-acqu_numb = '0003' #acquisition number 
+year = '2025'
+date = '0204' #date format, 'mmdd'
+acqu_numb = '0005' #acquisition number 
 
-path2data = os.path.join('F:/Rimouski_2026/',date,'Geophones/')
+path2data = os.path.join('E:/Rimouski_2025/Data/',date,'Geophones/')
 
 # set path to geophone correspondence table
-geophones_table_path = 'C:/Users/sebas/git/icewave/sebastien/geophones/geophones_table'
+# geophones_table_path = 'C:/Users/sebas/git/icewave/sebastien/geophones/geophones_table'
+geophones_table_path = 'C:/Users/sebas/Github/icewave/icewave/sebastien/geophones/geophones_table'
 # channel = 0  # 0 for E, 1 for N, 2 for Z. 
 
 #files need to be organised as: data/0210/Geophones/0001/minised files
 
-geophones_spacing = 6 # space between geophones, in meter 
+geophones_spacing = 3 # space between geophones, in meter 
 signal_length = 1 # duration in seconds 
 channel_dic = {
     1: "N",
@@ -216,6 +217,24 @@ while idx_stacking < nb_stacking :
 k_uwp= np.linspace(0,(nb_stacking + 1)*max(k),FK_uwp.shape[0])
 F, K_uwp = np.meshgrid(f, k_uwp)
 
+# Set a dictionnary for saving FK matrix 
+file_FK_name = f'{path2data}{year}_{date}_acq{acqu_numb}_FK_dict.pkl'
+if os.path.isfile(file_FK_name):
+    print('FK dictionnary already exists')
+    with open(file_FK_name,'rb') as pfile:
+        FK_dict = pickle.load(pfile)
+else:
+    FK_dict = {}
+    
+current_key = f'composante_{composante}_channel_{channel}_dir_{direction}'
+if flexure_wave:
+    FK_dict[current_key] = {'k':k_uwp,'f':f,'FK':FK_uwp}
+else:
+    FK_dict[current_key] = {'k':k,'f':f,'FK':FK_normalized}
+
+with open(file_FK_name,'wb') as pf:
+    pickle.dump(FK_dict,pf)
+    
 ################################################
 #%%---------- Plotting FK ---------------------
 ################################################
@@ -227,7 +246,6 @@ ymax = 400  # Maximum frequency
 xmin = 0  # Minimum wavenumber
 xmax = 4  # Maximum wavenumber
 
-
 #-----------------------------------------------
 # Set parameters 
 threshold = 0.2 # minimum relative amplitude to detect a local maximum in the dispersion relation FK plot 
@@ -236,6 +254,9 @@ prec = precision_k[flexure_wave]
 # 0: horizontal_wave 1: flexure_wave
 semirange_freq = 5 # semi-range of frequencies for horizontal waves
 nb_points = 12 # points to select on graph FK flexural
+#-----------------------------------------------
+
+
 #-----------------------------------------------
 
 fig, ax1 = plt.subplots(1, 1, figsize=fig_size)
@@ -392,6 +413,8 @@ elif horizontal_wave:
 #%% Plot and save a clean graph
 
 fig, ax1 = plt.subplots(1, 1, figsize=fig_size)
+ymin = 0
+ymax = 200
 
 if horizontal_wave:
     # Computes extents for imshow
@@ -414,11 +437,7 @@ if horizontal_wave:
         wave_type = 'QS0'
         
     figname = fig_folder + 'Horizontal_FKplot_' + wave_type + '_acqu_' + acqu_numb + '_dir'  + str(direction) + '_sig_length_' + str(signal_length).replace('.','p')
-
-    plt.savefig(figname + '.pdf', dpi = 300, bbox_inches = 'tight')
-    plt.savefig(figname + '.png', dpi = 300, bbox_inches = 'tight')
-    
-    
+        
 elif flexure_wave:
     c1 = ax1.imshow(np.transpose(FK_uwp), aspect = 'auto', cmap='gnuplot2',
                     origin = 'lower',extent = extents(k_uwp) + extents(f),vmin = vmin, vmax = vmax)
@@ -433,8 +452,8 @@ elif flexure_wave:
     wave_type = 'QS'
     figname = fig_folder + 'Flexural_FKplot_' + wave_type + '_acqu_' + acqu_numb + '_dir'  + str(direction)
 
-    plt.savefig(figname + '.pdf', dpi = 300, bbox_inches = 'tight')
-    plt.savefig(figname + '.png', dpi = 300, bbox_inches = 'tight')
+# plt.savefig(figname + '.pdf', dpi = 300, bbox_inches = 'tight')
+# plt.savefig(figname + '.png', dpi = 300, bbox_inches = 'tight')
     
 #%% Save phase velocity data in a dictionnary  
 

@@ -25,14 +25,19 @@ import icewave.sebastien.set_graphs as set_graphs
 
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif', serif='Computer Modern')
+
+def extents(f):
+    """ Computes the extents of an array, returns extremities to be used with plt.imshow """
+    delta = f[1] - f[0]
+    return [f[0] - delta/2, f[-1] + delta/2]
 #%% Import data 
 
-year = '2024'
-date = '0909' #date format, 'mmdd'
-acqu_numb = '0001' #acquisition number 
+year = '2025'
+date = '0204' #date format, 'mmdd'
+acqu_numb = '0005' #acquisition number 
 
-path2data = os.path.join('E:/Amundsen_RA_2024/Data/',date,'Geophones/')
-signal_length = 0.3
+path2data = os.path.join('E:/Rimouski_2025/Data/',date,'Geophones/')
+signal_length = 1
 
 fig_folder = path2data + acqu_numb + '/Results/' # folder where figures are saved 
 
@@ -133,8 +138,8 @@ ax.set_ylabel(r'$f \: \mathrm{(Hz)}$')
 ax.legend()
 
 #%% Find ice thickness
-h_precision = 0.05 # precision on ice thickness (in meter)
-h = np.arange(0.5,8.0,h_precision) # array of height tested 
+h_precision = 0.01 # precision on ice thickness (in meter)
+h = np.arange(0.1,1.0,h_precision) # array of height tested 
 
 # find h_ice that minimzes distance to data points 
 l2_norm = np.zeros(len(h))
@@ -166,8 +171,8 @@ ax.legend()
 # ax.set_yscale('log')
 
 figname = f'{fig_folder}hice_inversion_{date}_acq_{acqu_numb}'
-plt.savefig(figname + '.pdf', bbox_inches = 'tight')
-plt.savefig(figname + '.png', bbox_inches = 'tight')
+# plt.savefig(figname + '.pdf', bbox_inches = 'tight')
+# plt.savefig(figname + '.png', bbox_inches = 'tight')
 
 results['h_ice'] = h_ice
 
@@ -182,6 +187,205 @@ fig, ax = plt.subplots()
 ax.plot(h,l2_norm)
 ax.set_xlabel('$h \; \mathrm{(m)}$')
 ax.set_ylabel('$||k_{th} - k_{exp}||_2$')
+
+
+
+# =============================================================================
+#%% Create plots superposing KF spectrum and theory
+# =============================================================================
+
+#%% Load FK dictionnary 
+
+file_FK = f'{path2data}{year}_{date}_acq{acqu_numb}_FK_dict.pkl'
+with open(file_FK,'rb') as pf:
+    FK_dict = pickle.load(pf)
+
+
+#%% Create subplot 3 panels
+
+direction = 1
+c_w = 1450 # sound celerity in water 
+rho_w = 1027 # density of water 
+
+# compute best thickness that matches detected points on flexural wave dispersion relation
+h_precision = 0.01 # precision on ice thickness (in meter)
+h = np.arange(0.1,1.0,h_precision) # array of height tested 
+
+# find h_ice that minimzes distance to data points 
+l2_norm = np.zeros(len(h))
+for i in range(len(h)):
+    k_mode_synthetic, k_QS0, k_SH0, cphQS = geopack.wavenumbers_stein(results['rho_ice'], h[i], 
+                                                              results['E'], results['nu'],s[key_dir]['f'],c_w,rho_w)
+    error = np.nansum(np.power((s[key_dir]['k']-k_mode_synthetic),2))
+    l2_norm[i] = np.sqrt(error)
+    #plt.plot(f_mode, k_mode_synthetic, color='b', label='Line between points')  
+h_ice = h[np.argmin(l2_norm)] # keep thickness of ice that minimizes the error
+print(h_ice)
+
+#%%
+set_graphs.set_matplotlib_param('square')
+fig, axs = plt.subplots(ncols = 3, figsize = (14,6), constrained_layout = True)
+
+for i in range(len(axs)):
+    if i == 0:
+        ax = axs[0]
+        composante = 'N'
+        channel = 1
+        key = f'composante_{composante}_channel_{channel}_dir_{direction}'
+
+        ax.imshow(np.transpose(FK_dict[key]['FK']),aspect = 'auto', origin = 'lower',cmap = 'gray_r',
+                  extent = extents(FK_dict[key]['k']) + extents(FK_dict[key]['f']),vmin = 0,vmax = 1)
+        ax.set_ylim([0,400])
+
+        ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$')
+        ax.set_ylabel(r'$f \; \mathrm{(Hz)}$')
+
+        # plot theory
+        x_th = np.linspace(FK_dict[key]['k'].min(),FK_dict[key]['k'].max(),100)
+        y_th = results['C_longi']*x_th/2/np.pi
+
+        ax.plot(x_th,y_th,'--', color = 'tab:red',lw = 3)
+
+    elif i == 1:
+        ax = axs[1]
+        
+        composante = 'E'
+        channel = 0
+        key = f'composante_{composante}_channel_{channel}_dir_{direction}'
+
+        ax.imshow(np.transpose(FK_dict[key]['FK']),aspect = 'auto', origin = 'lower',cmap = 'gray_r',
+                  extent = extents(FK_dict[key]['k']) + extents(FK_dict[key]['f']),vmin = 0,vmax = 1)
+        ax.set_ylim([0,400])
+
+        ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$')
+        ax.set_ylabel(r'$f \; \mathrm{(Hz)}$')
+
+        # plot theory
+        x_th = np.linspace(FK_dict[key]['k'].min(),FK_dict[key]['k'].max(),100)
+        y_th = results['C_shear']*x_th/2/np.pi
+
+        ax.plot(x_th,y_th,'--', color = 'tab:red',lw = 3)
+        
+    else:
+        ax = axs[i]
+        composante = 'Z'
+        channel = 2
+        key = f'composante_{composante}_channel_{channel}_dir_{direction}'
+        
+        ax.imshow(np.transpose(FK_dict[key]['FK']),aspect = 'auto', origin = 'lower',cmap = 'gray_r',
+                  extent = extents(FK_dict[key]['k']) + extents(FK_dict[key]['f']),vmin = 0,vmax = 1)
+        ax.set_ylim([0,200])
+
+        ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$')
+        ax.set_ylabel(r'$f \; \mathrm{(Hz)}$')
+        
+        # # plot detected points
+        # key_dir = f'dir{direction}'
+        # ax.plot(s[key_dir]['k'],s[key_dir]['f'],'.', color = 'tab:red')
+        
+        # plot theory
+        freq_th = np.linspace(s[key_dir]['f'].min(),s[key_dir]['f'].max(),100)
+        k_mode_synthetic, k_QS0, k_SH0, cphQS = geopack.wavenumbers_stein(results['rho_ice'], h_ice, 
+                                                                  results['E'], results['nu'],freq_th,c_w,rho_w)
+        ax.plot(k_mode_synthetic,freq_th,'--',color = 'tab:red',lw = 3,label = label_th)
+
+figname = f'E:/PhD_manuscript/ch5/geophone_BicWin/{year}_{date}_acq_{acqu_numb}_dispersion_relation_QS0_SH0_QS'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.svg', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
+
+
+
+#%% Create plot for flexural wave
+
+composante = 'Z'
+channel = '2'
+direction = 1
+key = f'composante_{composante}_channel_{channel}_dir_{direction}'
+
+c_w = 1450 # sound celerity in water 
+rho_w = 1027 # density of water 
+
+fig, ax = plt.subplots()
+ax.imshow(np.transpose(FK_dict[key]['FK']),aspect = 'auto', origin = 'lower',cmap = 'gray_r',
+          extent = extents(FK_dict[key]['k']) + extents(FK_dict[key]['f']),vmin = 0,vmax = 1)
+ax.set_ylim([0,200])
+
+ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$')
+ax.set_ylabel(r'$f \; \mathrm{(Hz)}$')
+
+# plot detected points
+key_dir = f'dir{direction}'
+ax.plot(s[key_dir]['k'],s[key_dir]['f'],'.', color = 'tab:red')
+
+# compute best thickness value that matches current curve
+h_precision = 0.01 # precision on ice thickness (in meter)
+h = np.arange(0.1,1.0,h_precision) # array of height tested 
+
+# find h_ice that minimzes distance to data points 
+l2_norm = np.zeros(len(h))
+for i in range(len(h)):
+    k_mode_synthetic, k_QS0, k_SH0, cphQS = geopack.wavenumbers_stein(results['rho_ice'], h[i], 
+                                                              results['E'], results['nu'],s[key_dir]['f'],c_w,rho_w)
+    error = np.nansum(np.power((s[key_dir]['k']-k_mode_synthetic),2))
+    l2_norm[i] = np.sqrt(error)
+    #plt.plot(f_mode, k_mode_synthetic, color='b', label='Line between points')  
+h_ice = h[np.argmin(l2_norm)] # keep thickness of ice that minimizes the error
+print(h_ice)
+
+# plot theory
+freq_th = np.linspace(s[key_dir]['f'].min(),s[key_dir]['f'].max(),100)
+k_mode_synthetic, k_QS0, k_SH0, cphQS = geopack.wavenumbers_stein(results['rho_ice'], h_ice, 
+                                                          results['E'], results['nu'],freq_th,c_w,rho_w)
+ax.plot(k_mode_synthetic,freq_th,'--',color = 'tab:orange',lw = 3,label = label_th)
+
+
+#%% Create plot for SH0 
+
+composante = 'E'
+channel = 0
+direction = 1
+key = f'composante_{composante}_channel_{channel}_dir_{direction}'
+
+fig, ax = plt.subplots()
+ax.imshow(np.transpose(FK_dict[key]['FK']),aspect = 'auto', origin = 'lower',cmap = 'gray_r',
+          extent = extents(FK_dict[key]['k']) + extents(FK_dict[key]['f']),vmin = 0,vmax = 1)
+ax.set_ylim([0,400])
+
+ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$')
+ax.set_ylabel(r'$f \; \mathrm{(Hz)}$')
+
+# plot theory
+x_th = np.linspace(FK_dict[key]['k'].min(),FK_dict[key]['k'].max(),100)
+y_th = results['C_shear']*x_th/2/np.pi
+
+ax.plot(x_th,y_th,'--', color = 'tab:red',lw = 3)
+
+#%% Create plot for QS0
+
+composante = 'N'
+channel = 1
+direction = 1
+key = f'composante_{composante}_channel_{channel}_dir_{direction}'
+
+fig, ax = plt.subplots()
+ax.imshow(np.transpose(FK_dict[key]['FK']),aspect = 'auto', origin = 'lower',cmap = 'gray_r',
+          extent = extents(FK_dict[key]['k']) + extents(FK_dict[key]['f']),vmin = 0,vmax = 1)
+ax.set_ylim([0,400])
+
+ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$')
+ax.set_ylabel(r'$f \; \mathrm{(Hz)}$')
+
+# plot theory
+x_th = np.linspace(FK_dict[key]['k'].min(),FK_dict[key]['k'].max(),100)
+y_th = results['C_longi']*x_th/2/np.pi
+
+ax.plot(x_th,y_th,'--', color = 'tab:red',lw = 3)
+
+
+
+
+
 
 
     
