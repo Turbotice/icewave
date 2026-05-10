@@ -40,7 +40,7 @@ parula_map = matcmaps.parula()
 #%% Set parameters 
 
 year = '2024'
-date = '0909' #date format, 'mmdd'
+date = '0910' #date format, 'mmdd'
 acqu_numb = '0001' #acquisition number 
 
 path2data = os.path.join('E:/Amundsen_RA_2024/Data/',date,'Geophones/')
@@ -166,7 +166,7 @@ select_filtered = 1 # boolean, 1 if we want to select filtered signal
 
 flexure_wave = composante == 'Z' # 1 to pick the dispersion curves of the flexure wave, 0 to pick those of the other 2 modes
 horizontal_wave = not flexure_wave
-direction = 2 # 1 ou 2 
+direction = 1 # 1 ou 2 
 
 #-------------------------------------------------------------------------------
 # assign a string to S values depending on the direction
@@ -277,7 +277,7 @@ F, K_uwp = np.meshgrid(f, k_uwp)
 vmin = 0     # Minimum value for colormap
 vmax = 1     # Maximum value for colormap (adjust as needed)
 ymin = 0  # Minimum frequency
-ymax = 200  # Maximum frequency
+ymax = 400  # Maximum frequency
 xmin = 0  # Minimum wavenumber
 xmax = 4  # Maximum wavenumber
 
@@ -502,7 +502,7 @@ elif flexure_wave:
     plt.savefig(figname + '.png', dpi = 300, bbox_inches = 'tight')
     
     key = f'{wave_type}_{str(direction)}'
-    FK_data[key] = geopack.build_FK_structure(FK_uwp,f,k,
+    FK_data[key] = geopack.build_FK_structure(FK_uwp,f,k_uwp,
                                               np.array(f_mode),np.array(k_mode))
     
 rw.save_dict_to_h5(FK_data,filename)
