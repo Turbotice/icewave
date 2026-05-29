@@ -14,8 +14,9 @@ n = 9;
 
 M={};
 
-nx = 3840;
-ny = 2160;
+dim_image = size(im);
+nx = dim_image(2);
+ny = dim_image(1);
 
 while isempty(s)
     c=c+1;
