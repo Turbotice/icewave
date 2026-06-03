@@ -1,9 +1,9 @@
 #%%
 # USER PARAMETERS (edit these lines as you wish)
 # distances in m :
-plate_length_x = 8e-2      # total extent in x-direction
+plate_length_x = 16e-2      # total extent in x-direction
 plate_width_y = 4e-2       # total extent in y-direction
-plate_thickness_z = 9.7e-3   # total extent in z-direction
+plate_thickness_z = 10e-3   # total extent in z-direction
 
 nx_cells = 40              # number of elements along x
 ny_cells = 20              # number of elements along y

@@ -268,8 +268,9 @@ handles = [
     for v in vals
 ]
 #plt.colorbar()
-plt.xlim(0, np.nanmax(thicknesses_avg)*1.1)
-plt.ylim(0, np.nanmax(sigmac_array)*1.1)
+#plt.xlim(0, np.nanmax(thicknesses_avg)*1.1)
+#plt.ylim(0, np.nanmax(sigmac_array)*1.1)
+plt.loglog()
 plt.xlabel('thickness (mm)')
 plt.ylabel('$\sigma_c$ (Pa)')
 plt.legend(handles=handles, title="Sample length [m]")

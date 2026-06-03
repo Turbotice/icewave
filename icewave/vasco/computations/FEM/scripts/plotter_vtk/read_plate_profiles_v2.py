@@ -254,14 +254,129 @@ plt.plot(xvals, beam_profile_theory(xvals, F=-10, E=Eval, L=Lval, w=wval, h=hval
 #%%
 # verif que pour 2 modules d'young differents la forme de la plaque déformée est qualitativement la même
 # pour ca on normalise les 2 courbes qu'on compare
-%matplotlib qt
+%matplotlib inline
 plt.figure()
-plt.plot(dict_results['plate_E3.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['xmean'], dict_results['plate_E3.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['uz_mean']/np.max(np.abs(dict_results['plate_E3.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['uz_mean'])),'.')
+hval=4e-3
+wval=4e-2
+Lval=8e-2
+Eval=3e9
+#plt.plot(dict_results['plate_E3.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['xmean'], dict_results['plate_E3.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['uz_mean']/np.max(np.abs(dict_results['plate_E3.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['uz_mean'])),'.')
+x2plot = dict_results['plate_E3.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['xmean']
+y2plot = dict_results['plate_E3.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['uz_mean']/beam_profile_theory(Lval/2, F=-10, E=Eval, L=Lval, w=wval, h=hval)
+plt.plot(x2plot, y2plot, 'x', label=f'E={Eval/1e9} GPa, h={hval*1e3}mm')
+hval=4e-3
+wval=4e-2
+Lval=8e-2
+Eval=9e9
+#plt.plot(dict_results['plate_E9.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['xmean'], dict_results['plate_E9.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['uz_mean']/np.max(np.abs(dict_results['plate_E9.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['uz_mean'])),'+')
+x2plot = dict_results['plate_E9.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['xmean']
+y2plot = dict_results['plate_E9.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['uz_mean']/beam_profile_theory(Lval/2, F=-10, E=Eval, L=Lval, w=wval, h=hval)
+plt.plot(x2plot, y2plot, '.', label=f'E={Eval/1e9} GPa, h={hval*1e3}mm')
+hval=2e-3
+wval=4e-2
+Lval=8e-2
+Eval=3e9
+#plt.plot(dict_results['plate_E3.0GPa_L80mm_w40mm_h2.00mm_Fz-10.0N.vtk']['xmean'], dict_results['plate_E3.0GPa_L80mm_w40mm_h2.00mm_Fz-10.0N.vtk']['uz_mean']/np.max(np.abs(dict_results['plate_E3.0GPa_L80mm_w40mm_h2.00mm_Fz-10.0N.vtk']['uz_mean'])),'+')
+x2plot = dict_results['plate_E3.0GPa_L80mm_w40mm_h2.00mm_Fz-10.0N.vtk']['xmean']
+y2plot = dict_results['plate_E3.0GPa_L80mm_w40mm_h2.00mm_Fz-10.0N.vtk']['uz_mean']/beam_profile_theory(Lval/2, F=-10, E=Eval, L=Lval, w=wval, h=hval)
+plt.plot(x2plot, y2plot, 'x', label=f'E={Eval/1e9} GPa, h={hval*1e3}mm')
 
-plt.plot(dict_results['plate_E9.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['xmean'], dict_results['plate_E9.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['uz_mean']/np.max(np.abs(dict_results['plate_E9.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['uz_mean'])),'+')
-
-plt.plot(dict_results['plate_E3.0GPa_L80mm_w40mm_h2.00mm_Fz-10.0N.vtk']['xmean'], dict_results['plate_E3.0GPa_L80mm_w40mm_h2.00mm_Fz-10.0N.vtk']['uz_mean']/np.max(np.abs(dict_results['plate_E3.0GPa_L80mm_w40mm_h2.00mm_Fz-10.0N.vtk']['uz_mean'])),'+')
-
-
+plt.legend()
+plt.xlabel('x [m]')
+plt.ylabel(r'$\frac{\xi_{simu}}{\delta_{\mathrm{beam\,theory}}}$', fontsize=15)
 plt.show()
-# %%
+# %% plot dépendance de rigidité en flexion "apparente" vs epaisseur
+
+def add_FEMresults_todict(E_GPa=3, L_mm=80, w_mm=40, h_mm=4, Fz=-2, dict_results={}):
+    filename = make_filename(E_GPa=E_GPa,L_mm=L_mm,w_mm=w_mm,h_mm=h_mm,Fz=Fz)
+    key_simu = filename
+    dict_results[key_simu] = {}
+    dict_results[key_simu]['xmean'], dict_results[key_simu]['uz_mean'], dict_results[key_simu]['uz_std'] = read_avg_plate_profile(E_GPa=E_GPa, L_mm=L_mm, w_mm=w_mm, h_mm=h_mm, Fz=Fz)
+    argmax = np.argmax(np.abs(dict_results[key_simu]['uz_mean']))
+    print(argmax)
+    dict_results[key_simu]['uz_max_mean'] = dict_results[key_simu]['uz_mean'][argmax]
+    dict_results[key_simu]['uz_max_std'] = dict_results[key_simu]['uz_std'][argmax]
+
+    return dict_results
+
+def arrEeffsurE_from_arrthicknesses(arr_h_mm, Fz = -2,E_GPa=3,L_mm=80,w_mm=40):
+    arr_EeffsurE = np.zeros(len(arr_h_mm))
+    for i in range(len(arr_h_mm)):
+        h_mm = arr_h_mm[i]
+        
+        filename = make_filename(E_GPa=E_GPa,L_mm=L_mm,w_mm=w_mm,h_mm=h_mm,Fz=Fz)
+
+        xvals = dict_results[filename]
+        yvals = dict_results[filename]['uz_mean']/beam_profile_theory(Lval/2, F=Fz, E=E_GPa*1e9, L=L_mm*1e-3, w=w_mm*1e-3, h=h_mm*1e-3)
+        max1 = np.max(yvals)
+        EeffsurE = 1/max1
+        arr_EeffsurE[i] = EeffsurE
+    return arr_EeffsurE
+
+
+# pour plaque de 8 cm
+arr_h_mm = np.array([1,2,3,4,6,8,10,12,15,20,40])
+
+Fz = -2
+E_GPa=3
+L_mm=80
+w_mm=40
+
+for i in range(len(arr_h_mm)):
+    h_mm = arr_h_mm[i]
+    
+    dict_results_new = add_FEMresults_todict(E_GPa=E_GPa,L_mm=L_mm,w_mm=w_mm,h_mm=h_mm,Fz=Fz, dict_results=dict_results)
+
+
+arr_EeffsurE = arrEeffsurE_from_arrthicknesses(arr_h_mm=arr_h_mm,Fz=Fz,E_GPa=E_GPa,L_mm=L_mm,w_mm=w_mm)
+plt.plot(arr_h_mm, arr_EeffsurE,'o',label='L=8cm')
+
+"""xvals = np.linspace(1e-2,5e-1)
+yvals = 1/((1-np.tanh(np.pi*w_mm/(2*L_mm))*0.3**3)*(1+(5/6)*xvals**2))
+plt.plot(xvals,yvals, label='formule farfelue (ref?)')"""
+
+# pour plaque de 12 cm
+
+arr_h_mm = np.array([1,2,3,4,6,8,10,15,20,40])
+
+Fz = -2
+E_GPa=3
+L_mm=120
+w_mm=40
+
+for i in range(len(arr_h_mm)):
+    h_mm = arr_h_mm[i]
+    
+    dict_results_new = add_FEMresults_todict(E_GPa=E_GPa,L_mm=L_mm,w_mm=w_mm,h_mm=h_mm,Fz=Fz, dict_results=dict_results)
+
+
+arr_EeffsurE = arrEeffsurE_from_arrthicknesses(arr_h_mm=arr_h_mm,Fz=Fz,E_GPa=E_GPa,L_mm=L_mm,w_mm=w_mm)
+
+plt.plot(arr_h_mm, arr_EeffsurE,'o',label='L=12cm')
+
+# pour plaque de 16 cm
+
+arr_h_mm = np.array([1,2,3,4,6,8,10])
+
+Fz = -2
+E_GPa=3
+L_mm=160
+w_mm=40
+
+for i in range(len(arr_h_mm)):
+    h_mm = arr_h_mm[i]
+    
+    dict_results_new = add_FEMresults_todict(E_GPa=E_GPa,L_mm=L_mm,w_mm=w_mm,h_mm=h_mm,Fz=Fz, dict_results=dict_results)
+
+
+arr_EeffsurE = arrEeffsurE_from_arrthicknesses(arr_h_mm=arr_h_mm,Fz=Fz,E_GPa=E_GPa,L_mm=L_mm,w_mm=w_mm)
+
+plt.plot(arr_h_mm, arr_EeffsurE,'o',label='L=12cm')
+
+plt.xlabel('h [mm]')
+plt.ylabel('Eeff/E')
+plt.xlim(0,7)
+plt.ylim(0,4)
+#plt.plot([],[],'o',color='tab:blue',label='simus')
+#plt.loglog()
+plt.legend()

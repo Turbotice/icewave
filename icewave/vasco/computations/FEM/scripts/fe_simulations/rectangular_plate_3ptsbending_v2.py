@@ -94,12 +94,12 @@ def post_proces(out, pb, state, extend=False):
 ##############################################################
 # INPUTS
 #Fz = -10 # force along z in Newtons (for 3 points bending, negative sign)
-Fz = -0.5 # float(input('Applied force Fz (N) ? '))
-E = 0.03e9 # float(input("Young's modulus (GPa) ? ")) * 1e9
+Fz = -2 # float(input('Applied force Fz (N) ? '))
+E = 3e9 # float(input("Young's modulus (GPa) ? ")) * 1e9
 
-plate_length_x = 8e-2
+plate_length_x = 16e-2
 plate_width_y = 4e-2
-plate_thickness_z = 9.7e-3
+plate_thickness_z = 10e-3
 nx_cells = 40
 ny_cells = 20
 nz_cells = 10
