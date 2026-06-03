@@ -18,13 +18,13 @@ close all
 
 M={};
 
-base = 'W:';
-main_path = [ base '/Banquise/Calibration_PMMH_2026/20251216/calib_video_4K/frame_selection/'];
-folder = [main_path 'Binarisation/'];
+base = 'F:';
+main_path = [ base '/Calib_PMMH_2024/bernache/calib_photo/'];
+folder = main_path ;
 
 % collect list of images and binarized images 
 bwlist = dir([folder '*.mat']);
-imlist = dir([folder '*.tiff']);
+imlist = dir([folder '*.JPG']);
 
 figure(1)
 for i=1:length(bwlist)
@@ -71,7 +71,7 @@ if ~isfolder(save_folder)
     mkdir(save_folder)
 end
 
-for i=10:length(M)
+for i=8:length(M)
     name = M(i).m.name;
     imname = M(i).m.imname;
     load(fullfile(folder,name))
