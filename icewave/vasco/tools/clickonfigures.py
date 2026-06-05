@@ -3,7 +3,7 @@ from skimage.measure import profile_line
 
 # fonction pour mesurer les coordonnées de n points sur une figure
 
-def get_n_points(x, y, n_points=1):
+def get_n_points(x, y, n_points=1, symbol='o'):
     fig, ax = plt.subplots()
     ax.plot(x, y)
     ax.grid(True)
@@ -26,7 +26,7 @@ def get_n_points(x, y, n_points=1):
         coords.append((event.xdata, event.ydata))
         print(f"[{len(coords)}/{n_points}] x = {event.xdata:.4f}, y = {event.ydata:.4f}")
 
-        ax.plot(event.xdata, event.ydata, 'ro')
+        ax.plot(event.xdata, event.ydata, 'r', marker=symbol)
         fig.canvas.draw()
 
         if len(coords) >= n_points:
@@ -39,10 +39,10 @@ def get_n_points(x, y, n_points=1):
     print(f"👉 Clique sur {n_points} point(s)")
     print("👉 Utilise zoom/pan SANS déclencher de clic parasite")
 
-    plt.show()
+    plt.show(block=True)
     return coords
 
-def get_n_points_onimage(image, n_points=1):
+def get_n_points_onimage(image, n_points=1, symbol='o'):
     fig, ax = plt.subplots()
     ax.imshow(image)
     #ax.grid(True)
@@ -65,7 +65,7 @@ def get_n_points_onimage(image, n_points=1):
         coords.append((event.xdata, event.ydata))
         print(f"[{len(coords)}/{n_points}] x = {event.xdata:.4f}, y = {event.ydata:.4f}")
 
-        ax.plot(event.xdata, event.ydata, 'ro')
+        ax.plot(event.xdata, event.ydata, 'r', marker=symbol)
         fig.canvas.draw()
 
         if len(coords) >= n_points:

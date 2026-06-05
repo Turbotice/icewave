@@ -155,3 +155,22 @@ def plot_profilelines_onimage(image, profiles):
 """
 profiles = all_profiles(image=image, angle_deg=-40)
 plot_profilelines_onimage(image,profiles)"""
+
+
+def superpose_all_profiles(profiles, angle_deg):
+    theta = np.deg2rad(angle_deg)
+    d = np.array([np.sin(theta), np.cos(theta)])
+    plt.figure()
+
+    for p in profiles:
+        src = np.array(p['src'])
+
+        # position du début du profil dans le repère de la direction d
+        s0 = np.dot(src, d)
+
+        x = s0 + np.arange(len(p['profile']))
+
+        plt.plot(x, p['profile'], 'k', alpha=0.1)
+
+    plt.xlabel("Position le long de la direction du profil")
+    plt.show()

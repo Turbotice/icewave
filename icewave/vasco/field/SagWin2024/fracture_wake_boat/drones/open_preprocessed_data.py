@@ -2,6 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
+import os
 import sys
 
 icewave_path = 'C:/Users/Vasco Zanchi/Documents/git_turbotice/icewave/icewave/'
@@ -11,6 +12,8 @@ import tools.rw_data as rw
 
 from vasco.tools.clickonfigures import profile_line_on_image_2clicks
 from vasco.tools.clickonfigures import get_n_points_onimage
+
+from functions_fracture_analysis import click_on_fracture_path_plot_time_evol, click2extract_amplitude, plot_elevation_refnotbroken_and_broken
 
 #%%
 disk = 'L:'# disk is Elements on adour
@@ -40,6 +43,11 @@ vx = dict_stereo_pivdata['u'][0,:,:,:]
 vy = dict_stereo_pivdata['u'][1,:,:,:]
 vz = dict_stereo_pivdata['u'][2,:,:,:]
 
+dt = dict_stereo_pivdata['t'][1] - dict_stereo_pivdata['t'][0]
+
+ux = np.cumsum(vx, axis=2)*dt
+uy = np.cumsum(vy, axis=2)*dt
+uz = np.cumsum(vz, axis=2)*dt
 
 
 #%% PLOTS
@@ -85,10 +93,10 @@ plt.show()
 
 #%%
 
-%matplotlib qt
+#%matplotlib qt
 
 # faire un tableau de profil dans la direction de propagation de l'onde
-from profile import *
+from profiles import *
 
 angle_deg = dominating_angle_wave_deg
 
@@ -99,21 +107,114 @@ profiles = all_profiles(image, angle_deg)
 plot_profilelines_onimage(image, profiles)
 
 
+#%%
+%matplotlib inline
 
-theta = np.deg2rad(angle_deg)
-d = np.array([np.sin(theta), np.cos(theta)])
-plt.figure()
+plt.imshow(image)
+plt.imshow(np.where(fractures_positions_data['binary'],fractures_positions_data['binary'],np.nan),cmap='gray')
+plt.show()
+#%%
 
-for p in profiles:
-    src = np.array(p['src'])
+n_points = 12
+%matplotlib qt
 
-    # position du début du profil dans le repère de la direction d
-    s0 = np.dot(src, d)
+matrix_temp_evol_uz, times_frac_sec_approx, idcs_single_frac = click_on_fracture_path_plot_time_evol(n_points, uz, dict_stereo_pivdata,fractures_positions_data)
+# LE PREMIER CLIC DOIT ETRE LE PLUS PROCHE POSSIBLE DE LA LIMITE AVEC GLACE NON CASSEE !!
 
-    x = s0 + np.arange(len(p['profile']))
+#frac_id = f'xind{}'
 
-    plt.plot(x, p['profile'], 'k', alpha=0.1)
+# %%
+array_amplitudes_frac, wave_period_sec = click2extract_amplitude(matrix_temp_evol_uz, times_frac_sec_approx, dict_stereo_pivdata)
 
-plt.xlabel("Position le long de la direction du profil")
+#%%
+
+
+
+array_D = np.array([2,4,6,8,10,12,14,16]) # on définit une longueur (en pixel) où on veut se placer pour regarder 
+#la ref en glace non cassée
+
+# on met dans des matrices de la même dimensions que le cas précédent (donc si une seule valeur on la transforme en tableau)
+matrix_temp_evol_uz_ref_noncassee = np.zeros((len(array_D), uz.shape[2]))
+times_frac_sec_approx_ref_noncassee = np.ones(len(array_D)) * time_frac_approx
+
+for i in range(len(array_D)):
+    D=array_D[i]
+    uz_ref_noncassee, x_ind_ref_noncasse_int, y_ind_ref_noncasse_int, time_frac_approx, (x_ind_ref_noncasse,y_ind_ref_noncasse,xdata2plot,ydata2plot,slope,intercept, deltaD) = plot_elevation_refnotbroken_and_broken(D, uz, idcs_single_frac, times_frac_sec_approx,
+                                            dict_stereo_pivdata, matrix_temp_evol_uz,
+                                            fractures_positions_data)
+    
+    matrix_temp_evol_uz_ref_noncassee[i,:] = uz_ref_noncassee
+
+# maintenant mesurer également l'amplitude pour la ref "glace non cassée"
+%matplotlib qt
+array_amplitudes_ref_noncassee, wave_period_sec_ref_noncassee = click2extract_amplitude(matrix_temp_evol_uz_ref_noncassee, times_frac_sec_approx_ref_noncassee, dict_stereo_pivdata)
+
+#%%
+
+%matplotlib inline
+# on veut calculer l' "abscisse" sur la droite fittée de fracture de tous ces points
+alpha = np.arctan(slope)
+
+coord_onfracline_noncassee = - array_D
+x_ind_onfrac = idcs_single_frac[:,0]
+y_ind_onfrac = idcs_single_frac[:,1]
+coord_onfracline_cassee = np.sin(alpha) * (2*y_ind_onfrac - slope*x_ind_onfrac - intercept - y_ind_onfrac[0])
+
+
+
+plt.plot(coord_onfracline_noncassee, array_amplitudes_ref_noncassee,'o')
+plt.plot(coord_onfracline_cassee, array_amplitudes_frac,'o')
+
+plt.ylabel('Amplitude [m]')
+plt.xlabel('Relative distance [px] to the first "fractured" pixel detected')
 plt.show()
 
+#%% save data from one fracture line
+frac_id = f'yind{idcs_single_frac[0,1]}_xind{idcs_single_frac[0,0]}'
+
+dict_single_frac = {}
+dict_single_frac['matrix_temp_evol_uz'] = matrix_temp_evol_uz
+dict_single_frac['times_frac_sec_approx'] = times_frac_sec_approx
+dict_single_frac['idcs_single_frac'] = idcs_single_frac
+dict_single_frac['array_amplitudes_frac'] = array_amplitudes_frac
+dict_single_frac['wave_period_sec'] = wave_period_sec
+dict_single_frac['frac_id'] = frac_id
+dict_single_frac['coord_onfracline_cassee'] = coord_onfracline_cassee
+
+
+dict_single_frac['array_amplitudes_ref_noncassee'] = array_amplitudes_ref_noncassee
+dict_single_frac['wave_period_sec_ref_noncassee'] = wave_period_sec_ref_noncassee
+dict_single_frac['times_frac_sec_approx_ref_noncassee'] = times_frac_sec_approx_ref_noncassee
+dict_single_frac['matrix_temp_evol_uz_noncassee'] = matrix_temp_evol_uz_ref_noncassee
+dict_single_frac['slope'] = slope
+dict_single_frac['intercept'] = intercept
+dict_single_frac['alpha'] = alpha
+dict_single_frac['coord_onfracline_noncassee'] = coord_onfracline_noncassee
+dict_stereo_pivdata['array_D'] = array_D
+
+
+
+path_dict2save = f'{daily_drone_data_path}/Results/traitement_vasco/dict_results_frac.pkl'
+if os.path.exists(path_dict2save):
+    with open(path_dict2save, 'rb') as file:
+        dict_frac = pickle.load(file)
+
+else:
+    dict_frac = {}
+
+dict_frac['dict_single_frac_'+dict_single_frac['frac_id']] = dict_single_frac
+
+save_input = input('save ? (y/n)')
+if save_input=='y':
+    pickle.dump(dict_frac, open(path_dict2save, "wb"))
+else:
+    pass
+
+#%%
+"""
+frac_id = dict_frac['dict_single_frac_yind23_xind28']['frac_id']
+array_amplitudes_frac = dict_frac['dict_single_frac_yind23_xind28']['array_amplitudes_frac']
+idcs_single_frac = dict_frac['dict_single_frac_yind23_xind28']['idcs_single_frac']
+matrix_temp_evol_uz = dict_frac['dict_single_frac_yind23_xind28']['matrix_temp_evol_uz']
+times_frac_sec_approx = dict_frac['dict_single_frac_yind23_xind28']['times_frac_sec_approx']
+wave_period_sec = dict_frac['dict_single_frac_yind23_xind28']['wave_period_sec']"""
