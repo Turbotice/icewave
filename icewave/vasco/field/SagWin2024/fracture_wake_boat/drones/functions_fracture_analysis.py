@@ -51,6 +51,10 @@ def click2extract_amplitude(matrix_temp_evol_uz, times_frac_sec_approx, dict_ste
     #%matplotlib qt
 
     array_amplitudes_frac = np.zeros(len(times_frac_sec_approx))
+    array_full_period_sec = np.zeros(len(times_frac_sec_approx))
+    array_t1_sec = np.zeros(len(times_frac_sec_approx))
+    array_t2_sec = np.zeros(len(times_frac_sec_approx))
+    
 
     for i in range(len(times_frac_sec_approx)):
         x2plot = dict_stereo_pivdata['t'] - times_frac_sec_approx[i]
@@ -58,15 +62,19 @@ def click2extract_amplitude(matrix_temp_evol_uz, times_frac_sec_approx, dict_ste
         coords = get_n_points(x2plot, y2plot, n_points=2)
         y1 = np.interp(coords[0][0], x2plot, y2plot)
         y2 = np.interp(coords[1][0], x2plot, y2plot)
+
+        array_t1_sec[i] = coords[0][0] + times_frac_sec_approx[i]
+        array_t2_sec[i] = coords[1][0] + times_frac_sec_approx[i]
         
         delta_t_sec = coords[1][0] - coords[0][0]
         amplitude_picapic = np.abs(y2 - y1)
         
         array_amplitudes_frac[i] = amplitude_picapic/2
 
-        full_period_sec = delta_t_sec
+        full_period_sec = delta_t_sec*2
+        array_full_period_sec[i] = full_period_sec
 
-    return array_amplitudes_frac, full_period_sec
+    return array_amplitudes_frac, full_period_sec, array_t1_sec, array_t2_sec
 
 
 
