@@ -1,3 +1,4 @@
+import numpy as np
 import matplotlib.pyplot as plt
 from skimage.measure import profile_line
 
@@ -42,9 +43,20 @@ def get_n_points(x, y, n_points=1, symbol='o'):
     plt.show(block=True)
     return coords
 
-def get_n_points_onimage(image, n_points=1, symbol='o'):
+def get_n_points_onimage(image, n_points=1, symbol='o', refpoints_optional=None, vmin=None, vmax=None):
+    """
+    Rq : les refpoints_optional sont un tableau de shape (n_points, 2).
+    Exemple si un seul point : [[x1, y2]] 
+    """
+
     fig, ax = plt.subplots()
-    ax.imshow(image)
+    if (type(vmax)==float)|(type(vmax)==int):
+        ax.imshow(image, vmin=vmin, vmax=vmax)    
+    else:
+        ax.imshow(image)
+
+    if type(refpoints_optional)==np.ndarray:
+        ax.plot(refpoints_optional[:,0], refpoints_optional[:,1], '^r')
     #ax.grid(True)
 
     coords = []
@@ -83,9 +95,9 @@ def get_n_points_onimage(image, n_points=1, symbol='o'):
 
 
 
-def profile_line_on_image_2clicks(image):
+def profile_line_on_image_2clicks(image, refpoints_optional=None):
 
-    coords_2pts = get_n_points_onimage(image, n_points=2)
+    coords_2pts = get_n_points_onimage(image, n_points=2, refpoints_optional=refpoints_optional)
 
     ystart = coords_2pts[0][1]
     xstart = coords_2pts[0][0]
@@ -98,4 +110,4 @@ def profile_line_on_image_2clicks(image):
         (yend, xend)
     )
 
-    return profile
+    return profile, (xstart,ystart), (xend,yend)

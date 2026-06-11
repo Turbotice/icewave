@@ -56,55 +56,6 @@ for i in range(0,1000,100):
     plt.figure()
     plt.imshow(vz[:,:,1000+i])
 
-#%% FFT2 in space
-%matplotlib qt
-# mesure de l'angle de l'onde pour une image
-image = vz[:,:,1000]
-
-image_croped = image[:,:60] # car sur la gauche l'angle est un peu different
-
-padding_factor = 5
-
-absfft2shifted = np.fft.fftshift(np.abs(np.fft.fft2(image_croped, s=(vz.shape[0]*padding_factor,vz.shape[1]*padding_factor))))
-
-# detection of maxima
-maxval = np.max(absfft2shifted)
-npwh = np.where(absfft2shifted==maxval)
-kyindmax = npwh[0][0]
-kxindmax = npwh[1][0]
-print(npwh)
-
-kyzeroind = int(vz.shape[0]*padding_factor/2)
-kxzeroind = int(vz.shape[1]*padding_factor/2)
-
-diff_kxind = kxindmax - kxzeroind
-diff_kyind = kyindmax - kyzeroind 
-
-dominating_angle_wave_deg = 180/np.pi * np.arctan(diff_kyind/diff_kxind)
-print('angle wave =',dominating_angle_wave_deg,'deg')
-
-plt.figure()
-plt.imshow(absfft2shifted)
-plt.plot(kxindmax, kyindmax,'r+')
-plt.show()
-
-
-
-
-#%%
-
-#%matplotlib qt
-
-# faire un tableau de profil dans la direction de propagation de l'onde
-from profiles import *
-
-angle_deg = dominating_angle_wave_deg
-
-profiles = all_profiles(image, angle_deg)
-
-
-
-plot_profilelines_onimage(image, profiles)
 
 
 #%%
