@@ -68,7 +68,8 @@ plt.imshow(np.where(fractures_positions_data['binary'],fractures_positions_data[
 
 if 'dict_frac' in globals():
     for k in dict_frac:
-        plt.plot(dict_frac[k]['idcs_single_frac'][0][0], dict_frac[k]['idcs_single_frac'][0][1], '^r', markersize=4)
+        if 'single_frac' in k:
+            plt.plot(dict_frac[k]['idcs_single_frac'][0][0], dict_frac[k]['idcs_single_frac'][0][1], '^r', markersize=4)
 plt.show()
 
 
@@ -179,6 +180,31 @@ if save_input=='y':
     pickle.dump(dict_frac, open(path_dict2save, "wb"))
 else:
     pass
+
+
+
+#%%
+
+from find_wave_front import *
+
+
+
+for k in dict_frac:
+    if 'dict_single_frac' in k:
+        idcs_single_frac = dict_frac[k]['idcs_single_frac']
+        time_frac_approx = dict_frac[k]['times_frac_sec_approx_ref_noncassee'][0]
+        index_time_frac_approx = np.where(dict_stereo_pivdata['t']>=time_frac_approx)[0][0]
+
+        matrice2d = uz[:,:,index_time_frac_approx]
+
+        peaks2d, matrice2d_smoothed = find_wave_fronts_on_image(matrice2d, sigma_smooth=5, axis=0, plot=False)
+
+        plt.figure()
+        plt.imshow(matrice2d_smoothed)
+        plt.imshow(peaks2d)
+        plt.plot(idcs_single_frac[:,0], idcs_single_frac[:,1], '^k')
+        plt.show()
+
 
 
 #%% FFT2 in space to measure angle and approx wavelength (semble pas marcher)

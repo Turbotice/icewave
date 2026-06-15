@@ -71,7 +71,8 @@ plt.imshow(np.where(fractures_positions_data['binary'],fractures_positions_data[
 
 if 'dict_frac' in globals():
     for k in dict_frac:
-        plt.plot(dict_frac[k]['idcs_single_frac'][0][0], dict_frac[k]['idcs_single_frac'][0][1], '^r', markersize=4)
+        if 'single_frac' in k:
+            plt.plot(dict_frac[k]['idcs_single_frac'][0][0], dict_frac[k]['idcs_single_frac'][0][1], '^r', markersize=4)
 plt.show()
 #%%
 
