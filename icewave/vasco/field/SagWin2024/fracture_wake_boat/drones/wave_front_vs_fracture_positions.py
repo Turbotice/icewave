@@ -73,8 +73,8 @@ if 'dict_frac' in globals():
 plt.show()
 
 #%%
-
-from find_wave_front import find_wave_fronts_on_image, find_lines, group_lines_to_dict
+from scipy.ndimage import gaussian_filter1d
+from find_wave_front import find_wave_fronts_on_image, find_lines, group_lines_to_dict, compute_kappa_n_profiles_along_wavecrest
 
 k = 'dict_single_frac_yind10_xind39'
 
@@ -96,58 +96,19 @@ plt.show()
 #%%
 
 
-img = peaks2d
-
-lines = find_lines(img, min_points_line=20, tolerance_px=6.0)
-
-print(f"{len(lines)} ligne(s) trouvée(s) :\n")
-for i, line in enumerate(lines):
-    print(f"  Ligne {i} — {len(line)} point(s) : {line}")
-
-dict_lines = group_lines_to_dict(lines)
-
+'''
+# test compute local angle
 plt.figure()
-plt.imshow(matrice2d, cmap='gray')
-ct=0
-for k in dict_lines:
-    xvals2plot = dict_lines[k]['x_ind']
-    yvals2plot = dict_lines[k]['y_ind']
-    a,b = np.polyfit(xvals2plot,yvals2plot, 1)
-    plt.plot(xvals2plot, a*xvals2plot+b,'k')
-    plt.plot(xvals2plot, yvals2plot, label='line '+str(ct))
-    dict_lines[k]['linear_fit'] = {}
-    dict_lines[k]['linear_fit']['slope'] = a
-    dict_lines[k]['linear_fit']['intercept'] = b
-    ct+=1
+plt.plot(dict_lines['line_0']['x_ind'],gaussian_filter1d(dict_lines['line_0']['y_ind'], sigma=1))
 
-plt.legend()
-plt.show()
+x_test = dict_lines['line_0']['x_ind']
+ysm_test = gaussian_filter1d(dict_lines['line_0']['y_ind'],sigma=2)
 
+#tanalpha = np.diff(ysm_test)/np.diff(x_test)
+alpha = np.arctan2(np.gradient(x_test), np.gradient(ysm_test))
 
+plt.plot(x_test, alpha)'''
+%matplotlib inline
+for i in range(0,500,50):
+    dict_lines, (peaks2d, matrice2d_smoothed, matrice2d) = compute_kappa_n_profiles_along_wavecrest(uz, index_time=500+i, facq_x=dict_stereo_pivdata['SCALE']['facq_x'])
 
-
-# tracé de la courbure "transverse" le long d'une crête de vague
-
-# tout d'abord, on peut calculer le champ de courbures :
-# ATTENTION : CE N'EST PAS ENCORE DANS LES BONNES DIMENSIONS POUR L'ESPACE !!!
-kappa_x = np.gradient(np.gradient(matrice2d_smoothed,axis=1),axis=1)
-kappa_y = np.gradient(np.gradient(matrice2d_smoothed,axis=0),axis=0)
-
-plt.figure()
-for k in dict_lines:
-
-    slope = dict_lines[k]['linear_fit']['slope']
-    theta = np.arctan(slope) + np.pi/2
-    x_ind = dict_lines[k]['x_ind']
-    y_ind = dict_lines[k]['y_ind']
-    
-    kappa_n_prof = np.zeros(len(x_ind))
-    for i in range(len(x_ind)):
-        kappa_n_prof[i] = np.cos(theta) * kappa_x[y_ind[i],x_ind[i]] + np.sin(theta) * kappa_y[y_ind[i],x_ind[i]]
-
-
-    dict_lines[k]['kappa_n_profile'] = kappa_n_prof
-
-    plt.plot(np.abs(kappa_n_prof))
-
-# %%
