@@ -21,7 +21,7 @@ def gen_parser():
     parser = argparse.ArgumentParser(description="Manipulate multi instruments data")
     parser.add_argument('-date', dest='date', type=str,default='0226',help='select date to process data')
     parser.add_argument('-step', dest='step', type=int,default=1,help='select step. 1: get_records, 2:convert_flightrecords')
-    parser.add_argument('-year', dest='year', type=int,default='2026',help='Specift the year')
+    parser.add_argument('-year', dest='year', type=str,default='2026',help='Specify the year')
 
     #parser.add_argument('-step', dest='step', type=int,default=3,help='select Step to be performed')
 #    print(parser)   
@@ -138,7 +138,7 @@ def save_mp4file(drone,filename):
     cv2.imwrite(imagefile, frame) # Save the image
 
 def convert_flightrecords(date,year = '2025'):
-    csvfiles = get_csvfiles(date)
+    csvfiles = get_csvfiles(date,year=year)
     records={}
     records['drones']={}
     for drone in csvfiles.keys():
@@ -327,6 +327,7 @@ def get_flighrecord(srtfile,step=100,drone='mesange'):
     return record
 
 def main(args):
+    print(args.year)
     if args.step==1:
         get_records(args.date,year=args.year)
     if args.step==2:
