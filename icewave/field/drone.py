@@ -14,7 +14,7 @@ import icewave.field.Save_extract_record as drone_save
 from PIL import Image, ExifTags
 
 global drones
-drones = ['mesange','bernache','Fulmar']
+drones = ['mesange','bernache','Fulmar','Tourterelle','Harfang']
 
 import argparse
 def gen_parser():    
@@ -55,7 +55,7 @@ def get_gps_jpg(exif):
     return latitude,longitude
 
 def get_records(date,jpg=True,year='2025'):
-    srtfiles = get_srtfiles(date)
+    srtfiles = get_srtfiles(date,year=year)
     
     records = {}
     records['drones']={}
@@ -70,7 +70,7 @@ def get_records(date,jpg=True,year='2025'):
                 records['drones'][key][name].append(record)
 
     if jpg==True:
-        jpgfiles = drone_save.get_jpgfiles(date)
+        jpgfiles = drone_save.get_jpgfiles(date,year=year)
         print(jpgfiles)
         #for now, it does not find any jpg files
         for key in jpgfiles.keys():
@@ -99,6 +99,19 @@ def get_srtfiles(date,year='2025'):
         else:
             print(f"No data for {key} on {date}")
     return srtfiles
+
+def get_jpgfiles(date,year='2025'):
+    jpgfiles = {}
+    base = df.find_path(year=year,date=date)
+    print(base)
+    for key in drones:
+        srt = glob.glob(base+date+'/Drones/'+key+'/*/*.JPG')#/*/*.srt')
+        pprint(srt)
+        if len(srt)>0:
+            jpgfiles[key] = srt
+        else:
+            print(f"No data for {key} on {date}")
+    return jpgfiles    
 
 def get_mp4files(date,save=True):
     import cv2
@@ -259,6 +272,8 @@ def get_flighrecord(srtfile,step=100,drone='mesange'):
     elif drone=='Bernache' or drone=='bernache':
         h0 = 5
     elif drone=='Fulmar' or drone=='fulmar':
+        h0 = 5
+    elif drone=='Tourterelle' or drone=='tourterelle':
         h0 = 5
     else:
         h0=0
