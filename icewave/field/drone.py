@@ -70,7 +70,7 @@ def get_records(date,jpg=True,year='2025'):
                 records['drones'][key][name].append(record)
 
     if jpg==True:
-        jpgfiles = drone_save.get_jpgfiles(date,year=year)
+        jpgfiles = get_jpgfiles(date,year=year)
         print(jpgfiles)
         #for now, it does not find any jpg files
         for key in jpgfiles.keys():
