@@ -76,7 +76,7 @@ def get_records(date,jpg=True,year='2025'):
         for key in jpgfiles.keys():
             records['drones'][key]={}
             for i,jpgfile in enumerate(jpgfiles[key]):
-                name = jpgfile.split('/')[-2]#.split('.')[0]
+                name = os.path.basename(jpgfile).split('.')[0]#.split('/')[-2]#.split('.')[0]
                 print(i,jpgfile,name)
                 if not name in records['drones'][key]:
                     record = get_jpg_record(jpgfile,drone=key)
