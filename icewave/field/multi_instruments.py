@@ -41,7 +41,8 @@ def get_records(date,year='2025'):
 
 def save_records(date,year):
     records = get_records(date)
-    base = df.find_path(year,date=date)
+    base = df.find_path(year=year,date=date)
+    print(base)
     filename = base+date+'/Summary/records_'+date+'.pkl'
 
     folder = os.path.dirname(filename)
@@ -187,8 +188,8 @@ def get_avg_position(record):
     longitude = np.mean(longitudes)
     return latitude,longitude
 
-def read_BA_timeline(date):
-    base = df.find_path()
+def read_BA_timeline(date,year="2025"):
+    base = df.find_path(year=year)
     filename = base + f'Summary/{date}_path_drone.txt'
     
     filelist = rw_data.read_csv(filename)
