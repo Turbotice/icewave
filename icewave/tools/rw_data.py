@@ -58,9 +58,9 @@ def write_h5(filename,data):
     hf = h5py.File(filename, 'w')
     for key in data.keys():
         if type(data[key])==dict:
-            hf.create_group(key)
+            hf.create_group(str(key))
             for k in data[key].keys():
-                hf[key].create_dataset(k,data=data[key][k])
+                hf[str(key)].create_dataset(str(k),data=data[key][k])
         else:
             hf.create_dataset(key, data=np.asarray(data[key]))
     hf.close()
@@ -138,41 +138,40 @@ def write_dict_h5_rec(h5group,dict_obj):
     numpy arrays, arrays of strings, list of strings and dictionnaries to equivalents h5 structures """
 
     for key,value in dict_obj.items():
-        
         if isinstance(value,dict): # if value is a dictionnary
-            subgroup = h5group.create_group(key)
+            subgroup = h5group.create_group(str(key))
             write_dict_h5_rec(subgroup,value)
             
         elif isinstance(value, list):# if value is a list
-            list_group = h5group.create_group(key)
+            list_group = h5group.create_group(str(key))
             for i, item in enumerate(value):
                 item_key = str(i)
 
                 # Nested dictionary
                 if isinstance(item, dict):
-                    subgroup = list_group.create_group(item_key)
+                    subgroup = list_group.create_group(str(item_key))
                     write_dict_h5_rec(subgroup, item)
 
                 # Nested numpy array
                 elif isinstance(item, np.ndarray):
                     if item.dtype.kind in {'U','O'} and np.all(np.vectorize(lambda x: isinstance(x,str))(item)):
                         dt = h5py.string_dtype(encoding='utf-8')
-                        list_group.create_dataset(item_key, data=item.astype(object), dtype=dt)
+                        list_group.create_dataset(str(item_key), data=item.astype(object), dtype=dt)
                     else:
-                        list_group.create_dataset(item_key, data=item)
+                        list_group.create_dataset(str(item_key), data=item)
 
                 # Nested string
                 elif isinstance(item, str):
                     dt = h5py.string_dtype(encoding='utf-8')
-                    list_group.create_dataset(item_key, data=item, dtype=dt)
+                    list_group.create_dataset(str(item_key), data=item, dtype=dt)
 
                 # Nested scalar
                 elif isinstance(item, (int, float, np.integer, np.floating)):
-                    list_group.create_dataset(item_key, data=item)
+                    list_group.create_dataset(str(item_key), data=item)
 
                 # Nested list => recurse
                 elif isinstance(item, list):
-                    sublist_group = list_group.create_group(item_key)
+                    sublist_group = list_group.create_group(str(item_key))
                     # recursive list handling
                     for j, subitem in enumerate(item):
                         subkey = str(j)
@@ -187,23 +186,23 @@ def write_dict_h5_rec(h5group,dict_obj):
             # case 1 : numpy array of strings
             if value.dtype.kind in {'U','O'} and np.all(np.vectorize(lambda x: isinstance(x,str))(value)):
                 dt = h5py.string_dtype(encoding = 'utf-8')
-                h5group.create_dataset(key, data = value.astype(object),dtype = dt)
+                h5group.create_dataset(str(key), data = value.astype(object),dtype = dt)
                 
             # case 2 : any other numpy array 
             else :
-                h5group.create_dataset(key, data = value)
+                h5group.create_dataset(str(key), data = value)
                 
         elif isinstance(value,str): # if value is a string 
             dt = h5py.string_dtype(encoding = 'utf-8')
-            h5group.create_dataset(key, data = value,dtype = dt)
+            h5group.create_dataset(str(key), data = value,dtype = dt)
             
         elif isinstance(value,list) and all(isinstance(v,str) for v in value): # if value is a list of strings
             dt = h5py.string_dtype(encoding = 'utf-8')
-            h5group.create_dataset(key, data = np.array(value,dtype = object),dtype = dt)
+            h5group.create_dataset(str(key), data = np.array(value,dtype = object),dtype = dt)
             
         elif isinstance(value, (int, float, np.integer, np.floating)):
                 # store scalars directly
-                h5group.create_dataset(key, data=value)
+                h5group.create_dataset(str(key), data=value)
             
         else:
             raise TypeError(f"Unsupported data type for key '{key}': {type(value)}")

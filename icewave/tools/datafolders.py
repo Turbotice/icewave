@@ -43,7 +43,12 @@ def find_path(disk='Backup25',year='2025',smb=False,date='0211'):
             pass#disk='F-1'
         elif 'Linux' in ostype and disk == 'Shack25':
             disk='F'#Shack25'
-        
+    if year=='2026':
+        print(year)
+        if 'macOS' in ostype:
+            disk='Shack26'#disk='F-1'
+        elif 'Linux' in ostype:
+            disk='Shack26'#Shack25'
     #print('OS type : '+str(ostype))
     #print('Computer name : '+str(osname))
     #if year=='2025':
@@ -58,6 +63,8 @@ def find_path(disk='Backup25',year='2025',smb=False,date='0211'):
         base = disk+'/Share_hublot/Data/'
     elif disk=='Shack25' or 'F':
         base = disk+'/Data/'
+    elif disk=='Shack26':
+        base = disk+'/data/'
     else:
         print('please specify the folder path')
     if 'Linux' in ostype:

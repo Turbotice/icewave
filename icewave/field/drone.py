@@ -41,7 +41,17 @@ def get_record(drone,srtfile,date='0211',year='2025'):
 def get_jpg_record(jpgfile,drone=''):
     img = Image.open(jpgfile)
     record = { ExifTags.TAGS[k]: v for k, v in img._getexif().items() if k in ExifTags.TAGS }
+    record['latitude'],record['longitude']=get_gps_jpg(record)
     return record
+
+def get_gps_jpg(exif):
+    if 'GPSInfo' in exif.keys():
+        lat = exif['GPSInfo'][2]
+        latitude = float(lat[0]+lat[1]/60+lat[2]/3600)
+
+        lon = exif['GPSInfo'][4]
+        longitude = -float(lon[0]+lon[1]/60+lon[2]/3600)#west hemisphere
+    return latitude,longitude
 
 def get_records(date,jpg=True,year='2025'):
     srtfiles = get_srtfiles(date)
@@ -100,7 +110,7 @@ def get_mp4files(date,save=True):
                 save_mp4file(drone,filename)
     return mp4files
 
-def  generate_flightrecords(date):
+def generate_flightrecords(date):
     srtfiles = get_srtfiles(date)
     
 
