@@ -211,6 +211,12 @@ def main(args):
             dates = ['0131','0201','0203','0204','0205','0206','0207','0208','0209']
             for i in range(10,26):
                 dates.append('02'+str(i))
+        if args.year=='2026':
+            dates = ['0131']
+            for i in range(1,10):
+                dates.append('020'+str(i))
+            for i in range(10,24):
+                dates.append('02'+str(i))
         for date in dates:
             try:
                 save_records(date,year=args.year)
