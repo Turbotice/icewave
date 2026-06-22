@@ -1,6 +1,4 @@
-import stephane.display.graphes as graphes
-import stephane.tools.Smath as smath
-
+import icewave.display.graphes as graphes
 import icewave.tools.datafolders as df
 import icewave.tools.rw_data as rw_data
 
@@ -13,14 +11,11 @@ import os
 import numpy as np
 
 #import icewave.phone.rw_pyphone as rw
-import icewave.tools.rw_data as rw_data
-
 import icewave.field.drone as drone
 import icewave.field.phone as phone
 import icewave.field.geophone as geophone
 import icewave.field.buoys as buoys
 import icewave.field.gps as gps
-
 
 import argparse
 
