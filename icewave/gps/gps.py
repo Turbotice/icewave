@@ -160,7 +160,7 @@ def display_dictwpts(filename,date,wpts,save=True,scale=0.75):
 #graphes.save_figs(figs,savedir=savefolder,prefix='wpts_'+date+'_',suffix='summary',frmt='pdf')
 
 
-def map_traj(Long,Lat,save=False,scale=0.8,title='',ext=None,t=None,ax=None):
+def map_traj(Long,Lat,colors=None,save=False,scale=0.8,title='',ext=None,t=None,ax=None,color='r',marker='.',linestyle=''):
     if ext==None:
         BBox = box_data(Long,Lat,scale=scale)
         print(BBox)
@@ -169,12 +169,20 @@ def map_traj(Long,Lat,save=False,scale=0.8,title='',ext=None,t=None,ax=None):
         ext = extent(BBox)
 
         t = tmp_connect()
+    if t==None:
+        t = tmp_connect()
+        
     X,Y = project(Long,Lat)
 
     if ax==None:
         fig, ax = plt.subplots(figsize=(8, 8), dpi=200)
     ax,figs = display_map(ext,t,ax=ax,width=600)
-    ax.plot(X,Y,'k-')
+
+    if colors is not None:
+        for (x,y,color) in zip(X,Y,colors):
+            ax.plot(x,y,marker=marker,alpha=0.2,linestyle=linestyle,color=color)#color=color,marker=marker)
+    else:    
+        ax.plot(X,Y,marker=marker,alpha=0.2,linestyle=linestyle,color=color)#color=color,marker=marker)
 
     figs.update(graphes.legende('Longitude','Latitude',title,cplot=True))
 
@@ -222,7 +230,7 @@ def boxes(name):
     """
     d={}
     d['haha'] = [-68.8311,-68.7995,48.3389,48.3551]
-    d['bic'] = [-68.8681,-68.7995,48.3181,48.3551]
+    d['bic'] = [-68.8681,-68.7995,48.3,48.385]
     d['rimouski'] = [-68.5462,-68.5065,48.4374,48.4636]
     d['capelans'] = [ -68.857421,-68.849667,48.327819,48.332625]#[-68.8625,-68.8330,48.3185,48.3363]
 

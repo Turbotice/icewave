@@ -14,13 +14,14 @@ import icewave.field.Save_extract_record as drone_save
 from PIL import Image, ExifTags
 
 global drones
-drones = ['mesange','bernache','Fulmar']
+drones = ['mesange','bernache','Fulmar','Tourterelle','Harfang']
 
 import argparse
 def gen_parser():    
     parser = argparse.ArgumentParser(description="Manipulate multi instruments data")
     parser.add_argument('-date', dest='date', type=str,default='0226',help='select date to process data')
     parser.add_argument('-step', dest='step', type=int,default=1,help='select step. 1: get_records, 2:convert_flightrecords')
+    parser.add_argument('-year', dest='year', type=str,default='2026',help='Specify the year')
 
     #parser.add_argument('-step', dest='step', type=int,default=3,help='select Step to be performed')
 #    print(parser)   
@@ -41,10 +42,20 @@ def get_record(drone,srtfile,date='0211',year='2025'):
 def get_jpg_record(jpgfile,drone=''):
     img = Image.open(jpgfile)
     record = { ExifTags.TAGS[k]: v for k, v in img._getexif().items() if k in ExifTags.TAGS }
+    record['latitude'],record['longitude']=get_gps_jpg(record)
     return record
 
+def get_gps_jpg(exif):
+    if 'GPSInfo' in exif.keys():
+        lat = exif['GPSInfo'][2]
+        latitude = float(lat[0]+lat[1]/60+lat[2]/3600)
+
+        lon = exif['GPSInfo'][4]
+        longitude = -float(lon[0]+lon[1]/60+lon[2]/3600)#west hemisphere
+    return latitude,longitude
+
 def get_records(date,jpg=True,year='2025'):
-    srtfiles = get_srtfiles(date)
+    srtfiles = get_srtfiles(date,year=year)
     
     records = {}
     records['drones']={}
@@ -59,13 +70,13 @@ def get_records(date,jpg=True,year='2025'):
                 records['drones'][key][name].append(record)
 
     if jpg==True:
-        jpgfiles = drone_save.get_jpgfiles(date)
+        jpgfiles = get_jpgfiles(date,year=year)
         print(jpgfiles)
         #for now, it does not find any jpg files
         for key in jpgfiles.keys():
             records['drones'][key]={}
             for i,jpgfile in enumerate(jpgfiles[key]):
-                name = jpgfile.split('/')[-2]#.split('.')[0]
+                name = os.path.basename(jpgfile).split('.')[0]#.split('/')[-2]#.split('.')[0]
                 print(i,jpgfile,name)
                 if not name in records['drones'][key]:
                     record = get_jpg_record(jpgfile,drone=key)
@@ -89,6 +100,19 @@ def get_srtfiles(date,year='2025'):
             print(f"No data for {key} on {date}")
     return srtfiles
 
+def get_jpgfiles(date,year='2025'):
+    jpgfiles = {}
+    base = df.find_path(year=year,date=date)
+    print(base)
+    for key in drones:
+        srt = glob.glob(base+date+'/Drones/'+key+'/*/*.JPG')#/*/*.srt')
+        pprint(srt)
+        if len(srt)>0:
+            jpgfiles[key] = srt
+        else:
+            print(f"No data for {key} on {date}")
+    return jpgfiles    
+
 def get_mp4files(date,save=True):
     import cv2
     import os
@@ -100,9 +124,8 @@ def get_mp4files(date,save=True):
                 save_mp4file(drone,filename)
     return mp4files
 
-def  generate_flightrecords(date):
+def generate_flightrecords(date):
     srtfiles = get_srtfiles(date)
-    
 
 def save_mp4file(drone,filename):
     print(key,filename.split('/')[-2])
@@ -114,7 +137,7 @@ def save_mp4file(drone,filename):
     cv2.imwrite(imagefile, frame) # Save the image
 
 def convert_flightrecords(date,year = '2025'):
-    csvfiles = get_csvfiles(date)
+    csvfiles = get_csvfiles(date,year=year)
     records={}
     records['drones']={}
     for drone in csvfiles.keys():
@@ -249,6 +272,8 @@ def get_flighrecord(srtfile,step=100,drone='mesange'):
         h0 = 5
     elif drone=='Fulmar' or drone=='fulmar':
         h0 = 5
+    elif drone=='Tourterelle' or drone=='tourterelle':
+        h0 = 5
     else:
         h0=0
         print(drone)
@@ -301,8 +326,9 @@ def get_flighrecord(srtfile,step=100,drone='mesange'):
     return record
 
 def main(args):
+    print(args.year)
     if args.step==1:
-        get_records(args.date)
+        get_records(args.date,year=args.year)
     if args.step==2:
         convert_flightrecords(args.date)
     if args.step==3:

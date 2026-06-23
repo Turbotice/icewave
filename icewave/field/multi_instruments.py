@@ -1,6 +1,4 @@
-import stephane.display.graphes as graphes
-import stephane.tools.Smath as smath
-
+import icewave.display.graphes as graphes
 import icewave.tools.datafolders as df
 import icewave.tools.rw_data as rw_data
 
@@ -13,14 +11,11 @@ import os
 import numpy as np
 
 #import icewave.phone.rw_pyphone as rw
-import icewave.tools.rw_data as rw_data
-
 import icewave.field.drone as drone
 import icewave.field.phone as phone
 import icewave.field.geophone as geophone
 import icewave.field.buoys as buoys
 import icewave.field.gps as gps
-
 
 import argparse
 
@@ -45,8 +40,9 @@ def get_records(date,year='2025'):
     return records
 
 def save_records(date,year):
-    records = get_records(date)
-    base = df.find_path(year,date=date)
+    records = get_records(date,year=year)
+    base = df.find_path(year=year,date=date)
+    print(base)
     filename = base+date+'/Summary/records_'+date+'.pkl'
 
     folder = os.path.dirname(filename)
@@ -192,8 +188,8 @@ def get_avg_position(record):
     longitude = np.mean(longitudes)
     return latitude,longitude
 
-def read_BA_timeline(date):
-    base = df.find_path()
+def read_BA_timeline(date,year="2025"):
+    base = df.find_path(year=year)
     filename = base + f'Summary/{date}_path_drone.txt'
     
     filelist = rw_data.read_csv(filename)
@@ -210,6 +206,12 @@ def main(args):
         if args.year=='2025':
             dates = ['0131','0201','0203','0204','0205','0206','0207','0208','0209']
             for i in range(10,26):
+                dates.append('02'+str(i))
+        if args.year=='2026':
+            dates = ['0131']
+            for i in range(1,10):
+                dates.append('020'+str(i))
+            for i in range(10,24):
                 dates.append('02'+str(i))
         for date in dates:
             try:
