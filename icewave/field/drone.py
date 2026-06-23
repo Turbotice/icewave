@@ -126,7 +126,6 @@ def get_mp4files(date,save=True):
 
 def generate_flightrecords(date):
     srtfiles = get_srtfiles(date)
-    
 
 def save_mp4file(drone,filename):
     print(key,filename.split('/')[-2])
