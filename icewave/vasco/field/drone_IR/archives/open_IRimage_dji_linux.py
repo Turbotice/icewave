@@ -3,8 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import os
-os.add_dll_directory(r"C:\Program Files\dji_thermal_sdk_v1.8_20250829\tsdk-core\lib\windows\release_x64")   # ← your SDK bin folder
 
+import ctypes
+ctypes.CDLL('/home/vasco/Téléchargements/dji_thermal_sdk_v1.8_20250829/dji_thermal_sdk_v1.8_20250829/tsdk-core/lib/linux/release_x64/libdirp.so')
 
 from dji_thermal_sdk.dji_sdk import *
 from dji_thermal_sdk.utility import rjpeg_to_heatmap, rjpeg_to_thermal
@@ -20,7 +21,7 @@ import dji_thermal_sdk.dji_sdk as DJI
 
 # 1. Initialisez le SDK en pointant vers le dossier contenant vos DLLs
 # Si les DLLs sont dans le dossier courant :
-DJI.dji_init(dllpath="libdirp.dll") 
+#DJI.dji_init(dllpath="libdirp.dll") 
 
 # 2. Vérifiez que la bibliothèque est bien chargée
 print(DJI._libdirp)
@@ -84,18 +85,5 @@ def open_IR_image(rd,plot=False):
             plt.colorbar(label='Température (°C)')
             plt.title("Image Thermique Radiométrique")
             plt.show()
-    return temp_matrix
 
 # %%
-def convert_all_rjpeg_to_txt(input_dir, output_dir):
-    lsdr = os.listdir(input_dir)
-    for filename in lsdr:
-        if (filename.endswith('JPG'))|(filename.endswith('jpg')):
-            try:
-                matrix = open_IR_image(f'{input_dir}/{filename}')
-                outputfilename = filename[:-3]+'txt'
-                np.savetxt(f'{output_dir}/{outputfilename}', matrix)
-            except:
-                print('not able to load IR data')
-
-#convert_all_rjpeg_to_txt("C:/Users/Vasco Zanchi/Downloads/IR_Images_Buffer/IR_Images_Buffer", "C:/Users/Vasco Zanchi/Downloads/IR_Images_Buffer/IR_Images_Buffer/outputs")
