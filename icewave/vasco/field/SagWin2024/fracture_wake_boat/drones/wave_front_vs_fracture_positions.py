@@ -20,10 +20,13 @@ from functions_fracture_analysis import click_on_fracture_path_plot_time_evol, c
 from profiles import *
 
 #%% definition des chemins des données
-disk = 'L:'# disk is Elements on adour
+#disk = 'L:'# disk is Elements on adour
+disk = 'C:'
 date = '0211'
 
-data_path = f'{disk}/Share_hublot/Data'
+#data_path = f'{disk}/Share_hublot/Data'
+data_path = f'C:/Users/Vasco Zanchi/Desktop/Saguenay2024'
+
 daily_drone_data_path = f'{data_path}/{date}/Drones'
 
 velocity_field_path = f'{daily_drone_data_path}/exact_solution_real_field_stereo_0211_2024_rectangular_grid.h5'
@@ -59,9 +62,8 @@ facq_x = dict_stereo_pivdata['SCALE']['facq_x']
 %matplotlib inline
 
 path_dict2save = f'{daily_drone_data_path}/Results/traitement_vasco/dict_results_frac.pkl'
-if os.path.exists(path_dict2save):
-    with open(path_dict2save, 'rb') as file:
-        dict_frac = pickle.load(file)
+with open(path_dict2save, 'rb') as file:
+    dict_frac = pickle.load(file)
 image = vz[:,:,1000]
 plt.imshow(image)
 plt.imshow(np.where(fractures_positions_data['binary'],fractures_positions_data['binary'],np.nan),cmap='gray')
@@ -112,3 +114,72 @@ plt.plot(x_test, alpha)'''
 for i in range(0,500,50):
     dict_lines, (peaks2d, matrice2d_smoothed, matrice2d) = compute_kappa_n_profiles_along_wavecrest(uz, index_time=500+i, facq_x=dict_stereo_pivdata['SCALE']['facq_x'])
 
+#%% Find lines for all frames and save pkl file
+dic_all_lines = {}
+for i in range(vz.shape[2]):
+    dic_all_lines['frame_'+str(i)] = {}
+    dict_lines, (peaks2d, matrice2d_smoothed, matrice2d) = compute_kappa_n_profiles_along_wavecrest(uz, index_time=i, facq_x=dict_stereo_pivdata['SCALE']['facq_x'], plot=False)
+    dic_all_lines['frame_'+str(i)]['dict_lines'] = dict_lines
+    dic_all_lines['frame_'+str(i)]['other_infos'] = (peaks2d, matrice2d_smoothed, matrice2d)
+
+pkl_filename = 'dict_all_wavefront_lines'
+pkl_filepath = f'{daily_drone_data_path}/Results/traitement_vasco/{pkl_filename}.pkl'
+save_input = input('save ? (y/n)')
+if save_input=='y':
+    pickle.dump(dic_all_lines, open(pkl_filepath, "wb"))
+else:
+    pass
+
+# %% plot histogramme des temps de fractures
+(yind_positions_fractures, xind_positions_fractures) = np.where(fractures_positions_data['binary']==1)
+
+array_tfrac_approx = np.zeros(len(yind_positions_fractures))
+for i in range(len(yind_positions_fractures)):
+    array_tfrac_approx[i] = fractures_positions_data['tmaxs_kappa2_t'][yind_positions_fractures[i],xind_positions_fractures[i]]
+
+%matplotlib inline
+hh = plt.hist(array_tfrac_approx, bins=40)
+xvals = hh[0]
+yvals = hh[1]
+plt.xlim(0, np.max(xvals)*1.05)
+plt.ylim(0, np.max(yvals)*1.05)
+plt.xlabel('Fracture time [sec]', fontsize=15)
+plt.ylabel('# of pixels', fontsize=15)
+plt.show()
+
+# et plot t_frac_approx vs yind
+%matplotlib inline
+plt.figure()
+plt.plot(yind_positions_fractures,array_tfrac_approx,'o')
+plt.show()
+
+#%%
+# on va chercher kappa_n et kappa_t 
+# pour les 3 premieres fractures d'intérêt
+
+# on va faire "à moitié" à  la main :
+# sélection de la ligne de front d'onde 
+# qui nous intéresse, après avoir choisi la fracture 
+# qui nous intéresse et donc le temps (frame) à afficher
+
+k1 = 'dict_single_frac_yind23_xind28'
+tfrac_approx = dict_frac[k1]['times_frac_sec_approx_ref_noncassee'][0]
+ind_tfrac_approx = np.where(dict_stereo_pivdata['t']>=tfrac_approx)[0][0]
+
+plt.figure()
+plt.imshow(uz[:,:,ind_tfrac_approx])
+plt.plot(dict_frac[k1]['idcs_single_frac'][:,0], dict_frac[k1]['idcs_single_frac'][:,1], 'k^')
+for i in range(len(dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines'])):
+    xvals = dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines']['line_'+str(i)]['x_ind']
+    yvals = dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines']['line_'+str(i)]['y_ind']
+    plt.plot(xvals, yvals, label='line '+str(i))
+
+plt.legend()
+plt.show()
+
+# choix par exemple ici : line 0
+line_index = 0
+
+
+
+# %%

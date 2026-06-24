@@ -185,8 +185,10 @@ def compute_kappa_n_profiles_along_wavecrest(uz, index_time=1000, facq_x=1.25, p
         #arr_theta = arr_alpha + np.pi/2
 
         norm = np.sqrt(1 + (df/dx)**2)
-        u = -(df/dx) / norm
-        v = 1/norm
+        u_n = -(df/dx) / norm
+        v_n = 1/norm
+        u_t = 1/norm
+        v_t = (df/dx) / norm
 
         if plot:
             #plt.plot(xvals2plot, a*xvals2plot+b,'k',alpha=0.5)
@@ -194,9 +196,9 @@ def compute_kappa_n_profiles_along_wavecrest(uz, index_time=1000, facq_x=1.25, p
             plt.plot(xvals2plot, yvals2plot, label='line '+str(ct))
             ax = plt.gca()
             if ax.yaxis_inverted():
-                varrow = -v
+                varrow = -v_n
             else:
-                varrow = v
+                varrow = v_n
             plt.quiver(
                 xvals2plot, yvals2plot, u, varrow,
                 np.ones(len(xvals2plot)),                    # couleur selon ||∇f||
@@ -221,8 +223,11 @@ def compute_kappa_n_profiles_along_wavecrest(uz, index_time=1000, facq_x=1.25, p
         dict_lines[k]['polynomial_fit']['xvalsfit'] = xvals2plot
         dict_lines[k]['polynomial_fit']['yfit'] = synth_ydata
 
-        dict_lines[k]['polynomial_fit']['u'] = u
-        dict_lines[k]['polynomial_fit']['v'] = v
+        dict_lines[k]['polynomial_fit']['u_n'] = u_n
+        dict_lines[k]['polynomial_fit']['v_n'] = v_n
+        dict_lines[k]['polynomial_fit']['u_t'] = u_t
+        dict_lines[k]['polynomial_fit']['v_t'] = v_t
+        
 
 
         ct+=1
@@ -246,25 +251,33 @@ def compute_kappa_n_profiles_along_wavecrest(uz, index_time=1000, facq_x=1.25, p
         x_ind = dict_lines[k]['x_ind']
         y_ind = dict_lines[k]['y_ind']
         kappa_n_prof = np.zeros(len(x_ind))
+        kappa_t_prof = np.zeros(len(x_ind))
 
         if not(params['fit_higher_order']):
 
             slope = dict_lines[k]['linear_fit']['slope']
             theta = np.arctan(slope) + np.pi/2
+            alpha = np.arctan(slope)
             dict_lines[k]['linear_fit']['theta_rad'] = theta
             for i in range(len(x_ind)):
                 kappa_n_prof[i] = np.cos(theta) * kappa_x[y_ind[i],x_ind[i]] + np.sin(theta) * kappa_y[y_ind[i],x_ind[i]]
-
+                kappa_t_prof[i] = np.cos(alpha) * kappa_x[y_ind[i],x_ind[i]] + np.sin(alpha) * kappa_y[y_ind[i],x_ind[i]]
 
         elif params['fit_higher_order']:
-            u = dict_lines[k]['polynomial_fit']['u']
-            v = dict_lines[k]['polynomial_fit']['v']
+            u_n = dict_lines[k]['polynomial_fit']['u_n']
+            v_n = dict_lines[k]['polynomial_fit']['v_n']
+            u_t = dict_lines[k]['polynomial_fit']['u_t']
+            v_t = dict_lines[k]['polynomial_fit']['v_t']
+            
 
             for i in range(len(x_ind)):
-                kappa_n_prof[i] = u[i] * kappa_x[y_ind[i],x_ind[i]] + v[i] * kappa_y[y_ind[i],x_ind[i]]
+                kappa_n_prof[i] = u_n[i] * kappa_x[y_ind[i],x_ind[i]] + v_n[i] * kappa_y[y_ind[i],x_ind[i]]
+                kappa_t_prof[i] = u_t[i] * kappa_x[y_ind[i],x_ind[i]] + v_t[i] * kappa_y[y_ind[i],x_ind[i]]
 
 
         dict_lines[k]['kappa_n_profile'] = kappa_n_prof
+        dict_lines[k]['kappa_t_profile'] = kappa_t_prof
+        
         if plot:  
             plt.plot(-kappa_n_prof)
             plt.ylim(0,None)

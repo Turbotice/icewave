@@ -16,10 +16,13 @@ from vasco.tools.clickonfigures import get_n_points_onimage
 from functions_fracture_analysis import click_on_fracture_path_plot_time_evol, click2extract_amplitude, plot_elevation_refnotbroken_and_broken
 
 #%%
-disk = 'L:'# disk is Elements on adour
+#disk = 'L:'# disk is Elements on adour
+disk = 'C:'# disk is Elements on adour
+
 date = '0211'
 
-data_path = f'{disk}/Share_hublot/Data'
+#data_path = f'{disk}/Share_hublot/Data'
+data_path = f'C:/Users/Vasco Zanchi/Desktop/Saguenay2024'
 daily_drone_data_path = f'{data_path}/{date}/Drones'
 
 velocity_field_path = f'{daily_drone_data_path}/exact_solution_real_field_stereo_0211_2024_rectangular_grid.h5'
@@ -101,7 +104,7 @@ labels = sc.fit_predict(X)
 #model = AgglomerativeClustering(n_clusters=50, linkage='single')
 #labels = model.fit_predict(X)
 
-#k = 100
+k = 100
 #kmeans = KMeans(n_clusters=k, init="k-means++", n_init=10, random_state=42)
 #kmeans.fit(X)
 
@@ -129,6 +132,7 @@ fig, axes = plt.subplots(1, 1, figsize=(10, 7))
 # Cluster plot
 colors = plt.cm.tab10(np.linspace(0, 1, 4))
 for i in range(k):
+
     mask = labels == i
     axes.scatter(X[mask, 0], X[mask, 1], s=40, label=f"Cluster {i+1}")
 #axes[0].scatter(centers[:, 0], centers[:, 1],
@@ -151,58 +155,3 @@ plt.tight_layout()
 plt.show()
 
 
-#%%  "clustering" à 1d (pour les temps de frac) pour voir si on voit 
-# que les fractures peuvent se détecter en temps...
-
-
-X = tfrac_sec_vals[:,np.newaxis]
-
-
-X = StandardScaler().fit_transform(X)
-
-# ── 2. Fit K-Means ───────────────────────────────────────────────────────────
-k = 20
-kmeans = KMeans(n_clusters=k, init="k-means++", n_init=10, random_state=42)
-kmeans.fit(X)
-
-labels     = kmeans.labels_
-centers    = kmeans.cluster_centers_
-inertia    = kmeans.inertia_
-
-print(f"Inertia (WCSS): {inertia:.2f}")
-
-"""# ── 3. Elbow Method – find optimal k ─────────────────────────────────────────
-inertias = []
-K_range  = range(1, 11)
-
-for k in K_range:
-    km = KMeans(n_clusters=k, init="k-means++", n_init=10, random_state=42)
-    km.fit(X)
-    inertias.append(km.inertia_)
-"""
-# ── 4. Plot ───────────────────────────────────────────────────────────────────
-fig, axes = plt.subplots(1, 1, figsize=(10, 7))
-
-# Cluster plot
-colors = plt.cm.tab10(np.linspace(0, 1, 4))
-for i in range(k):
-    mask = labels == i
-    axes.scatter(X_old[mask, 0], X_old[mask, 1], s=40, label=f"Cluster {i+1}")
-#axes[0].scatter(centers[:, 0], centers[:, 1],
-#                c="black", s=200, marker="X", zorder=5, label="Centroids")
-axes.set_title(f"K-Means Clustering (k={k})")
-axes.set_xlabel("Feature 1")
-axes.set_ylabel("Feature 2")
-#axes[0].legend()
-
-"""# Elbow curve
-axes[1].plot(K_range, inertias, "bo-", linewidth=2, markersize=8)
-axes[1].axvline(x=4, color="red", linestyle="--", label="Optimal k=4")
-axes[1].set_title("Elbow Method")
-axes[1].set_xlabel("Number of Clusters (k)")
-axes[1].set_ylabel("Inertia (WCSS)")
-axes[1].legend()"""
-
-plt.tight_layout()
-#plt.savefig("kmeans_result.png", dpi=150)
-plt.show()
