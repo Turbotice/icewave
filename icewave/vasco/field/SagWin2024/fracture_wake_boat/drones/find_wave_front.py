@@ -5,6 +5,13 @@ from typing import List, Tuple
 from scipy.signal import find_peaks
 from scipy.ndimage import gaussian_filter
 
+import sys
+icewave_path = 'C:/Users/Vasco Zanchi/Documents/git_turbotice/icewave/icewave/'
+sys.path.append(icewave_path)
+from vasco.tools.tridimfits import fit_3dparabola, measure_bidimensional_curvature_around_central_point, convertir_base_tournee, change_order_from_polyfeatures_to_polycoefs
+
+
+
 def find_peaks2d(matrice2d, axis=0):
     output_matrix = np.zeros_like(matrice2d) * np.nan
     if axis==0:
@@ -200,7 +207,7 @@ def compute_kappa_n_profiles_along_wavecrest(uz, index_time=1000, facq_x=1.25, p
             else:
                 varrow = v_n
             plt.quiver(
-                xvals2plot, yvals2plot, u, varrow,
+                xvals2plot, yvals2plot, u_n, varrow,
                 np.ones(len(xvals2plot)),                    # couleur selon ||∇f||
                 cmap='plasma',
                 scale=40,               # ajuster la taille des flèches
@@ -284,3 +291,46 @@ def compute_kappa_n_profiles_along_wavecrest(uz, index_time=1000, facq_x=1.25, p
             
 
     return dict_lines, (peaks2d, matrice2d_smoothed, matrice2d)
+
+#%%
+def bidim_curvature_oneline(uz=np.ndarray,
+                            dic_all_lines=dict,
+                            ind_t=1088, 
+                            line_index=0,
+                            window_size=(11,11)):
+    """
+    info : pour ind_t il faut mettre ind_tfrac_approx correspondant à 
+    l'instant approx d'une fracture
+    """
+    
+    xind_arr = dic_all_lines[f'frame_{ind_t}']['dict_lines'][f'line_{line_index}']['x_ind']
+    yind_arr = dic_all_lines[f'frame_{ind_t}']['dict_lines'][f'line_{line_index}']['y_ind']
+    #u_n_arr = dic_all_lines[f'frame_{ind_t}']['dict_lines'][f'line_{line_index}']['polynomial_fit']['u_n']
+    u_t_arr = dic_all_lines[f'frame_{ind_t}']['dict_lines'][f'line_{line_index}']['polynomial_fit']['u_t']
+    #v_n_arr = dic_all_lines[f'frame_{ind_t}']['dict_lines'][f'line_{line_index}']['polynomial_fit']['v_n']
+    v_t_arr = dic_all_lines[f'frame_{ind_t}']['dict_lines'][f'line_{line_index}']['polynomial_fit']['v_t']
+
+    alpha_arr = np.zeros(len(u_t_arr))
+    for i in range(len(u_t_arr)):
+        alpha_arr[i] = np.arctan2(v_t_arr[i], u_t_arr[i])
+    
+    arr_coefficients_invariantbasis = np.zeros((len(xind_arr), 6)) # 6 coef pour un fit de parabole tridimensionnelle
+    arr_coefficients_movingbasis = np.zeros((len(xind_arr), 6))
+
+    for index_point in range(len(xind_arr)):
+        if ((xind_arr[index_point]-int((window_size[0]-1)/2) < 0) | (yind_arr[index_point]-int((window_size[1]-1)/2) < 0)):
+            arr_coefficients_invariantbasis[i,:] = np.ones(6)*np.nan
+            arr_coefficients_movingbasis[i,:] = np.ones(6)*np.nan
+        else:
+            matrix2d = uz[:,:,ind_t]
+            dic_res = measure_bidimensional_curvature_around_central_point(matrix2d, xind_arr[index_point], yind_arr[index_point], window_size=window_size)
+            coef_polyfeatures = dic_res['coefficients']
+            intercept = dic_res['intercept']
+
+            coefficients_invariantbasis = change_order_from_polyfeatures_to_polycoefs(coef_polyfeatures=coef_polyfeatures, intercept=intercept)
+            arr_coefficients_invariantbasis[index_point,:] = coefficients_invariantbasis
+
+            coefficients_movingbasis = convertir_base_tournee(coefficients_invariantbasis, alpha_arr[index_point])
+            arr_coefficients_movingbasis[index_point,:] = coefficients_movingbasis
+
+    return arr_coefficients_invariantbasis, arr_coefficients_movingbasis, alpha_arr

@@ -15,6 +15,8 @@ import tools.rw_data as rw
 from vasco.tools.clickonfigures import profile_line_on_image_2clicks
 from vasco.tools.clickonfigures import get_n_points_onimage
 from vasco.tools.clickonfigures import get_n_points
+from vasco.tools.tridimfits import fit_3dparabola, measure_bidimensional_curvature_around_central_point, convertir_base_tournee, change_order_from_polyfeatures_to_polycoefs
+
 
 from functions_fracture_analysis import click_on_fracture_path_plot_time_evol, click2extract_amplitude, plot_elevation_refnotbroken_and_broken
 from profiles import *
@@ -76,7 +78,7 @@ plt.show()
 
 #%%
 from scipy.ndimage import gaussian_filter1d
-from find_wave_front import find_wave_fronts_on_image, find_lines, group_lines_to_dict, compute_kappa_n_profiles_along_wavecrest
+from find_wave_front import find_wave_fronts_on_image, find_lines, group_lines_to_dict, compute_kappa_n_profiles_along_wavecrest, bidim_curvature_oneline
 
 k = 'dict_single_frac_yind10_xind39'
 
@@ -179,7 +181,28 @@ plt.show()
 
 # choix par exemple ici : line 0
 line_index = 0
+# on peut donc choisir dans le dic_all_lines la frame 
+# qui nous intéresse et la ligne qui nous intéresse
+kappa_n_profile = dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines']['line_'+str(line_index)]['kappa_n_profile']
+kappa_t_profile = dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines']['line_'+str(line_index)]['kappa_t_profile']
+
+plt.figure()
+plt.plot(kappa_n_profile)
+plt.plot(kappa_t_profile)
 
 
 
-# %%
+arr_coefficients_invariantbasis, arr_coefficients_movingbasis, alpha_arr = bidim_curvature_oneline(uz=uz, 
+                                                                                                   dic_all_lines=dic_all_lines,
+                                                                                                   ind_t=ind_tfrac_approx, 
+                                                                                                   line_index=line_index,
+                                                                                                   window_size=(11,11))
+#####################
+kappa_xx = 2 * arr_coefficients_invariantbasis[:,0]
+kappa_yy = 2 * arr_coefficients_invariantbasis[:,1]
+
+
+#####################
+kappa_tt_profile = 2 * arr_coefficients_movingbasis[:,0]
+kappa_nn_profile = 2 * arr_coefficients_movingbasis[:,1]
+K_gauss_movingbasis = arr_coefficients_movingbasis[:,0]*arr_coefficients_movingbasis[:,1] - arr_coefficients_movingbasis[:,2]**2
