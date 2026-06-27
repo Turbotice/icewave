@@ -247,8 +247,11 @@ def compute_kappa_n_profiles_along_wavecrest(uz, index_time=1000, facq_x=1.25, p
 
     # tout d'abord, on peut calculer le champ de courbures :
 
-    kappa_x = np.gradient(np.gradient(matrice2d_smoothed,axis=1),axis=1) * facq_x
-    kappa_y = np.gradient(np.gradient(matrice2d_smoothed,axis=0),axis=0) * facq_x
+    #kappa_x = np.gradient(np.gradient(matrice2d_smoothed,axis=1),axis=1) * (facq_x**2)
+    #kappa_y = np.gradient(np.gradient(matrice2d_smoothed,axis=0),axis=0) * (facq_x**2)
+
+    kappa_x = np.diff(np.diff(matrice2d_smoothed,axis=1,prepend=0),axis=1,prepend=0) * (facq_x**2)
+    kappa_y = np.diff(np.diff(matrice2d_smoothed,axis=0,prepend=0),axis=0,prepend=0) * (facq_x**2)
 
     
     if plot:
@@ -259,6 +262,8 @@ def compute_kappa_n_profiles_along_wavecrest(uz, index_time=1000, facq_x=1.25, p
         y_ind = dict_lines[k]['y_ind']
         kappa_n_prof = np.zeros(len(x_ind))
         kappa_t_prof = np.zeros(len(x_ind))
+        kappa_x_prof = np.zeros(len(x_ind))
+        kappa_y_prof = np.zeros(len(x_ind))
 
         if not(params['fit_higher_order']):
 
@@ -267,6 +272,8 @@ def compute_kappa_n_profiles_along_wavecrest(uz, index_time=1000, facq_x=1.25, p
             alpha = np.arctan(slope)
             dict_lines[k]['linear_fit']['theta_rad'] = theta
             for i in range(len(x_ind)):
+                kappa_x_prof[i] = kappa_x[y_ind[i],x_ind[i]]
+                kappa_y_prof[i] = kappa_y[y_ind[i],x_ind[i]]
                 kappa_n_prof[i] = np.cos(theta) * kappa_x[y_ind[i],x_ind[i]] + np.sin(theta) * kappa_y[y_ind[i],x_ind[i]]
                 kappa_t_prof[i] = np.cos(alpha) * kappa_x[y_ind[i],x_ind[i]] + np.sin(alpha) * kappa_y[y_ind[i],x_ind[i]]
 
@@ -278,12 +285,17 @@ def compute_kappa_n_profiles_along_wavecrest(uz, index_time=1000, facq_x=1.25, p
             
 
             for i in range(len(x_ind)):
+                kappa_x_prof[i] = kappa_x[y_ind[i],x_ind[i]]
+                kappa_y_prof[i] = kappa_y[y_ind[i],x_ind[i]]
                 kappa_n_prof[i] = u_n[i] * kappa_x[y_ind[i],x_ind[i]] + v_n[i] * kappa_y[y_ind[i],x_ind[i]]
                 kappa_t_prof[i] = u_t[i] * kappa_x[y_ind[i],x_ind[i]] + v_t[i] * kappa_y[y_ind[i],x_ind[i]]
 
 
         dict_lines[k]['kappa_n_profile'] = kappa_n_prof
         dict_lines[k]['kappa_t_profile'] = kappa_t_prof
+        dict_lines[k]['kappa_x_profile'] = kappa_x_prof
+        dict_lines[k]['kappa_y_profile'] = kappa_y_prof
+        
         
         if plot:  
             plt.plot(-kappa_n_prof)
@@ -305,14 +317,17 @@ def bidim_curvature_oneline(uz=np.ndarray,
     
     xind_arr = dic_all_lines[f'frame_{ind_t}']['dict_lines'][f'line_{line_index}']['x_ind']
     yind_arr = dic_all_lines[f'frame_{ind_t}']['dict_lines'][f'line_{line_index}']['y_ind']
-    #u_n_arr = dic_all_lines[f'frame_{ind_t}']['dict_lines'][f'line_{line_index}']['polynomial_fit']['u_n']
+    u_n_arr = dic_all_lines[f'frame_{ind_t}']['dict_lines'][f'line_{line_index}']['polynomial_fit']['u_n']
     u_t_arr = dic_all_lines[f'frame_{ind_t}']['dict_lines'][f'line_{line_index}']['polynomial_fit']['u_t']
-    #v_n_arr = dic_all_lines[f'frame_{ind_t}']['dict_lines'][f'line_{line_index}']['polynomial_fit']['v_n']
+    v_n_arr = dic_all_lines[f'frame_{ind_t}']['dict_lines'][f'line_{line_index}']['polynomial_fit']['v_n']
     v_t_arr = dic_all_lines[f'frame_{ind_t}']['dict_lines'][f'line_{line_index}']['polynomial_fit']['v_t']
+
+    
 
     alpha_arr = np.zeros(len(u_t_arr))
     for i in range(len(u_t_arr)):
         alpha_arr[i] = np.arctan2(v_t_arr[i], u_t_arr[i])
+    print(alpha_arr)
     
     arr_coefficients_invariantbasis = np.zeros((len(xind_arr), 6)) # 6 coef pour un fit de parabole tridimensionnelle
     arr_coefficients_movingbasis = np.zeros((len(xind_arr), 6))

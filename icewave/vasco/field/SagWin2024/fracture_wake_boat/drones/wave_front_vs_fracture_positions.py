@@ -155,7 +155,7 @@ plt.figure()
 plt.plot(yind_positions_fractures,array_tfrac_approx,'o')
 plt.show()
 
-#%%
+#%% étude "complète" pour 1 crack
 # on va chercher kappa_n et kappa_t 
 # pour les 3 premieres fractures d'intérêt
 
@@ -164,13 +164,13 @@ plt.show()
 # qui nous intéresse, après avoir choisi la fracture 
 # qui nous intéresse et donc le temps (frame) à afficher
 
-k1 = 'dict_single_frac_yind23_xind28'
-tfrac_approx = dict_frac[k1]['times_frac_sec_approx_ref_noncassee'][0]
+keyfrac = 'dict_single_frac_yind23_xind28'
+tfrac_approx = dict_frac[keyfrac]['times_frac_sec_approx_ref_noncassee'][0]
 ind_tfrac_approx = np.where(dict_stereo_pivdata['t']>=tfrac_approx)[0][0]
 
 plt.figure()
 plt.imshow(uz[:,:,ind_tfrac_approx])
-plt.plot(dict_frac[k1]['idcs_single_frac'][:,0], dict_frac[k1]['idcs_single_frac'][:,1], 'k^')
+plt.plot(dict_frac[keyfrac]['idcs_single_frac'][:,0], dict_frac[keyfrac]['idcs_single_frac'][:,1], 'k^')
 for i in range(len(dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines'])):
     xvals = dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines']['line_'+str(i)]['x_ind']
     yvals = dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines']['line_'+str(i)]['y_ind']
@@ -183,6 +183,8 @@ plt.show()
 line_index = 0
 # on peut donc choisir dans le dic_all_lines la frame 
 # qui nous intéresse et la ligne qui nous intéresse
+kappa_x_profile = dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines']['line_'+str(line_index)]['kappa_x_profile']
+kappa_y_profile = dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines']['line_'+str(line_index)]['kappa_y_profile']
 kappa_n_profile = dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines']['line_'+str(line_index)]['kappa_n_profile']
 kappa_t_profile = dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines']['line_'+str(line_index)]['kappa_t_profile']
 
@@ -197,12 +199,89 @@ arr_coefficients_invariantbasis, arr_coefficients_movingbasis, alpha_arr = bidim
                                                                                                    ind_t=ind_tfrac_approx, 
                                                                                                    line_index=line_index,
                                                                                                    window_size=(11,11))
+
+
+
+
+#%%
 #####################
-kappa_xx = 2 * arr_coefficients_invariantbasis[:,0]
-kappa_yy = 2 * arr_coefficients_invariantbasis[:,1]
+# extraction des courbures (converties en unités physiques)
+facq_x = dict_stereo_pivdata['SCALE']['facq_x']
+
+kappa_xx = 2 * arr_coefficients_invariantbasis[:,0] * (facq_x**2)
+kappa_yy = 2 * arr_coefficients_invariantbasis[:,1] * (facq_x**2)
+K_gauss_invariantbasis = (facq_x**4) * (arr_coefficients_invariantbasis[:,0]*arr_coefficients_invariantbasis[:,1] - arr_coefficients_invariantbasis[:,2]**2)
 
 
 #####################
-kappa_tt_profile = 2 * arr_coefficients_movingbasis[:,0]
-kappa_nn_profile = 2 * arr_coefficients_movingbasis[:,1]
-K_gauss_movingbasis = arr_coefficients_movingbasis[:,0]*arr_coefficients_movingbasis[:,1] - arr_coefficients_movingbasis[:,2]**2
+kappa_tt_profile = 2 * arr_coefficients_movingbasis[:,0] * (facq_x**2)
+kappa_nn_profile = 2 * arr_coefficients_movingbasis[:,1] * (facq_x**2)
+K_gauss_movingbasis = (facq_x**4) * (arr_coefficients_movingbasis[:,0]*arr_coefficients_movingbasis[:,1] - arr_coefficients_movingbasis[:,2]**2)
+
+plt.figure()
+plt.plot(kappa_nn_profile)
+plt.plot(kappa_tt_profile)
+plt.plot(K_gauss_movingbasis)
+
+
+#######################
+
+#%% vérif que les 2 methodes de mesure de courbure sont cohérentes
+plt.figure()
+plt.plot(kappa_xx,label='kappaxx')
+plt.plot(kappa_yy,label='kappayy')
+plt.plot(kappa_x_profile,label='kappax')
+plt.plot(kappa_y_profile,label='kappay')
+plt.legend()
+plt.figure()
+plt.plot(kappa_tt_profile, label='kappa_tt')
+plt.plot(kappa_nn_profile, label='kappa_nn')
+plt.plot(kappa_t_profile, label='kappa_t_profile')
+plt.plot(kappa_n_profile, label='kappa_n_profile')
+plt.legend()
+
+# %%
+def closest_points_between_2curves(x1=np.ndarray,y1=np.ndarray,x2=np.ndarray,y2=np.ndarray):
+    """
+    inputs :
+    x1, y2 : coordonnées des points de la fracture
+    x2, y2 : coordonnées des points du front d'onde
+    outputs :
+    tableau d'indices (pour x2), de la taille de x1 des points les plus proches
+    """
+    closests = np.empty(len(x1), dtype=int)
+    for i in range(len(x1)):
+        distances = np.hypot(x1[i]-x2, y1[i]-y2) # distances est un tableau de la taille de x2
+        print(distances)
+        agmn = np.argmin(distances)
+        closests[i] = agmn
+    return closests
+
+
+x1 = dict_frac[keyfrac]['idcs_single_frac'][:,0]
+y1 = dict_frac[keyfrac]['idcs_single_frac'][:,1]
+
+x2 = dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines']['line_'+str(line_index)]['x_ind']
+y2 = dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines']['line_'+str(line_index)]['y_ind']
+
+ind_closests = closest_points_between_2curves(x1=x1, y1=y1, x2=x2, y2=y2)
+
+xvals2plot_meters = np.arange(len(kappa_nn_profile)) * (1/facq_x)
+
+plt.figure(figsize=(10,7))
+plt.plot(xvals2plot_meters, kappa_nn_profile, label='curvature normal to wave front')
+plt.plot(xvals2plot_meters, kappa_tt_profile, label='curvature tangent to wave front')
+
+plt.plot(xvals2plot_meters, np.sign(K_gauss_movingbasis) * np.sqrt(np.abs(K_gauss_movingbasis)))
+
+
+plt.plot(xvals2plot_meters, kappa_n_profile,label='kappa_n_profile method 1')
+plt.plot(xvals2plot_meters, kappa_t_profile,label='kappa_t_profile method 1')
+
+plt.vlines(np.min(xvals2plot_meters[ind_closests]),np.min(kappa_nn_profile), np.max(kappa_nn_profile),'r',linestyle='--')
+plt.vlines(np.max(xvals2plot_meters[ind_closests]),np.min(kappa_nn_profile), np.max(kappa_nn_profile),'r',linestyle='--')
+plt.plot([],[],'r--',label='limites inf et sup de la fracture')
+plt.legend()
+plt.xlabel('Position along the wave front [m]', fontsize=15)
+plt.ylabel('Curvature [m^-1]', fontsize=15)
+# %%

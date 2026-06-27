@@ -52,7 +52,28 @@ def fit_3dparabola(x,y,z, plot=False):
     return dict_results
 
 
-def measure_bidimensional_curvature_around_central_point(matrix2d, xind_centre, yind_centre, window_size=(11,11)):
+def measure_bidimensional_curvature_around_central_point(matrix2d, xind_centre, yind_centre, window_size=(11,11), plot=True):
+
+    """
+    Fits a parabola in 3d, given a 2d matrix (real field), 
+    the zone around which to fit
+
+    Example :
+    x = np.arange(0,100,1)
+    y = np.arange(0,100,1)
+    X,Y = np.meshgrid(x,y)
+    def parabole(x,y):
+        return 1*(x-50)**2+2*(y-50)**2
+    matrice2d = parabole(X,Y)
+    measure_bidimensional_curvature_around_central_point(matrice2d,50,50,window_size=(21,21))
+    Check using np.diff :
+    kappa_x = np.diff(np.diff(matrice2d,axis=1,prepend=0),axis=1,prepend=0)
+    kappa_y = np.diff(np.diff(matrice2d,axis=0,prepend=0),axis=0,prepend=0)
+
+    print('Method applying twice np.diff :)
+    print('kappa_x(50,50)', kappa_x[50,50])
+    print('kappa_y(50,50)', kappa_y[50,50])
+    """
 
     dx = int((window_size[0]-1)/2)
     dy = int((window_size[1]-1)/2)
@@ -64,8 +85,8 @@ def measure_bidimensional_curvature_around_central_point(matrix2d, xind_centre, 
     yind_sup = yind_centre+dy
 
 
-    xvals = np.arange(uz.shape[1])
-    yvals = np.arange(uz.shape[0])
+    xvals = np.arange(matrix2d.shape[1])
+    yvals = np.arange(matrix2d.shape[0])
 
     X,Y = np.meshgrid(xvals,yvals)
     X = X[yind_inf:yind_sup, xind_inf:xind_sup]
@@ -77,7 +98,7 @@ def measure_bidimensional_curvature_around_central_point(matrix2d, xind_centre, 
     Z = matrix2d[yind_inf:yind_sup,xind_inf:xind_sup]
     z = Z.flatten()
 
-    dict_results = fit_3dparabola(x,y,z, plot=True)
+    dict_results = fit_3dparabola(x,y,z, plot=plot)
     return dict_results
 
 import numpy as np
@@ -123,6 +144,14 @@ def convertir_base_tournee(coeffs, alpha):
 
 
 def change_order_from_polyfeatures_to_polycoefs(coef_polyfeatures=np.zeros(6), intercept=0):
+    """
+    Test with non numerical values :
+    coef_polyfeatures = np.array(['1','x','y','x²','xy','y²'])
+    change_order_from_polyfeatures_to_polycoefs(coef_polyfeatures)
+    Returns :
+    array(['x²', 'y²', 'xy', 'x', 'y', '0'])
+    """
+    
     a = coef_polyfeatures[3]
     b = coef_polyfeatures[5]
     c = coef_polyfeatures[4]
