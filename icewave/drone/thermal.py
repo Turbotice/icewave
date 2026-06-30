@@ -2,7 +2,8 @@
 #from PIL.ExifTags import TAGS
 
 from PIL import Image, ExifTags
-
+from exiftool import ExifToolHelper
+import base64
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -32,9 +33,36 @@ def histogram(im,N=100,Max=400):
 
 
 def get_exif(filename):
-    image = Image.open(filename)
-    exif = { ExifTags.TAGS[k]: v for k, v in image._getexif().items() if k in ExifTags.TAGS }
+    exif = {}
+    with ExifToolHelper() as et:
+        for d in et.get_metadata(filename,params = '-b'):
+            for k, v in d.items():
+                #print(f"Dict: {k} = {v}")
+                exif[k] = v            
     return exif
+
+def read_rawdata(exif):
+    # Ta chaîne Base64
+    base64_str = exif['APP3:ThermalData']
+# Extraire la partie après "base64:"
+    if base64_str.startswith("base64:"):
+        base64_str = base64_str[7:]  # Enleve "base64:"
+    # Décoder en bytes
+    binary_data = base64.b64decode(base64_str)
+    #print(f"Taille des données binaires : {len(binary_data)} octets")
+
+    # Convertir en numpy array
+    uint16_array_np = np.frombuffer(binary_data, dtype=np.uint16)
+
+    #print(len(uint16_array_np))
+
+    # Récupère les dimensions réelles du capteur
+    nx = int(exif['File:ImageHeight']/2)
+    ny = int(exif['File:ImageWidth']/2)
+
+    # Conversion en image
+    data = np.reshape(uint16_array_np,(nx,ny))
+    return data
 
 
 def exemple():
