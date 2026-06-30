@@ -78,9 +78,10 @@ plt.show()
 
 #%%
 from scipy.ndimage import gaussian_filter1d
-from find_wave_front import find_wave_fronts_on_image, find_lines, group_lines_to_dict, compute_kappa_n_profiles_along_wavecrest, bidim_curvature_oneline
+from find_wave_front import find_wave_fronts_on_image, find_lines, group_lines_to_dict, compute_kappa_n_profiles_along_wavecrest, bidim_curvature_oneline, closest_points_between_2curves
 
-k = 'dict_single_frac_yind10_xind39'
+#k = 'dict_single_frac_yind10_xind39'
+k = 'dict_single_frac_yind23_xind28'
 
 idcs_single_frac = dict_frac[k]['idcs_single_frac']
 time_frac_approx = dict_frac[k]['times_frac_sec_approx_ref_noncassee'][0]
@@ -113,8 +114,7 @@ alpha = np.arctan2(np.gradient(x_test), np.gradient(ysm_test))
 
 plt.plot(x_test, alpha)'''
 %matplotlib inline
-for i in range(0,500,50):
-    dict_lines, (peaks2d, matrice2d_smoothed, matrice2d) = compute_kappa_n_profiles_along_wavecrest(uz, index_time=500+i, facq_x=dict_stereo_pivdata['SCALE']['facq_x'])
+dict_lines, (peaks2d, matrice2d_smoothed, matrice2d) = compute_kappa_n_profiles_along_wavecrest(uz, index_time=index_time_frac_approx, facq_x=dict_stereo_pivdata['SCALE']['facq_x'])
 
 #%% Find lines for all frames and save pkl file
 dic_all_lines = {}
@@ -164,7 +164,13 @@ plt.show()
 # qui nous intéresse, après avoir choisi la fracture 
 # qui nous intéresse et donc le temps (frame) à afficher
 
-keyfrac = 'dict_single_frac_yind23_xind28'
+#keyfrac = 'dict_single_frac_yind23_xind28'
+#line_index = 0
+#keyfrac = 'dict_single_frac_yind10_xind39'
+#line_index = 0
+keyfrac = 'dict_single_frac_yind34_xind25'
+line_index = 1
+
 tfrac_approx = dict_frac[keyfrac]['times_frac_sec_approx_ref_noncassee'][0]
 ind_tfrac_approx = np.where(dict_stereo_pivdata['t']>=tfrac_approx)[0][0]
 
@@ -179,8 +185,6 @@ for i in range(len(dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines']))
 plt.legend()
 plt.show()
 
-# choix par exemple ici : line 0
-line_index = 0
 # on peut donc choisir dans le dic_all_lines la frame 
 # qui nous intéresse et la ligne qui nous intéresse
 kappa_x_profile = dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines']['line_'+str(line_index)]['kappa_x_profile']
@@ -192,6 +196,7 @@ plt.figure()
 plt.plot(kappa_n_profile)
 plt.plot(kappa_t_profile)
 
+#%%
 
 
 arr_coefficients_invariantbasis, arr_coefficients_movingbasis, alpha_arr = bidim_curvature_oneline(uz=uz, 
@@ -199,9 +204,6 @@ arr_coefficients_invariantbasis, arr_coefficients_movingbasis, alpha_arr = bidim
                                                                                                    ind_t=ind_tfrac_approx, 
                                                                                                    line_index=line_index,
                                                                                                    window_size=(11,11))
-
-
-
 
 #%%
 #####################
@@ -218,16 +220,16 @@ kappa_tt_profile = 2 * arr_coefficients_movingbasis[:,0] * (facq_x**2)
 kappa_nn_profile = 2 * arr_coefficients_movingbasis[:,1] * (facq_x**2)
 K_gauss_movingbasis = (facq_x**4) * (arr_coefficients_movingbasis[:,0]*arr_coefficients_movingbasis[:,1] - arr_coefficients_movingbasis[:,2]**2)
 
-plt.figure()
+"""plt.figure()
 plt.plot(kappa_nn_profile)
 plt.plot(kappa_tt_profile)
-plt.plot(K_gauss_movingbasis)
+plt.plot(K_gauss_movingbasis)"""
 
 
 #######################
 
-#%% vérif que les 2 methodes de mesure de courbure sont cohérentes
-plt.figure()
+# vérif que les 2 methodes de mesure de courbure sont cohérentes
+"""plt.figure()
 plt.plot(kappa_xx,label='kappaxx')
 plt.plot(kappa_yy,label='kappayy')
 plt.plot(kappa_x_profile,label='kappax')
@@ -238,24 +240,10 @@ plt.plot(kappa_tt_profile, label='kappa_tt')
 plt.plot(kappa_nn_profile, label='kappa_nn')
 plt.plot(kappa_t_profile, label='kappa_t_profile')
 plt.plot(kappa_n_profile, label='kappa_n_profile')
-plt.legend()
+plt.legend()"""
 
-# %%
-def closest_points_between_2curves(x1=np.ndarray,y1=np.ndarray,x2=np.ndarray,y2=np.ndarray):
-    """
-    inputs :
-    x1, y2 : coordonnées des points de la fracture
-    x2, y2 : coordonnées des points du front d'onde
-    outputs :
-    tableau d'indices (pour x2), de la taille de x1 des points les plus proches
-    """
-    closests = np.empty(len(x1), dtype=int)
-    for i in range(len(x1)):
-        distances = np.hypot(x1[i]-x2, y1[i]-y2) # distances est un tableau de la taille de x2
-        print(distances)
-        agmn = np.argmin(distances)
-        closests[i] = agmn
-    return closests
+
+
 
 
 x1 = dict_frac[keyfrac]['idcs_single_frac'][:,0]
@@ -268,6 +256,7 @@ ind_closests = closest_points_between_2curves(x1=x1, y1=y1, x2=x2, y2=y2)
 
 xvals2plot_meters = np.arange(len(kappa_nn_profile)) * (1/facq_x)
 
+%matplotlib inline
 plt.figure(figsize=(10,7))
 plt.plot(xvals2plot_meters, kappa_nn_profile, label='curvature normal to wave front')
 plt.plot(xvals2plot_meters, kappa_tt_profile, label='curvature tangent to wave front')
@@ -275,13 +264,16 @@ plt.plot(xvals2plot_meters, kappa_tt_profile, label='curvature tangent to wave f
 plt.plot(xvals2plot_meters, np.sign(K_gauss_movingbasis) * np.sqrt(np.abs(K_gauss_movingbasis)))
 
 
-plt.plot(xvals2plot_meters, kappa_n_profile,label='kappa_n_profile method 1')
-plt.plot(xvals2plot_meters, kappa_t_profile,label='kappa_t_profile method 1')
+#plt.plot(xvals2plot_meters, kappa_n_profile,label='kappa_n_profile method 1')
+#plt.plot(xvals2plot_meters, kappa_t_profile,label='kappa_t_profile method 1')
 
 plt.vlines(np.min(xvals2plot_meters[ind_closests]),np.min(kappa_nn_profile), np.max(kappa_nn_profile),'r',linestyle='--')
 plt.vlines(np.max(xvals2plot_meters[ind_closests]),np.min(kappa_nn_profile), np.max(kappa_nn_profile),'r',linestyle='--')
 plt.plot([],[],'r--',label='limites inf et sup de la fracture')
 plt.legend()
+plt.ylim(np.min(kappa_nn_profile), np.max(kappa_nn_profile))
+plt.xlim(0, np.max(xvals2plot_meters[ind_closests] * 1.5))
+plt.grid()
 plt.xlabel('Position along the wave front [m]', fontsize=15)
 plt.ylabel('Curvature [m^-1]', fontsize=15)
 # %%

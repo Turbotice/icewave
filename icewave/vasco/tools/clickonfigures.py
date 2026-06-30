@@ -111,3 +111,53 @@ def profile_line_on_image_2clicks(image, refpoints_optional=None):
     )
 
     return profile, (xstart,ystart), (xend,yend)
+
+
+def get_n_points_anyfigure(fig, ax, n_points=1, symbol='o'):
+    """
+    Inputs : fig, ax
+    -> clic on figure n times
+    Returns : coords of the points on which you clicked
+
+    Example :
+    fig, ax = plt.subplots()
+    xtest=np.linspace(0,100,20)
+    ax.plot(xtest, xtest**2)
+    get_n_points_anyfigure(fig=fig, ax=ax)
+    """
+
+    
+
+    coords = []
+
+    def onclick(event):
+        # 🚫 Ignore si zoom ou pan actif
+        if fig.canvas.toolbar.mode != '':
+            return
+
+        # 🚫 Ignore clic hors graphe
+        if event.xdata is None or event.ydata is None:
+            return
+
+        # 🚫 Seulement clic gauche
+        if event.button != 1:
+            return
+
+        coords.append((event.xdata, event.ydata))
+        print(f"[{len(coords)}/{n_points}] x = {event.xdata:.4f}, y = {event.ydata:.4f}")
+
+        ax.plot(event.xdata, event.ydata, 'r', marker=symbol)
+        fig.canvas.draw()
+
+        if len(coords) >= n_points:
+            print("✅ Terminé")
+            fig.canvas.mpl_disconnect(cid)
+            plt.close(fig)
+
+    cid = fig.canvas.mpl_connect('button_press_event', onclick)
+
+    print(f"👉 Clique sur {n_points} point(s)")
+    print("👉 Utilise zoom/pan SANS déclencher de clic parasite")
+
+    plt.show(block=True)
+    return coords

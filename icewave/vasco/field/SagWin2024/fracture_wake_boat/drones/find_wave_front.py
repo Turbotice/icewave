@@ -349,3 +349,19 @@ def bidim_curvature_oneline(uz=np.ndarray,
             arr_coefficients_movingbasis[index_point,:] = coefficients_movingbasis
 
     return arr_coefficients_invariantbasis, arr_coefficients_movingbasis, alpha_arr
+
+def closest_points_between_2curves(x1=np.ndarray,y1=np.ndarray,x2=np.ndarray,y2=np.ndarray):
+    """
+    inputs :
+    x1, y2 : coordonnées des points de la fracture
+    x2, y2 : coordonnées des points du front d'onde
+    outputs :
+    tableau d'indices (pour x2), de la taille de x1 des points les plus proches
+    """
+    closests = np.empty(len(x1), dtype=int)
+    for i in range(len(x1)):
+        distances = np.hypot(x1[i]-x2, y1[i]-y2) # distances est un tableau de la taille de x2
+        print(distances)
+        agmn = np.argmin(distances)
+        closests[i] = agmn
+    return closests
