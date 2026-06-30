@@ -5,6 +5,13 @@ from typing import List, Tuple
 from scipy.signal import find_peaks
 from scipy.ndimage import gaussian_filter
 
+import sys
+icewave_path = 'C:/Users/Vasco Zanchi/Documents/git_turbotice/icewave/icewave/'
+sys.path.append(icewave_path)
+from vasco.tools.tridimfits import fit_3dparabola, measure_bidimensional_curvature_around_central_point, convertir_base_tournee, change_order_from_polyfeatures_to_polycoefs
+
+
+
 def find_peaks2d(matrice2d, axis=0):
     output_matrix = np.zeros_like(matrice2d) * np.nan
     if axis==0:
@@ -185,8 +192,10 @@ def compute_kappa_n_profiles_along_wavecrest(uz, index_time=1000, facq_x=1.25, p
         #arr_theta = arr_alpha + np.pi/2
 
         norm = np.sqrt(1 + (df/dx)**2)
-        u = -(df/dx) / norm
-        v = 1/norm
+        u_n = -(df/dx) / norm
+        v_n = 1/norm
+        u_t = 1/norm
+        v_t = (df/dx) / norm
 
         if plot:
             #plt.plot(xvals2plot, a*xvals2plot+b,'k',alpha=0.5)
@@ -194,11 +203,11 @@ def compute_kappa_n_profiles_along_wavecrest(uz, index_time=1000, facq_x=1.25, p
             plt.plot(xvals2plot, yvals2plot, label='line '+str(ct))
             ax = plt.gca()
             if ax.yaxis_inverted():
-                varrow = -v
+                varrow = -v_n
             else:
-                varrow = v
+                varrow = v_n
             plt.quiver(
-                xvals2plot, yvals2plot, u, varrow,
+                xvals2plot, yvals2plot, u_n, varrow,
                 np.ones(len(xvals2plot)),                    # couleur selon ||∇f||
                 cmap='plasma',
                 scale=40,               # ajuster la taille des flèches
@@ -221,8 +230,11 @@ def compute_kappa_n_profiles_along_wavecrest(uz, index_time=1000, facq_x=1.25, p
         dict_lines[k]['polynomial_fit']['xvalsfit'] = xvals2plot
         dict_lines[k]['polynomial_fit']['yfit'] = synth_ydata
 
-        dict_lines[k]['polynomial_fit']['u'] = u
-        dict_lines[k]['polynomial_fit']['v'] = v
+        dict_lines[k]['polynomial_fit']['u_n'] = u_n
+        dict_lines[k]['polynomial_fit']['v_n'] = v_n
+        dict_lines[k]['polynomial_fit']['u_t'] = u_t
+        dict_lines[k]['polynomial_fit']['v_t'] = v_t
+        
 
 
         ct+=1
@@ -235,8 +247,11 @@ def compute_kappa_n_profiles_along_wavecrest(uz, index_time=1000, facq_x=1.25, p
 
     # tout d'abord, on peut calculer le champ de courbures :
 
-    kappa_x = np.gradient(np.gradient(matrice2d_smoothed,axis=1),axis=1) * facq_x
-    kappa_y = np.gradient(np.gradient(matrice2d_smoothed,axis=0),axis=0) * facq_x
+    #kappa_x = np.gradient(np.gradient(matrice2d_smoothed,axis=1),axis=1) * (facq_x**2)
+    #kappa_y = np.gradient(np.gradient(matrice2d_smoothed,axis=0),axis=0) * (facq_x**2)
+
+    kappa_x = np.diff(np.diff(matrice2d_smoothed,axis=1,prepend=0),axis=1,prepend=0) * (facq_x**2)
+    kappa_y = np.diff(np.diff(matrice2d_smoothed,axis=0,prepend=0),axis=0,prepend=0) * (facq_x**2)
 
     
     if plot:
@@ -246,28 +261,107 @@ def compute_kappa_n_profiles_along_wavecrest(uz, index_time=1000, facq_x=1.25, p
         x_ind = dict_lines[k]['x_ind']
         y_ind = dict_lines[k]['y_ind']
         kappa_n_prof = np.zeros(len(x_ind))
+        kappa_t_prof = np.zeros(len(x_ind))
+        kappa_x_prof = np.zeros(len(x_ind))
+        kappa_y_prof = np.zeros(len(x_ind))
 
         if not(params['fit_higher_order']):
 
             slope = dict_lines[k]['linear_fit']['slope']
             theta = np.arctan(slope) + np.pi/2
+            alpha = np.arctan(slope)
             dict_lines[k]['linear_fit']['theta_rad'] = theta
             for i in range(len(x_ind)):
+                kappa_x_prof[i] = kappa_x[y_ind[i],x_ind[i]]
+                kappa_y_prof[i] = kappa_y[y_ind[i],x_ind[i]]
                 kappa_n_prof[i] = np.cos(theta) * kappa_x[y_ind[i],x_ind[i]] + np.sin(theta) * kappa_y[y_ind[i],x_ind[i]]
-
+                kappa_t_prof[i] = np.cos(alpha) * kappa_x[y_ind[i],x_ind[i]] + np.sin(alpha) * kappa_y[y_ind[i],x_ind[i]]
 
         elif params['fit_higher_order']:
-            u = dict_lines[k]['polynomial_fit']['u']
-            v = dict_lines[k]['polynomial_fit']['v']
+            u_n = dict_lines[k]['polynomial_fit']['u_n']
+            v_n = dict_lines[k]['polynomial_fit']['v_n']
+            u_t = dict_lines[k]['polynomial_fit']['u_t']
+            v_t = dict_lines[k]['polynomial_fit']['v_t']
+            
 
             for i in range(len(x_ind)):
-                kappa_n_prof[i] = u[i] * kappa_x[y_ind[i],x_ind[i]] + v[i] * kappa_y[y_ind[i],x_ind[i]]
+                kappa_x_prof[i] = kappa_x[y_ind[i],x_ind[i]]
+                kappa_y_prof[i] = kappa_y[y_ind[i],x_ind[i]]
+                kappa_n_prof[i] = u_n[i] * kappa_x[y_ind[i],x_ind[i]] + v_n[i] * kappa_y[y_ind[i],x_ind[i]]
+                kappa_t_prof[i] = u_t[i] * kappa_x[y_ind[i],x_ind[i]] + v_t[i] * kappa_y[y_ind[i],x_ind[i]]
 
 
         dict_lines[k]['kappa_n_profile'] = kappa_n_prof
+        dict_lines[k]['kappa_t_profile'] = kappa_t_prof
+        dict_lines[k]['kappa_x_profile'] = kappa_x_prof
+        dict_lines[k]['kappa_y_profile'] = kappa_y_prof
+        
+        
         if plot:  
             plt.plot(-kappa_n_prof)
             plt.ylim(0,None)
             
 
     return dict_lines, (peaks2d, matrice2d_smoothed, matrice2d)
+
+#%%
+def bidim_curvature_oneline(uz=np.ndarray,
+                            dic_all_lines=dict,
+                            ind_t=1088, 
+                            line_index=0,
+                            window_size=(11,11)):
+    """
+    info : pour ind_t il faut mettre ind_tfrac_approx correspondant à 
+    l'instant approx d'une fracture
+    """
+    
+    xind_arr = dic_all_lines[f'frame_{ind_t}']['dict_lines'][f'line_{line_index}']['x_ind']
+    yind_arr = dic_all_lines[f'frame_{ind_t}']['dict_lines'][f'line_{line_index}']['y_ind']
+    u_n_arr = dic_all_lines[f'frame_{ind_t}']['dict_lines'][f'line_{line_index}']['polynomial_fit']['u_n']
+    u_t_arr = dic_all_lines[f'frame_{ind_t}']['dict_lines'][f'line_{line_index}']['polynomial_fit']['u_t']
+    v_n_arr = dic_all_lines[f'frame_{ind_t}']['dict_lines'][f'line_{line_index}']['polynomial_fit']['v_n']
+    v_t_arr = dic_all_lines[f'frame_{ind_t}']['dict_lines'][f'line_{line_index}']['polynomial_fit']['v_t']
+
+    
+
+    alpha_arr = np.zeros(len(u_t_arr))
+    for i in range(len(u_t_arr)):
+        alpha_arr[i] = np.arctan2(v_t_arr[i], u_t_arr[i])
+    print(alpha_arr)
+    
+    arr_coefficients_invariantbasis = np.zeros((len(xind_arr), 6)) # 6 coef pour un fit de parabole tridimensionnelle
+    arr_coefficients_movingbasis = np.zeros((len(xind_arr), 6))
+
+    for index_point in range(len(xind_arr)):
+        if ((xind_arr[index_point]-int((window_size[0]-1)/2) < 0) | (yind_arr[index_point]-int((window_size[1]-1)/2) < 0)):
+            arr_coefficients_invariantbasis[i,:] = np.ones(6)*np.nan
+            arr_coefficients_movingbasis[i,:] = np.ones(6)*np.nan
+        else:
+            matrix2d = uz[:,:,ind_t]
+            dic_res = measure_bidimensional_curvature_around_central_point(matrix2d, xind_arr[index_point], yind_arr[index_point], window_size=window_size)
+            coef_polyfeatures = dic_res['coefficients']
+            intercept = dic_res['intercept']
+
+            coefficients_invariantbasis = change_order_from_polyfeatures_to_polycoefs(coef_polyfeatures=coef_polyfeatures, intercept=intercept)
+            arr_coefficients_invariantbasis[index_point,:] = coefficients_invariantbasis
+
+            coefficients_movingbasis = convertir_base_tournee(coefficients_invariantbasis, alpha_arr[index_point])
+            arr_coefficients_movingbasis[index_point,:] = coefficients_movingbasis
+
+    return arr_coefficients_invariantbasis, arr_coefficients_movingbasis, alpha_arr
+
+def closest_points_between_2curves(x1=np.ndarray,y1=np.ndarray,x2=np.ndarray,y2=np.ndarray):
+    """
+    inputs :
+    x1, y2 : coordonnées des points de la fracture
+    x2, y2 : coordonnées des points du front d'onde
+    outputs :
+    tableau d'indices (pour x2), de la taille de x1 des points les plus proches
+    """
+    closests = np.empty(len(x1), dtype=int)
+    for i in range(len(x1)):
+        distances = np.hypot(x1[i]-x2, y1[i]-y2) # distances est un tableau de la taille de x2
+        print(distances)
+        agmn = np.argmin(distances)
+        closests[i] = agmn
+    return closests

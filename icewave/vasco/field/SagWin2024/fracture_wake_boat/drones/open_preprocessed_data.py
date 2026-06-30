@@ -16,10 +16,12 @@ from vasco.tools.clickonfigures import get_n_points_onimage
 from functions_fracture_analysis import click_on_fracture_path_plot_time_evol, click2extract_amplitude, plot_elevation_refnotbroken_and_broken
 
 #%%
-disk = 'L:'# disk is Elements on adour
+#disk = 'L:'# disk is Elements on adour
+disk = 'C:'
 date = '0211'
 
-data_path = f'{disk}/Share_hublot/Data'
+#data_path = f'{disk}/Share_hublot/Data'
+data_path = f'C:/Users/Vasco Zanchi/Desktop/Saguenay2024'
 daily_drone_data_path = f'{data_path}/{date}/Drones'
 
 velocity_field_path = f'{daily_drone_data_path}/exact_solution_real_field_stereo_0211_2024_rectangular_grid.h5'
