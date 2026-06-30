@@ -1,5 +1,8 @@
-from PIL import Image
-from PIL.ExifTags import TAGS
+#from PIL import Image
+#from PIL.ExifTags import TAGS
+
+from PIL import Image, ExifTags
+
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,13 +20,22 @@ def analyse_IR(filename):
     # need to add metadata to retrieve temperature
     im = plt.imread(imagename)
 
+    #compute the histogram
     n,xc = histogram(im,N=100,Max=400)    
+
 
 def histogram(im,N=100,Max=400):    
     norm = np.linalg.norm(im,axis=2)
     [n,x] = np.histogram(np.ndarray.flatten(norm),bins=N,range=[0,Max])
     xc = (x[1:]+x[:-1])/2
     return n,xc
+
+
+def get_exif(filename):
+    image = Image.open(filename)
+    exif = { ExifTags.TAGS[k]: v for k, v in image._getexif().items() if k in ExifTags.TAGS }
+    return exif
+
 
 def exemple():
     folder = '/Users/stephane/Documents/BicWin2026/Data_Exemples/IR_0211/'
