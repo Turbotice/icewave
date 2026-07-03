@@ -74,6 +74,8 @@ def find_lines(
     List[List[Tuple[int, int]]]
         Liste de lignes ; chaque ligne est une liste ordonnée de points
         (row, col) appartenant à cette ligne.
+    
+    ATTENTION ! CA VEUT DIRE QUE L'ORDRE EST [(yind1, xind1), (yind2, xind2), etc.] !!!!
     """
     if image.ndim != 2:
         raise ValueError("L'image doit être 2D.")
