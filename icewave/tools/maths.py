@@ -26,3 +26,15 @@ def pol2cart(rho, phi):
     x = rho * np.cos(phi)
     y = rho * np.sin(phi)
     return(x, y)
+
+def PolygonArea(corners):
+    #implementation of shoelace formula. Works on convex polygons : Voronoi diagram are convex !
+     
+    n = len(corners) #  # of corners
+    area = 0.0
+    for i in range(n):
+        j = (i + 1) % n
+        area += corners[i][0] * corners[j][1]
+        area -= corners[j][0] * corners[i][1]
+    area = abs(area) / 2.0
+    return area

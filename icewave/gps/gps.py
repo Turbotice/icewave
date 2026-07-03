@@ -318,6 +318,29 @@ def waypoints_loc(gpx):
     return Long, Lat 
 
 #----------------------------------------------------------------------------------------------------
+def area_MIZ_2026():
+    p1 = [48.35, -68.833]
+    p2 = [48.342, -68.8275]
+    p3 = [48.3343, -68.856]
+    p4 = [48.352, -68.871]
+    
+    area = np.asarray([p1]+[p2]+[p3]+[p4]+[p1])
+    return area
+
+def position_inside_zone(Lat,Lon,area):
+    import matplotlib.path as mpltPath
+    path = mpltPath.Path(area)
+
+    points = np.transpose([Lat]+[Lon])
+    inside = path.contains_points(points)
+    #if type(Lat)==list:
+    #    return inside
+    #elif type(Lat)==float:
+    #    return inside[0]
+    #else:
+    #    print('format of Latitude not recognized')
+    return inside
+    #print(points.shape)
 
 
 def distance_GPS(lat,long,Lat0,Long0,R_earth = 6371e3):

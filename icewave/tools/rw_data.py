@@ -62,7 +62,11 @@ def write_h5(filename,data):
             for k in data[key].keys():
                 hf[str(key)].create_dataset(str(k),data=data[key][k])
         else:
+            #try:
+            print(data[key])
             hf.create_dataset(key, data=np.asarray(data[key]))
+            #except:
+            #    print(f'Cannot save in .h5 format the field {key}')
     hf.close()
 
 def save_h5_rec(filename,data):
@@ -76,8 +80,9 @@ def write_h5_rec(hf,data):
             print(key)
             hf = write_h5_rec(hf[key],data[key])
         else:
-            print(data[key])
-            hf.create_dataset(key, data=np.asarray(data[key]))
+            print(key,data[key])
+            hf.create_dataset(str(key), data=str(data[key]))
+#            hf.create_dataset(key, data=np.asarray(data[key]).astype(str))
     return hf
 
 def read_h5(filename):

@@ -16,6 +16,22 @@ parula_map = matcmaps.parula()
 global g 
 g = 9.81
 
+def gk(f):
+     """ Return the gravity wave number from an experimental frequency
+     Inputs: - f, float,
+     Output: - k float
+     """
+     omega = 2*np.pi*f
+     return omega**2/g #pure gravity waves
+
+def gf(k):
+     """ Return the frequency of gravity wave for a given wave number
+     Inputs: - k, float,
+     Output: - f float
+     """
+     omega = np.sqrt(g*k)
+     f = omega/2/np.pi
+     return f
 
 def dim_numbers(params,g = 9.81):
     """ Return dimensionless numbers from set of parameters
@@ -23,14 +39,15 @@ def dim_numbers(params,g = 9.81):
     Output: - dimensionless, tuple, (gamma,delta_1,delta_2,r) """
     
     omega = 2*np.pi*params[0]
-    k_0 = omega**2/g
+    k_0 = gk(params[0])
+    gamma = params[1]*k_0
+
     
     rho_1 = params[2]
     rho_2 = params[3]
     nu_1 = params[4]
     nu_2 = params[5]
     
-    gamma = params[1]*k_0
     delta_1 = np.sqrt(nu_1/omega)*k_0
     delta_2 = np.sqrt(nu_2/omega)*k_0
     r = rho_1/rho_2
@@ -41,7 +58,7 @@ def dim_numbers(params,g = 9.81):
 
 def define_M(kappa,dimensionless):
     """ Create matrix for dispersion relation 
-    Inputs : - k, float, wavevector value
+    Inputs : - kappa, float, wavevector value
              - dimensionless, parameters used to build matrix M (gamma,delta_1,delta_2,r)
              
     Outputs : - M, numpy.array, matrix of coefficients used to get dispersion relation. 
@@ -209,7 +226,7 @@ def func_real_imag(z,dimensionless):
 
 #-------------------------------------------------------------------------------------------------------
 
-def get_wavevector_theory(freq,h,rho_1,rho_2,nu_1,nu_2):
+def get_wavevector_theory(freq,h,rho_1,rho_2,nu_1,nu_2,display=True):
     """ Compute wavector using viscous bilayers, for a given set of frequencies and 
     fluid physical properties. """
     
@@ -224,7 +241,8 @@ def get_wavevector_theory(freq,h,rho_1,rho_2,nu_1,nu_2):
         
         solution = scipy.optimize.fsolve(func_real_imag,initial_guess,(dimensionless,))
         root = solution[0] + 1j*solution[1]
-        print(f'Root of det(M) = {root}')
+        if display:
+            print(f'Root of det(M) = {root}')
         initial_guess = solution
         k_array[i] = root*k0_array[i]
         
@@ -317,7 +335,7 @@ def define_M_hat(kappa,dimensionless):
 
 #----------------------------------------------------------------------------------------------------------------
 
-def get_coeffs(kappa,dimensionless):
+def get_coeffs(kappa,dimensionless,display=False):
     """ Get coefficients A1,B1,C1,D1,A2,C2 used to define pressure and vorticity fields.
     This methods solver a system MX = Y, based on the knowledge of the surface amplitude xi_0 and assuming that 
     surface and fluids interface deformation are in phase. 
@@ -334,7 +352,8 @@ def get_coeffs(kappa,dimensionless):
     # Solve the system M * X = Y
     try:
         coeffs = np.linalg.solve(M_hat, Y)
-        print("Solution X:", coeffs)
+        if display:
+            print("Solution X:", coeffs)
     except np.linalg.LinAlgError as e:
         print("Error:", e)
         
