@@ -4,6 +4,7 @@
 from PIL import Image, ExifTags
 from exiftool import ExifToolHelper
 import base64
+import struct
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,6 +12,10 @@ import glob
 
 import icewave.tools.datafolders as df
 import icewave.tools.rw_data as rw
+
+from skimage import measure
+import scipy.ndimage as nd
+
 
 import os
 
@@ -28,6 +33,28 @@ def analyse_IR(filename):
 
     #compute the histogram
     n,xc = histogram(im,N=100,Max=400)
+
+
+def regionprops(bw,Thres,minsize=50):
+    binary = np.asarray(bw)>Thres
+    
+    struct = [[1,1,1],[1,1,1],[1,1,1]]
+    labels = nd.label(binary, structure=struct)[0]
+    #colormap of the fracture, color codes the time of opening (in rot max ?)
+    props = measure.regionprops_table(labels,properties=['area'])#,'perimeter','axis_major_length','axis_minor_length','centroid','eccentricity','intensity_mean','intensity_max','intensity_median','intensity_std'])
+
+    minsize = 50 #remove all areas smaller than 50 pixels
+    labnums = np.where(props['area']>=minsize)[0]+1
+    #print(labnums)
+    [ny,nx] = binary.shape
+
+    bigs_mask = np.asarray([[(labels[i,j] in labnums) for j in range(nx)] for i in range(ny)])
+
+    bigs = binary*bigs_mask
+    labels = nd.label(np.asarray(bigs), structure=struct)[0]
+    props = measure.regionprops_table(labels, intensity_image=bw,properties=['area','perimeter','axis_major_length','axis_minor_length','centroid','eccentricity','intensity_mean','intensity_max','intensity_median','intensity_std'])
+
+    return props,bigs
 
 
 def histogram(im,N=100,Max=400):
@@ -71,6 +98,9 @@ def compute_hist_raw(raw):
 
 def compute_IR_avg(data):
     #compute some quantities from raw data
+    if data is None or not('APP3:ThermalData' in data.keys()):
+        print('Cannot load Raw thermal data, skip')
+        return None
     raw = data['APP3:ThermalData']
     data['IR_moy'] = np.mean(raw)
     data['IR_std'] = np.std(raw)
@@ -92,6 +122,10 @@ def load_image(filename):
         return None
     #list the fields to retrieve
     keys = {'File:FileName',
+            'EXIF:DateTimeOriginal',
+            'EXIF:ApertureValue',
+            'EXIF:DigitalZoomRatio',
+            'EXIF:XPComment',
             'EXIF:GPSLatitudeRef',
             'EXIF:GPSLatitude',
             'EXIF:GPSLongitudeRef',
@@ -262,20 +296,26 @@ def gen_all():
     #print(read_rawdata())
     base = df.find_path(disk='Shack26')
     filelist = glob.glob(base+'*/Drones/Tourterelle/*/*_T.JPG')
-    savefolder = base + 'IR_Data/extract_RJPG/'
-    datas = {}
-    for filename in filelist:
-        print(filename)
-        name = os.path.basename(filename).split('.')[0]
-        data = load_image(filename)
-        data = compute_IR_avg(data)
-        data.pop('APP3:ThermalData', None)        
-        datas[name] = data
-    #rw.
-    filename = savefolder +'IR_datas_histograms.pkl'
-    rw.write_pkl(filename,datas)
-    return datas
+    folders = set([filename.split('/')[-2] for filename in filelist])
 
+    savefolder = base + 'IR_Data/extract_RJPG/'
+    for folder in folders:
+        datas = {}
+        filelist = glob.glob(base+f'*/Drones/Tourterelle/{folder}/*_T.JPG')
+        for filename in filelist:
+            print(filename)
+            name = os.path.basename(filename).split('.')[0]
+            data = load_image(filename)
+            data = compute_IR_avg(data)
+            if data is None:
+                continue
+            data.pop('APP3:ThermalData', None)        
+            datas[name] = data
+    #rw.
+        namef = os.path.basename(folder)
+        filename = savefolder +f'{namef}_IR_datas_histograms.pkl'
+        rw.write_pkl(filename,datas)
+    return datas
 
 
 def exemple_3():
