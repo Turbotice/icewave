@@ -154,8 +154,8 @@ def temporal_FFT_spatio(H,fps,padding_bool = 1,add_pow2 = 0,output_FFT = False):
         N = padding_length 
         print('Padding used')
     else :
-        FFT_t = np.fft.fft(H,n = N,axis = -1)
         N = original_length
+        FFT_t = np.fft.fft(H,n = N,axis = -1)
         print('No padding')
     
     
