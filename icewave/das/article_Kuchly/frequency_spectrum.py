@@ -107,7 +107,7 @@ fs,fiber_length,facq_x = DS.get_DAS_parameters(path2DAS_param,date)
 # Load DAS data 
 path2data = f'{main_path}Data/{date}/DAS/'
 filelist = glob.glob(path2data + '*UTC.h5')
-idx_file = 6 #5 for 0211
+idx_file = 0 #5 for 0211
 file2load = filelist[idx_file]
 print(file2load)
 
@@ -150,7 +150,7 @@ offset_text.set_x(1)
 
 #%% Compute frequency spectrum 
 chunk = 0
-TF_spectrum,freq = FT.temporal_FFT_spatio(stack_strain[chunk,:,:].T,fs,padding_bool = 0)
+TF_spectrum,freq = FT.temporal_FFT_spatio(stack_strain[chunk,:,:].T,fs,padding_bool = 1)
 
 # save spectrum in a dictionnary
 my_dict[date] = {'TF_spectrum':TF_spectrum,'f':freq}
@@ -176,4 +176,7 @@ ax.set_xlabel(r'$f \; \mathrm{(Hz)}$')
 ax.set_ylabel(r'$\hat{\dot{\epsilon}} \; \mathrm{(a.u.)}$')
 ax.legend()
 
+figname = f'{fig_folder}frequency_spectrum_waves_signal'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
 
