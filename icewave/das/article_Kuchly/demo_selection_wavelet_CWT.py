@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Nov 24 14:17:09 2025
+Created on Mon Jul  6 11:04:58 2026
 
 @author: sebas
+
+Show influence of the selected wavelet on the resulting scaleogram
 """
 
 import os
@@ -12,6 +14,7 @@ from matplotlib.collections import LineCollection
 import matplotlib.colors as colors
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import pickle
 from datetime import datetime, time , timedelta
 import pytz
@@ -51,13 +54,13 @@ down_sampling_factor = 10
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif', serif='Computer Modern')
 
-
 #%% Set fig_folder path 
 
 # fig_folder = 'U:/Data/0211/DAS/Figures_article/CWT_explanation/'
 fig_folder = 'F:/Rimouski_2025/DAS_article/Figures_answer_reviews/'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
+
 
 #%% FUNCTION SECTION 
 
@@ -249,7 +252,6 @@ def load_DAS_water_height(file2water):
     
     return DAS_water_height
 
-    
 #%% Load parameters for DAS
 main_path = 'F:/Rimouski_2025/'
 path2DAS_param = f'{main_path}Data/parameters_Febus_2025.pkl'
@@ -301,39 +303,51 @@ cbar = plt.colorbar(imsh,cax = cax)
 
 #%% Show Demodulated signal 
 
-freq_list = [0.2,0.22,0.25,0.3,0.4,0.5]
+# select a frequency
+selected_freq = 0.2 
 
-for selected_freq in freq_list:
+idx_freq = np.argmin(abs(freq - selected_freq))
+print(idx_freq)
+profile = FFT_t[0,idx_freq,:]
+max_profile = max(np.real(profile))
 
-    idx_freq = np.argmin(abs(freq - selected_freq))
-    print(idx_freq)
-    profile = FFT_t[0,idx_freq,:]
-    max_profile = max(np.real(profile))
-    
-    set_graphs.set_matplotlib_param('triple')
-    fig, ax = plt.subplots()
-    ax.plot(s,np.real(profile))
-    ax.set_xlabel(r'$x \; \mathrm{(m)}$')
-    ax.set_ylabel(r'$\hat{\dot{\epsilon}} \; \mathrm{(a.u.)}$')
-    max_y = max_profile*1.1
-    ax.set_ylim([-max_y,max_y])
-    ax.set_xlim([0,s[-1]])
-    # ax.set_ylim([-1.1,1.1])
-    label = r'$f = ' + f'{selected_freq:.2f}' + '\; \mathrm{Hz}$'
-    ax.set_title(label)
-    
-    ax.ticklabel_format(axis='y', style='sci', scilimits=(3, 3))
-    
-    freq_txt = f'f_{selected_freq:.2f}'.replace('.','p')
-    
-    figname = f'{fig_folder}Filtered_signal_{freq_txt}_{label_UTC0}_chunk_{chunk}'
-    # plt.savefig(figname + '.pdf', bbox_inches='tight')
-    # plt.savefig(figname + '.svg', bbox_inches='tight')
-    # plt.savefig(figname + '.png', bbox_inches='tight')
-    
-#%% Compute scaleogram for this specific frequency
+set_graphs.set_matplotlib_param('triple')
+fig, ax = plt.subplots()
+ax.plot(s,np.real(profile))
+ax.set_xlabel(r'$x \; \mathrm{(m)}$')
+ax.set_ylabel(r'$\hat{\dot{\epsilon}} \; \mathrm{(a.u.)}$')
+max_y = max_profile*1.1
+ax.set_ylim([-max_y,max_y])
+ax.set_xlim([0,s[-1]])
+# ax.set_ylim([-1.1,1.1])
+label = r'$f = ' + f'{selected_freq:.2f}' + '\; \mathrm{Hz}$'
+ax.set_title(label)
 
+ax.ticklabel_format(axis='y', style='sci', scilimits=(3, 3))
+
+freq_txt = f'f_{selected_freq:.2f}'.replace('.','p')
+
+figname = f'{fig_folder}Filtered_signal_{freq_txt}_{label_UTC0}_chunk_{chunk}'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
+
+#%% Compute scaleogram for this specific frequency and show scaleogram
 wavelet = 'cmor1.5-1.5' # mother wavelet  
+
+# show wavelet
+[psi, x] = pywt.ContinuousWavelet(wavelet).wavefun(10)
+
+fig, ax = plt.subplots()
+ax.plot(x,np.real(psi), label = r'$\mathrm{Re}(\psi)$')
+ax.plot(x,np.imag(psi), label = r'$\mathrm{Im}(\psi)$')
+ax.set_xlim([-5,5])
+
+ax.set_ylabel(r'$\psi(u)$')
+ax.set_xlabel(r'$u$')
+
+ax.legend()
+
 
 sampling_period = 1/facq_x #spatial sampling wavelength
 #logarithmic scales
@@ -344,9 +358,64 @@ norm_sigma = pywt.scale2frequency(wavelet,scales)
 wavelength_sampled = sampling_period/norm_sigma # typical wavelength that will be sampled 
 print(f'Wavelengths sampled : min = {wavelength_sampled[0]:.2f} m, max = {wavelength_sampled[-1]:.2f} m')
 
-#%% Plot scaleogram
+idx_freq = np.argmin(abs(freq - selected_freq))
+print(idx_freq)
+profile = FFT_t[0,idx_freq,:]
 
-for selected_freq in freq_list:
+# compute cwt
+cwtmatr, freqs = pywt.cwt(np.real(profile), scales, wavelet, sampling_period = sampling_period)
+
+set_graphs.set_matplotlib_param('triple')
+fig, ax = plt.subplots()
+k = 2*np.pi*freqs
+
+max_scaleo = np.max(abs(cwtmatr))
+imsh = ax.pcolormesh(s,k,abs(cwtmatr[:,:])/max_scaleo,cmap = 'gist_yarg',shading = 'auto',norm = 'linear')
+ax.set_xlabel(r'$x \; \mathrm{(m)}$')
+ax.set_ylabel(r'$k \; \mathrm{(rad.m^{-1})}$')
+imsh.set_clim([0,1])
+imsh.set_rasterized(True)
+
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="2%", pad=0.1)
+cbar = plt.colorbar(imsh,cax = cax)
+cbar.set_label(r'$\hat{\dot{\epsilon}}(f)/\hat{\dot{\epsilon}}_{max}(f)$')
+# cbar.formatter.set_powerlimits((3, 3))
+# cbar.update_ticks()
+
+ax.set_ylim([k.min(),0.5])
+# ax.set_yscale('log')
+ax.set_xlim([0,s[-1]])
+
+label = r'$f = ' + f'{selected_freq:.2f}' + '\; \mathrm{Hz}$'
+ax.set_title(label)
+
+freq_txt = f'f_{selected_freq:.2f}'.replace('.','p')
+
+figname = f'{fig_folder}Scaleogram_{freq_txt}_{label_UTC0}_chunk_{chunk}'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
+
+#%% Create three subplots 
+
+set_graphs.set_matplotlib_param('square')
+fig, axs = plt.subplots(nrows = 1, ncols = 3, layout = 'constrained',figsize = (12,5),
+                        sharey = True)
+
+wavelet_list = ['cmor0.5-1.5','cmor1.5-1.5','cmor2.5-1.5']
+
+for i in range(axs.shape[0]):
+    
+    wavelet = wavelet_list[i]
+    ax = axs[i]
+    sampling_period = 1/facq_x #spatial sampling wavelength
+    #logarithmic scales
+    scales = np.geomspace(2,1024,num = 100)
+
+    # compute normalized wavenumber (sigma)
+    norm_sigma = pywt.scale2frequency(wavelet,scales)
+    wavelength_sampled = sampling_period/norm_sigma # typical wavelength that will be sampled 
     
     idx_freq = np.argmin(abs(freq - selected_freq))
     print(idx_freq)
@@ -354,158 +423,41 @@ for selected_freq in freq_list:
 
     # compute cwt
     cwtmatr, freqs = pywt.cwt(np.real(profile), scales, wavelet, sampling_period = sampling_period)
-    
-    set_graphs.set_matplotlib_param('triple')
-    fig, ax = plt.subplots()
+
     k = 2*np.pi*freqs
-    
     max_scaleo = np.max(abs(cwtmatr))
     imsh = ax.pcolormesh(s,k,abs(cwtmatr[:,:])/max_scaleo,cmap = 'gist_yarg',shading = 'auto',norm = 'linear')
     ax.set_xlabel(r'$x \; \mathrm{(m)}$')
-    ax.set_ylabel(r'$k \; \mathrm{(rad.m^{-1})}$')
     imsh.set_clim([0,1])
     imsh.set_rasterized(True)
-    
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="2%", pad=0.1)
-    cbar = plt.colorbar(imsh,cax = cax)
-    cbar.set_label(r'$\hat{\dot{\epsilon}}(f)/\hat{\dot{\epsilon}}_{max}(f)$')
+
+    # divider = make_axes_locatable(ax)
+    # cax = divider.append_axes("right", size="2%", pad=0.1)
+    # cbar = plt.colorbar(imsh,cax = cax)
+    # cbar.set_label(r'$\hat{\dot{\epsilon}}(f)/\hat{\dot{\epsilon}}_{max}(f)$')
     # cbar.formatter.set_powerlimits((3, 3))
     # cbar.update_ticks()
-    
+
     ax.set_ylim([k.min(),0.5])
     # ax.set_yscale('log')
     ax.set_xlim([0,s[-1]])
+
+    # show wavelet
+    [psi, x] = pywt.ContinuousWavelet(wavelet).wavefun(10)
+
+    axins = inset_axes(ax, width="40%", height="40%")
+    axins.plot(x,np.real(psi), label = r'$\mathrm{Re}(\psi)$')
+    axins.plot(x,np.imag(psi), label = r'$\mathrm{Im}(\psi)$')
+    axins.set_xlim([-5,5])
+    axins.set_axis_off()
+    # axins.set_xticks([])
+    # axins.set_yticks([])
     
-    label = r'$f = ' + f'{selected_freq:.2f}' + '\; \mathrm{Hz}$'
-    ax.set_title(label)
+    # axins.set_ylabel(r'$\psi(u)$')
+    # axins.set_xlabel(r'$u$')
 
-    freq_txt = f'f_{selected_freq:.2f}'.replace('.','p')
-    
-    figname = f'{fig_folder}Scaleogram_{freq_txt}_{label_UTC0}_chunk_{chunk}'
-    # plt.savefig(figname + '.pdf', bbox_inches='tight')
-    # plt.savefig(figname + '.svg', bbox_inches='tight')
-    # plt.savefig(figname + '.png', bbox_inches='tight')
+axs[0].set_ylabel(r'$k \; \mathrm{(rad.m^{-1})}$')
 
-# =============================================================================
-#%% Plot Dispersion relation for a given x
-# =============================================================================
-
-#%% Load avg CWT
-
-date = '0211'
-# main_path = f'U:'
-
-main_path = 'U:/'
-path2data = f'{main_path}Data/{date}/DAS/'
-
-path2CWT = f'{path2data}avg_CWT/'
-filelist = glob.glob(f'{path2CWT}avg_CWT*.h5')
-print(filelist)
-
-# load water height data
-file2water = glob.glob(f'{path2data}fiber_water_height_GPS_structure_{date}.h5')[0]
-print(file2water)    
-DAS_water_height = load_DAS_water_height(file2water)
-
-# load swell orientation 
-file_swell_orientation = f'{main_path}Data/swell_orientation_beam_forming.h5'
-swell_orientation = rw.load_dict_from_h5(file_swell_orientation)
-
-swell_bool = 1 #1 if we want to account for swell orientation correction 
-swell_dict =  {'bool':swell_bool,'theta':swell_orientation[date]}
-
-idx_file = 5
-file2load = filelist[idx_file]
-print(file2load)
-data = rw.load_dict_from_h5(file2load)
-
-#%% define label 
-label_UTC0 = data['label']
-
-# change k if we want to account for swell orientation 
-if swell_dict['bool']:
-    data['k_star'] = data['k_star']/np.cos(swell_dict['theta']*np.pi/180)
-    label_swell = 'swell_corrected'
-else:
-    label_swell = ''
-
-#%% Plot (f,k) and D fit for three different positions 
-
-s = data['x'] - offset_fiber
-k = data['k_star']
-freq = data['f']
-mean_CWT = data['mean_CWT']
-
-selected_x = np.array([100,300,500]) - 35
-idx_x = [np.argmin(abs(s - x)) for x in selected_x]
-
-freq_range = [0.02,0.8]
-min_prominence = 0.7
-min_width = 3
-
-# select range of k for which we look for a peak
-if date in date_downsampling:
-    k_min = 0.05
-    k_max = 0.8
-    idx_kmin = np.argmin(abs(k - k_min))
-    idx_kmax = np.argmin(abs(k - k_max))
-    mean_CWT = mean_CWT[:,idx_kmax:idx_kmin,:]
-    k = k[idx_kmax:idx_kmin]
-
-rho_w = 1027
-
-format_date = '%Y-%m-%dT%H-%M-%S'
-UTC_0 = datetime.strptime(data['label'],format_date)
-UTC_0 = UTC_0.replace(tzinfo = pytz.timezone('UTC'))
-label_UTC0 = data['label']
-
-set_graphs.set_matplotlib_param(38)
-cmap = 'gist_yarg'
-
-for i,idx in enumerate(idx_x):
-    FK = mean_CWT[:,:,idx]
-    max_FK = np.max(abs(FK))
-    
-    fig, ax = plt.subplots()
-    imsh = ax.pcolormesh(k,freq,abs(FK)/max_FK,cmap = cmap, shading = 'auto')
-    ax.set_ylim([0,1])
-    ax.set_xlim([0.01,0.5])
-    
-    imsh.set_clim([0,1])
-    imsh.set_rasterized(True)
-    
-    k_exp,f_exp = extract_peaks(FK,freq,k,freq_range,min_prominence,min_width)
-    ax.plot(k_exp,f_exp,'r.')
-    print(f'Detected coordinates :{k_exp}')
-    
-    if len(k_exp) != 0:
-        H = get_water_height(DAS_water_height,UTC_0,selected_x[i])
-        popt,pcov = scipy.optimize.curve_fit(lambda x,D : shallow_hydroelastic(x, D, rho_w, H)/2/np.pi,k_exp,f_exp,
-                                             bounds = (1e5,1e8))
-        err_coeff = np.sqrt(np.diag(pcov))
-        print(f'D = {popt[0]:.2e} ± {err_coeff[0]:.2e} J')
-    
-        k_th = np.linspace(0,1,100)
-        omega_th = shallow_hydroelastic(k_th, popt[0], rho_w, H)
-        label_th = r'$D = ' + f'{popt[0]:.2e}' + r' \; \mathrm{J}$'
-        ax.plot(k_th,omega_th/2/np.pi,'r--',label = label_th)
-        # ax.legend(loc = 'upper right',fontsize = 17)
-        
-    ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$')
-    ax.set_ylabel(r'$f \; \mathrm{(Hz)}$') 
-    
-    title = r'$x = ' + f'{selected_x[i]:.0f}' + '\; \mathrm{m}$'
-    ax.set_title(title)
-    
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="2%", pad=0.1)
-    cbar = plt.colorbar(imsh,cax = cax)
-    cbar.set_label(r'$\hat{\dot{\epsilon}}$')
-    
-    x_txt = f'x_{selected_x[i]:.0f}'
-    
-    figname = f'{fig_folder}FK_{label_UTC0}_{x_txt}'
-    plt.savefig(figname + '.pdf', bbox_inches='tight')
-    plt.savefig(figname + '.svg', bbox_inches='tight')
-    plt.savefig(figname + '.png', bbox_inches='tight')
+figname = f'{fig_folder}illustration_wavelet_selection'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')

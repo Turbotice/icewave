@@ -60,7 +60,8 @@ plt.rc('font', family='serif', serif='Computer Modern')
 
 #%% Set fig_folder
 
-fig_folder = 'U:/Data/Summary/DAS/Bathymetry/'
+# fig_folder = 'U:/Data/Summary/DAS/Bathymetry/'
+fig_folder = 'F:/Rimouski_2025/DAS_article/'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
     

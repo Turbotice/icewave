@@ -52,7 +52,8 @@ plt.rc('text', usetex=True)
 plt.rc('font', family='serif', serif='Computer Modern')
 #%% Set fig_folder path 
 
-fig_folder = 'U:/Data/0211/DAS/Figures_article/spatio/'
+# fig_folder = 'U:/Data/0211/DAS/Figures_article/spatio/'
+fig_folder = 'F:/Rimouski_2025/DAS_article/Figures_answer_reviews/'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
 
@@ -90,7 +91,7 @@ def annotate_axes(ax, text, fontsize=18):
 #%% Load DAS parameters and data
 
 # Load parameters for DAS
-main_path = 'U:/'
+main_path = 'F:/Rimouski_2025/'
 path2DAS_param = f'{main_path}Data/parameters_Febus_2025.pkl'
 
 date = '0211'
@@ -359,3 +360,4 @@ for ax_key in axd.keys():
 # plt.savefig(figname + '.pdf', bbox_inches='tight')
 # plt.savefig(figname + '.svg', bbox_inches='tight')
 # plt.savefig(figname + '.png', bbox_inches='tight')
+

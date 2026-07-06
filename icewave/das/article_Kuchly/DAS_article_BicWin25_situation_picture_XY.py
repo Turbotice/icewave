@@ -52,7 +52,8 @@ def shift_XY(X,Y,X0,Y0):
 
 #%% Set fig_folder path 
 
-fig_folder = 'U:/Data/0211/DAS/Figures_article/Situation_picture/'
+# fig_folder = 'U:/Data/0211/DAS/Figures_article/Situation_picture/'
+fig_folder = 'F:/Rimouski_2025/DAS_article/'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
     
@@ -240,7 +241,7 @@ X_DAS,Y_DAS = shift_XY(X_DAS, Y_DAS, X0, Y0)
 
 
 set_graphs.set_matplotlib_param('single')
-markersize = 6
+markersize = 12
 fig, ax = plt.subplots(figsize = (12,6))
 c = ax.pcolormesh(Yreal - Y_DAS[0],Xreal - X_DAS[0],img[:,:,0],shading = 'auto', cmap = 'gray')
 c.set_rasterized(True)
@@ -264,10 +265,10 @@ for j in range(3):
     current_color = cmap(norm_acq(j))
     if j == 2:
         ax.plot(Y_geoph[:,j],X_geoph[:,j],'^',color = current_color,mec = 'k',
-            ms = 6,zorder = 2,label = 'Geophone')
+            ms = markersize,zorder = 2,label = 'Geophone')
     else :
         ax.plot(Y_geoph[:,j],X_geoph[:,j],'^',color = current_color,mec = 'k',
-            ms = 6,zorder = 2)
+            ms = markersize,zorder = 2)
         
 
 # plot drillings
@@ -279,15 +280,15 @@ for i,key_date in enumerate(gps_results.keys()):
         current_color = cmap(norm_h(gps_results[key_date]['h'][j]))
         if j == 0 and i == 0:
             scatter = ax.plot(Y_gps[key_date][j],X_gps[key_date][j],'p',color = current_color,mec = 'k',
-                    ms = 8,zorder = 3,label = 'Drilling')
+                    ms = markersize,zorder = 3,label = 'Drilling')
         else:
             scatter = ax.plot(Y_gps[key_date][j],X_gps[key_date][j],'p',color = current_color,mec = 'k',
-                    ms = 8,zorder = 3)
+                    ms = markersize,zorder = 3)
 
 for i in range(len(MS_gps[MS_date]['h'])):
     current_color = cmap(norm_h(MS_gps[MS_date]['h'][i]))
     ax.plot(Y_MS[i],X_MS[i],'p',color = current_color,mec = 'k',
-            ms = 8,zorder = 3)
+            ms = markersize,zorder = 3)
     
 areas_properties = FontProperties(family = 'Times New Roman')
 # add ice areas
@@ -315,7 +316,7 @@ ax.set_ylim(np.array([-120,120]) - X0) # [-120,120]
 ax.legend(ncols = 3, bbox_to_anchor = (0.11, 1),
               loc='lower left')
 
-figname = fig_folder + 'Camera_coord_YX_situation_picture_0205_18_doc_010_notomo_ice_labels' 
+figname = fig_folder + 'Camera_coord_YX_situation_picture_0205_18_doc_010_notomo_ice_labels_large_ms' 
 plt.savefig(figname + '.pdf', bbox_inches='tight',dpi = 600)
 plt.savefig(figname + '.svg', bbox_inches='tight',dpi = 600)
 plt.savefig(figname + '.png', bbox_inches='tight',dpi = 600)
