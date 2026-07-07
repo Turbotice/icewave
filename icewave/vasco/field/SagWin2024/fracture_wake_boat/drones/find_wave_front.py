@@ -427,6 +427,8 @@ def scan_frames_get_indt_mindist(keyfrac:str, ind_tfrac:int, delta_indt:int, dic
     indt_arr = np.arange(ind_tfrac-delta_indt, ind_tfrac+1, 1)
     # cas method='first'
     dist_first_arr = np.zeros(len(indt_arr))
+    # cas method = 'last'
+    dist_last_arr = np.zeros(len(indt_arr))
     # cas method='avg'
     avg_dist_arr = np.zeros(len(indt_arr))
     for i in range(len(indt_arr)):
@@ -438,6 +440,13 @@ def scan_frames_get_indt_mindist(keyfrac:str, ind_tfrac:int, delta_indt:int, dic
             cd, ic_cl, _, _, _, _ = shortest_distance_to_any_wavefront(xind=xind,yind=yind,time_sec=time_sec,dict_all_wavefront_lines=dict_all_wavefront_lines,dict_stereo_pivdata=dict_stereo_pivdata)
             dist_first_arr[i] = cd
             print(cd)
+        elif method=='last':
+            xind = dict_frac[keyfrac]['idcs_single_frac'][-1,0]
+            yind = dict_frac[keyfrac]['idcs_single_frac'][-1,1]
+            cd, ic_cl, _, _, _, _ = shortest_distance_to_any_wavefront(xind=xind,yind=yind,time_sec=time_sec,dict_all_wavefront_lines=dict_all_wavefront_lines,dict_stereo_pivdata=dict_stereo_pivdata)
+            dist_last_arr[i] = cd
+            print(cd)
+        
         elif method=='avg':
             xind_arr = dict_frac[keyfrac]['idcs_single_frac'][:,0]
             yind_arr = dict_frac[keyfrac]['idcs_single_frac'][:,1]
@@ -453,17 +462,24 @@ def scan_frames_get_indt_mindist(keyfrac:str, ind_tfrac:int, delta_indt:int, dic
         id_distfirstmin = np.argmin(dist_first_arr)
         indt_distfirstmin = indt_arr[id_distfirstmin]
         return indt_distfirstmin        
+    
+    elif method=='last':
+        id_distlastmin = np.argmin(dist_last_arr)
+        indt_distlastmin = indt_arr[id_distlastmin]
+        return indt_distlastmin    
+
     elif method=='avg':    
         id_avgdistmin = np.argmin(avg_dist_arr)
         indt_avgdistmin = indt_arr[id_avgdistmin]
         return indt_avgdistmin
     else:
-        print('choose a method between "first" and "avg"')
+        print('choose a method between "first", "last" and "avg"')
 
 
 # fonction pour tester la fonction scan_frames_get_indt_mindist en faisant des affichages... 
 def Show_two_times_wavefront_and_frac(keyfrac, 
-                                      delta_indt = 100, 
+                                      delta_indt = 100,
+                                      method='avg',
                                       uz=np.ndarray,
                                       dict_frac=dict, 
                                       dict_stereo_pivdata=dict,
@@ -482,7 +498,7 @@ def Show_two_times_wavefront_and_frac(keyfrac,
                                                 dict_frac=dict_frac, 
                                                 dict_all_wavefront_lines=dic_all_lines, 
                                                 dict_stereo_pivdata=dict_stereo_pivdata,
-                                                method='avg')
+                                                method=method)
 
 
 
@@ -512,5 +528,5 @@ def Show_two_times_wavefront_and_frac(keyfrac,
     plt.legend()
     plt.show()
 
-
+    return indt_distmin
 # %%

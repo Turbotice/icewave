@@ -164,26 +164,34 @@ plt.show()
 # qui nous intéresse, après avoir choisi la fracture 
 # qui nous intéresse et donc le temps (frame) à afficher
 
+# Les 3 fractures qui sont sur le front d'onde au moment de leur détection
+
 #keyfrac = 'dict_single_frac_yind23_xind28'
 #line_index = 0
 #keyfrac = 'dict_single_frac_yind10_xind39'
 #line_index = 0
-keyfrac = 'dict_single_frac_yind34_xind25'
+#keyfrac = 'dict_single_frac_yind34_xind25'
+#line_index = 1
+
+# Les autres, détection en retard :
+
+#keyfrac = 'dict_single_frac_yind56_xind14'
+#line_index = 1
+keyfrac = 'dict_single_frac_yind50_xind19'
 line_index = 1
+#keyfrac = 'dict_single_frac_yind80_xind9'
+#line_index = 4
 
-tfrac_approx = dict_frac[keyfrac]['times_frac_sec_approx_ref_noncassee'][0]
-ind_tfrac_approx = np.where(dict_stereo_pivdata['t']>=tfrac_approx)[0][0]
 
-plt.figure()
-plt.imshow(uz[:,:,ind_tfrac_approx])
-plt.plot(dict_frac[keyfrac]['idcs_single_frac'][:,0], dict_frac[keyfrac]['idcs_single_frac'][:,1], 'k^')
-for i in range(len(dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines'])):
-    xvals = dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines']['line_'+str(i)]['x_ind']
-    yvals = dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines']['line_'+str(i)]['y_ind']
-    plt.plot(xvals, yvals, label='line '+str(i))
+indt_distmin = Show_two_times_wavefront_and_frac(keyfrac, 
+                                                 delta_indt=120,
+                                                   uz=uz,
+                                                   method='last',
+                                                     dic_all_lines=dic_all_lines,
+                                                       dict_frac=dict_frac,
+                                                         dict_stereo_pivdata=dict_stereo_pivdata)
 
-plt.legend()
-plt.show()
+ind_tfrac_approx = indt_distmin
 
 # on peut donc choisir dans le dic_all_lines la frame 
 # qui nous intéresse et la ligne qui nous intéresse
@@ -195,6 +203,7 @@ kappa_t_profile = dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines']['l
 plt.figure()
 plt.plot(kappa_n_profile)
 plt.plot(kappa_t_profile)
+
 
 #%%
 
