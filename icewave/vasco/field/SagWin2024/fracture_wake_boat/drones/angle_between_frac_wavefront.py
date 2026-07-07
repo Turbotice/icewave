@@ -19,6 +19,7 @@ from vasco.tools.clickonfigures import get_n_points
 from measure_anglefrac import complete_routine_measure_angle_frac_lines, projection_coord_oninclinated_line
 from functions_fracture_analysis import click_on_fracture_path_plot_time_evol, click2extract_amplitude, plot_elevation_refnotbroken_and_broken
 from profiles import *
+from find_wave_front import shortest_distance_to_any_wavefront
 
 #%% definition des chemins des données
 #disk = 'L:'# disk is Elements on adour
@@ -88,53 +89,14 @@ array_tfrac_approx = np.zeros(len(yind_positions_fractures))
 for i in range(len(yind_positions_fractures)):
     array_tfrac_approx[i] = fractures_positions_data['tmaxs_kappa2_t'][yind_positions_fractures[i],xind_positions_fractures[i]]
 
-def shortest_distance_to_any_wavefront(xind=np.ndarray, yind=np.ndarray, tfrac=np.ndarray, dict_all_wavefront_lines=dict_all_wavefront_lines, dict_stereo_pivdata=dict_stereo_pivdata):
-    """
-    va chercher, pour un point (xind,yind) avec pour instant de fracture t_frac, le point sur le front d'onde détecté le plus proche
-    
-    Returns :
-    closest_distance, id_closest_line, xshift, yshift, agmn_dist
-    (avec agmn_dist l'indice, dans la ligne de front d'onde d'indice
-    id_closest_line, du point trouvé le plus proche)
-    """
-    
-    t_ind = np.where(dict_stereo_pivdata['t']>=tfrac)[0][0]
-    dict_lines = dict_all_wavefront_lines['frame_'+str(t_ind)]['dict_lines']
-
-    min_distances = np.zeros(len(dict_lines))
-    xshifts = np.zeros(len(dict_lines))
-    yshifts = np.zeros(len(dict_lines))
-    agmn_dists = np.zeros(len(dict_lines))
-    for i in range(len(dict_lines)):
-        xidcs_line = dict_lines['line_'+str(i)]['x_ind']
-        yidcs_line = dict_lines['line_'+str(i)]['y_ind']
-        
-        distances = np.hypot(xidcs_line - xind, yidcs_line - yind)
-        agmn_dist = np.argmin(distances)
-        min_dist = distances[agmn_dist]
-
-        min_distances[i] = min_dist
-        xshifts[i] = (xidcs_line - xind)[agmn_dist]
-        yshifts[i] = (yidcs_line - yind)[agmn_dist]
-        agmn_dists[i] = agmn_dist
-    
-    id_closest_line = np.argmin(min_distances)
-    closest_distance = min_distances[id_closest_line]
-    xshift = xshifts[id_closest_line]
-    yshift = yshifts[id_closest_line]
-    ind_closest_onwavefront = int(agmn_dists[id_closest_line])
-
-
-    # ajouter le calcule de "où est" le front par rapport à la fracture    
-
-    return closest_distance, id_closest_line, xshift, yshift, ind_closest_onwavefront, t_ind
 
 #%%
 # test
+
 array_closest_distance = np.zeros(len(array_tfrac_approx))
 yshifts = np.zeros(len(array_tfrac_approx))
 for i in range(len(array_tfrac_approx)):
-    closest_distance, id_closest_line, xshift, yshift, _, _ = shortest_distance_to_any_wavefront(xind=xind_positions_fractures[i], yind=yind_positions_fractures[i], tfrac=array_tfrac_approx[i])
+    closest_distance, id_closest_line, xshift, yshift, _, _ = shortest_distance_to_any_wavefront(xind=xind_positions_fractures[i], yind=yind_positions_fractures[i], time_sec=array_tfrac_approx[i], dict_all_wavefront_lines=dict_all_wavefront_lines, dict_stereo_pivdata=dict_stereo_pivdata)
     array_closest_distance[i] = closest_distance
     yshifts[i] = yshift
 %matplotlib qt
@@ -148,6 +110,8 @@ plt.show()
 dict_lines_frac, dict_results_anglesfrac = complete_routine_measure_angle_frac_lines(fractures_positions_data=fractures_positions_data, minsize_frac_px=6)
 
 #%%
+
+delta_t_sec = -5
 
 Xind_arr = dict_results_anglesfrac['Xind_arr']
 Yind_arr = dict_results_anglesfrac['Yind_arr']
@@ -163,7 +127,7 @@ for i in range(len(Xind_arr)):
     yind = yind_positions_fractures[ind_same]
     tfrac = array_tfrac_approx[ind_same]
 
-    closest_distance, id_closest_line, xshift, yshift, ind_closest_onwavefront, t_ind = shortest_distance_to_any_wavefront(xind=xind, yind=yind, tfrac=tfrac, dict_all_wavefront_lines=dict_all_wavefront_lines)
+    closest_distance, id_closest_line, xshift, yshift, ind_closest_onwavefront, t_ind = shortest_distance_to_any_wavefront(xind=xind, yind=yind, time_sec=tfrac + delta_t_sec, dict_all_wavefront_lines=dict_all_wavefront_lines, dict_stereo_pivdata=dict_stereo_pivdata)
 
     xind_wavefront = dict_all_wavefront_lines['frame_'+str(t_ind)]['dict_lines']['line_'+str(id_closest_line)]['x_ind']
     yind_wavefront = dict_all_wavefront_lines['frame_'+str(t_ind)]['dict_lines']['line_'+str(id_closest_line)]['y_ind']
@@ -177,10 +141,9 @@ for i in range(len(Xind_arr)):
     Alpha_wavefront_closest_arr[i] = alpha_wavefront_closest
 
 
-# %%
 %matplotlib inline
 
-maskplot = (Yind_arr>=20)&(Yind_arr<70) & ((Alpha_linfit_arr - Alpha_wavefront_closest_arr)>0)
+maskplot = (Yind_arr>=20)&(Yind_arr<70)# & ((Alpha_linfit_arr - Alpha_wavefront_closest_arr)>0)
 
 plt.figure()
 plt.scatter(Xind_arr, Yind_arr, c=(Alpha_linfit_arr) * 180/np.pi, vmin=0, vmax=90, cmap='rainbow')
@@ -216,7 +179,7 @@ indsort = np.argsort(Xprim_along_line[maskplot])
 xsm = Xprim_along_line[maskplot][indsort]
 ysm = gaussian_filter1d((Alpha_linfit_arr - Alpha_wavefront_closest_arr)[maskplot][indsort] * 180/np.pi,sigma=10)
 plt.plot(xsm, ysm)
-plt.ylim(0, 75)
+plt.ylim(-10, 70)
 plt.xlim(0, np.max(xsm)*1.05)
 plt.show()
 

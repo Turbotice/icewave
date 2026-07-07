@@ -367,3 +367,150 @@ def closest_points_between_2curves(x1=np.ndarray,y1=np.ndarray,x2=np.ndarray,y2=
         agmn = np.argmin(distances)
         closests[i] = agmn
     return closests
+
+
+def shortest_distance_to_any_wavefront(xind=np.ndarray, yind=np.ndarray, time_sec=np.ndarray, dict_all_wavefront_lines=dict, dict_stereo_pivdata=dict):
+    """
+    va chercher, pour un point (xind,yind) à un instant time_sec, le point sur le front d'onde détecté le plus proche
+    Typiquement, pour un point (xind,yind) avec pour instant de fracture détecté time_sec=t_frac sur une fracture
+    on peut aller chercher à cet instant là le point le plus proche sur le front d'onde le plus proche.
+
+    Returns :
+    closest_distance, id_closest_line, xshift, yshift, agmn_dist
+    (avec agmn_dist l'indice, dans la ligne de front d'onde d'indice
+    id_closest_line, du point trouvé le plus proche)
+    """
+    
+    t_ind = np.where(dict_stereo_pivdata['t']>=time_sec)[0][0]
+    dict_lines = dict_all_wavefront_lines['frame_'+str(t_ind)]['dict_lines']
+
+    min_distances = np.zeros(len(dict_lines))
+    xshifts = np.zeros(len(dict_lines))
+    yshifts = np.zeros(len(dict_lines))
+    agmn_dists = np.zeros(len(dict_lines))
+    for i in range(len(dict_lines)):
+        xidcs_line = dict_lines['line_'+str(i)]['x_ind']
+        yidcs_line = dict_lines['line_'+str(i)]['y_ind']
+        
+        distances = np.hypot(xidcs_line - xind, yidcs_line - yind)
+        agmn_dist = np.argmin(distances)
+        min_dist = distances[agmn_dist]
+
+        min_distances[i] = min_dist
+        xshifts[i] = (xidcs_line - xind)[agmn_dist]
+        yshifts[i] = (yidcs_line - yind)[agmn_dist]
+        agmn_dists[i] = agmn_dist
+    
+    id_closest_line = np.argmin(min_distances)
+    closest_distance = min_distances[id_closest_line]
+    xshift = xshifts[id_closest_line]
+    yshift = yshifts[id_closest_line]
+    ind_closest_onwavefront = int(agmn_dists[id_closest_line])
+
+
+    # ajouter le calcul de "où est" le front par rapport à la fracture    
+
+    return closest_distance, id_closest_line, xshift, yshift, ind_closest_onwavefront, t_ind
+
+def scan_frames_get_indt_mindist(keyfrac:str, ind_tfrac:int, delta_indt:int, dict_frac=dict, dict_all_wavefront_lines=dict, dict_stereo_pivdata=dict, method='avg'):
+    """
+    scanne les temps précédents une fracture donnée, et trouve le temps pour lequel
+    une crête de front d'onde est la plus proche de cette fracture.
+    Il y a 2 méthodes possible : soit on regarde tous les points de la fracture 
+    et on minimise la distance moyenne, soit on minimise seulement la distance
+     pour le première point de la fracture (qui dans certains cas est le "crack tip")
+    2 options pour method :
+    method = 'avg', ou method = 'first'    
+    """
+    time_sec_frac = dict_stereo_pivdata['t'][ind_tfrac]
+
+    indt_arr = np.arange(ind_tfrac-delta_indt, ind_tfrac+1, 1)
+    # cas method='first'
+    dist_first_arr = np.zeros(len(indt_arr))
+    # cas method='avg'
+    avg_dist_arr = np.zeros(len(indt_arr))
+    for i in range(len(indt_arr)):
+        indt = indt_arr[i]
+        time_sec = dict_stereo_pivdata['t'][indt]
+        if method=='first':
+            xind = dict_frac[keyfrac]['idcs_single_frac'][0,0]
+            yind = dict_frac[keyfrac]['idcs_single_frac'][0,1]
+            cd, ic_cl, _, _, _, _ = shortest_distance_to_any_wavefront(xind=xind,yind=yind,time_sec=time_sec,dict_all_wavefront_lines=dict_all_wavefront_lines,dict_stereo_pivdata=dict_stereo_pivdata)
+            dist_first_arr[i] = cd
+            print(cd)
+        elif method=='avg':
+            xind_arr = dict_frac[keyfrac]['idcs_single_frac'][:,0]
+            yind_arr = dict_frac[keyfrac]['idcs_single_frac'][:,1]
+            distances = np.zeros(len(xind_arr))
+            for k in range(len(xind_arr)):
+                xind = xind_arr[k]
+                yind = yind_arr[k]
+                cd, ic_cl, _, _, _, _ = shortest_distance_to_any_wavefront(xind=xind,yind=yind,time_sec=time_sec,dict_all_wavefront_lines=dict_all_wavefront_lines,dict_stereo_pivdata=dict_stereo_pivdata)
+                distances[k] = cd
+            print(np.mean(distances))
+            avg_dist_arr[i] = np.mean(distances)
+    if method=='first':
+        id_distfirstmin = np.argmin(dist_first_arr)
+        indt_distfirstmin = indt_arr[id_distfirstmin]
+        return indt_distfirstmin        
+    elif method=='avg':    
+        id_avgdistmin = np.argmin(avg_dist_arr)
+        indt_avgdistmin = indt_arr[id_avgdistmin]
+        return indt_avgdistmin
+    else:
+        print('choose a method between "first" and "avg"')
+
+
+# fonction pour tester la fonction scan_frames_get_indt_mindist en faisant des affichages... 
+def Show_two_times_wavefront_and_frac(keyfrac, 
+                                      delta_indt = 100, 
+                                      uz=np.ndarray,
+                                      dict_frac=dict, 
+                                      dict_stereo_pivdata=dict,
+                                      dic_all_lines=dict):
+    #keyfrac = 'dict_single_frac_yind10_xind39'
+    #keyfrac = 'dict_single_frac_yind23_xind28'
+    #keyfrac = 'dict_single_frac_yind34_xind25'
+    #keyfrac = 'dict_single_frac_yind50_xind19'
+    #keyfrac = 'dict_single_frac_yind56_xind14'
+
+    tfrac_approx = dict_frac[keyfrac]['times_frac_sec_approx_ref_noncassee'][0]
+    ind_tfrac_approx = np.where(dict_stereo_pivdata['t']>=tfrac_approx)[0][0]
+
+
+    indt_distmin = scan_frames_get_indt_mindist(keyfrac, ind_tfrac_approx, delta_indt, 
+                                                dict_frac=dict_frac, 
+                                                dict_all_wavefront_lines=dic_all_lines, 
+                                                dict_stereo_pivdata=dict_stereo_pivdata,
+                                                method='avg')
+
+
+
+
+    plt.figure()
+    plt.imshow(uz[:,:,ind_tfrac_approx])
+    plt.plot(dict_frac[keyfrac]['idcs_single_frac'][:,0], dict_frac[keyfrac]['idcs_single_frac'][:,1], 'k^')
+    for i in range(len(dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines'])):
+        xvals = dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines']['line_'+str(i)]['x_ind']
+        yvals = dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines']['line_'+str(i)]['y_ind']
+        plt.plot(xvals, yvals, label='line '+str(i))
+
+    plt.title('frame'+str(ind_tfrac_approx))
+    plt.legend()
+    plt.show()
+
+
+    plt.figure()
+    plt.imshow(uz[:,:,indt_distmin])
+    plt.plot(dict_frac[keyfrac]['idcs_single_frac'][:,0], dict_frac[keyfrac]['idcs_single_frac'][:,1], 'k^')
+    for i in range(len(dic_all_lines['frame_'+str(indt_distmin)]['dict_lines'])):
+        xvals = dic_all_lines['frame_'+str(indt_distmin)]['dict_lines']['line_'+str(i)]['x_ind']
+        yvals = dic_all_lines['frame_'+str(indt_distmin)]['dict_lines']['line_'+str(i)]['y_ind']
+        plt.plot(xvals, yvals, label='line '+str(i))
+
+    plt.title('frame'+str(indt_distmin))
+    plt.legend()
+    plt.show()
+
+
+# %%

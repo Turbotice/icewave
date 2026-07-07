@@ -78,7 +78,7 @@ plt.show()
 
 #%%
 from scipy.ndimage import gaussian_filter1d
-from find_wave_front import find_wave_fronts_on_image, find_lines, group_lines_to_dict, compute_kappa_n_profiles_along_wavecrest, bidim_curvature_oneline, closest_points_between_2curves
+from find_wave_front import find_wave_fronts_on_image, find_lines, group_lines_to_dict, compute_kappa_n_profiles_along_wavecrest, bidim_curvature_oneline, closest_points_between_2curves, Show_two_times_wavefront_and_frac
 
 #k = 'dict_single_frac_yind10_xind39'
 k = 'dict_single_frac_yind23_xind28'
@@ -254,9 +254,16 @@ y2 = dic_all_lines['frame_'+str(ind_tfrac_approx)]['dict_lines']['line_'+str(lin
 
 ind_closests = closest_points_between_2curves(x1=x1, y1=y1, x2=x2, y2=y2)
 
-xvals2plot_meters = np.arange(len(kappa_nn_profile)) * (1/facq_x)
+s_ind = np.zeros(len(x2))
+for i in range(len(x2)-1):
+    s_ind[i+1] = s_ind[i] + np.sqrt( (x2[i+1]-x2[i])**2 + (y2[i+1]-y2[i])**2 )
+
+#xvals2plot_meters = np.arange(len(kappa_nn_profile)) * (1/facq_x)
+xvals2plot_meters = s_ind * (1/facq_x)
 
 %matplotlib inline
+
+
 plt.figure(figsize=(10,7))
 plt.plot(xvals2plot_meters, kappa_nn_profile, label='curvature normal to wave front')
 plt.plot(xvals2plot_meters, kappa_tt_profile, label='curvature tangent to wave front')
