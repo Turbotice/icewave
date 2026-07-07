@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Dec  5 14:35:28 2025
+Created on Mon Jul  6 14:13:25 2026
 
 @author: sebas
-
-Create a figure presenting E,h and D VS x
-
 """
+
 
 import os
 import re
@@ -47,20 +45,34 @@ new_blues = colors.ListedColormap(full_blues(np.linspace(0.2,1,256)))
 
 #%% Set fig_folder path 
 
-fig_folder = 'U:/Data/0211/DAS/Figures_article/Results/'
+fig_folder = 'F:/Rimouski_2025/DAS_article/'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
     
 #%% Load DAS results 
+base = 'U:/Data/'
 
-file2load = 'U:/Data/Summary/DAS/main_results_active_passive_V2.h5'
+file2load = f'{base}/Summary/DAS/main_results_active_passive_V2.h5'
 results_DAS = rw.load_dict_from_h5(file2load)
+
+folder2active = 'F:/Rimouski_2025/DAS_article/Uncertainties/'
+file2load = f'{folder2active}active_E_modulus_results_uncertainties.pkl'
+with open(file2load,'rb') as pf:
+    E_results = pickle.load(pf)
+    
+file2load = f'{folder2active}active_thickness_results_uncertainties.pkl'
+with open(file2load,'rb') as pf:
+    h_results = pickle.load(pf)
+
+file2load = f'{folder2active}active_flex_modulus_results_uncertainties.pkl'
+with open(file2load,'rb') as pf:
+    D_results = pickle.load(pf)
 
 #%% Load DAS GPS position 
 
-file_water_height = 'U:/Data/0211/DAS/fiber_water_height_GPS_structure_0211.h5'
+file_water_height = f'{base}/0211/DAS/fiber_water_height_GPS_structure_0211.h5'
 DAS_water_height = rw.load_dict_from_h5(file_water_height)
-
+    
 #%% Load geophones acquisition position
 
 dates = ['0210','0211','0212']
@@ -69,7 +81,7 @@ GPS = {'Geophones':{},'thickness':{}}
 date = '0210'
 year = '2025'
 
-path2logfile = f'U:/Data/{date}/Geophones'
+path2logfile = f'{base}{date}/Geophones'
 geophones_table_path = 'C:/Users/sebas/git/icewave/sebastien/geophones/geophones_table'
 UTC_timearea = pytz.timezone('UTC')
 
@@ -116,7 +128,7 @@ for key in geoph_results.keys():
 
 #%% Load Maddie GPS results 
 
-filename = 'U:/Data/Summary/DAS/Maddie_gps_measurements_DAS.pkl'
+filename = f'{base}/Summary/DAS/Maddie_gps_measurements_DAS.pkl'
 with open(filename,'rb') as pf:
     MS_gps = pickle.load(pf)
 #%% Collect Stephane GPS waypoints 
@@ -146,8 +158,8 @@ for date in records.keys():
     
     for key in gps_results[date].keys():
         gps_results[date][key] = np.array(gps_results[date][key])
-        
- 
+
+
 # =============================================================================
 #%% Compute Flexural modulus for gps positions and geophones lines 
 # =============================================================================
@@ -200,6 +212,7 @@ for i,key in enumerate(data_h.keys()):
     avg_data[i,1,:] = std    
 
 #%% Create subplot
+offset_fiber = 37.5
 
 model_key = '20250210'
 markersize = 8
@@ -219,8 +232,17 @@ set_graphs.set_matplotlib_param('triple')
 fig, axs = plt.subplots(nrows = 1, ncols = 3, figsize = (16,6.5),layout = 'constrained')   
 
 # plot E VS x
-axs[0].plot(results_DAS['active']['0212']['x'],results_DAS['active']['0212']['E']*1e-9,'-o',
-            color = color_date['active']['0212'],mec = 'k')
+# axs[0].plot(results_DAS['active']['0212']['x'],results_DAS['active']['0212']['E']*1e-9,'-o',
+#             color = 'k',mec = 'k')
+for date in E_results.keys():
+    axs[0].plot(E_results[date]['x_mid'] - offset_fiber,E_results[date]['E']*1e-9,'-o',
+                color = color_date['active'][date],mec = 'k',label = f'active {date}')
+    axs[0].fill_between(E_results[date]['x_mid'] - offset_fiber,
+                        (E_results[date]['E'] - E_results[date]['E_unc'])*1e-9,
+                        (E_results[date]['E'] + E_results[date]['E_unc'])*1e-9,
+                        alpha = 0.2,
+                color = color_date['active'][date])
+
 axs[0].plot(sub_results[model_key]['x'][0],sub_results[model_key]['Young modulus (Pa)'][0]*1e-9,'^',
             color = 'tab:green',mec = 'k',ms = markersize,label = 'geophones')
 axs[0].plot(np.mean(sub_results[model_key]['x'][1:3]),np.mean(sub_results[model_key]['Young modulus (Pa)'][1:3])*1e-9,'^',
@@ -244,9 +266,17 @@ axs[1].errorbar(avg_data[:,0,0],avg_data[:,0,1],xerr = avg_data[:,1,0],yerr = av
 #         axs[1].plot(gps_results[date]['x'],gps_results[date]['h'],'p',
 #                 color = 'tab:cyan',mec = 'k',ms = markersize)
 # plot DAS
-for date in results_DAS['active'].keys():
-    axs[1].plot(results_DAS['active'][date]['x'],results_DAS['active'][date]['h'],'-o',
-                color = color_date['active'][date],mec = 'k',label = f'active {date}',zorder = 0)
+# for date in results_DAS['active'].keys():
+#     axs[1].plot(results_DAS['active'][date]['x'],results_DAS['active'][date]['h'],'-o',
+#                 color = color_date['active'][date],mec = 'k',label = f'active {date}',zorder = 0)
+for date in h_results.keys():
+    axs[1].plot(h_results[date]['x'] - offset_fiber,h_results[date]['h'],'-o',
+                color = color_date['active'][date],mec = 'k')
+    axs[1].fill_between(h_results[date]['x'] - offset_fiber,
+                        h_results[date]['h'] - h_results[date]['h_low'],
+                        h_results[date]['h'] + h_results[date]['h_high'],
+                        alpha = 0.2,
+                color = color_date['active'][date])
 
 # plot geophone
 axs[1].plot(sub_results[model_key]['x'][0],sub_results[model_key]['thickness (m)'][0],'^',
@@ -263,13 +293,26 @@ axs[1].set_ylim([0.22,0.82])
 
 # plot D VS x
 # plot DAS active
-axs[2].plot(results_DAS['active']['0212']['x'],results_DAS['active']['0212']['D'],'o-',
-            color = color_date['active']['0212'],mec = 'k')
+# axs[2].plot(results_DAS['active']['0212']['x'],results_DAS['active']['0212']['D'],'o-',
+#             color = color_date['active']['0212'],mec = 'k')
+for date in D_results.keys():
+    axs[2].plot(D_results[date]['x'] - offset_fiber,D_results[date]['D'],'-o',
+                color = color_date['active'][date],mec = 'k')
+    axs[2].fill_between(D_results[date]['x'] - offset_fiber,
+                        D_results[date]['D'] - D_results[date]['D_unc'],
+                        D_results[date]['D'] + D_results[date]['D_unc'],
+                        alpha = 0.2,
+                color = color_date['active'][date])
+    
 # plot DAS passive
 for date in results_DAS['passive']['corrected'].keys():
-    axs[2].errorbar(results_DAS['passive']['corrected'][date]['x'],results_DAS['passive']['corrected'][date]['D'],
-                    yerr = results_DAS['passive']['corrected'][date]['err_D'],fmt = 'o-', ecolor = 'k',
+    x = results_DAS['passive']['corrected'][date]['x']
+    D = results_DAS['passive']['corrected'][date]['D']
+    D_err = results_DAS['passive']['corrected'][date]['err_D']
+    axs[2].plot(x,D,'o-',
                     color = color_date['passive'][date],mec = 'k',label = f'passive {date}')
+    axs[2].fill_between(x,D - D_err,D + D_err,alpha= 0.2,color = color_date['passive'][date])
+    
 # plot geophones
 axs[2].plot(sub_results[model_key]['x'][0],sub_results[model_key]['D'][0],'^',
             color = 'tab:green',mec = 'k',ms = markersize)
@@ -277,8 +320,8 @@ axs[2].plot(np.mean(sub_results[model_key]['x'][1:3]),np.mean(sub_results[model_
             color = 'tab:green',mec = 'k',ms = markersize)
 
 axs[2].set_xlabel(r'$x \; \mathrm{(m)}$')
-axs[2].set_ylabel(r'$D \; \mathrm{(J)}$')
-axs[2].set_ylim([-1.1e6,1.5e8])
+axs[2].set_ylabel(r'$D \; \mathrm{(Pa.m^{-3})}$')
+axs[2].set_ylim([-1.1e6,2.6e8])
 
 # add vertical lines 
 axs[0].vlines(x_boarder,1, 10,linestyles = '--',colors = 'k',lw = 1)
@@ -293,147 +336,8 @@ for ax in axs:
 fig.legend(ncols = 3,
               loc='outside upper center',frameon = False)
 
-figname = f'{fig_folder}Subplot_EhD_VS_x_with_ice_boarder'
-# plt.savefig(figname + '.pdf', bbox_inches='tight')
-# plt.savefig(figname + '.svg', bbox_inches='tight')
-# plt.savefig(figname + '.png', bbox_inches='tight')
-
-#%%
-    
-test = np.mean(results_DAS['active']['0212']['E'])/1e9
-std_test = np.std(results_DAS['active']['0212']['E'])/1e9
-
-
-
-
-
-
-
-
-#%%
-fig, ax = plt.subplots()
-ax.errorbar(avg_data[:,0,0],avg_data[:,0,1],xerr = avg_data[:,1,0],yerr = avg_data[:,1,1],
-            fmt = 'none',ecolor = 'tab:cyan')
-
-
-
-
-
-
-
-#%%  Plot flexural modulus using geophones and thickness measurements - gps  
-
-scale = 'linear'
-ms = 7
-
-set_graphs.set_matplotlib_param('single')
-fig, ax = plt.subplots()
-
-color_date = {'0210':new_blues(0.2),'0211':new_blues(0.6), '0212': new_blues(0.9)}
-key_swell = 'corrected'
-for date in ['0211','0212'] :
-    ax.errorbar(results_DAS['passive'][key_swell][date]['x'],results_DAS['passive'][key_swell][date]['D'],
-                yerr = results_DAS['passive'][key_swell][date]['err_D'],
-                fmt = '-o',label = date, color = color_date[date])
-
-ax.plot(sub_results[model_key]['x'],sub_results[model_key]['D'],'s', color = color_date['0210'],
-        ms = ms,mec = 'k',label = 'Geophones')
-
-# count = 0
-# for key_date in gps_results.keys():    
-#     if count == 0:
-#         ax.plot(gps_results[key_date]['x'],gps_results[key_date]['D'],'^', color = color_date[key_date],
-#                 ms = ms,mec = 'k',label = 'Thickness')
-    
-#     else : 
-#         ax.plot(gps_results[key_date]['x'],gps_results[key_date]['D'],'^', color = color_date[key_date],
-#                 ms = ms,mec = 'k')      
-#     count += 1
-    
-ax.plot(results_DAS['active']['0212']['x'],results_DAS['active']['0212']['D'],'o-',color = 'tab:red',label = 'Active 0212')
-
-ax.set_xlabel(r'$x \; \mathrm{(m)}$')
-ax.set_ylabel(r'$D \; \mathrm{(J)}$')
-
-ax.set_xlim([0,630])
-
-if scale == 'log':
-    ax.set_ylim([4e6,3e8])
-    ax.set_yscale(scale)
-    ax.legend(loc = 'lower right',fontsize = 18)
-else :
-    ax.set_ylim([0.5e6,1.7e8])
-    ax.set_yscale(scale)
-    ax.legend(loc = 'upper right',fontsize = 18)
-
-
-figname = f'{fig_folder}D_vs_x_DAS_geophone_superposition_{scale}'
-# plt.savefig(figname + '.pdf', bbox_inches='tight')
-# plt.savefig(figname + '.png', bbox_inches='tight')
-
-
-#%% Load E,h from Ludo's active method  
-
-date = '0212'
-path2active_results = f'U:/Data/{date}/DAS/Results_active_sources/'
-
-path2values_h = os.path.join(path2active_results, 'thicknesses.pkl')
-path2values_E = os.path.join(path2active_results, 'young_modulus.pkl')
-
-with open(path2values_h, 'rb') as f:
-    thicknesses = pickle.load(f)
-    print("Contents of thicknesses.pkl:")
-    print(thicknesses)
-
-with open(path2values_E, 'rb') as f:
-    young_modulus = pickle.load(f)
-    print("\nContents of young_modulus.pkl:")
-    print(young_modulus)
-
-
-# --- Prepare h data ---
-h_raw = np.array(thicknesses['h'])
-h_xpos_raw = np.array(list(thicknesses['xposition'].values()))
-
-# Compute moving average (window = 4)
-window = 2
-h_ma = np.convolve(h_raw, np.ones(window)/window, mode='valid')
-
-# Adjust x-position for moving average (centered)
-h_xpos_ma = h_xpos_raw[(window - 1)//2 : -(window//2)] if len(h_xpos_raw) >= window else []
-
-# --- Prepare E data ---
-E_raw = np.array(young_modulus['E'][:-1])  # drop last value
-E_xpos_raw = np.array(list(young_modulus['xposition'].values())[:-1])
-
-E_ma = np.convolve(E_raw, np.ones(window)/window, mode='valid')
-E_xpos_ma = E_xpos_raw[(window - 1)//2 : -(window//2)] if len(E_xpos_raw) >= window else []
-
-# --- Interpolate E onto h_xpos_raw ---
-E_interp = np.interp(h_xpos_raw, E_xpos_raw, E_raw)
-
-
-#%% Superpose gps thickness results and Ludo's Thickness
-
-set_graphs.set_matplotlib_param('single')
-fig, ax = plt.subplots()
-ax.plot(h_xpos_ma,h_ma,'o-',color = 'tab:red',mec = 'k',label = 'Active')
-count = 0
-for key_date in gps_results.keys():
-    if count == 0 :
-        ax.plot(gps_results[key_date]['x'],gps_results[key_date]['h'],'^',color = 'tab:blue',mec = 'k',
-                label = 'By hand')
-    
-    else :
-        ax.plot(gps_results[key_date]['x'],gps_results[key_date]['h'],'^',color = 'tab:blue',mec = 'k')
-    
-    count+=1
-
-ax.set_xlim([0,630])
-ax.set_xlabel(r'$x \; \mathrm{(m)}$')
-ax.set_ylabel(r'$h \; \mathrm{(m)}$')
-ax.legend()
-
-figname = f'{fig_folder}h_vs_x_DAS_thickness_hand_superposition'
-# plt.savefig(figname + '.pdf', bbox_inches='tight')
-# plt.savefig(figname + '.png', bbox_inches='tight')
+figname = f'{fig_folder}Subplot_EhD_VS_x_with_uncertainties'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.svg', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
+ 
