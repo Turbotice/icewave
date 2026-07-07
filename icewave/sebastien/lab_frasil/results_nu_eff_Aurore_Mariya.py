@@ -5,7 +5,7 @@ Created on Wed Jun 17 11:49:38 2026
 @author: sebas
 """
 
-
+#%%
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -152,4 +152,36 @@ figname = f'{fig_folder}nu_eff_VS_h_rho_1p07_rho_1p0'
 plt.savefig(f'{figname}.png', bbox_inches = 'tight')
 plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
 plt.savefig(f'{figname}.svg', bbox_inches = 'tight')
+
+#%% Plot only Aurore results 
+
+
+set_graphs.set_matplotlib_param('powerpoint')
+fig, ax = plt.subplots()
+nu_w = 1e-6
+
+color_table = {'aurore':'tab:blue','mariya':'tab:red'}
+marker_table = {'lamb':'o','bilayer':'^'}
+ms = 12
+
+method = 'laser'
+key = 'aurore'
+key_model = 'lamb'
+table = main_table[key][key_model][method]
+
+marker = marker_table[key_model]
+ax.errorbar(table['h'],table['nu']/nu_w,
+            yerr = table['err_nu']/nu_w,fmt = marker,color = color_table[key],
+            markersize = ms)
+    
+ax.set_xlabel(r'$h \; \mathrm{(mm)}$')
+ax.set_ylabel(r'$\nu / \nu_w$')
+
+ax.set_xlim([0,16])
+# ax.set_yscale('log')
+
+figname = f'{fig_folder}nu_eff_VS_h_Aurore_data_Lamb_model'
+plt.savefig(f'{figname}.png', bbox_inches = 'tight')
+plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
+# plt.savefig(f'{figname}.svg', bbox_inches = 'tight')
 

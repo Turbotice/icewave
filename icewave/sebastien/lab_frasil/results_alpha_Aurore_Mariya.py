@@ -108,8 +108,66 @@ with open(file2load,'rb') as pf:
 fig_folder = 'F:/PhD_Manuscript/ch3/Attenuation/'   
 if not os.path.isdir(fig_folder) :
     os.mkdir(fig_folder)
+
+#%% Plot Aurore results 
+
+data = main_dict['aurore']
+mksize = 12
+
+set_graphs.set_matplotlib_param('powerpoint')
+method = 'laser'
+thickness_list = [5.0,7.5,10.0,12.5,15.0]
+
+bounds = np.array([3.75,6.25,8.75,11.25,13.75,16.25]) # bounds used for colorbar
+norm = mcolors.BoundaryNorm(boundaries=bounds, ncolors=256)
+cmap = new_blues
+marker_list = ['o','s','D','^','h','p']
+fig, ax = plt.subplots(figsize = (12,9))
+
+for i,h in enumerate(thickness_list):
+    valid_keys = []
+    for key in data.keys():
+        if data[key]['method'] == method and data[key]['h'] == h:
+            valid_keys.append(key)
+            
+    alpha = np.array([data[key]['alpha'] for key in valid_keys])
+    err_alpha = np.array([data[key]['err_alpha'] for key in valid_keys])
+    f_demod = np.array([data[key]['f_demod'] for key in valid_keys])
+
+    current_color = cmap(norm(h))
+    marker = marker_list[i]
+    ax.errorbar(f_demod,alpha,yerr = err_alpha,fmt = marker,color = current_color,
+                markeredgecolor = 'k',ecolor = 'k',
+                markersize = mksize)
     
+    xth = np.linspace(2.0,6.0,100)
+    coeffs,err_coeff = powerlaw_fit(f_demod, alpha, err_alpha)
     
+    yth = coeffs[1]*xth**coeffs[0]
+    label_th = r'$y = ' + f'{coeffs[1]:.2f}'+ 'f^{' + f'{coeffs[0]:.3f}' + '}$'
+    print(label_th)
+    ax.plot(xth,yth,'-',color = current_color,label = label_th)
+    
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="2%", pad=0.1)
+    
+# create a scalar mappable
+sm = cm.ScalarMappable(cmap=cmap, norm=norm)
+sm.set_array([])  # Only needed for the colorbar
+cbar = fig.colorbar(sm, cax=cax)
+midpoints = [(bounds[i] + bounds[i+1])/2 for i in range(len(bounds) - 1)]
+cbar.set_ticks(midpoints)
+cbar.set_ticklabels([f'{mid:.1f}' for mid in midpoints])
+cbar.set_label(r'$h \; \mathrm{(mm)}$')
+
+ax.set_xlabel(r'$f \; \mathrm{(Hz)}$',labelpad = 5)
+ax.set_ylabel(r'$\alpha \; \mathrm{(m^{-1}})$',labelpad = 5)
+ax.set_xscale('log')
+ax.set_yscale('log')
+ax.set_xlim([2.7,5.3])
+ax.set_ylim([2e0,70])
+
+
 # =============================================================================
 # %% Plot Mariya results    
 # =============================================================================
