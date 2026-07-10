@@ -13,7 +13,7 @@ import tools.rw_data as rw
 from vasco.tools.clickonfigures import profile_line_on_image_2clicks
 from vasco.tools.clickonfigures import get_n_points_onimage
 
-from functions_fracture_analysis import click_on_fracture_path_plot_time_evol, click2extract_amplitude, plot_elevation_refnotbroken_and_broken
+from functions_fracture_analysis import click_on_fracture_path_plot_time_evol, click2extract_amplitude, plot_elevation_refnotbroken_and_broken, clic2extract_amplitude_withref_singlepixel
 
 #%%
 #disk = 'L:'# disk is Elements on adour
@@ -88,7 +88,15 @@ matrix_temp_evol_uz, times_frac_sec_approx, idcs_single_frac = click_on_fracture
 #frac_id = f'xind{}'
 
 # %%
-array_amplitudes_frac, wave_period_sec, array_t1_sec, array_t2_sec = click2extract_amplitude(matrix_temp_evol_uz, times_frac_sec_approx, dict_stereo_pivdata)
+#array_amplitudes_frac, wave_period_sec, array_t1_sec, array_t2_sec = click2extract_amplitude(matrix_temp_evol_uz, times_frac_sec_approx, dict_stereo_pivdata)
+
+array_amplitudes_frac = []
+array_amplitudes_err_frac = []
+for i in range(len(matrix_temp_evol_uz)):
+    amplitude, amplitude_err = clic2extract_amplitude_withref_singlepixel(temp_evol_uz=matrix_temp_evol_uz[i], t_frac_sec_approx=times_frac_sec_approx[i], dict_stereo_pivdata=dict_stereo_pivdata)
+    array_amplitudes_frac.append(amplitude)
+    array_amplitudes_err_frac.append(amplitude_err)
+
 
 #%%
 
@@ -168,7 +176,7 @@ dict_single_frac['array_D'] = array_D
 
 
 
-path_dict2save = f'{daily_drone_data_path}/Results/traitement_vasco/dict_results_frac.pkl'
+path_dict2save = f'{daily_drone_data_path}/Results/traitement_vasco/dict_results_frac_witherrorbar.pkl'
 if os.path.exists(path_dict2save):
     with open(path_dict2save, 'rb') as file:
         dict_frac = pickle.load(file)

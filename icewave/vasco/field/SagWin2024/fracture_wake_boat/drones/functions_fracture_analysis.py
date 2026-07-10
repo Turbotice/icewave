@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import pickle
 
 import sys
 icewave_path = 'C:/Users/Vasco Zanchi/Documents/git_turbotice/icewave/icewave/'
@@ -8,12 +9,15 @@ sys.path.append(icewave_path)
 from vasco.tools.clickonfigures import profile_line_on_image_2clicks
 from vasco.tools.clickonfigures import get_n_points_onimage
 from vasco.tools.clickonfigures import get_n_points
+from vasco.tools.clickonfigures import get_n_points_anyfigure
 
 
 
 def click_on_fracture_path_plot_time_evol(n_points, uz,
                                           dict_stereo_pivdata, 
-                                          fractures_positions_data):
+                                          fractures_positions_data,
+                                          saveplotdata = True,
+                                          saveloc = 'C:/Users/Vasco Zanchi/Desktop/presentations/reunions_hebdo/figures_data_article'):
     # dans cette partie on veut cliquer sur quelques pixels qui nous intéressent 
     # au début, puis on afficher l'évolution temporelle de l'élévation à ce point 
 
@@ -43,9 +47,50 @@ def click_on_fracture_path_plot_time_evol(n_points, uz,
         plt.vlines(times_frac_sec_approx[i], ymin=(np.min(matrix_temp_evol_uz)), 
                 ymax=np.max(matrix_temp_evol_uz), colors='r',linestyle='--',
                     alpha=0.3)
+    if saveplotdata:
+        plt.savefig(f'{saveloc}/fig_timeevol_v1.pdf', dpi=600)
+        dict_datafig = {}
+        dict_datafig['xvals'] = dict_stereo_pivdata['t']
+        dict_datafig['matrix_yvals'] = matrix_temp_evol_uz
+        dict_datafig['xvals_vlines'] = times_frac_sec_approx
+        dict_datafig['idcs_single_frac'] = idcs_single_frac
+
+        pickle.dump(dict_datafig, open(f'{saveloc}/datafig_timeevol_example.pkl', "wb"))
     plt.show(block=True)
 
+
     return matrix_temp_evol_uz, times_frac_sec_approx, idcs_single_frac
+
+def clic2extract_amplitude_withref_singlepixel(temp_evol_uz, t_frac_sec_approx, dict_stereo_pivdata):
+    x2plot = dict_stereo_pivdata['t'] - t_frac_sec_approx
+    y2plot = temp_evol_uz
+    fig, ax = plt.subplots()
+    ax.plot(x2plot, y2plot, 'k')
+    coords = get_n_points_anyfigure(fig=fig, ax=ax, n_points=3, symbol='+')
+    x1 = coords[0][0]
+    x2 = coords[1][0]
+    x3 = coords[2][0]
+    y1 = coords[0][1]
+    y2 = coords[1][1]
+    y3 = coords[2][1]
+    
+    ya = np.mean([y1, y3])
+    ya_std = np.abs(y1 - y3)
+    yb = y2
+
+    ymiddle = (ya+yb)/2
+    ymiddle_err = ya_std
+    
+    # maintenant on choisit un seul point pour le max de uz qui nous intéresse, pour en déduire A_c
+    fig, ax = plt.subplots()
+    ax.plot(x2plot, y2plot, 'k')
+    coord = get_n_points_anyfigure(fig, ax, n_points=1)
+    amplitude = coord[0][1] - ymiddle
+    amplitude_err = ymiddle_err
+
+    return amplitude, amplitude_err
+
+
 
 def click2extract_amplitude(matrix_temp_evol_uz, times_frac_sec_approx, dict_stereo_pivdata):
     #%matplotlib qt
@@ -76,6 +121,74 @@ def click2extract_amplitude(matrix_temp_evol_uz, times_frac_sec_approx, dict_ste
 
     return array_amplitudes_frac, full_period_sec, array_t1_sec, array_t2_sec
 
+def threeclick2extract_amplitude(matrix_temp_evol_uz, times_frac_sec_approx, dict_stereo_pivdata):
+    #%matplotlib qt
+
+    array_App1 = np.zeros(len(times_frac_sec_approx))
+    array_App2 = np.zeros(len(times_frac_sec_approx))
+    array_amplitudes_frac_avg = np.zeros(len(times_frac_sec_approx))
+    array_amplitudes_frac_err = np.zeros(len(times_frac_sec_approx))
+    array_full_period_sec_1 = np.zeros(len(times_frac_sec_approx))
+    array_full_period_sec_2 = np.zeros(len(times_frac_sec_approx))
+    array_full_period_sec_avg = np.zeros(len(times_frac_sec_approx))
+    array_full_period_sec_err = np.zeros(len(times_frac_sec_approx))    
+    array_t1_sec = np.zeros(len(times_frac_sec_approx))
+    array_t2_sec = np.zeros(len(times_frac_sec_approx))
+    array_t3_sec = np.zeros(len(times_frac_sec_approx))
+    
+
+    for i in range(len(times_frac_sec_approx)):
+        x2plot = dict_stereo_pivdata['t'] - times_frac_sec_approx[i]
+        y2plot = matrix_temp_evol_uz[i,:]
+        coords = get_n_points(x2plot, y2plot, n_points=3)
+        y1 = np.interp(coords[0][0], x2plot, y2plot)
+        y2 = np.interp(coords[1][0], x2plot, y2plot)
+        y3 = np.interp(coords[2][0], x2plot, y2plot)
+
+        array_t1_sec[i] = coords[0][0] + times_frac_sec_approx[i]
+        array_t2_sec[i] = coords[1][0] + times_frac_sec_approx[i]
+        array_t3_sec[i] = coords[2][0] + times_frac_sec_approx[i]
+        
+        
+        delta_t_sec_1 = coords[1][0] - coords[0][0]
+        delta_t_sec_2 = coords[2][0] - coords[1][0]
+        amplitude_picapic1 = np.abs(y2 - y1)
+        amplitude_picapic2 = np.abs(y3 - y2)
+        array_App1[i] = amplitude_picapic1
+        array_App2[i] = amplitude_picapic2
+        
+        array_amplitudes_frac_avg[i] = np.mean([amplitude_picapic1, amplitude_picapic2])/2
+        array_amplitudes_frac_err[i] = np.std([amplitude_picapic2, amplitude_picapic1])/2
+
+        full_period_sec_1 = delta_t_sec_1*2
+        full_period_sec_2 = delta_t_sec_2*2
+
+        full_period_sec_avg = np.mean([full_period_sec_1, full_period_sec_2])
+        full_period_sec_err = np.std([full_period_sec_1, full_period_sec_2])
+        
+
+        array_full_period_sec_1[i] = full_period_sec_1
+        array_full_period_sec_2[i] = full_period_sec_2
+
+        array_full_period_sec_avg[i] = full_period_sec_avg
+        array_full_period_sec_err[i] = full_period_sec_err
+        
+    dict_results = {}
+    dict_results['array_App1'] = array_App1
+    dict_results['array_App2'] = array_App2
+    dict_results['array_amplitudes_frac_avg'] = array_amplitudes_frac_avg
+    dict_results['array_amplitudes_frac_err'] = array_amplitudes_frac_err
+    
+    dict_results['array_full_period_sec_1'] = array_full_period_sec_1
+    dict_results['array_full_period_sec_2'] = array_full_period_sec_2
+    dict_results['array_full_period_sec_avg'] = array_full_period_sec_avg
+    dict_results['array_full_period_sec_err'] = array_full_period_sec_err
+    dict_results['array_t1_sec'] = array_t1_sec
+    dict_results['array_t2_sec'] = array_t2_sec
+    dict_results['array_t3_sec'] = array_t3_sec
+    
+
+    return dict_results
 
 
 

@@ -170,15 +170,15 @@ plt.show()
 #line_index = 0
 #keyfrac = 'dict_single_frac_yind10_xind39'
 #line_index = 0
-#keyfrac = 'dict_single_frac_yind34_xind25'
-#line_index = 1
+keyfrac = 'dict_single_frac_yind34_xind25'
+line_index = 1
 
 # Les autres, détection en retard :
 
 #keyfrac = 'dict_single_frac_yind56_xind14'
 #line_index = 1
-keyfrac = 'dict_single_frac_yind50_xind19'
-line_index = 1
+#keyfrac = 'dict_single_frac_yind50_xind19'
+#line_index = 1
 #keyfrac = 'dict_single_frac_yind80_xind9'
 #line_index = 4
 
