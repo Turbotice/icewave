@@ -18,14 +18,14 @@ plt.rc('text', usetex=True)
 plt.rc('font', family='serif', serif='Computer Modern')
 #%% Load data 
 
-year = '2024'
-date = '0910' #date format, 'mmdd'
-acqu_numb = '0001' #acquisition number 
+year = '2025'
+date = '0210' #date format, 'mmdd'
+acqu_numb = '0003' #acquisition number 
 
-path2data = os.path.join('F:/Amundsen_RA_2024/Data/',date,'Geophones/')
+path2data = os.path.join('F:/Rimouski_2025/Data/',date,'Geophones/')
 
 # set fig_folder
-fig_folder = 'F:/PhD_Manuscript/ch5/geophone_AR/'
+fig_folder = f'{path2data}/MCMC_results/'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
 
