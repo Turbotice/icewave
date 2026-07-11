@@ -5,7 +5,7 @@ Created on Fri Jul  3 10:53:41 2026
 @author: sebas
 """
 
-
+#%%
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -122,7 +122,7 @@ folderlist = glob.glob(f'{base}*e*laser*/')
 
 # create a table of density
 rho_dict = {'2026_06_11':1.067,'2026_06_12':1.067,
-            '2026_06_17':1.03,'2026_06_18':1.03}
+            '2026_06_17':1.03,'2026_06_18':1.03,'2026_07_06':1.135}
 
 # selected keys
 selection_keys = ['h','f_ex','amplitude','alpha','err_alpha','k0','err_k0','f_demod',
@@ -151,7 +151,17 @@ path2data = f'{base}attenuation_results.pkl'
 
 with open(path2data,'rb') as pf:
     data = pickle.load(pf)
-    
+
+# =============================================================================
+# %% Test get_subset_dict
+# =============================================================================
+amp = 25 # in mm
+h = 22.0 # in mm
+
+selection = {'amplitude':amp,'h':h}
+sub_data = get_subset_dict(data, selection)
+print(sub_data.keys())
+
 # =============================================================================
 # %% Plot data for a given density and amplitude     
 # =============================================================================
