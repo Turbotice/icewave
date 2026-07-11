@@ -222,7 +222,7 @@ def flexural_day(D_results):
     # get rid off outliers 
     filtered_D = np.zeros((D_array.shape))
     for j in range(D_array.shape[1]):
-        test = abs(D_array[:,j] - mean_D) > 2*std_D_time 
+        test = abs(D_array[:,j] - mean_D) > 10*std_D_time 
         for i in range(D_array.shape[0]):
             if test[i] == 1:
                 filtered_D[i,j] = None
@@ -394,12 +394,13 @@ ax.plot(xth,y_low)
 ax.plot(xth,y_up)
 
 
-
+# =============================================================================
 #%% Load flexural modulus data from CWT analysis #0211
+# =============================================================================
 
 main_path = 'F:/Rimouski_2025/Data/'
 # date_DAS = ['0211', '0212']
-date_DAS = ['0211']
+date_DAS = ['0212']
 
 # set offset fiber
 offset_fiber = 37.5 # in meters
@@ -407,7 +408,7 @@ offset_fiber = 37.5 # in meters
 main_D = {}
 main_D['corrected'] = {}
 for date in date_DAS : 
-    filepath = f'{main_path}{date}/DAS/Figures/Wavelet_study*/{date}_wavelet_flexural_modulus_subpix_swell_corrected_file*.h5'
+    filepath = f'{main_path}{date}/DAS/Figures/Wavelet_study*/{date}_wavelet_flexural_modulus_subpix_swell_corrected_file*uncertainties.h5'
     filelist = glob.glob(filepath, recursive = True)
     print(filelist)
     
@@ -441,14 +442,18 @@ for date in date_DAS :
 
 #%% 
 
-# fig, ax = plt.subplots()
-# for key in D_results.keys():
-#     D = D_results[key]['D']
-#     err_D = D_results[key]['err_D']
-#     x = D_results[key]['x']
+fig, ax = plt.subplots()
+for key in D_results.keys():
+    D = D_results[key]['D']
+    err_D = D_results[key]['err_D']
+    x = D_results[key]['x']
     
-#     ax.plot(x,D,'o-')
-#     ax.fill_between(x,D - err_D,D + err_D, alpha = 0.2)
+    for i,err in enumerate(err_D):
+        if np.isinf(err):
+            err_D[i] = np.max(err_D[np.isfinite(err_D)])
+    
+    ax.plot(x,D,'o-')
+    ax.fill_between(x,D - err_D,D + err_D, alpha = 0.2)
     
 #%%
 
@@ -462,9 +467,15 @@ for i,key in enumerate(keys) :
     D = D_results[key]['D']
     err_D = D_results[key]['err_D']
     x = D_results[key]['x']
-    D_array[:,i] = D_results[key]['D']
-    errD_array[:,i] = D_results[key]['err_D']
-        
+    
+    for j,err in enumerate(err_D):
+        if np.isinf(err):
+            err_D[j] = np.max(err_D[np.isfinite(err_D)])
+    
+    D_array[:,i] = D
+    errD_array[:,i] = err_D
+    
+
     # Compute average of flexural modulus for each position 
     mean_D = np.nanmean(D_array, axis = 1)
     std_D_time = np.nanstd(D_array,axis = 1)
@@ -495,10 +506,11 @@ for i,key in enumerate(keys) :
     std_b = np.nanmean(errD_array, axis = 1) # standard deviation type b (mean std over each fit for a given position)
     
     main_std = np.sqrt((std_D_time/np.sqrt(D_array.shape[1]))**2 + std_b**2)
+    # main_std = np.sqrt((std_D_time)**2 + std_b**2)
     
     
-    ax.plot(x,D_array[:,i],'o-')
-    ax.fill_between(x,D - err_D,D + err_D, alpha = 0.2)
+    # ax.plot(x,D_array[:,i],'o-')
+    # ax.fill_between(x,D - err_D,D + err_D, alpha = 0.2)
 
 ax.plot(x,mean_D,'o-',color = 'k')
 ax.fill_between(x,mean_D - main_std, mean_D + main_std, color = 'k', alpha = 0.2)
