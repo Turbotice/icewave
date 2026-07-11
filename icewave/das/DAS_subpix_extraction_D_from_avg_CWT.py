@@ -169,6 +169,32 @@ def extract_peaks(FK,freq,k,freq_range,min_prominence,min_width):
 
     return k_exp,f_exp
 
+#---------------------------------------------------------------------------------------------------------
+
+def error_model(f_exp,k_exp,best_D,rho_w,H,DELTA_D = 1e7):
+    
+    # estimate error 
+    N = len(f_exp)
+    f_model_best = shallow_hydroelastic(k_exp,best_D, rho_w, H)/2/np.pi
+    residuals = f_model_best - f_exp
+    # écart-type des résidus (1 paramètre ajusté -> dof = N-1)
+    dof = max(N - 1, 1)
+    sigma_res = np.sqrt(np.sum(residuals**2) / dof)
+    
+    D_plus = best_D + DELTA_D
+    D_minus = best_D - DELTA_D
+    actual_delta = (D_plus - D_minus) / 2
+    f_model_plus = shallow_hydroelastic(k_exp, D_plus , rho_w, H)/2/np.pi
+    f_model_minus = shallow_hydroelastic(k_exp, D_minus , rho_w, H)/2/np.pi
+    df_dD = (f_model_plus - f_model_minus) / (2 * actual_delta)
+    denom = np.sum(df_dD**2)
+    if denom > 0:
+        sigma_D_res = sigma_res / np.sqrt(denom)
+    else:
+        sigma_D_res = 0.0
+    
+    return sigma_D_res
+
 #-------------------------------------------------------------------------------------------------------------------
 
 def extract_D(mean_CWT,selected_x,s,freq,k,peaks_detec,DAS_water_height,UTC_mid):
@@ -215,9 +241,11 @@ def extract_D(mean_CWT,selected_x,s,freq,k,peaks_detec,DAS_water_height,UTC_mid)
             popt,pcov = scipy.optimize.curve_fit(lambda x,D : shallow_hydroelastic(x, D, rho_w, H)/2/np.pi,k_exp,f_exp,
                                                  bounds = (1e5,1e8))
             err_coeff = np.sqrt(np.diag(pcov))
+            
+            sigma_D_res = error_model(f_exp, k_exp, popt[0], rho_w, H)
             # print(f'D = {popt[0]:.2e} ± {err_coeff[0]:.2e}')
             D[i] = popt[0]
-            err_D[i] = err_coeff[0]
+            err_D[i] = np.sqrt(sigma_D_res**2 + err_coeff[0]**2)
             
         else:
             D[i] = None
@@ -431,7 +459,7 @@ def process_data(data,fig_folder,date,DAS_water_height,swell_dict):
     results_dict['x'] = selected_x
     results_dict['UTC_0'] = label_UTC0
     
-    file2save = f'{current_fig_folder}{date}_wavelet_flexural_modulus_subpix_{label_swell}_file_{label_UTC0}.h5'
+    file2save = f'{current_fig_folder}{date}_wavelet_flexural_modulus_subpix_{label_swell}_file_{label_UTC0}_uncertainties.h5'
     rw.save_dict_to_h5(results_dict, file2save)
     print(f'{file2save} successfully saved !')
     
