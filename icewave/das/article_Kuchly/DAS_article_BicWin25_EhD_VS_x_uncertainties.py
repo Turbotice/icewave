@@ -18,7 +18,6 @@ import pickle
 from datetime import datetime, time , timedelta
 import pytz
 import glob 
-import imageio as iio
 import cv2 as cv
 import h5py
 import scipy
@@ -44,13 +43,13 @@ full_blues = mpl.colormaps['Blues'].resampled(256)
 new_blues = colors.ListedColormap(full_blues(np.linspace(0.2,1,256)))
 
 #%% Set fig_folder path 
-
-fig_folder = 'F:/Rimouski_2025/DAS_article/'
+disk = 'E:/'
+fig_folder = f'{disk}Rimouski_2025/DAS_article/'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
     
 #%% Load DAS results 
-base = 'F:/Rimouski_2025/Data/'
+base = f'{disk}Rimouski_2025/Data/'
 
 file2load = f'{base}/Summary/DAS/main_results_active_passive_V3.h5'
 results_DAS = rw.load_dict_from_h5(file2load)
@@ -82,7 +81,8 @@ date = '0210'
 year = '2025'
 
 path2logfile = f'{base}{date}/Geophones'
-geophones_table_path = 'C:/Users/sebas/git/icewave/sebastien/geophones/geophones_table'
+# geophones_table_path = 'C:/Users/sebas/git/icewave/sebastien/geophones/geophones_table'
+geophones_table_path = 'C:/Users/sebas/Github/icewave/icewave/geophone/geophones_table'
 UTC_timearea = pytz.timezone('UTC')
 
 # load geophone GPS coordinates 
@@ -325,6 +325,8 @@ for date in results_DAS['active'].keys():
     x = results_DAS['active'][date]['x']
     D = results_DAS['active'][date]['D']
     D_unc = results_DAS['active'][date]['D_unc']
+    if date == '0211':
+        D_unc[-1] = 37*1e6 # ensured no negative value of D - D_unc
     
     axs[2].plot(x,D,'-o',
                 color = color_date['active'][date],mec = 'k')
@@ -355,7 +357,7 @@ axs[2].set_xlabel(r'$x \; \mathrm{(m)}$')
 axs[2].set_ylabel(r'$D \; \mathrm{(Pa.m^{-3})}$')
 # axs[2].set_ylim([-1.1e6,2.6e8])
 axs[2].set_yscale('log')
-axs[2].set_ylim([1e6,2.6e8])
+axs[2].set_ylim([3e6,4e8])
 
 # add vertical lines 
 axs[0].vlines(x_boarder,1, 10,linestyles = '--',colors = 'k',lw = 1)
@@ -370,12 +372,147 @@ for ax in axs:
 fig.legend(ncols = 3,
               loc='outside upper center',frameon = False)
 
-figname = f'{fig_folder}Subplot_EhD_VS_x_with_uncertainties'
-# plt.savefig(figname + '.pdf', bbox_inches='tight')
-# plt.savefig(figname + '.svg', bbox_inches='tight')
-# plt.savefig(figname + '.png', bbox_inches='tight')
+figname = f'{fig_folder}Subplot_EhD_VS_x_with_uncertainties_ylog'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.svg', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
  
 
+#%% compute average value of E within each region 
+
+# R1
+date = '0212'
+x = results_DAS['active'][date]['x']
+E = results_DAS['active'][date]['E']
+mask = np.where(x < x_boarder[0])[0]
+E_mean = np.mean(E[mask])
+E_std = np.std(E[mask])
+
+print(f'E(R1) = {E_mean*1e-9:.2f} ± {E_std*1e-9:.3f}')
+
+#R2 
+mask = np.where(np.logical_and(x < x_boarder[1],x > x_boarder[0]))[0]
+E_mean = np.mean(E[mask])
+E_std = np.std(E[mask])
+
+print(f'E(R2) = {E_mean*1e-9:.2f} ± {E_std*1e-9:.3f}')
+
+# R3
+mask = np.where(x > x_boarder[1])[0]
+E_mean = np.mean(E[mask])
+E_std = np.std(E[mask])
+print(f'E(R3) = {E_mean*1e-9:.2f} ± {E_std*1e-9:.3f}')
+
+#%% Compute average value of h within each region
+
+# R1
+h_list = []
+for date in results_DAS['active'].keys():
+    x = results_DAS['active'][date]['x']
+    h = results_DAS['active'][date]['h']
+    mask = np.where(x < x_boarder[0])[0]
+    for elem in h[mask]:
+        h_list.append(elem)
+    
+h_list = np.array(h_list)
+h_mean = np.mean(h_list)
+h_std = np.std(h_list)
+print(f'h(R1) = {h_mean:.2f} ± {h_std:.3f}')
+
+# R2
+h_list = []
+for date in results_DAS['active'].keys():
+    x = results_DAS['active'][date]['x']
+    h = results_DAS['active'][date]['h']
+    mask = np.where(np.logical_and(x < x_boarder[1],x > x_boarder[0]))[0]
+    for elem in h[mask]:
+        h_list.append(elem)
+    
+h_list = np.array(h_list)
+h_mean = np.mean(h_list)
+h_std = np.std(h_list)
+print(f'h(R2) = {h_mean:.2f} ± {h_std:.3f}')
+
+# R3
+h_list = []
+for date in results_DAS['active'].keys():
+    x = results_DAS['active'][date]['x']
+    h = results_DAS['active'][date]['h']
+    mask = np.where(x > x_boarder[1])[0]
+    for elem in h[mask]:
+        h_list.append(elem)
+    
+h_list = np.array(h_list)
+h_mean = np.mean(h_list)
+h_std = np.std(h_list)
+print(f'h(R3) = {h_mean:.2f} ± {h_std:.3f}')
+
+
+#%% Compute average value of D within each region with active method
+
+method = 'passive'
+# R1
+D_list = []
+if method == 'active':
+    main_dict = results_DAS[method]
+else: 
+    main_dict = results_DAS[method]['corrected']
+for date in main_dict.keys():
+    x = main_dict[date]['x']
+    D = main_dict[date]['D']
+    mask = np.where(x < x_boarder[0])[0]
+    for elem in D[mask]:
+        D_list.append(elem)
+    
+D_list = np.array(D_list)
+D_mean = np.nanmean(D_list)
+D_std = np.nanstd(D_list)
+print(f'D(R1) = {D_mean*1e-6:.2f} ± {D_std*1e-6:.2f}')
+
+# R2
+D_list = []
+if method == 'active':
+    main_dict = results_DAS[method]
+else: 
+    main_dict = results_DAS[method]['corrected']
+for date in main_dict.keys():
+    x = main_dict[date]['x']
+    D = main_dict[date]['D']
+    mask = np.where(np.logical_and(x < x_boarder[1],x > x_boarder[0]))[0]
+    for elem in D[mask]:
+        D_list.append(elem)
+    
+D_list = np.array(D_list)
+D_mean = np.nanmean(D_list)
+D_std = np.nanstd(D_list)
+print(f'D(R2) = {D_mean*1e-6:.2f} ± {D_std*1e-6:.2f}')
+
+# R3
+D_list = []
+if method == 'active':
+    main_dict = results_DAS[method]
+else: 
+    main_dict = results_DAS[method]['corrected']
+for date in main_dict.keys():
+    x = main_dict[date]['x']
+    D = main_dict[date]['D']
+    mask = np.where(x > x_boarder[1])[0]
+    for elem in D[mask]:
+        D_list.append(elem)
+    
+D_list = np.array(D_list)
+D_mean = np.nanmean(D_list)
+D_std = np.nanstd(D_list)
+print(f'D(R3) = {D_mean*1e-6:.2f} ± {D_std*1e-6:.2f}')
+
+
+#%% Estimate relative error on h when comparing active and passive methods 
+
+E = 5.1*1e9
+nu = 0.3
+D = 62.6*1e6
+h = (12*(1-nu**2)*D/E)**(1/3)
+print(h)
 
 # =============================================================================
 #%% Archive - tests
