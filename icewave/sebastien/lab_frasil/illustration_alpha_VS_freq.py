@@ -23,6 +23,9 @@ import cmocean
 import icewave.sebastien.set_graphs as set_graphs
 import icewave.tools.Fourier_tools as FT
 
+global g
+g = 9.81
+
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif', serif='Computer Modern')
 
@@ -30,6 +33,34 @@ full_blues = mpl.colormaps['Blues'].resampled(256)
 new_blues = mcolors.ListedColormap(full_blues(np.linspace(0.2,1,256)))
 
 #%% FUNCTION SECTION 
+
+def affine(x,a,b):
+    y = a*x + b
+    return y
+
+def powerlaw_fit(x,y,err_y = None):
+    """ Fit data using a power law, taking into account standard deviation of y """
+    log_x = np.log(x)
+    log_y = np.log(y)
+    
+    if err_y is None :
+        popt,pcov = scipy.optimize.curve_fit(lambda x,a,b : affine(log_x,a,b),log_x,log_y)
+    
+    else : 
+        
+        err_log_y = err_y/y
+        popt,pcov = scipy.optimize.curve_fit(lambda x,a,b : affine(log_x,a,b),log_x,log_y,sigma = err_log_y,
+                                             absolute_sigma = True)
+        
+    err_affine = np.sqrt(np.diag(pcov))
+    beta = popt[0]
+    err_beta = err_affine[0]
+    B = np.exp(popt[1])
+    err_B = B*err_affine[1]
+    
+    coeffs = (beta,B)
+    err_coeffs = (err_beta,err_B)
+    return coeffs,err_coeffs
 
 def get_folder_date(foldername):
     chain = foldername.split('\\')
@@ -183,7 +214,10 @@ bounds = get_boundaries(h_list)
 cmap = new_blues
 # cnorm = mcolors.Normalize(h_list.min(),h_list.max())
 cnorm = mcolors.BoundaryNorm(boundaries=bounds, ncolors=256)
+marker_list = ['o','s','D','^','v']
+ms = 8
 
+xth = np.linspace(1e0,6e0,100)
 set_graphs.set_matplotlib_param('single')
 fig, ax = plt.subplots()
 
@@ -196,8 +230,21 @@ for i,h in enumerate(h_list):
     f = np.array([current_dict[key]['f_demod'] for key in current_dict.keys()])
     
     color = cmap(cnorm(h))
-    ax.errorbar(f,alpha,yerr = 5*err_alpha,color = color, fmt = 'o',
+    marker = marker_list[i]
+    ax.errorbar(f,alpha,yerr = 5*err_alpha,color = color, fmt = marker, ms = ms,
                 ecolor ='k',mec = 'k')
+    
+    # fit by Lamb
+    # beta = 3.5
+    popt,pcov = scipy.optimize.curve_fit(lambda x,beta,b : affine(x, beta, b),np.log(f*2*np.pi),np.log(alpha),
+                                         # sigma = err_alpha/alpha,absolute_sigma = True,
+                                         bounds = ([0,np.log(1e-5)],[10,np.log(1e-1)]))
+    print(popt)
+    coeff = popt
+    err_coeff = np.sqrt(np.diag(pcov))
+    yth = np.exp(affine(np.log(xth*2*np.pi),coeff[0],coeff[1]))
+
+    ax.plot(xth,yth,'-',color = color)
 
 ax.set_xscale('log')
 ax.set_yscale('log')
@@ -229,13 +276,318 @@ xth = np.linspace(2,3)
 yth = 0.8*xth**3.5
 ax.plot(xth,yth,'k--')
 
+# figname = f'{fig_folder}alpha_VS_freq_rho_{rho}_amp_{amp}mm'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
+
+# =============================================================================
+# %% Plot with insert: alpha VS freq for a given amplitude and density
+# =============================================================================
+amp = 25 # in mm
+rho = 1.03 # water density
+
+selection = {'amplitude':amp,'rho':rho}
+sub_data = get_subset_dict(data, selection)
+
+h_list = []
+for key in sub_data:
+    if sub_data[key]['h'] not in h_list:
+        h_list.append(sub_data[key]['h'])
+h_list = np.array(h_list)
+
+bounds = get_boundaries(h_list)
+
+cmap = new_blues
+# cnorm = mcolors.Normalize(h_list.min(),h_list.max())
+cnorm = mcolors.BoundaryNorm(boundaries=bounds, ncolors=256)
+marker_list = ['o','s','D','^','v']
+ms = 8
+
+xth = np.linspace(1e0,6e0,100)
+set_graphs.set_matplotlib_param('single')
+fig, ax = plt.subplots()
+
+coeff_array = np.zeros(h_list.shape[0])
+err_coeff_array = np.zeros(h_list.shape[0])
+for i,h in enumerate(h_list):
+    selection = {'h':h}
+    current_dict = get_subset_dict(sub_data, selection)
+    
+    alpha = np.array([current_dict[key]['alpha'] for key in current_dict.keys()])
+    err_alpha = np.array([current_dict[key]['err_alpha'] for key in current_dict.keys()])
+    f = np.array([current_dict[key]['f_demod'] for key in current_dict.keys()])
+    
+    color = cmap(cnorm(h))
+    marker = marker_list[i]
+    ax.errorbar(f,alpha,yerr = err_alpha,color = color, fmt = marker, ms = ms,
+                ecolor ='k',mec = 'k')
+    
+    # fit by Lamb
+    beta = 3.5
+    # popt,pcov = scipy.optimize.curve_fit(lambda x,b : affine(x, beta, b),np.log(f*2*np.pi),np.log(alpha),
+    #                                      sigma = err_alpha/alpha,absolute_sigma = True,
+    #                                      bounds = (np.log(1e-5),np.log(1e-1)))
+    
+    popt,pcov = scipy.optimize.curve_fit(lambda x,b : affine(x, beta, b),np.log(f*2*np.pi),np.log(alpha),
+                                         bounds = (np.log(1e-5),np.log(1e-1)))
+    print(popt)
+    coeff = popt[0]
+    err_coeff = np.sqrt(np.diag(pcov))[0]
+    yth = np.exp(affine(np.log(xth*2*np.pi),beta,coeff))
+    ax.plot(xth,yth,'-',color = color)
+    
+    coeff_array[i] = coeff
+    err_coeff_array[i] = err_coeff
+
+    
+ax.set_xscale('log')
+ax.set_yscale('log')
+ax.set_ylim([3e0,7e1])
+ax.set_xlim([1.8e0,5.3e0])
+
+ax.set_xlabel(r'$f \; \mathrm{(Hz)}$')
+ax.set_ylabel(r'$\alpha \; \mathrm{(m^{-1})}$')
+
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="2%", pad=0.1)
+
+sm = cm.ScalarMappable(cmap=cmap, norm=cnorm)
+sm.set_array([])  # Only needed for the colorbar
+cbar = fig.colorbar(sm, cax=cax)
+# midpoints = [(bounds[i] + bounds[i+1])/2 for i in range(len(bounds) - 1)]
+# cbar.set_ticks(midpoints)
+cbar.set_ticks(h_list)
+cbar.set_ticklabels([f'{mid:.1f}' for mid in h_list])
+cbar.set_label(r'$h \; \mathrm{(mm)}$')
+    
+# # create a scalar mappable
+# sm = cm.ScalarMappable(cmap=cmap, norm=cnorm)
+# # sm.set_array([])  # Only needed for the colorbar
+# cbar = fig.colorbar(sm, cax=cax)
+# cbar.set_label(r'$h \; \mathrm{(mm)}$')
+
+# xth = np.linspace(2,3)
+# yth = 0.8*xth**3.5
+# ax.plot(xth,yth,'k--')
+
 figname = f'{fig_folder}alpha_VS_freq_rho_{rho}_amp_{amp}mm'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
+
+nu = 2*pow(np.exp(coeff_array),2)*pow(g,4)
+err_nu = 4*pow(g,4)*np.exp(coeff_array)*np.exp(coeff_array)*err_coeff_array
+
+nu_w = 1e-6
+axins = inset_axes(ax, width="35%", height="35%",
+                   bbox_to_anchor=(0.14, 0, 1, 1),
+                   bbox_transform=ax.transAxes, loc="upper left")
+axins.errorbar(h_list,nu/nu_w,yerr = err_nu/nu_w,xerr = 1,fmt = 'o',ms = ms,
+               ecolor ='k',mec = 'k')
+axins.set_xlabel(r'$h \; \mathrm{(mm)}$')
+axins.set_ylabel(r'$\nu_{eff}/\nu_w$')
+axins.set_xlim([0,25])
+axins.set_ylim([0,4500])
+
+figname = f'{fig_folder}alpha_VS_freq_rho_{rho}_amp_{amp}mm_with_nu_eff_Lamb_insert'
 plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')
 
+# =============================================================================
+# %% Plot dispersion relation
+# =============================================================================
+
+amp = 25 # in mm
+rho = 1.03 # water density
+
+selection = {'amplitude':amp,'rho':rho}
+sub_data = get_subset_dict(data, selection)
+
+h_list = []
+for key in sub_data:
+    if sub_data[key]['h'] not in h_list:
+        h_list.append(sub_data[key]['h'])
+h_list = np.array(h_list)
+
+bounds = get_boundaries(h_list)
+
+cmap = new_blues
+# cnorm = mcolors.Normalize(h_list.min(),h_list.max())
+cnorm = mcolors.BoundaryNorm(boundaries=bounds, ncolors=256)
+marker_list = ['o','s','D','^','v']
+ms = 8
+
+xth = np.linspace(10,100,100)
+set_graphs.set_matplotlib_param('single')
+fig, ax = plt.subplots()
+
+coeff_array = np.zeros(h_list.shape[0])
+err_coeff_array = np.zeros(h_list.shape[0])
+for i,h in enumerate(h_list):
+    selection = {'h':h}
+    current_dict = get_subset_dict(sub_data, selection)
+    
+    alpha = np.array([current_dict[key]['alpha'] for key in current_dict.keys()])
+    err_alpha = np.array([current_dict[key]['err_alpha'] for key in current_dict.keys()])
+    f = np.array([current_dict[key]['f_demod'] for key in current_dict.keys()])
+    k0 = np.array([current_dict[key]['k0'] for key in current_dict.keys()])
+    omega = 2*np.pi*f
+    
+    color = cmap(cnorm(h))
+    marker = marker_list[i]
+    ax.errorbar(k0,omega,color = color, fmt = marker, ms = ms,
+                ecolor ='k',mec = 'k')
+        
+# ax.set_xscale('log')
+# ax.set_yscale('log')
+# ax.set_ylim([3e0,7e1])
+# ax.set_xlim([1.8e0,5.3e0])
+
+yth = np.sqrt(g*xth)
+ax.plot(xth,yth,'r--')
+ax.set_xlabel(r'$k_0 \; \mathrm{(rad.m^{-1})}$')
+ax.set_ylabel(r'$\omega \; \mathrm{(rad.s^{-1})}$')
+
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="2%", pad=0.1)
+
+sm = cm.ScalarMappable(cmap=cmap, norm=cnorm)
+sm.set_array([])  # Only needed for the colorbar
+cbar = fig.colorbar(sm, cax=cax)
+# midpoints = [(bounds[i] + bounds[i+1])/2 for i in range(len(bounds) - 1)]
+# cbar.set_ticks(midpoints)
+cbar.set_ticks(h_list)
+cbar.set_ticklabels([f'{mid:.1f}' for mid in h_list])
+cbar.set_label(r'$h \; \mathrm{(mm)}$')
+    
+
+
+# =============================================================================
+# %% Plot alpha/k0 for different thicknesses 
+# =============================================================================
+
+amp = 25 # in mm
+rho = 1.03 # water density
+
+selection = {'amplitude':amp,'rho':rho}
+sub_data = get_subset_dict(data, selection)
+
+h_list = []
+for key in sub_data:
+    if sub_data[key]['h'] not in h_list:
+        h_list.append(sub_data[key]['h'])
+h_list = np.array(h_list)
+
+bounds = get_boundaries(h_list)
+
+cmap = new_blues
+# cnorm = mcolors.Normalize(h_list.min(),h_list.max())
+cnorm = mcolors.BoundaryNorm(boundaries=bounds, ncolors=256)
+marker_list = ['o','s','D','^','v']
+ms = 8
+
+xth = np.linspace(1e0,6e0,100)
+set_graphs.set_matplotlib_param('single')
+fig, ax = plt.subplots()
+
+coeff_array = np.zeros(h_list.shape[0])
+err_coeff_array = np.zeros(h_list.shape[0])
+for i,h in enumerate(h_list):
+    selection = {'h':h}
+    current_dict = get_subset_dict(sub_data, selection)
+    
+    alpha = np.array([current_dict[key]['alpha'] for key in current_dict.keys()])
+    err_alpha = np.array([current_dict[key]['err_alpha'] for key in current_dict.keys()])
+    f = np.array([current_dict[key]['f_demod'] for key in current_dict.keys()])
+    k0 = np.array([current_dict[key]['k0'] for key in current_dict.keys()])
+    A = np.array([current_dict[key]['exponential']['A'] for key in current_dict.keys()])
+    
+    color = cmap(cnorm(h))
+    marker = marker_list[i]
+    ax.errorbar(f,2*np.pi*alpha/k0,yerr = err_alpha/k0,color = color, fmt = marker, ms = ms,
+                ecolor ='k',mec = 'k')
+    
+    # fit by Lamb
+    # beta = 3.5
+    # # popt,pcov = scipy.optimize.curve_fit(lambda x,b : affine(x, beta, b),np.log(f*2*np.pi),np.log(alpha),
+    # #                                      sigma = err_alpha/alpha,absolute_sigma = True,
+    # #                                      bounds = (np.log(1e-5),np.log(1e-1)))
+    
+    # popt,pcov = scipy.optimize.curve_fit(lambda x,b : affine(x, beta, b),np.log(f*2*np.pi),np.log(alpha),
+    #                                      bounds = (np.log(1e-5),np.log(1e-1)))
+    # print(popt)
+    # coeff = popt[0]
+    # err_coeff = np.sqrt(np.diag(pcov))[0]
+    # yth = np.exp(affine(np.log(xth*2*np.pi),beta,coeff))
+    # ax.plot(xth,yth,'-',color = color)
+    
+    # coeff_array[i] = coeff
+    # err_coeff_array[i] = err_coeff
+
+    
+# ax.set_xscale('log')
+# ax.set_yscale('log')
+# ax.set_ylim([3e0,7e1])
+# ax.set_xlim([1.8e0,5.3e0])
+
+ax.set_xlabel(r'$f \; \mathrm{(Hz)}$')
+ax.set_ylabel(r'$2\pi\alpha/k_0 $')
+
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="2%", pad=0.1)
+
+sm = cm.ScalarMappable(cmap=cmap, norm=cnorm)
+sm.set_array([])  # Only needed for the colorbar
+cbar = fig.colorbar(sm, cax=cax)
+# midpoints = [(bounds[i] + bounds[i+1])/2 for i in range(len(bounds) - 1)]
+# cbar.set_ticks(midpoints)
+cbar.set_ticks(h_list)
+cbar.set_ticklabels([f'{mid:.1f}' for mid in h_list])
+cbar.set_label(r'$h \; \mathrm{(mm)}$')
+    
+# # create a scalar mappable
+# sm = cm.ScalarMappable(cmap=cmap, norm=cnorm)
+# # sm.set_array([])  # Only needed for the colorbar
+# cbar = fig.colorbar(sm, cax=cax)
+# cbar.set_label(r'$h \; \mathrm{(mm)}$')
+
+# xth = np.linspace(2,3)
+# yth = 0.8*xth**3.5
+# ax.plot(xth,yth,'k--')
+
+figname = f'{fig_folder}ratio_alpha_k0_VS_freq_rho_{rho}_amp_{amp}mm'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
+
+
+
+
+#%% Plot amplitude vs frequency for different thicknesses
+
+amp = 25 # in mm
+rho = 1.03 # water density
+
+selection = {'amplitude':amp,'rho':rho}
+sub_data = get_subset_dict(data, selection)
+
+h_list = []
+for key in sub_data:
+    if sub_data[key]['h'] not in h_list:
+        h_list.append(sub_data[key]['h'])
+h_list = np.array(h_list)
+
+bounds = get_boundaries(h_list)
+
+cmap = new_blues
+# cnorm = mcolors.Normalize(h_list.min(),h_list.max())
+cnorm = mcolors.BoundaryNorm(boundaries=bounds, ncolors=256)
+marker_list = ['o','s','D','^','v']
+ms = 8
+
+
+
 #%% Plot data for different amplitudes 
 
-selection = {'h':8.0,'rho':1.067}
+selection = {'h':22.0,'rho':1.135}
 
 sub_data = get_subset_dict(data, selection)
 
@@ -286,7 +638,7 @@ ax.set_ylabel(r'$\alpha \; \mathrm{(m^{-1})}$')
 ax.set_xscale('log')
 ax.set_yscale('log')
 ax.set_ylim([3e0,1e2])
-ax.set_xlim([2.3e0,6e0])
+ax.set_xlim([1.8e0,6e0])
 
 divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="2%", pad=0.1)
@@ -304,4 +656,90 @@ figname = f'{fig_folder}alpha_VS_freq_rho_{rho}_h_{h}mm_colorbar_A'
 plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')
     
+
+#%% Plot attenuation for different values of rho 
+
+amp = 25 # in mm
+h = 11 # water density
+
+selection = {'amplitude':amp,'h':h}
+sub_data = get_subset_dict(data, selection)
+
+rho_list = []
+for key in sub_data:
+    if sub_data[key]['rho'] not in rho_list:
+        rho_list.append(sub_data[key]['rho'])
+rho_list = np.sort(np.array(rho_list))
+
+bounds = get_boundaries(rho_list)
+
+cmap = new_blues
+# cnorm = mcolors.Normalize(h_list.min(),h_list.max())
+cnorm = mcolors.BoundaryNorm(boundaries=bounds, ncolors=256)
+marker_list = ['o','s','D','^','v']
+ms = 8
+
+xth = np.linspace(1e0,6e0,100)
+set_graphs.set_matplotlib_param('single')
+fig, ax = plt.subplots()
+
+for i,rho in enumerate(rho_list):
+    selection = {'rho':rho}
+    current_dict = get_subset_dict(sub_data, selection)
+    
+    alpha = np.array([current_dict[key]['alpha'] for key in current_dict.keys()])
+    err_alpha = np.array([current_dict[key]['err_alpha'] for key in current_dict.keys()])
+    f = np.array([current_dict[key]['f_demod'] for key in current_dict.keys()])
+    
+    color = cmap(cnorm(rho))
+    marker = marker_list[i]
+    ax.errorbar(f,alpha,yerr = err_alpha,color = color, fmt = marker, ms = ms,
+                ecolor ='k',mec = 'k')
+    
+    # fit by Lamb
+    # beta = 3.5
+    # popt,pcov = scipy.optimize.curve_fit(lambda x,b : affine(x, beta, b),np.log(f*2*np.pi),np.log(alpha),
+    #                                      sigma = err_alpha/alpha,absolute_sigma = True,
+    #                                      bounds = (np.log(1e-5),np.log(1e-1)))
+    # print(popt)
+    # coeff = popt[0]
+    # err_coeff = np.sqrt(np.diag(pcov))[0]
+    # yth = np.exp(affine(np.log(xth*2*np.pi),beta,coeff))
+
+    # ax.plot(xth,yth,'-',color = color)
+
+ax.set_xscale('log')
+ax.set_yscale('log')
+ax.set_ylim([2e0,7e1])
+ax.set_xlim([1.8e0,6e0])
+
+ax.set_xlabel(r'$f \; \mathrm{(Hz)}$')
+ax.set_ylabel(r'$\alpha \; \mathrm{(m^{-1})}$')
+
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="2%", pad=0.1)
+
+sm = cm.ScalarMappable(cmap=cmap, norm=cnorm)
+sm.set_array([])  # Only needed for the colorbar
+cbar = fig.colorbar(sm, cax=cax)
+# midpoints = [(bounds[i] + bounds[i+1])/2 for i in range(len(bounds) - 1)]
+# cbar.set_ticks(midpoints)
+cbar.set_ticks(rho_list)
+cbar.set_ticklabels([f'{mid:.3f}' for mid in rho_list])
+cbar.set_label(r'$\rho_w$')
+    
+# # create a scalar mappable
+# sm = cm.ScalarMappable(cmap=cmap, norm=cnorm)
+# # sm.set_array([])  # Only needed for the colorbar
+# cbar = fig.colorbar(sm, cax=cax)
+# cbar.set_label(r'$h \; \mathrm{(mm)}$')
+
+xth = np.linspace(2,3)
+yth = 0.8*xth**3.5
+ax.plot(xth,yth,'k--')
+
+figname = f'{fig_folder}alpha_VS_freq_h_{h}mm_amp_{amp}mm'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
+
     
