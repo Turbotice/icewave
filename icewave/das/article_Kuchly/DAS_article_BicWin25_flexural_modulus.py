@@ -52,7 +52,8 @@ down_sampling_factor = 10
 
 #%% Set fig_folder path 
 
-fig_folder = 'U:/Data/0211/DAS/Figures_article/CWT/'
+# fig_folder = 'U:/Data/0211/DAS/Figures_article/CWT/'
+fig_folder = 'F:/Rimouski_2025/Data/Summary/DAS/Uncertainties/'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
     
@@ -73,45 +74,54 @@ def flexural_day(D_results):
     D_array = np.zeros((len(D_results[keys[0]]['D']),len(keys)))
     errD_array  = np.zeros((len(D_results[keys[0]]['D']),len(keys)))
     for i,key in enumerate(keys) :
-        D_array[:,i] = D_results[key]['D']
-        errD_array[:,i] = D_results[key]['err_D']
+        D = D_results[key]['D']
+        err_D = D_results[key]['err_D']
+        x = D_results[key]['x']
+        
+        # if no uncertainty, replace it by maximum of finite values
+        for j,err in enumerate(err_D):
+            if np.isinf(err):
+                err_D[j] = np.max(err_D[np.isfinite(err_D)])
+        
+        D_array[:,i] = D
+        errD_array[:,i] = err_D
         
     # Compute average of flexural modulus for each position 
     mean_D = np.nanmean(D_array, axis = 1)
     std_D_time = np.nanstd(D_array,axis = 1)
     
     # get rid off outliers 
-    filtered_D = np.zeros((D_array.shape))
-    for j in range(D_array.shape[1]):
-        test = abs(D_array[:,j] - mean_D) > 2*std_D_time 
-        for i in range(D_array.shape[0]):
-            if test[i] == 1:
-                filtered_D[i,j] = None
-                print('Outliers detected')
-            else : 
-                filtered_D[i,j] = D_array[i,j]
+    # filtered_D = np.zeros((D_array.shape))
+    # for j in range(D_array.shape[1]):
+    #     test = abs(D_array[:,j] - mean_D) > 2*std_D_time 
+    #     for i in range(D_array.shape[0]):
+    #         if test[i] == 1:
+    #             filtered_D[i,j] = None
+    #             print('Outliers detected')
+    #         else : 
+    #             filtered_D[i,j] = D_array[i,j]
         
-    filtered_errD = np.zeros((errD_array.shape))
-    for j in range(D_array.shape[1]):
-        test = abs(D_array[:,j] - mean_D) > 2*std_D_time 
-        for i in range(D_array.shape[0]):
-            if test[i] == 1:
-                filtered_errD[i,j] = None
-            else : 
-                filtered_errD[i,j] = errD_array[i,j]
+    # filtered_errD = np.zeros((errD_array.shape))
+    # for j in range(D_array.shape[1]):
+    #     test = abs(D_array[:,j] - mean_D) > 2*std_D_time 
+    #     for i in range(D_array.shape[0]):
+    #         if test[i] == 1:
+    #             filtered_errD[i,j] = None
+    #         else : 
+    #             filtered_errD[i,j] = errD_array[i,j]
             
-    mean_filtered = np.nanmean(filtered_D,axis = 1)
-    std_filtered = np.nanstd(filtered_D,axis = 1) # standard deviation type A
+    # mean_filtered = np.nanmean(filtered_D,axis = 1)
+    # std_filtered = np.nanstd(filtered_D,axis = 1) # standard deviation type A
     
-    std_b = np.nanmean(filtered_errD, axis = 1) # standard deviation type b (mean std over each fit for a given position)
+    std_b = np.nanmean(errD_array, axis = 1) # standard deviation type b (mean std over each fit for a given position)
     
-    main_std = np.sqrt((std_filtered/np.sqrt(filtered_D.shape[0]))**2 + std_b**2)
+    main_std = np.sqrt((std_D_time/np.sqrt(D_array.shape[1]))**2 + std_b**2)
     
-    return mean_filtered, main_std 
+    return mean_D, main_std 
 
 #%% Load flexural modulus data from CWT analysis #0211
 
-main_path = 'U:/Data/'
+main_path = 'F:/Rimouski_2025/Data/'
 date_DAS = ['0211', '0212']
 
 # set offset fiber
@@ -120,7 +130,7 @@ offset_fiber = 37.5 # in meters
 main_D = {}
 main_D['corrected'] = {}
 for date in date_DAS : 
-    filepath = f'{main_path}{date}/DAS/Figures/Wavelet_study*/{date}_wavelet_flexural_modulus_subpix_swell_corrected_file*.h5'
+    filepath = f'{main_path}{date}/DAS/Figures/Wavelet_study*/{date}_wavelet_flexural_modulus_subpix_swell_corrected_file*uncertainties.h5'
     filelist = glob.glob(filepath, recursive = True)
     print(filelist)
     
@@ -137,7 +147,7 @@ for date in date_DAS :
 
 main_D['uncorrected'] = {}
 for date in date_DAS : 
-    filepath = f'{main_path}{date}/DAS/Figures/Wavelet_study*/{date}_wavelet_flexural_modulus_subpix__file*.h5'
+    filepath = f'{main_path}{date}/DAS/Figures/Wavelet_study*/{date}_wavelet_flexural_modulus_subpix__file*uncertainties.h5'
     filelist = glob.glob(filepath, recursive = True)
     print(filelist)
     
@@ -171,7 +181,108 @@ figname = f'{fig_folder}D_VS_x_swell_correction_comparison'
 # plt.savefig(figname + '.svg', bbox_inches='tight')
 # plt.savefig(figname + '.png', bbox_inches='tight')
 
-#%% Load Ludo's results 
+
+#%% Load Ludo's results with uncertainties 
+
+folder2active = 'F:/Rimouski_2025/DAS_article/Uncertainties/'
+file2load = f'{folder2active}active_E_modulus_results_uncertainties.pkl'
+with open(file2load,'rb') as pf:
+    E_results = pickle.load(pf)
+    
+file2load = f'{folder2active}active_thickness_results_uncertainties.pkl'
+with open(file2load,'rb') as pf:
+    h_results = pickle.load(pf)
+
+file2load = f'{folder2active}active_flex_modulus_results_uncertainties.pkl'
+with open(file2load,'rb') as pf:
+    D_results = pickle.load(pf)
+
+
+#%% Create a dictionnary that gathers both active and passive results 
+
+# load DAS gps positions
+file_water_height = 'F:/Rimouski_2025/Data/0211/DAS/fiber_water_height_GPS_structure_0211.h5'
+DAS_water_height = rw.load_dict_from_h5(file_water_height)
+
+# GPS coordinates of beginning and end of fiber
+Lat0 = DAS_water_height['lat'][0]
+Long0 = DAS_water_height['long'][0]
+
+Lat1 = DAS_water_height['lat'][-1]
+Long1 = DAS_water_height['long'][-1]
+
+# azimuth angle of fiber 
+psi = 360 + np.arctan2(np.cos(Lat0*np.pi/180)*(Long1 - Long0)*np.pi/180,(Lat1 - Lat0)*np.pi/180)*180/np.pi
+
+
+# create a dictionnary
+results = {}
+results['passive'] = main_D
+    
+# store active results
+results['active'] = {}
+for key_date in ['0211','0212']:
+    results['active'][key_date] = {}
+    results['active'][key_date].update(E_results[key_date])
+    results['active'][key_date].update(h_results[key_date])
+    results['active'][key_date].update(D_results[key_date])
+    results['active'][key_date]['x'] = results['active'][key_date]['x'] - offset_fiber
+    
+    
+    # results['active'][key_date] = {'E':E_results[key_date],'h':h_results[key_date],'D':D_results[key_date]}
+
+    
+# compute GPS positions
+for key_corr in results['passive'].keys():
+    for key_date in results['passive'][key_corr].keys():
+        
+        Lat,Long = dp.LatLong_coords_from_referencepoint(Lat0, Long0, psi, results['passive'][key_corr][key_date]['x'])
+        results['passive'][key_corr][key_date]['latitude'] = Lat
+        results['passive'][key_corr][key_date]['longitude'] = Long
+
+
+for key_date in results['active'].keys():
+    
+    Lat,Long = dp.LatLong_coords_from_referencepoint(Lat0, Long0, psi, results['active'][key_date]['x'])
+    results['active'][key_date]['latitude'] = Lat
+    results['active'][key_date]['longitude'] = Long
+    
+#%%
+filename = 'F:/Rimouski_2025/Data/Summary/DAS/main_results_active_passive_V3.h5'
+rw.save_dict_to_h5(results, filename)
+
+filename = filename.replace('.h5','.pkl')
+with open(filename,'wb') as pf:
+    pickle.dump(results,pf)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#%% Load Ludo's results without uncertainties
 
 path2active_results = f'{main_path}Summary/DAS/Results_active_sources/'
 
@@ -287,7 +398,7 @@ figname = f'{fig_folder}D_VS_x_comparison_with_active_sources_swell_corrected_lo
 #%% Create a dictionnary that gathers all results
 
 # load DAS gps positions
-file_water_height = 'U:/Data/0211/DAS/fiber_water_height_GPS_structure_0211.h5'
+file_water_height = 'F:/Rimouski_2025/Data/0211/DAS/fiber_water_height_GPS_structure_0211.h5'
 DAS_water_height = rw.load_dict_from_h5(file_water_height)
 
 # GPS coordinates of beginning and end of fiber
@@ -326,7 +437,7 @@ for key_date in results['active'].keys():
     results['active'][key_date]['longitude'] = Long
     
 
-filename = 'U:/Data/Summary/DAS/main_results_active_passive_V2.h5'
+filename = 'F:/Rimouski_2025/Data/Summary/DAS/main_results_active_passive_V3.h5'
 rw.save_dict_to_h5(results, filename)
 
 filename = filename.replace('.h5','.pkl')

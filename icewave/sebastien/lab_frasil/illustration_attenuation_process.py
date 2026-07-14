@@ -154,7 +154,8 @@ imsh = ax.imshow(abs(positive_shift).T*1e3,cmap = 'gray_r',aspect = 'auto',norm 
 ax.set_ylim([0,5])
 ax.set_xlim([-150,150])
 # ax.plot(k[unravel_coords[0]],f_demod,'ro')
-ax.axvline(k0,ymin = 0, ymax = 1,ls = '--', color = 'r', lw = 2)
+# ax.axvline(k0,ymin = 0, ymax = 1,ls = '--', color = 'r', lw = 2)
+ax.axhline(f_demod,xmin = 0, xmax = 1,ls = '--', color = 'r', lw = 2)
 
 divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="2%", pad=0.1)
@@ -213,7 +214,8 @@ imsh = ax.imshow(abs(positive_shift).T*1e3,cmap = 'gray_r',aspect = 'auto',norm 
 ax.set_ylim([0,5])
 ax.set_xlim([-150,150])
 # ax.plot(k[unravel_coords[0]],f_demod,'ro')
-ax.axvline(k0,ymin = 0, ymax = 1,ls = '--', color = 'r', lw = 2)
+# ax.axvline(k0,ymin = 0, ymax = 1,ls = '--', color = 'r', lw = 2)
+ax.axhline(f_demod,xmin = 0, xmax = 1,ls = '--', color = 'r', lw = 2)
 
 divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="2%", pad=0.1)

@@ -149,9 +149,9 @@ ax.set_ylabel(r'$\nu / \nu_w$')
 ax.legend()
 
 figname = f'{fig_folder}nu_eff_VS_h_rho_1p07_rho_1p0'
-plt.savefig(f'{figname}.png', bbox_inches = 'tight')
-plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
-plt.savefig(f'{figname}.svg', bbox_inches = 'tight')
+# plt.savefig(f'{figname}.png', bbox_inches = 'tight')
+# plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
+# plt.savefig(f'{figname}.svg', bbox_inches = 'tight')
 
 #%% Plot only Aurore results 
 
@@ -181,7 +181,7 @@ ax.set_xlim([0,16])
 # ax.set_yscale('log')
 
 figname = f'{fig_folder}nu_eff_VS_h_Aurore_data_Lamb_model'
-plt.savefig(f'{figname}.png', bbox_inches = 'tight')
-plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
+# plt.savefig(f'{figname}.png', bbox_inches = 'tight')
+# plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
 # plt.savefig(f'{figname}.svg', bbox_inches = 'tight')
 

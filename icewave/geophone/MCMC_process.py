@@ -25,19 +25,19 @@ plt.rc('font', family='serif', serif='Computer Modern')
 
 #%% Load data
 
-year = '2024'
-date = '0909' #date format, 'mmdd'
-acqu_numb = '0001' #acquisition number 
+year = '2025'
+date = '0210' #date format, 'mmdd'
+acqu_numb = '0003' #acquisition number 
 
-path2data = os.path.join('F:/Amundsen_RA_2024/Data/',date,'Geophones/')
+path2data = os.path.join('F:/Rimouski_2025/Data/',date,'Geophones/')
 
 # set fig_folder
-fig_folder = 'F:/PhD_Manuscript/ch5/geophone_AR/'
+fig_folder = f'{path2data}'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
 
 # load phase velocity data
-signal_length = 0.3
+signal_length = 1
 file2load = f'{path2data}Phase_velocity_dictionnary_acqu_{acqu_numb}_sig_length_' + str(signal_length).replace('.','p') + '.pkl'
 with open(file2load,'rb') as pfile:
     s = pickle.load(pfile)
@@ -341,7 +341,7 @@ def simulated_annealing(delta_param0, T0, T0param, Tmin, Tminparam, X, MIN_param
 
 # simulated annealing schedule
 isave = 200 # save data every isave iterations
-N_SA = 6000 # maximum number of iterations # initial value = 30 000
+N_SA = 10000 # maximum number of iterations # initial value = 30 000
 T0 = 0.025; Tmin = 0.025 # range of temperature we are using 
 #T0param = 0.8; Tminparam = 0.05
 T0param = 0.25; Tminparam = 0.25 # minimal and maximal range of the step for Metropolis algorithm 
@@ -366,14 +366,14 @@ E = rho_ice*data['cQS0']**2*(1-nu**2)
 print(f'Young modulus, E = {E*1e-9} and Poisson coefficient, nu = {nu}')
 
 # extremal values of the fitted parameters
-min_thickness = 0.5
-max_thickness = 5.0
-min_E = 1.5e9
+min_thickness = 0.1
+max_thickness = 1.5
+min_E = 1.0e9
 max_E = 8e9
 min_nu = 0.10
 max_nu = 0.45
 min_rho = 600
-max_rho = 1000
+max_rho = 1050
 
 
 # Initial values of each parameter 
@@ -391,7 +391,7 @@ delta_param0 = (MAX_param0 - MIN_param0)
  
 # Initial values of the different parameters 
 X = np.zeros((4,N_SA))
-X[0,0] = 2.0 # ice thickness
+X[0,0] = 0.5 # ice thickness
 X[1,0] = 4e9 # Young modulus
 X[2,0] = 0.3 # Poisson coefficient 
 X[3,0] = 900 # ice density 

@@ -121,10 +121,11 @@ thickness_list = [5.0,7.5,10.0,12.5,15.0]
 bounds = np.array([3.75,6.25,8.75,11.25,13.75,16.25]) # bounds used for colorbar
 norm = mcolors.BoundaryNorm(boundaries=bounds, ncolors=256)
 cmap = new_blues
-marker_list = ['o','s','D','^','h','p']
+marker_list = ['s','D','^','h','p']
 fig, ax = plt.subplots(figsize = (12,9))
 
 for i,h in enumerate(thickness_list):
+    print(i)
     valid_keys = []
     for key in data.keys():
         if data[key]['method'] == method and data[key]['h'] == h:
@@ -141,9 +142,15 @@ for i,h in enumerate(thickness_list):
                 markersize = mksize)
     
     xth = np.linspace(2.0,6.0,100)
-    coeffs,err_coeff = powerlaw_fit(f_demod, alpha, err_alpha)
-    
-    yth = coeffs[1]*xth**coeffs[0]
+    beta = 3.5
+    popt,pcov = scipy.optimize.curve_fit(lambda x,b : affine(x, beta, b),np.log(f_demod*2*np.pi),np.log(alpha),
+                                         sigma = err_alpha/alpha,absolute_sigma = True,
+                                         bounds = (np.log(1e-5),np.log(1e-1)))
+    print(popt)
+    coeff = popt[0]
+    err_coeff = np.sqrt(np.diag(pcov))[0]
+    yth = np.exp(affine(np.log(xth*2*np.pi),beta,coeff))
+
     label_th = r'$y = ' + f'{coeffs[1]:.2f}'+ 'f^{' + f'{coeffs[0]:.3f}' + '}$'
     print(label_th)
     ax.plot(xth,yth,'-',color = current_color,label = label_th)
@@ -166,6 +173,11 @@ ax.set_xscale('log')
 ax.set_yscale('log')
 ax.set_xlim([2.7,5.3])
 ax.set_ylim([2e0,70])
+
+figname = f'{fig_folder}alpha_VS_f_Aurore_wit_Lamb_fit'
+plt.savefig(f'{figname}.png', bbox_inches = 'tight')
+plt.savefig(f'{figname}.pdf', bbox_inches = 'tight')
+
 
 
 # =============================================================================

@@ -159,8 +159,7 @@ def build_GPS_array(gps_dict):
             print(GPS_logs)
             
             if  GPS_logs['num_GPS_logs'] > 1:
-                GPS_logs = geophone_gps.compute_avg_logs(GPS_logs)
-                
+                GPS_logs = compute_avg_logs(GPS_logs)
                 GPS_geoph[i,j,0] = GPS_logs['longitude']
                 GPS_geoph[i,j,1] = GPS_logs['latitude']
                 
