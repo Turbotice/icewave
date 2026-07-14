@@ -61,18 +61,22 @@ def click_on_fracture_path_plot_time_evol(n_points, uz,
 
     return matrix_temp_evol_uz, times_frac_sec_approx, idcs_single_frac
 
-def clic2extract_amplitude_withref_singlepixel(temp_evol_uz, t_frac_sec_approx, dict_stereo_pivdata):
+def clic2extract_amplitude_withref_singlepixel(temp_evol_uz, t_frac_sec_approx, dict_stereo_pivdata, arr_t_frac_sec=None):
     x2plot = dict_stereo_pivdata['t'] - t_frac_sec_approx
     y2plot = temp_evol_uz
     fig, ax = plt.subplots()
     ax.plot(x2plot, y2plot, 'k')
+    if type(arr_t_frac_sec)==np.ndarray:
+        for i in range(len(arr_t_frac_sec)):
+            ax.vlines(arr_t_frac_sec[i] - t_frac_sec_approx, np.min(y2plot), np.max(y2plot), linestyle='--',color='r', alpha=0.2)
+
     coords = get_n_points_anyfigure(fig=fig, ax=ax, n_points=3, symbol='+')
     x1 = coords[0][0]
     x2 = coords[1][0]
     x3 = coords[2][0]
-    y1 = coords[0][1]
-    y2 = coords[1][1]
-    y3 = coords[2][1]
+    y1 = np.interp(x1, x2plot, y2plot)
+    y2 = np.interp(x2, x2plot, y2plot)
+    y3 = np.interp(x3, x2plot, y2plot)
     
     ya = np.mean([y1, y3])
     ya_std = np.abs(y1 - y3)
@@ -83,13 +87,100 @@ def clic2extract_amplitude_withref_singlepixel(temp_evol_uz, t_frac_sec_approx, 
     
     # maintenant on choisit un seul point pour le max de uz qui nous intéresse, pour en déduire A_c
     fig, ax = plt.subplots()
+    ax.plot(x1, y1, '+r')
+    ax.plot(x2, y2, '+r')
+    ax.plot(x3, y3, '+r')
     ax.plot(x2plot, y2plot, 'k')
+    if type(arr_t_frac_sec)==np.ndarray:
+        for i in range(len(arr_t_frac_sec)):
+            ax.vlines(arr_t_frac_sec[i] - t_frac_sec_approx, np.min(y2plot), np.max(y2plot), linestyle='--',color='r', alpha=0.2)
+
     coord = get_n_points_anyfigure(fig, ax, n_points=1)
     amplitude = coord[0][1] - ymiddle
     amplitude_err = ymiddle_err
 
-    return amplitude, amplitude_err
+    dict_results = {}
+    dict_results['x1'] = x1
+    dict_results['x2'] = x2
+    dict_results['x3'] = x3
+    dict_results['y1'] = y1
+    dict_results['y2'] = y2
+    dict_results['y3'] = y3
+    dict_results['ymiddle'] = ymiddle
+    dict_results['ymiddle_err'] = ymiddle_err
+    dict_results['amplitude'] = amplitude
+    dict_results['amplitude_err'] = amplitude_err
 
+    return dict_results
+
+
+def oneclick2extract_amplitude_singlepixel(temp_evol_uz, t_frac_sec_approx, dict_stereo_pivdata, arr_t_frac_sec=None):
+    x2plot = dict_stereo_pivdata['t']
+    y2plot = temp_evol_uz
+    fig, ax = plt.subplots(figsize=(18,12))
+    ax.plot(x2plot, y2plot, 'k')
+    if type(arr_t_frac_sec)==np.ndarray:
+        for i in range(len(arr_t_frac_sec)):
+            if arr_t_frac_sec[i]==t_frac_sec_approx:
+                clr='b'
+            else:
+                clr='r'
+            ax.vlines(arr_t_frac_sec[i], np.min(y2plot), np.max(y2plot), linestyle='--',color=clr, alpha=0.2)
+    ax.set_xlim(t_frac_sec_approx-15, t_frac_sec_approx+10)
+
+    coord = get_n_points_anyfigure(fig=fig, ax=ax, n_points=1)
+    x_clic = coord[0][0]
+    y_clic = coord[0][1]
+    y_interp = np.interp(x_clic, x2plot, y2plot)
+
+    amplitude = np.abs(y_interp)
+
+    dict_results = {}
+    dict_results['x_clic'] = x_clic
+    dict_results['y_clic'] = y_clic
+    dict_results['y_interp'] = y_interp
+    dict_results['amplitude'] = amplitude
+
+    return dict_results
+
+def extract_amplitude_singlepixel_automatic(temp_evol_uz, t_frac_sec_approx, dict_stereo_pivdata, arr_t_frac_sec=None):
+    """
+    Pour cette fonction, on a besoin d'un champ detrended, car sinon 
+    les valeurs pour l'amplitude sont décalées en fonction du temps
+    La valeur qu'on mesure est la valeur de l'amplitude maximale
+    pour tout temps < t_frac_sec_approx
+    """
+    x2plot = dict_stereo_pivdata['t']
+    y2plot = temp_evol_uz
+
+    indices_notbroken = np.where(x2plot <= t_frac_sec_approx)
+    y2plot_notbroken = y2plot[indices_notbroken]
+    x2plot_notbroken = x2plot[indices_notbroken]
+
+    agmx = np.argmax(np.abs(y2plot_notbroken))
+    amplitudemax = np.abs(y2plot_notbroken[agmx])
+    elevation_amplitudemax = y2plot_notbroken[agmx]
+    time_sec_amplitudemax = x2plot_notbroken[agmx]
+
+    fig, ax = plt.subplots(figsize=(18,12))
+    ax.plot(x2plot, y2plot, 'k')
+    if type(arr_t_frac_sec)==np.ndarray:
+        for i in range(len(arr_t_frac_sec)):
+            if arr_t_frac_sec[i]==t_frac_sec_approx:
+                clr='b'
+            else:
+                clr='r'
+            ax.vlines(arr_t_frac_sec[i], np.min(y2plot), np.max(y2plot), linestyle='--',color=clr, alpha=0.3)
+    plt.plot(time_sec_amplitudemax, elevation_amplitudemax, '+r')
+    plt.show()
+
+    dict_results = {}
+    dict_results['time_amplitudemax'] = time_sec_amplitudemax
+    dict_results['indtime_amplitudemax'] = agmx
+    dict_results['amplitudemax'] = amplitudemax
+    dict_results['elevation_amplitudemax'] = elevation_amplitudemax
+
+    return dict_results
 
 
 def click2extract_amplitude(matrix_temp_evol_uz, times_frac_sec_approx, dict_stereo_pivdata):

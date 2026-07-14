@@ -13,7 +13,7 @@ import tools.rw_data as rw
 from vasco.tools.clickonfigures import profile_line_on_image_2clicks
 from vasco.tools.clickonfigures import get_n_points_onimage
 
-from functions_fracture_analysis import click_on_fracture_path_plot_time_evol, click2extract_amplitude, plot_elevation_refnotbroken_and_broken, clic2extract_amplitude_withref_singlepixel
+from functions_fracture_analysis import click_on_fracture_path_plot_time_evol, click2extract_amplitude, plot_elevation_refnotbroken_and_broken, clic2extract_amplitude_withref_singlepixel, oneclick2extract_amplitude_singlepixel, extract_amplitude_singlepixel_automatic
 
 #%%
 #disk = 'L:'# disk is Elements on adour
@@ -47,23 +47,38 @@ vz = dict_stereo_pivdata['u'][2,:,:,:]
 
 dt = dict_stereo_pivdata['t'][1] - dict_stereo_pivdata['t'][0]
 
-ux = np.cumsum(vx, axis=2)*dt
-uy = np.cumsum(vy, axis=2)*dt
-uz = np.cumsum(vz, axis=2)*dt
+def detrend_along_time_axis(v, window_size=120): # à peu près nombre de frames par periode d'onde):
+    window = np.ones(window_size) / window_size
+    v_detrended = np.zeros_like(v)
+
+    # Supposons vz.shape = (N_x, N_y, N_t)
+    for i in range(v.shape[0]):
+        for j in range(v.shape[1]):
+            v_detrended[i, j, :] = v[i, j, :] - np.convolve(v[i, j, :], window, mode='same')
+    return v_detrended
+
+vx_detrended = detrend_along_time_axis(vx)
+vy_detrended = detrend_along_time_axis(vy)
+vz_detrended = detrend_along_time_axis(vz)
+
+
+ux = np.cumsum(vx_detrended, axis=2)*dt
+uy = np.cumsum(vy_detrended, axis=2)*dt
+uz = np.cumsum(vz_detrended, axis=2)*dt
 
 
 #%% PLOTS
 %matplotlib inline
 for i in range(0,1000,100):
     plt.figure()
-    plt.imshow(vz[:,:,1000+i])
+    plt.imshow(vz_detrended[:,:,1000+i])
 
 
 
 #%%
 %matplotlib inline
 
-path_dict2save = f'{daily_drone_data_path}/Results/traitement_vasco/dict_results_frac.pkl'
+path_dict2save = f'{daily_drone_data_path}/Results/traitement_vasco/dict_results_frac_detrendvz.pkl'
 if os.path.exists(path_dict2save):
     with open(path_dict2save, 'rb') as file:
         dict_frac = pickle.load(file)
@@ -79,7 +94,7 @@ if 'dict_frac' in globals():
 plt.show()
 #%%
 
-n_points = 11
+n_points = 10
 %matplotlib qt
 
 matrix_temp_evol_uz, times_frac_sec_approx, idcs_single_frac = click_on_fracture_path_plot_time_evol(n_points, uz, dict_stereo_pivdata,fractures_positions_data)
@@ -91,11 +106,15 @@ matrix_temp_evol_uz, times_frac_sec_approx, idcs_single_frac = click_on_fracture
 #array_amplitudes_frac, wave_period_sec, array_t1_sec, array_t2_sec = click2extract_amplitude(matrix_temp_evol_uz, times_frac_sec_approx, dict_stereo_pivdata)
 
 array_amplitudes_frac = []
-array_amplitudes_err_frac = []
+#array_amplitudes_err_frac = []
+dict_all_results_atfracpixels = {}
+
 for i in range(len(matrix_temp_evol_uz)):
-    amplitude, amplitude_err = clic2extract_amplitude_withref_singlepixel(temp_evol_uz=matrix_temp_evol_uz[i], t_frac_sec_approx=times_frac_sec_approx[i], dict_stereo_pivdata=dict_stereo_pivdata)
-    array_amplitudes_frac.append(amplitude)
-    array_amplitudes_err_frac.append(amplitude_err)
+    dict_results_atfracpixels = extract_amplitude_singlepixel_automatic(temp_evol_uz=matrix_temp_evol_uz[i], t_frac_sec_approx=times_frac_sec_approx[i], dict_stereo_pivdata=dict_stereo_pivdata, arr_t_frac_sec=times_frac_sec_approx)
+    array_amplitudes_frac.append(dict_results_atfracpixels['amplitudemax'])
+    #array_amplitudes_err_frac.append(dict_results_atfracpixels['amplitude_err'])
+    dict_all_results_atfracpixels[str(i)] = dict_results_atfracpixels
+
 
 
 #%%
@@ -117,11 +136,22 @@ for i in range(len(array_D)):
     
     matrix_temp_evol_uz_ref_noncassee[i,:] = uz_ref_noncassee
 
-times_frac_sec_approx_ref_noncassee = np.ones(len(array_D)) * time_frac_approx
+#times_frac_sec_approx_ref_noncassee = np.ones(len(array_D)) * time_frac_approx
 
 # maintenant mesurer également l'amplitude pour la ref "glace non cassée"
 %matplotlib qt
-array_amplitudes_ref_noncassee, wave_period_sec_ref_noncassee, array_t1_sec_noncassee, array_t2_sec_noncassee = click2extract_amplitude(matrix_temp_evol_uz_ref_noncassee, times_frac_sec_approx_ref_noncassee, dict_stereo_pivdata)
+
+array_amplitudes_ref_noncassee = np.zeros(len(array_D))
+#array_amplitudes_err_ref_noncassee = np.zeros(len(array_D))
+dict_all_results_ref_noncassee = {}
+
+for i in range(len(matrix_temp_evol_uz_ref_noncassee)):
+    dict_results_ref_noncassee = oneclick2extract_amplitude_singlepixel(temp_evol_uz=matrix_temp_evol_uz_ref_noncassee[i], t_frac_sec_approx=np.mean(times_frac_sec_approx), dict_stereo_pivdata=dict_stereo_pivdata, arr_t_frac_sec=times_frac_sec_approx)
+    #dict_results_ref_noncassee = extract_amplitude_singlepixel_automatic(temp_evol_uz=matrix_temp_evol_uz_ref_noncassee[i], t_frac_sec_approx=np.inf, dict_stereo_pivdata=dict_stereo_pivdata, arr_t_frac_sec=times_frac_sec_approx)
+    array_amplitudes_ref_noncassee[i] = dict_results_ref_noncassee['amplitude']
+    #array_amplitudes_err_ref_noncassee[i] = dict_results_ref_noncassee['amplitude_err']
+    dict_all_results_ref_noncassee[str(i)] = dict_results_ref_noncassee
+    
 
 #%%
 
@@ -139,13 +169,19 @@ def func_fit(x,a=slope,b=intercept):
 coord_onfracline_cassee = (func_fit(x_ind_onfrac)-func_fit(x_ind_onfrac[0]))/np.sin(alpha) + ((func_fit(x_ind_onfrac[0]) - y_ind_onfrac[0]) - (func_fit(x_ind_onfrac) - y_ind_onfrac))*np.sin(alpha)
 
 %matplotlib qt
-plt.figure()
-plt.plot(coord_onfracline_noncassee, array_amplitudes_ref_noncassee,'o')
-plt.plot(coord_onfracline_cassee, array_amplitudes_frac,'o')
 
+array_amplitudes_err_frac = np.zeros(len(array_amplitudes_frac))
+array_amplitudes_err_ref_noncassee = np.zeros(len(array_amplitudes_ref_noncassee))
+
+plt.figure()
+plt.errorbar(coord_onfracline_cassee, array_amplitudes_frac, array_amplitudes_err_frac, linestyle='', marker='o', color='k', ecolor='gray')
+plt.errorbar(coord_onfracline_cassee, array_amplitudes_frac, array_amplitudes_err_frac, linestyle='', marker='o', color='k', ecolor='gray')
+plt.errorbar(coord_onfracline_noncassee, array_amplitudes_ref_noncassee, array_amplitudes_err_ref_noncassee, linestyle='', marker='o', color='k', ecolor='gray')
 plt.ylabel('Amplitude [m]')
 plt.xlabel('Relative distance [px] to the first "fractured" pixel detected')
 plt.show()
+
+
 
 #%% save data from one fracture line
 frac_id = f'yind{idcs_single_frac[0,1]}_xind{idcs_single_frac[0,0]}'
@@ -155,18 +191,14 @@ dict_single_frac['matrix_temp_evol_uz'] = matrix_temp_evol_uz
 dict_single_frac['times_frac_sec_approx'] = times_frac_sec_approx
 dict_single_frac['idcs_single_frac'] = idcs_single_frac
 dict_single_frac['array_amplitudes_frac'] = array_amplitudes_frac
-dict_single_frac['wave_period_sec'] = array_wave_period_sec
-dict_single_frac['array_t1_sec'] = array_t1_sec
-dict_single_frac['array_t2_sec'] = array_t2_sec
+#dict_single_frac['wave_period_sec'] = array_wave_period_sec
 dict_single_frac['frac_id'] = frac_id
 dict_single_frac['coord_onfracline_cassee'] = coord_onfracline_cassee
 
 
 dict_single_frac['array_amplitudes_ref_noncassee'] = array_amplitudes_ref_noncassee
-dict_single_frac['wave_period_sec_ref_noncassee'] = array_wave_period_sec_ref_noncassee
-dict_single_frac['array_t1_sec_noncassee'] = array_t1_sec_noncassee
-dict_single_frac['array_t2_sec_noncassee'] = array_t2_sec_noncassee
-dict_single_frac['times_frac_sec_approx_ref_noncassee'] = times_frac_sec_approx_ref_noncassee
+#dict_single_frac['wave_period_sec_ref_noncassee'] = array_wave_period_sec_ref_noncassee
+#dict_single_frac['times_frac_sec_approx_ref_noncassee'] = times_frac_sec_approx_ref_noncassee
 dict_single_frac['matrix_temp_evol_uz_noncassee'] = matrix_temp_evol_uz_ref_noncassee
 dict_single_frac['slope'] = slope
 dict_single_frac['intercept'] = intercept
@@ -176,7 +208,7 @@ dict_single_frac['array_D'] = array_D
 
 
 
-path_dict2save = f'{daily_drone_data_path}/Results/traitement_vasco/dict_results_frac_witherrorbar.pkl'
+path_dict2save = f'{daily_drone_data_path}/Results/traitement_vasco/dict_results_frac_detrendvz.pkl'
 if os.path.exists(path_dict2save):
     with open(path_dict2save, 'rb') as file:
         dict_frac = pickle.load(file)
@@ -208,7 +240,7 @@ for k in dict_frac:
     array_amplitudes_frac = dict_frac[k]['array_amplitudes_frac']
     array_amplitudes_ref_noncassee = dict_frac[k]['array_amplitudes_ref_noncassee']
 
-    wave_period_sec = dict_frac[k]['wave_period_sec']
+    #wave_period_sec = dict_frac[k]['wave_period_sec']
 
     plt.plot(coord_onfracline_noncassee, array_amplitudes_ref_noncassee,'s',color=colors[ct])
     plt.plot(coord_onfracline_cassee, array_amplitudes_frac,'^',color=colors[ct])
@@ -221,25 +253,5 @@ for k in dict_frac:
 
 
 
-#%%
 
-
-"""
-frac_id = dict_frac['dict_single_frac_yind23_xind28']['frac_id']
-array_amplitudes_frac = dict_frac['dict_single_frac_yind23_xind28']['array_amplitudes_frac']
-idcs_single_frac = dict_frac['dict_single_frac_yind23_xind28']['idcs_single_frac']
-matrix_temp_evol_uz = dict_frac['dict_single_frac_yind23_xind28']['matrix_temp_evol_uz']
-times_frac_sec_approx = dict_frac['dict_single_frac_yind23_xind28']['times_frac_sec_approx']
-wave_period_sec = dict_frac['dict_single_frac_yind23_xind28']['wave_period_sec']
-coord_onfracline_cassee = dict_frac['dict_single_frac_yind23_xind28']['coord_onfracline_cassee']
-
-array_amplitudes_ref_noncassee = dict_frac['dict_single_frac_yind23_xind28']['array_amplitudes_ref_noncassee']
-wave_period_sec_ref_noncassee = dict_frac['dict_single_frac_yind23_xind28']['wave_period_sec_ref_noncassee']
-matrix_temp_evol_uz_ref_noncassee = dict_frac['dict_single_frac_yind23_xind28']['matrix_temp_evol_uz_noncassee']
-times_frac_sec_approx_ref_noncassee = dict_frac['dict_single_frac_yind23_xind28']['times_frac_sec_approx_ref_noncassee']
-slope = dict_frac['dict_single_frac_yind23_xind28']['slope']
-intercept = dict_frac['dict_single_frac_yind23_xind28']['intercept']
-alpha = dict_frac['dict_single_frac_yind23_xind28']['alpha']
-coord_onfracline_noncassee = dict_frac['dict_single_frac_yind23_xind28']['coord_onfracline_noncassee']
-array_D = dict_frac['dict_single_frac_yind23_xind28']['array_D']"""
 # %%
