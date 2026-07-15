@@ -18,9 +18,12 @@ def click_on_fracture_path_plot_time_evol(n_points, uz,
                                           fractures_positions_data,
                                           saveplotdata = True,
                                           saveloc = 'C:/Users/Vasco Zanchi/Desktop/presentations/reunions_hebdo/figures_data_article'):
-    # dans cette partie on veut cliquer sur quelques pixels qui nous intéressent 
-    # au début, puis on afficher l'évolution temporelle de l'élévation à ce point 
-
+    """
+     dans cette partie on veut cliquer sur quelques pixels qui nous intéressent 
+     au début, puis on afficher l'évolution temporelle de l'élévation à ce point 
+    
+    Rq : le tableau idcs_singl_frac est sous la forme [[xind1,yind1],[xind2,yind2],etc.]
+    """
     binary_frac_positions = np.where(fractures_positions_data['binary'],fractures_positions_data['binary'],np.nan)
     #%matplotlib qt
 

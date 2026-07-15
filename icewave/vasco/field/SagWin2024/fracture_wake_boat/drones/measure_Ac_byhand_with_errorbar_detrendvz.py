@@ -93,14 +93,27 @@ if 'dict_frac' in globals():
             plt.plot(dict_frac[k]['idcs_single_frac'][0][0], dict_frac[k]['idcs_single_frac'][0][1], '^r', markersize=4)
 plt.show()
 #%%
-
+# soit on refait en cliquant pour choisir un nouveau crack (code commenté) :
+"""
 n_points = 10
 %matplotlib qt
 
 matrix_temp_evol_uz, times_frac_sec_approx, idcs_single_frac = click_on_fracture_path_plot_time_evol(n_points, uz, dict_stereo_pivdata,fractures_positions_data)
 # LE PREMIER CLIC DOIT ETRE LE PLUS PROCHE POSSIBLE DE LA LIMITE AVEC GLACE NON CASSEE !!
+"""
+# soit on fait en allant chercher les informations des cracks déjà sélectionnés auparavant
+path_dict_frac_ref = f'{daily_drone_data_path}/Results/traitement_vasco/dict_results_frac.pkl'
+with open(path_dict_frac_ref, 'rb') as file:
+    dict_frac_ref = pickle.load(file)
 
-#frac_id = f'xind{}'
+# Now choose the 'keyfrac' :
+keyfrac = 'dict_single_frac_yind23_xind28'
+times_frac_sec_approx = dict_frac_ref[keyfrac]['times_frac_sec_approx']
+idcs_single_frac = dict_frac_ref[keyfrac]['idcs_single_frac']
+
+matrix_temp_evol_uz = np.zeros((idcs_single_frac.shape[0], len(dict_stereo_pivdata['t'])))
+for i in range(idcs_single_frac.shape[0]):
+    matrix_temp_evol_uz[i,:] = uz[idcs_single_frac[i,1], idcs_single_frac[i,0],:]
 
 # %%
 #array_amplitudes_frac, wave_period_sec, array_t1_sec, array_t2_sec = click2extract_amplitude(matrix_temp_evol_uz, times_frac_sec_approx, dict_stereo_pivdata)
@@ -115,14 +128,13 @@ for i in range(len(matrix_temp_evol_uz)):
     #array_amplitudes_err_frac.append(dict_results_atfracpixels['amplitude_err'])
     dict_all_results_atfracpixels[str(i)] = dict_results_atfracpixels
 
-
-
 #%%
 
 %matplotlib inline
 
 array_D = np.array([2,4,6,8,10,12,14]) # on définit une longueur (en pixel) où on veut se placer pour regarder 
-#la ref en glace non cassée
+#array_D = np.array([2,4,6,8])
+# la ref en glace non cassée
 
 # on met dans des matrices de la même dimensions que le cas précédent (donc si une seule valeur on la transforme en tableau)
 matrix_temp_evol_uz_ref_noncassee = np.zeros((len(array_D), uz.shape[2]))
@@ -181,7 +193,26 @@ plt.ylabel('Amplitude [m]')
 plt.xlabel('Relative distance [px] to the first "fractured" pixel detected')
 plt.show()
 
+#%%
 
+# save dico example
+
+dict_example_timeevol = {}
+dict_example_timeevol['matrix_temp_evol_uz'] = matrix_temp_evol_uz
+dict_example_timeevol['tvals_sec'] = dict_stereo_pivdata['t']
+dict_example_timeevol['times_frac_sec_approx'] = times_frac_sec_approx
+dict_example_timeevol['keyfrac'] = keyfrac
+dict_example_timeevol['idcs_single_frac'] = idcs_single_frac
+
+dict_example_timeevol['matrix_temp_evol_uz_ref_noncassee'] = matrix_temp_evol_uz_ref_noncassee
+
+dict_example_timeevol['coord_onfracline_cassee'] = coord_onfracline_cassee
+dict_example_timeevol['coord_onfracline_noncassee'] = coord_onfracline_noncassee
+dict_example_timeevol['array_amplitudes_frac'] = array_amplitudes_frac
+
+
+path2dict_example_timeevol = "C:/Users/Vasco Zanchi/Desktop/presentations/reunions_hebdo/figures_data_article/dict_timeevol_example.pkl"
+pickle.dump(dict_example_timeevol, open(path2dict_example_timeevol, "wb"))
 
 #%% save data from one fracture line
 frac_id = f'yind{idcs_single_frac[0,1]}_xind{idcs_single_frac[0,0]}'
@@ -249,9 +280,6 @@ for k in dict_frac:
     plt.xlabel('Relative distance [px] to the first "fractured" pixel detected')
 
     ct+=1
-
-
-
 
 
 # %%
