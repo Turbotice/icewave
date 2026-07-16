@@ -43,7 +43,7 @@ full_blues = mpl.colormaps['Blues'].resampled(256)
 new_blues = colors.ListedColormap(full_blues(np.linspace(0.2,1,256)))
 
 #%% Set fig_folder path 
-disk = 'E:/'
+disk = 'F:/'
 fig_folder = f'{disk}Rimouski_2025/DAS_article/'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
@@ -81,8 +81,8 @@ date = '0210'
 year = '2025'
 
 path2logfile = f'{base}{date}/Geophones'
-# geophones_table_path = 'C:/Users/sebas/git/icewave/sebastien/geophones/geophones_table'
-geophones_table_path = 'C:/Users/sebas/Github/icewave/icewave/geophone/geophones_table'
+geophones_table_path = 'C:/Users/sebas/git/icewave/sebastien/geophones/geophones_table'
+# geophones_table_path = 'C:/Users/sebas/Github/icewave/icewave/geophone/geophones_table'
 UTC_timearea = pytz.timezone('UTC')
 
 # load geophone GPS coordinates 
@@ -354,10 +354,10 @@ for key in selected_acq:
 #             color = 'tab:green',mec = 'k',ms = markersize)
 
 axs[2].set_xlabel(r'$x \; \mathrm{(m)}$')
-axs[2].set_ylabel(r'$D \; \mathrm{(Pa.m^{-3})}$')
-# axs[2].set_ylim([-1.1e6,2.6e8])
-axs[2].set_yscale('log')
-axs[2].set_ylim([3e6,4e8])
+axs[2].set_ylabel(r'$D \; \mathrm{(Pa.m^{3})}$')
+axs[2].set_ylim([-1.1e6,2.6e8])
+# axs[2].set_yscale('log')
+# axs[2].set_ylim([3e6,4e8])
 
 # add vertical lines 
 axs[0].vlines(x_boarder,1, 10,linestyles = '--',colors = 'k',lw = 1)
@@ -372,7 +372,7 @@ for ax in axs:
 fig.legend(ncols = 3,
               loc='outside upper center',frameon = False)
 
-figname = f'{fig_folder}Subplot_EhD_VS_x_with_uncertainties_ylog'
+figname = f'{fig_folder}Subplot_EhD_VS_x_with_uncertainties'
 plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.svg', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')
