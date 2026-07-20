@@ -199,17 +199,17 @@ def plot_det_M(x,y,dimensionless,cmap = parula_map):
                 
     fig, ax = plt.subplots()
     extents = np.array((x.min(),x.max(),y.min(),y.max()))
-    c = ax.imshow(np.log10(abs(det_values)),cmap = cmap,origin = 'lower',aspect = 'equal',
+    c = ax.imshow(abs(det_values),cmap = cmap,origin = 'lower',aspect = 'equal',
                   interpolation = 'gaussian',extent = extents)
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="2%", pad=0.1)
     
     cbar = plt.colorbar(c,cax = cax)
-    cbar.set_label(r'$\mathrm{log10(|det(M(k))|)}$',labelpad = 5)
+    cbar.set_label(r'$|\mathrm{det}(\mathcal{M}(k))|)$',labelpad = 5)
     ax.set_xlabel(r'$\mathrm{Re}(k)/k_0 \; \mathrm{(rad.m^{-1})}$', labelpad = 5)
     ax.set_ylabel(r'$\mathrm{Im}(k)/k_0 \; \mathrm{(rad.m^{-1})}$', labelpad = 5)
     
-    return fig, ax
+    return fig, ax, c,cbar
 
 #-------------------------------------------------------------------------------------------------------
 
