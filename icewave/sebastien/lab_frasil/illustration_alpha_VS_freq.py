@@ -389,8 +389,8 @@ axins.set_xlim([0,25])
 axins.set_ylim([0,4500])
 
 figname = f'{fig_folder}alpha_VS_freq_rho_{rho}_amp_{amp}mm_with_nu_eff_Lamb_insert'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
 
 # =============================================================================
 # %% Plot dispersion relation
