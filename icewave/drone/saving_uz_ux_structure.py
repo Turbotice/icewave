@@ -217,12 +217,12 @@ def process_file(base,date,drone_ID,exp_ID, flip_field = 0, idx_file = 0):
 
 
 def main():
-    base = 'F:/Rimouski_2024/Data/'
+    base = 'U:/Data/'
 
-    date = '0226'
+    date = '0205'
     drone_ID = 'mesange'
-    exp_ID = '14-waves_007'
-    flip_field = 1
+    exp_ID = '07-waves_003'
+    flip_field = 0
     
     process_file(base, date, drone_ID, exp_ID, flip_field = flip_field)
 
