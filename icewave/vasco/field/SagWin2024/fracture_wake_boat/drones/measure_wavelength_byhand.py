@@ -15,6 +15,7 @@ import tools.rw_data as rw
 from vasco.tools.clickonfigures import profile_line_on_image_2clicks
 from vasco.tools.clickonfigures import get_n_points_onimage
 from vasco.tools.clickonfigures import get_n_points
+from vasco.tools.clickonfigures import get_n_points_anyfigure
 
 from functions_fracture_analysis import click_on_fracture_path_plot_time_evol, click2extract_amplitude, plot_elevation_refnotbroken_and_broken
 from profiles import *
@@ -52,9 +53,24 @@ vz = dict_stereo_pivdata['u'][2,:,:,:]
 
 dt = dict_stereo_pivdata['t'][1] - dict_stereo_pivdata['t'][0]
 
-ux = np.cumsum(vx, axis=2)*dt
-uy = np.cumsum(vy, axis=2)*dt
-uz = np.cumsum(vz, axis=2)*dt
+def detrend_along_time_axis(v, window_size=120): # à peu près nombre de frames par periode d'onde):
+    window = np.ones(window_size) / window_size
+    v_detrended = np.zeros_like(v)
+
+    # Supposons vz.shape = (N_x, N_y, N_t)
+    for i in range(v.shape[0]):
+        for j in range(v.shape[1]):
+            v_detrended[i, j, :] = v[i, j, :] - np.convolve(v[i, j, :], window, mode='same')
+    return v_detrended
+
+vx_detrended = detrend_along_time_axis(vx)
+vy_detrended = detrend_along_time_axis(vy)
+vz_detrended = detrend_along_time_axis(vz)
+
+
+ux = np.cumsum(vx_detrended, axis=2)*dt
+uy = np.cumsum(vy_detrended, axis=2)*dt
+uz = np.cumsum(vz_detrended, axis=2)*dt
 
 facq_x = dict_stereo_pivdata['SCALE']['facq_x']
 
@@ -192,6 +208,35 @@ from find_wave_front import *
 
 
 
+def find_inwhichline(xind:int,yind:int,dict_lines_oneframe:dict):
+    idx_line_found = None
+    index_in_line = None
+    for i in range(len(group_lines_to_dict(find_lines(peaks2d)))):
+        tabid = np.where((dict_lines_oneframe[f'line_{i}']['x_ind']==xind)&(dict_lines_oneframe[f'line_{i}']['y_ind']==yind))[0]
+        if len(tabid)==0:
+            pass
+        else:
+            idx_line_found = i
+            print(tabid)
+            index_in_line = tabid[0]
+            break
+    
+    return idx_line_found, index_in_line
+
+
+dict_wavelengths = {}
+dict_wavelengths['wavelength_estimates'] = {}
+dict_wavelengths['wavelength_avg'] = []
+dict_wavelengths['wavelength_std'] = []
+dict_wavelengths['x1'] = []
+dict_wavelengths['x2'] = []
+dict_wavelengths['x3'] = []
+dict_wavelengths['y1'] = []
+dict_wavelengths['y2'] = []
+dict_wavelengths['y3'] = []
+
+
+
 for k in dict_frac:
     if 'dict_single_frac' in k:
         idcs_single_frac = dict_frac[k]['idcs_single_frac']
@@ -201,14 +246,52 @@ for k in dict_frac:
         matrice2d = uz[:,:,index_time_frac_approx]
 
         peaks2d, matrice2d_smoothed = find_wave_fronts_on_image(matrice2d, sigma_smooth=5, axis=0, plot=False)
-
-        plt.figure()
-        plt.imshow(matrice2d_smoothed)
-        plt.imshow(peaks2d)
-        plt.plot(idcs_single_frac[:,0], idcs_single_frac[:,1], '^k')
-        plt.show()
+        peaks2d_down, matrice2d_smoothed_down = find_wave_fronts_on_image(-matrice2d, sigma_smooth=5, axis=0, plot=False)
 
 
+        dict_lines_up = group_lines_to_dict(find_lines(peaks2d))
+        dict_lines_down = group_lines_to_dict(find_lines(peaks2d_down))
+
+
+        fig, ax = plt.subplots()
+        ax.set_title('1st click on central line, 2nd and 3rd plot on two surrounding lines')
+        #ax.imshow(matrice2d_smoothed)
+        ax.imshow(matrice2d)
+        ax.imshow(peaks2d,cmap='coolwarm',vmax=1,vmin=0) # apparait rouge
+        ax.imshow(peaks2d_down,cmap='coolwarm',vmin=1) # apparait bleu
+        ax.plot(idcs_single_frac[:,0], idcs_single_frac[:,1], '^k')
+        coords = get_n_points_anyfigure(fig=fig, ax=ax, n_points=3)
+
+        x1, y1 = coords[0][0], coords[0][1]
+        x2, y2 = coords[1][0], coords[1][1]
+        x3, y3 = coords[2][0], coords[2][1]
+        #idx_line_found, index_in_line = find_inwhichline(np.round(x2).astype(int), np.round(y2).astype(int), dict_lines_oneframe=dict_lines_down)
+        
+        dist_a = np.sqrt((x2-x1)**2+(y2-y1)**2)
+        dist_b = np.sqrt((x3-x1)**2+(y3-y1)**2)
+
+        wavelength_estimates = np.array([dist_a, dist_b]) * 2
+        wavelength_avg = np.mean(wavelength_estimates)
+        wavelength_std = np.std(wavelength_estimates)
+
+        dict_wavelengths['x1'].append(x1)
+        dict_wavelengths['x2'].append(x2)
+        dict_wavelengths['x3'].append(x3)
+        dict_wavelengths['y1'].append(y1)
+        dict_wavelengths['y2'].append(y2)
+        dict_wavelengths['y3'].append(y3)
+        dict_wavelengths['wavelength_estimates_px'][k] = wavelength_estimates
+        dict_wavelengths['wavelength_avg_px'].append(wavelength_avg)
+        dict_wavelengths['wavelength_std_px'].append(wavelength_std)
+
+#%%
+plt.errorbar(np.arange(len(dict_wavelengths['wavelength_avg_px'])), np.array(dict_wavelengths['wavelength_avg_px']) * (1/facq_x),yerr=np.array(dict_wavelengths['wavelength_std_px']) * (1/facq_x), linestyle='',marker='o')
+
+
+# on a wavelength_std = 0.65 m environ (incertitude de type A)
+# on a wavelength_singlevalue_err = 1 m environ (incertitude de type B)
+# propagation des incerttitudes :
+# wavelength_err = np.sqrt(1**2 + 0.65**2) ~ 1.5 m
 
 #%% FFT2 in space to measure angle and approx wavelength (semble pas marcher)
 """

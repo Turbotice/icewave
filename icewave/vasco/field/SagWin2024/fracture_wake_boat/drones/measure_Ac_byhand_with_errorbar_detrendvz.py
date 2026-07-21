@@ -107,7 +107,12 @@ with open(path_dict_frac_ref, 'rb') as file:
     dict_frac_ref = pickle.load(file)
 
 # Now choose the 'keyfrac' :
-keyfrac = 'dict_single_frac_yind23_xind28'
+
+list_keysfrac = ['dict_single_frac_yind23_xind28', 'dict_single_frac_yind10_xind39', 'dict_single_frac_yind34_xind25', 'dict_single_frac_yind87_xind5', 'dict_single_frac_yind56_xind14', 'dict_single_frac_yind80_xind9', 'dict_single_frac_yind50_xind19']
+
+keyfrac = list_keysfrac[6]
+
+
 times_frac_sec_approx = dict_frac_ref[keyfrac]['times_frac_sec_approx']
 idcs_single_frac = dict_frac_ref[keyfrac]['idcs_single_frac']
 
@@ -118,13 +123,17 @@ for i in range(idcs_single_frac.shape[0]):
 # %%
 #array_amplitudes_frac, wave_period_sec, array_t1_sec, array_t2_sec = click2extract_amplitude(matrix_temp_evol_uz, times_frac_sec_approx, dict_stereo_pivdata)
 
+%matplotlib qt
+
 array_amplitudes_frac = []
 #array_amplitudes_err_frac = []
 dict_all_results_atfracpixels = {}
 
 for i in range(len(matrix_temp_evol_uz)):
-    dict_results_atfracpixels = extract_amplitude_singlepixel_automatic(temp_evol_uz=matrix_temp_evol_uz[i], t_frac_sec_approx=times_frac_sec_approx[i], dict_stereo_pivdata=dict_stereo_pivdata, arr_t_frac_sec=times_frac_sec_approx)
-    array_amplitudes_frac.append(dict_results_atfracpixels['amplitudemax'])
+    #dict_results_atfracpixels = extract_amplitude_singlepixel_automatic(temp_evol_uz=matrix_temp_evol_uz[i], t_frac_sec_approx=times_frac_sec_approx[i], dict_stereo_pivdata=dict_stereo_pivdata, arr_t_frac_sec=times_frac_sec_approx)
+    dict_results_atfracpixels = oneclick2extract_amplitude_singlepixel(temp_evol_uz=matrix_temp_evol_uz[i], t_frac_sec_approx=times_frac_sec_approx[i], dict_stereo_pivdata=dict_stereo_pivdata, arr_t_frac_sec=times_frac_sec_approx)
+    #array_amplitudes_frac.append(dict_results_atfracpixels['amplitudemax'])
+    array_amplitudes_frac.append(dict_results_atfracpixels['amplitude'])
     #array_amplitudes_err_frac.append(dict_results_atfracpixels['amplitude_err'])
     dict_all_results_atfracpixels[str(i)] = dict_results_atfracpixels
 
@@ -194,7 +203,7 @@ plt.xlabel('Relative distance [px] to the first "fractured" pixel detected')
 plt.show()
 
 #%%
-
+"""
 # save dico example
 
 dict_example_timeevol = {}
@@ -212,7 +221,7 @@ dict_example_timeevol['array_amplitudes_frac'] = array_amplitudes_frac
 
 
 path2dict_example_timeevol = "C:/Users/Vasco Zanchi/Desktop/presentations/reunions_hebdo/figures_data_article/dict_timeevol_example.pkl"
-pickle.dump(dict_example_timeevol, open(path2dict_example_timeevol, "wb"))
+pickle.dump(dict_example_timeevol, open(path2dict_example_timeevol, "wb"))"""
 
 #%% save data from one fracture line
 frac_id = f'yind{idcs_single_frac[0,1]}_xind{idcs_single_frac[0,0]}'

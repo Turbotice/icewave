@@ -1,19 +1,23 @@
-#%%
+import numpy as np
 
-window_size=120
-window = np.ones(window_size) / window_size
-vz_detrended = np.zeros_like(vz)
+def detrend_along_time_axis(v, window_size=120): # à peu près nombre de frames par periode d'onde):
+    window = np.ones(window_size) / window_size
+    v_detrended = np.zeros_like(v)
 
-# Supposons vz.shape = (N_x, N_y, N_t)
-for i in range(vz.shape[0]):
-    for j in range(vz.shape[1]):
-        vz_detrended[i, j, :] = vz[i, j, :] - np.convolve(vz[i, j, :], window, mode='same')
+    # Supposons vz.shape = (N_x, N_y, N_t)
+    for i in range(v.shape[0]):
+        for j in range(v.shape[1]):
+            v_detrended[i, j, :] = v[i, j, :] - np.convolve(v[i, j, :], window, mode='same')
+    return v_detrended
 
-dt = 1/dict_stereo_pivdata['SCALE']['facq_t']
+vx_detrended = detrend_along_time_axis(vx)
+vy_detrended = detrend_along_time_axis(vy)
+vz_detrended = detrend_along_time_axis(vz)
 
-uz = np.cumsum(vz_detrended, axis=2) * dt
 
-uz_trend = np.cumsum(vz, axis=2) * dt
+ux = np.cumsum(vx_detrended, axis=2)*dt
+uy = np.cumsum(vy_detrended, axis=2)*dt
+uz = np.cumsum(vz_detrended, axis=2)*dt
 
 %matplotlib qt
 plt.figure(figsize=(15,10))
