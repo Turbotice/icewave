@@ -1,3 +1,4 @@
+#%%
 import cv2
 import os
 
@@ -69,3 +70,5 @@ def decimate_space_time_imgseq(input_folder,output_folder,num_frames_to_process,
         saved_frame_index += 1
 
     print(f"Terminé. {saved_frame_index} images ont été sauvegardées dans {output_folder}.")
+
+# %%
