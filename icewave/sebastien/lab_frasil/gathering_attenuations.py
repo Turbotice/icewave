@@ -5,6 +5,7 @@ Created on Tue May  6 10:59:19 2025
 @author: sebas
 """
 
+#%%
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -223,7 +224,7 @@ with open(file2save,'wb') as pf:
     pickle.dump(data,pf)
 
 #%% Create folder where figures are saved 
-fig_folder = 'U:/Aurore_frasil/Results_Seb/'
+fig_folder = 'F:/PhD_Manuscript/ch3/Attenuation/'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)    
 
@@ -523,7 +524,7 @@ cmap = new_blues
 marker_list = ['o','s','D','^','h','p']
 fig, ax = plt.subplots(figsize = (12,9))
 
-
+xth = np.linspace(2.0,6.0,100)
 for i,h in enumerate(thickness_list):
     valid_keys = []
     for key in data.keys():

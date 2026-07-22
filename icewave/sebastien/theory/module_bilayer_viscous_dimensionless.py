@@ -33,6 +33,16 @@ def gf(k):
      f = omega/2/np.pi
      return f
 
+def delta_nu(f,nu):
+    """ Return thickness of viscous boundary layer for a given frequency 
+    Inputs: f, float or np.array
+            nu, float 
+    Output: delta, float or np.array """
+    omega = 2*np.pi*f
+    delta = np.sqrt(nu/omega)
+    return delta
+
+
 def dim_numbers(params,g = 9.81):
     """ Return dimensionless numbers from set of parameters
     Inputs: - params, tuple, (f_ex,h,rho_1,rho_2,nu_1,nu_2)

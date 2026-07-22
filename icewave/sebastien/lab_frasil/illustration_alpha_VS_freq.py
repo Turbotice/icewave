@@ -153,7 +153,7 @@ folderlist = glob.glob(f'{base}*e*laser*/')
 
 # create a table of density
 rho_dict = {'2026_06_11':1.067,'2026_06_12':1.067,
-            '2026_06_17':1.03,'2026_06_18':1.03,'2026_07_06':1.135}
+            '2026_06_17':1.03,'2026_06_18':1.03,'2026_07_06':1.135,'2026_07_17':1.00}
 
 # selected keys
 selection_keys = ['h','f_ex','amplitude','alpha','err_alpha','k0','err_k0','f_demod',
@@ -283,8 +283,8 @@ ax.plot(xth,yth,'k--')
 # =============================================================================
 # %% Plot with insert: alpha VS freq for a given amplitude and density
 # =============================================================================
-amp = 25 # in mm
-rho = 1.03 # water density
+amp = 15 # in mm
+rho = 1.135 # water density
 
 selection = {'amplitude':amp,'rho':rho}
 sub_data = get_subset_dict(data, selection)
@@ -587,7 +587,9 @@ ms = 8
 
 #%% Plot data for different amplitudes 
 
-selection = {'h':22.0,'rho':1.135}
+h = 11 # in mm
+rho = 1.03
+selection = {'h':h,'rho':rho}
 
 sub_data = get_subset_dict(data, selection)
 
@@ -606,8 +608,9 @@ gamma_list = A_list*k_list
 gamma_dot_list = gamma_list*omega_list
 
 cnorm = mcolors.Normalize(vmin = A_list.min()*1e3,vmax = A_list.max()*1e3)
-full = mpl.colormaps['Reds'].resampled(256)
-new_cmap = mcolors.ListedColormap(full(np.linspace(0.2,0.8,256)))
+# full = mpl.colormaps['copper'].resampled(256)
+full = cmocean.cm.dense.resampled(256)
+new_cmap = mcolors.ListedColormap(full(np.linspace(0.1,0.9,256)))
 cmap = new_cmap
 
 set_graphs.set_matplotlib_param('single')
@@ -653,14 +656,16 @@ yth = 0.8*xth**3.5
 ax.plot(xth,yth,'k--')
 
 figname = f'{fig_folder}alpha_VS_freq_rho_{rho}_h_{h}mm_colorbar_A'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
-    
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
+
 
 #%% Plot attenuation for different values of rho 
 
-amp = 25 # in mm
-h = 11 # water density
+amp = 15 # in mm
+h = 17 # thickness in mm
+
+rho_grains = 0.94
 
 selection = {'amplitude':amp,'h':h}
 sub_data = get_subset_dict(data, selection)
@@ -671,16 +676,20 @@ for key in sub_data:
         rho_list.append(sub_data[key]['rho'])
 rho_list = np.sort(np.array(rho_list))
 
-bounds = get_boundaries(rho_list)
+delta_rho_list = rho_list - rho_grains
 
-cmap = new_blues
+bounds = get_boundaries(delta_rho_list)
+
 # cnorm = mcolors.Normalize(h_list.min(),h_list.max())
+full = mpl.colormaps['Reds'].resampled(256)
+new_cmap = mcolors.ListedColormap(full(np.linspace(0.1,0.9,256)))
+cmap = new_cmap
 cnorm = mcolors.BoundaryNorm(boundaries=bounds, ncolors=256)
 marker_list = ['o','s','D','^','v']
 ms = 8
 
 xth = np.linspace(1e0,6e0,100)
-set_graphs.set_matplotlib_param('single')
+set_graphs.set_matplotlib_param('double')
 fig, ax = plt.subplots()
 
 for i,rho in enumerate(rho_list):
@@ -691,7 +700,7 @@ for i,rho in enumerate(rho_list):
     err_alpha = np.array([current_dict[key]['err_alpha'] for key in current_dict.keys()])
     f = np.array([current_dict[key]['f_demod'] for key in current_dict.keys()])
     
-    color = cmap(cnorm(rho))
+    color = cmap(cnorm(delta_rho_list[i]))
     marker = marker_list[i]
     ax.errorbar(f,alpha,yerr = err_alpha,color = color, fmt = marker, ms = ms,
                 ecolor ='k',mec = 'k')
@@ -724,9 +733,9 @@ sm.set_array([])  # Only needed for the colorbar
 cbar = fig.colorbar(sm, cax=cax)
 # midpoints = [(bounds[i] + bounds[i+1])/2 for i in range(len(bounds) - 1)]
 # cbar.set_ticks(midpoints)
-cbar.set_ticks(rho_list)
-cbar.set_ticklabels([f'{mid:.3f}' for mid in rho_list])
-cbar.set_label(r'$\rho_w$')
+cbar.set_ticks(delta_rho_list)
+cbar.set_ticklabels([f'{mid*1e3:.0f}' for mid in delta_rho_list])
+cbar.set_label(r'$\Delta \rho$')
     
 # # create a scalar mappable
 # sm = cm.ScalarMappable(cmap=cmap, norm=cnorm)
@@ -739,7 +748,7 @@ yth = 0.8*xth**3.5
 ax.plot(xth,yth,'k--')
 
 figname = f'{fig_folder}alpha_VS_freq_h_{h}mm_amp_{amp}mm'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
 
     
