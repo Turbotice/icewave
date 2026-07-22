@@ -19,11 +19,11 @@ import scipy
 import icewave.tools.datafolders as df
 
 
-def get_bathy_interpolator(disk = 'Backup25',year = '2024'):
+def get_bathy_interpolator(disk = 'Backup25',year = '2025'):
     """ Load bathymetry interpolator and return it"""
     
     base = df.find_path(disk,year)
-    path2bathy = f'{base}Bathymetrie/linear_interpolator_bathymetry.pkl'
+    path2bathy = f'{base}/Bathymetrie/linear_interpolator_bathymetry.pkl'
     
     with open(path2bathy,'rb') as pf:
         interp_H = pickle.load(pf)
