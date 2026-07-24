@@ -81,6 +81,13 @@ def collect_all_years(component = 'ux', dimension = 'space'):
         
     return data
 
+#%% Define fig_folder
+
+fig_folder = 'F:/PhD_Manuscript/ch4/'
+if not os.path.isdir(fig_folder) :
+    os.mkdir(fig_folder)
+
+
 #%% Collect data for a given year
 
 year = '2025'
@@ -167,11 +174,16 @@ ax.legend(fontsize = 10)
 ax.set_xscale('log')
 ax.set_yscale('log')
 
-ax.set_xlim([1e-1,1e0])
-ax.set_ylim([1e-3,5e-1])
+ax.set_xlim([1e-1,1.2e0])
+ax.set_ylim([2e-3,5e-1])
 
 ax.set_xlabel(r'$f \; \mathrm{(Hz)}$')
 ax.set_ylabel(r'$\alpha \; \mathrm{(m^{-1})}$')
+ax.grid(True, linestyle='--', alpha=0.3)
+
+figname = f'{fig_folder}attenuation_all_field_observation'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
 
 
 
