@@ -86,7 +86,7 @@ if not os.path.isdir(fig_folder):
 #%% Compute space-time spectrum for uz
 
 N = S['interp_ux'].shape[2]
-Efk = FT.space_time_spectrum(S['interp_ux'],1/S['artificial_facq_x'],
+Efk = FT.space_time_spectrum(S['interp_ux'],S['artificial_facq_x'],
                              S['SCALE']['facq_t'],add_pow2 = [0,0,0])
 
 #%% Plot FK spectrum
@@ -131,7 +131,7 @@ ax.plot(k_fit,y_exp,'r',label = title)
 ax.legend()
 
 hw_txt = f'{hw:.2f}'.replace('.','p')
-figname = f'{fig_folder}uz_FK_spectrum_time_detection_hw_{hw_txt}_{suffixe}'
+figname = f'{fig_folder}ux_FK_spectrum_time_detection_hw_{hw_txt}_{suffixe}'
 plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')
 
@@ -189,7 +189,7 @@ m['hw'] = hw
 m['err_hw'] = err_hw
 
 hw_txt = f'{hw:.2f}'.replace('.','p')
-figname = f'{fig_folder}uz_FK_spectrum_space_detection_hw_{hw_txt}_{suffixe}'
+figname = f'{fig_folder}ux_FK_spectrum_space_detection_hw_{hw_txt}_{suffixe}'
 plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')
 
@@ -255,7 +255,7 @@ else:
     main_results['real_hw'] = real_hw
 
 # main_results['Efk'] = Efk
-main_results['attenuation_uz'] = m
+main_results['attenuation_ux'] = m
 
 file2save = f'{path2data}main_results_{suffixe}.pkl'
 with open(file2save,'wb') as pf :
@@ -271,7 +271,7 @@ print(f'{file2save} file saved !')
 
 #%% Compare dispersion relations 
 
-m = main_results['attenuation_uz']
+m = main_results['attenuation_ux']
 fig, ax = plt.subplots()
 for key in m.keys():
     ax.plot(m[key]['k'],m[key]['f'],'.',label = key)
