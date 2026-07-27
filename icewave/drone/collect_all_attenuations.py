@@ -18,6 +18,14 @@ sys.path.append('C:/Users/sebas/git/')
 import icewave.tools.rw_data as rw
 import icewave.tools.datafolders as df
 import icewave.sebastien.set_graphs as set_graphs
+import icewave.sebastien.theory.module_bilayer_viscous_dimensionless as theory
+import icewave.drone.attenuation_module as att_mod
+
+global g
+g = 9.81
+
+plt.rc('text', usetex=True)
+plt.rc('font', family='serif', serif='Computer Modern')
 
 #%% Function section 
 
@@ -129,7 +137,7 @@ ax.set_ylabel(r'$\alpha \; \mathrm{(m^{-1})}$')
 data = {}
 components = ['uz','ux']
 dims = ['space','time']
-
+ 
 for component in components:
     for dim in dims:
         
@@ -182,9 +190,8 @@ ax.set_ylabel(r'$\alpha \; \mathrm{(m^{-1})}$')
 ax.grid(True, linestyle='--', alpha=0.3)
 
 figname = f'{fig_folder}attenuation_all_field_observation'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
-
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
 
 
 
