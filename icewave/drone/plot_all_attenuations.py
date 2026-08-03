@@ -130,6 +130,140 @@ figname = f'{fig_folder}attenuation_all_field_observation'
 # plt.savefig(figname + '.pdf', bbox_inches='tight')
 # plt.savefig(figname + '.png', bbox_inches='tight')
 
+# =============================================================================
+# %% Plot keeping only trustful points
+# =============================================================================
+
+component = 'ux'
+dim = 'time'
+key_process = f'{component}_{dim}'
+
+set_graphs.set_matplotlib_param('single')
+fig, axs = plt.subplots(nrows = 1,ncols = 2,layout = 'constrained',figsize = (14,6))
+
+for key,m in data[key_process].items():
+    x = m['f']
+    xerr = m['err_f']
+    
+    y = m['alpha']
+    yerr = m['err_alpha']
+    
+    mask = m['d'] < 0.14
+    
+    for i,ax in enumerate(axs):
+        if i == 0:
+            
+            ax.errorbar(x[mask],y[mask],yerr = yerr[mask],xerr = xerr[mask],fmt = '.',label = key)
+                
+            ax.legend(fontsize = 10)
+            ax.set_xscale('log')
+            ax.set_yscale('log')
+            
+            ax.set_xlim([1e-1,1.2e0])
+            ax.set_ylim([2e-3,5e-1])
+            
+            ax.set_xlabel(r'$f \; \mathrm{(Hz)}$')
+            ax.set_ylabel(r'$\alpha \; \mathrm{(m^{-1})}$')
+            ax.grid(True, linestyle='--', alpha=0.3)
+        
+        else:
+            ax.plot(x,m['d'],'.')
+
+# =============================================================================
+# %% Compare attenuation with models 
+# =============================================================================
+
+component = 'ux'
+dim = 'time'
+key_process = f'{component}_{dim}'
+
+xth = np.linspace(1e-2,1e1,200)
+
+set_graphs.set_matplotlib_param('double')
+fig, ax = plt.subplots()
+
+x2fit = []
+y2fit = []
+
+for key,m in data[key_process].items():
+    
+    mask = m['d'] < 0.14
+    x = m['f'][mask]
+    xerr = m['err_f'][mask]
+    
+    y = m['alpha'][mask]
+    yerr = m['err_alpha'][mask]
+    
+    for x_elem in x:
+        x2fit.append(x_elem)
+    for y_elem in y:
+        y2fit.append(y_elem)
+    
+    ax.errorbar(x,y,yerr = yerr,xerr = xerr,fmt = '.')
+    
+x2fit = np.array(x2fit)
+y2fit = np.array(y2fit)
+
+# fit by a power law
+coeffs,err_coeffs = powerlaw_fit(x2fit, y2fit)
+y_th = coeffs[1]*xth**coeffs[0]
+
+label_th = r'$\alpha = ' + f'{coeffs[1]:.1f}' + r'f^{' + f'{coeffs[0]:.1f}' + r'}$'
+ax.plot(xth,y_th,'r-.',label = label_th)
+
+# fit by a power law 2 
+beta = 2
+
+popt,pcov = scipy.optimize.curve_fit(lambda x,b : affine(x, beta, b),np.log(x2fit*2*np.pi),np.log(y2fit),
+                                     bounds = (np.log(1e-5),np.log(1e2)))
+print(popt)
+coeff = popt[0]
+err_coeff = np.sqrt(np.diag(pcov))[0]
+yth = np.exp(affine(np.log(xth*2*np.pi),beta,coeff))
+
+B = np.exp(coeff)
+err_B = np.sqrt((B*err_coeff)**2)
+label_th = r'$\alpha = ' + f'{B:.2f}' + r'f^2$'
+ax.plot(xth,yth,'k-',label = label_th)
+
+ax.legend()
+ax.set_xscale('log')
+ax.set_yscale('log')
+
+ax.set_xlim([1e-1,1.5e0])
+ax.set_ylim([2e-3,1e0])
+
+ax.set_xlabel(r'$f \; \mathrm{(Hz)}$')
+ax.set_ylabel(r'$\alpha \; \mathrm{(m^{-1})}$')
+ax.grid(True, linestyle='--', alpha=0.3)
+
+# compute Gpp/h
+rho_w = 1e3
+
+Gpp_h = 0.5*B*rho_w*g**2
+print(Gpp_h)
+
+Gpp = 30
+err_G = 0
+h = Gpp/Gpp_h
+
+err_h = h*np.sqrt((err_G/Gpp)**2 + (err_B/B)**2)
+print(f'h ={h:.3f} ± {err_h:.3f}')
+
+h_min = 0.05
+h_max = 0.20
+
+B_min = 2*Gpp/h_min/rho_w/(g**2)
+B_max = 2*Gpp/h_max/rho_w/(g**2)
+y_min = B_min*(xth*2*np.pi)**2
+y_max = B_max*(xth*2*np.pi)**2
+
+ax.fill_between(xth,y_min,y_max,color = 'k',alpha = 0.2)
+
+figname = f'{fig_folder}attenuation_all_field_observation_power_law_2'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
+
 
 #%% Plot with comparison with bilayer model
 
@@ -251,11 +385,12 @@ x2fit = []
 y2fit = []
 
 for key,m in data[key_process].items():
-    x = m['f']
-    xerr = m['err_f']
+    mask = m['d'] < 0.14
+    x = m['f'][mask]
+    xerr = m['err_f'][mask]
     
-    y = m['alpha']
-    yerr = m['err_alpha']
+    y = m['alpha'][mask]
+    yerr = m['err_alpha'][mask]
     
     for x_elem in x:
         x2fit.append(x_elem)
