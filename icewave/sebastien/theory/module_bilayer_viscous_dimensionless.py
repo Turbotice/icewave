@@ -261,6 +261,85 @@ def get_wavevector_theory(freq,h,rho_1,rho_2,nu_1,nu_2,display=True):
 
 #--------------------------------------------------------------------------------------------------------
 
+def get_wavevector_theory_Newton(freq, h, rho_1, rho_2, nu_1, nu_2, display=True):
+    """Compute wavevector using viscous bilayers for a given set of frequencies."""
+    
+    params_array = np.array([(f_ex, h, rho_1, rho_2, nu_1, nu_2) for f_ex in freq])
+    dimensionless_array = np.array([dim_numbers(params) for params in params_array]) 
+    omega_array = 2 * np.pi * freq
+    k0_array = omega_array**2 / g
+    
+    # Direct complex initial guess
+    initial_guess = 1.2 + 0.1j 
+    k_array = np.zeros(len(freq), dtype=complex)
+    
+    for i, dimensionless in enumerate(dimensionless_array):
+        try:
+            # Secant method handles complex numbers natively
+            root = scipy.optimize.newton(
+                det_M, 
+                initial_guess, 
+                args=(dimensionless,), 
+                tol=1e-12, 
+                maxiter=100
+            )
+        except RuntimeError:
+            if display:
+                print(f"Warning: Convergence failed at f = {freq[i]} Hz")
+            root = initial_guess  # Fallback to previous value
+        
+        if display:
+            print(f'Freq {freq[i]:.2f} Hz -> Root kappa = {root:.5f}')
+        
+        # Warm-start for the next frequency step
+        initial_guess = root 
+        k_array[i] = root * k0_array[i]
+        
+    return k_array
+
+
+#--------------------------------------------------------------------------------------------------------
+
+def min_singular_value(kappa_vec, dimensionless):
+    """Returns the smallest singular value of M(kappa)."""
+    kappa = kappa_vec[0] + 1j * kappa_vec[1]
+    M = define_M(kappa, dimensionless) 
+    
+    # Compute singular values without full U, V matrices for speed
+    s = np.linalg.svd(M, compute_uv=False) 
+    return s[-1] # Smallest singular value
+
+def get_wavevector_theory_svd(freq, h, rho_1, rho_2, nu_1, nu_2, display=True):
+    params_array = np.array([(f_ex, h, rho_1, rho_2, nu_1, nu_2) for f_ex in freq])
+    dimensionless_array = np.array([dim_numbers(params) for params in params_array]) 
+    omega_array = 2 * np.pi * freq
+    k0_array = omega_array**2 / g
+    
+    initial_guess = [1.0, 0.1] # [Re(kappa), Im(kappa)]
+    k_array = np.zeros(len(freq), dtype=complex)
+    
+    for i, dimensionless in enumerate(dimensionless_array):
+        # Nelder-Mead simplex search over [Re, Im] space
+        res = scipy.optimize.minimize(
+            min_singular_value, 
+            initial_guess, 
+            args=(dimensionless,), 
+            method='Nelder-Mead',
+            options={'xatol': 1e-7, 'fatol': 1e-7}
+        )
+        
+        root = res.x[0] + 1j * res.x[1]
+        
+        if display:
+            print(f'Freq {freq[i]:.2f} Hz -> Root kappa = {root:.5f} (min SVD = {res.fun:.2e})')
+            
+        initial_guess = res.x  # Update warm-start vector
+        k_array[i] = root * k0_array[i]
+        
+    return k_array
+
+#--------------------------------------------------------------------------------------------------------
+
 def define_M_hat(kappa,dimensionless):
     """ Create matrix for dispersion relation 
     Inputs : - kappa, float, dimensionless wavevector value
