@@ -241,15 +241,17 @@ def beam_profile_theory(x, F=1, E=1e9, L=8e-2, w=4e-2, h=4e-3):
 
 %matplotlib inline
 plt.figure()
-plt.plot(dict_results['plate_E3.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['xmean'], dict_results['plate_E3.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['uz_mean'],'.')#/np.max(np.abs(dict_results['plate_E3.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['uz_mean'])),'.')
+plt.plot(dict_results['plate_E3.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['xmean'], dict_results['plate_E3.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['uz_mean'],'.', color='tab:blue', label='Deflection from FEM')#/np.max(np.abs(dict_results['plate_E3.0GPa_L80mm_w40mm_h4.00mm_Fz-10.0N.vtk']['uz_mean'])),'.')
 hval=4e-3
 wval=4e-2
 Lval=8e-2
 Eval=3e9
 xvals=np.linspace(0,Lval)
-plt.plot(xvals, beam_profile_theory(xvals, F=-10, E=Eval, L=Lval, w=wval, h=hval))#/np.abs(beam_profile_theory(Lval/2,  F=-10, E=Eval, L=Lval, w=wval, h=hval)))
-
-
+plt.plot(xvals, beam_profile_theory(xvals, F=-10, E=Eval, L=Lval, w=wval, h=hval), color='tab:orange', label='Deflection from beam elastic theory')#/np.abs(beam_profile_theory(Lval/2,  F=-10, E=Eval, L=Lval, w=wval, h=hval)))
+plt.ylabel(r'$\xi$ (x) [m]')
+plt.xlabel('$x$ [m]')
+plt.legend()
+plt.show()
 
 #%%
 # verif que pour 2 modules d'young differents la forme de la plaque déformée est qualitativement la même
@@ -371,12 +373,79 @@ for i in range(len(arr_h_mm)):
 
 arr_EeffsurE = arrEeffsurE_from_arrthicknesses(arr_h_mm=arr_h_mm,Fz=Fz,E_GPa=E_GPa,L_mm=L_mm,w_mm=w_mm)
 
-plt.plot(arr_h_mm, arr_EeffsurE,'o',label='L=12cm')
+plt.plot(arr_h_mm, arr_EeffsurE,'o',label='L=16cm')
 
 plt.xlabel('h [mm]')
 plt.ylabel('Eeff/E')
-plt.xlim(0,7)
-plt.ylim(0,4)
+plt.xlim(0,15)
+plt.ylim(0,6)
+#plt.plot([],[],'o',color='tab:blue',label='simus')
+#plt.loglog()
+plt.legend()
+# %% tracé avec h/L en abscisse
+# pour plaque de 8 cm
+arr_h_mm = np.array([1,2,3,4,6,8,10,12,15,20,40])
+
+Fz = -2
+E_GPa=3
+L_mm=80
+w_mm=40
+
+for i in range(len(arr_h_mm)):
+    h_mm = arr_h_mm[i]
+    
+    dict_results_new = add_FEMresults_todict(E_GPa=E_GPa,L_mm=L_mm,w_mm=w_mm,h_mm=h_mm,Fz=Fz, dict_results=dict_results)
+
+
+arr_EeffsurE = arrEeffsurE_from_arrthicknesses(arr_h_mm=arr_h_mm,Fz=Fz,E_GPa=E_GPa,L_mm=L_mm,w_mm=w_mm)
+plt.plot(arr_h_mm/L_mm, arr_EeffsurE,'o',label='L=8cm')
+
+"""xvals = np.linspace(1e-2,5e-1)
+yvals = 1/((1-np.tanh(np.pi*w_mm/(2*L_mm))*0.3**3)*(1+(5/6)*xvals**2))
+plt.plot(xvals,yvals, label='formule farfelue (ref?)')"""
+
+# pour plaque de 12 cm
+
+arr_h_mm = np.array([1,2,3,4,6,8,10,15,20,40])
+
+Fz = -2
+E_GPa=3
+L_mm=120
+w_mm=40
+
+for i in range(len(arr_h_mm)):
+    h_mm = arr_h_mm[i]
+    
+    dict_results_new = add_FEMresults_todict(E_GPa=E_GPa,L_mm=L_mm,w_mm=w_mm,h_mm=h_mm,Fz=Fz, dict_results=dict_results)
+
+
+arr_EeffsurE = arrEeffsurE_from_arrthicknesses(arr_h_mm=arr_h_mm,Fz=Fz,E_GPa=E_GPa,L_mm=L_mm,w_mm=w_mm)
+
+plt.plot(arr_h_mm/L_mm, arr_EeffsurE,'o',label='L=12cm')
+
+# pour plaque de 16 cm
+
+arr_h_mm = np.array([1,2,3,4,6,8,10])
+
+Fz = -2
+E_GPa=3
+L_mm=160
+w_mm=40
+
+for i in range(len(arr_h_mm)):
+    h_mm = arr_h_mm[i]
+    
+    dict_results_new = add_FEMresults_todict(E_GPa=E_GPa,L_mm=L_mm,w_mm=w_mm,h_mm=h_mm,Fz=Fz, dict_results=dict_results)
+
+
+arr_EeffsurE = arrEeffsurE_from_arrthicknesses(arr_h_mm=arr_h_mm,Fz=Fz,E_GPa=E_GPa,L_mm=L_mm,w_mm=w_mm)
+
+plt.plot(arr_h_mm/L_mm, arr_EeffsurE,'o',label='L=16cm')
+
+plt.xlabel('h/L')
+plt.ylabel('Eeff/E')
+#plt.xlim(0,0.15)
+plt.ylim(0,6)
 #plt.plot([],[],'o',color='tab:blue',label='simus')
 #plt.loglog()
 plt.legend()

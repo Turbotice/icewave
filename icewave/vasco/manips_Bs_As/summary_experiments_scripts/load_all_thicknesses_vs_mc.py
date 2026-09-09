@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import os
 import pickle
+from scipy.optimize import curve_fit
 
 matplotlib.rcParams['font.sans-serif'] = "Times New Roman"
 # %%
@@ -132,10 +133,27 @@ plt.title('critical "force" (in grams) vs thickness (mm)')
 plt.legend()
 plt.savefig(sigmac_dir_path + f'mc_eff_vs_h_all_results_labeled_loglog.pdf',dpi=300)
 plt.show()
+
 #%% même plot mais avec differentes couleurs suivant les temperatures
+
+def func_Fc(h, sigmac):
+    w=4e-2
+    L=8e-2
+    Fc = (2/3)*(w/L)*sigmac * (h**2)
+    return Fc
+
+def flatten_list(nested_list):
+    flattened = [item for sublist in nested_list for item in sublist]
+    return flattened
 
 Lsample2plot = 8e-2
 legendeachserie=False
+
+listcolor = []
+arrx2plot = []
+arry2plot = []
+arryerr2plot = []
+arrxerr2plot = []
 
 plt.figure()
 for i in range(len(dates)):
@@ -145,10 +163,45 @@ for i in range(len(dates)):
     else:
         color = 'r'
     if L_samples[i]==Lsample2plot:
+
+        x2plot = np.array(dict_all_results['dict_results_'+dates[i]]['thicknesses_avg']) * 1e-3
+        y2plot = dict_all_results['dict_results_'+dates[i]]['mc_avg_eff'] * 1e-3 * 9.81
+        yerr2plot = dict_all_results['dict_results_'+dates[i]]['mc_err'] * 1e-3 * 9.81
+        xerr2plot = np.array(dict_all_results['dict_results_'+dates[i]]['thicknesses_std']) * 1e-3
+        """
         if legendeachserie:
-            plt.errorbar(dict_all_results['dict_results_'+dates[i]]['thicknesses_avg'], dict_all_results['dict_results_'+dates[i]]['mc_avg_eff'], yerr=dict_all_results['dict_results_'+dates[i]]['mc_err'], xerr=dict_all_results['dict_results_'+dates[i]]['thicknesses_std'],linestyle='',marker='o', color=color,ecolor='k',label=dates[i]+' , T = '+str(temperature_samples[i])+' °C')
+            plt.errorbar(x2plot, y2plot, yerr=yerr2plot, xerr=xerr2plot,linestyle='',marker='o', color=color,ecolor='k',label=dates[i]+' , T = '+str(temperature_samples[i])+' °C')
         else:
-            plt.errorbar(dict_all_results['dict_results_'+dates[i]]['thicknesses_avg'], dict_all_results['dict_results_'+dates[i]]['mc_avg_eff'], yerr=dict_all_results['dict_results_'+dates[i]]['mc_err'], xerr=dict_all_results['dict_results_'+dates[i]]['thicknesses_std'],linestyle='',marker='o', color=color,ecolor='k')
+            plt.errorbar(x2plot, y2plot, yerr=yerr2plot, xerr=xerr2plot,linestyle='',marker='o', color=color,ecolor='k')
+        """
+        listcolor.append([color] * len(x2plot))
+        arrx2plot.append(list(x2plot))
+        arry2plot.append(list(y2plot))
+        arryerr2plot.append(list(yerr2plot))
+        arrxerr2plot.append(list(xerr2plot))
+
+listcolor = flatten_list(listcolor)
+arrx2plot = np.array(flatten_list(arrx2plot))
+arry2plot = np.array(flatten_list(arry2plot))
+arryerr2plot = np.array(flatten_list(arryerr2plot))
+arrxerr2plot = np.array(flatten_list(arrxerr2plot))
+
+
+cold_indices_forfit = np.where((np.array(listcolor)=='b')&(np.logical_not(np.isnan(arrx2plot)))&(np.logical_not(np.isnan(arry2plot))))
+warm_indices_forfit = np.where((np.array(listcolor)=='r')&(np.logical_not(np.isnan(arrx2plot)))&(np.logical_not(np.isnan(arry2plot))))
+popt_cold, pcov_cold = curve_fit(func_Fc, arrx2plot[cold_indices_forfit], arry2plot[cold_indices_forfit])
+popt_warm, pcov_warm = curve_fit(func_Fc, arrx2plot[warm_indices_forfit], arry2plot[warm_indices_forfit])
+sigmac_avg_cold = popt_cold[0]
+sigmac_err_cold = np.sqrt(pcov_cold[0][0])
+sigmac_avg_warm = popt_warm[0]
+sigmac_err_warm = np.sqrt(pcov_warm[0][0])
+
+plt.errorbar(arrx2plot, arry2plot, arryerr2plot, arrxerr2plot, linestyle='', marker='', ecolor='gray', capsize=3)
+plt.scatter(arrx2plot, arry2plot, c=listcolor, zorder=2)
+xvals = np.linspace(1e-3, 10e-3)
+plt.plot(xvals, func_Fc(xvals, sigmac=sigmac_avg_cold), color='b',alpha=0.5, label='Fit : $\sigma_c$='+str(np.round(1e-6*sigmac_avg_cold,2))+' +- '+str(np.round(1e-6*sigmac_err_cold,2))+' MPa')
+plt.plot(xvals, func_Fc(xvals, sigmac=sigmac_avg_warm), color='r',alpha=0.5, label='Fit : $\sigma_c$='+str(np.round(1e-6*sigmac_avg_warm,2))+' +- '+str(np.round(1e-6*sigmac_err_warm,2))+' MPa')
+
 
 if legendeachserie==False:
     plt.errorbar([],[],linestyle='',marker='o',color='b',ecolor='k',label='T$\simeq$-10°C')
@@ -156,10 +209,10 @@ if legendeachserie==False:
 
 
 
-plt.xlabel('$h$ [mm]', fontsize=15)
-plt.ylabel('$m_c$ [g]', fontsize=15)
-plt.ylim(100,8000)
-plt.xlim(1,10)
+plt.xlabel('$h$ [m]', fontsize=15)
+plt.ylabel('$F_c$ [N]', fontsize=15)
+plt.ylim(100 * 1e-3 * 9.81,8000 * 1e-3 * 9.81)
+plt.xlim(1 * 1e-3,10 * 1e-3)
 plt.loglog()
 plt.title('Critical force at fracture vs thickness', fontsize=15)
 plt.legend()
@@ -183,7 +236,11 @@ for i in range(len(dates)):
         plot=True
         color='tab:green'
     if plot:
-        plt.errorbar(dict_all_results['dict_results_'+dates[i]]['thicknesses_avg'], dict_all_results['dict_results_'+dates[i]]['mc_avg_eff'], yerr=dict_all_results['dict_results_'+dates[i]]['mc_err'], xerr=dict_all_results['dict_results_'+dates[i]]['thicknesses_std'],linestyle='',marker='o', color=color,ecolor='k',label=dates[i]+' , T = '+str(temperature_samples[i])+' °C ; L='+str(L_samples[i]))
+        x2plot = dict_all_results['dict_results_'+dates[i]]['thicknesses_avg']
+        y2plot = dict_all_results['dict_results_'+dates[i]]['mc_avg_eff']
+        yerr2plot = dict_all_results['dict_results_'+dates[i]]['mc_err']
+        xerr2plot = dict_all_results['dict_results_'+dates[i]]['thicknesses_std']
+        plt.errorbar(x2plot, y2plot, yerr=yerr2plot, xerr=xerr2plot,linestyle='',marker='o', color=color,ecolor='k',label=dates[i]+' , T = '+str(temperature_samples[i])+' °C ; L='+str(L_samples[i]))
 
 plt.xlabel('thickness (mm)')
 plt.ylabel('$m_c$ effective (g)')
@@ -238,17 +295,30 @@ plt.show()
 w = 4e-2 
 
 mask_temperature = (array_temperatures_samples==0)
+mask_size = (array_L==0.08)
+mask_thicknesserr = (thicknesses_std/thicknesses_avg)<=1/8
 
 #sigmac_array = (3/2) * (mc_avg*1e-3*9.81*array_L)/(w*(thicknesses_avg*1e-3)**2)
 #sigmac_err_array = 3 * (mc_avg*1e-3*9.81*array_L) * (thicknesses_std*1e-3)/(w*(thicknesses_avg*1e-3)**3)
 sigmac_array = (3/2) * ((mc_avg+mass_balance+mass_pilar)*1e-3*9.81*array_L)/(w*(thicknesses_avg*1e-3)**2)
 sigmac_err_array = 3 * ((mc_avg+mass_balance+mass_pilar)*1e-3*9.81*array_L) * (thicknesses_std*1e-3)/(w*(thicknesses_avg*1e-3)**3)
 
+maskplot = mask_temperature & mask_nodefect  & mask_thicknesserr & mask_size
+
+x2plot = thicknesses_avg[maskplot]
+y2plot = sigmac_array[maskplot]
+xerr2plot = thicknesses_std[maskplot]
+yerr2plot = sigmac_err_array[maskplot]
 
 plt.figure()
-plt.errorbar(thicknesses_avg[mask_temperature&mask_nodefect], sigmac_array[mask_temperature&mask_nodefect],xerr=thicknesses_std[mask_temperature&mask_nodefect],yerr=sigmac_err_array[mask_temperature&mask_nodefect],linestyle='',marker='', color=color,ecolor='k',zorder=1)
+#plt.errorbar(x2plot, y2plot,xerr=xerr2plot,yerr=yerr2plot,linestyle='',marker='', color=color,ecolor='k',zorder=1)
 # Scatter
-sc = plt.scatter(thicknesses_avg[mask_temperature&mask_nodefect], sigmac_array[mask_temperature&mask_nodefect], c=array_L[mask_temperature&mask_nodefect], cmap='jet')
+#sc = plt.scatter(x2plot, y2plot, c=array_L[maskplot], cmap='jet')
+
+
+plt.errorbar(x2plot, y2plot,xerr=xerr2plot,yerr=yerr2plot,linestyle='',marker='', color=color,ecolor='k',zorder=1)
+sc = plt.scatter(x2plot, y2plot, c='b', cmap='jet')
+
 
 # Valeurs uniques
 vals = np.unique(array_L)
@@ -268,9 +338,9 @@ handles = [
     for v in vals
 ]
 #plt.colorbar()
-#plt.xlim(0, np.nanmax(thicknesses_avg)*1.1)
-#plt.ylim(0, np.nanmax(sigmac_array)*1.1)
-plt.loglog()
+plt.xlim(0, np.nanmax(thicknesses_avg)*1.1)
+plt.ylim(0, np.nanmax(sigmac_array)*1.1)
+#plt.loglog()
 plt.xlabel('thickness (mm)')
 plt.ylabel('$\sigma_c$ (Pa)')
 plt.legend(handles=handles, title="Sample length [m]")
@@ -284,9 +354,9 @@ thicknesses_avg_normalized = thicknesses_avg*1e-3/array_L
 thicknesses_std_normalized = thicknesses_std*1e-3/array_L
 
 plt.figure()
-plt.errorbar(thicknesses_avg_normalized[mask_temperature&mask_nodefect], sigmac_array[mask_temperature&mask_nodefect],xerr=thicknesses_std_normalized[mask_temperature&mask_nodefect],yerr=sigmac_err_array[mask_temperature&mask_nodefect],linestyle='',marker='', color=color,ecolor='k',zorder=1)
+plt.errorbar(thicknesses_avg_normalized[maskplot], sigmac_array[maskplot],xerr=thicknesses_std_normalized[maskplot],yerr=sigmac_err_array[maskplot],linestyle='',marker='', color=color,ecolor='k',zorder=1)
 # Scatter
-sc = plt.scatter(thicknesses_avg_normalized[mask_temperature&mask_nodefect], sigmac_array[mask_temperature&mask_nodefect], c=array_L[mask_temperature&mask_nodefect], cmap='jet')
+sc = plt.scatter(thicknesses_avg_normalized[maskplot], sigmac_array[maskplot], c=array_L[maskplot], cmap='jet')
 
 # Valeurs uniques
 vals = np.unique(array_L)
