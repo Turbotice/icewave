@@ -199,6 +199,11 @@ sigmac_err_warm = np.sqrt(pcov_warm[0][0])
 plt.errorbar(arrx2plot, arry2plot, arryerr2plot, arrxerr2plot, linestyle='', marker='', ecolor='gray', capsize=3)
 plt.scatter(arrx2plot, arry2plot, c=listcolor, zorder=2)
 xvals = np.linspace(1e-3, 10e-3)
+
+"""plt.errorbar(arrx2plot[warm_indices_forfit], arry2plot[warm_indices_forfit], arryerr2plot[warm_indices_forfit], arrxerr2plot[warm_indices_forfit], linestyle='', marker='', ecolor='gray', capsize=3)
+plt.scatter(arrx2plot[warm_indices_forfit], arry2plot[warm_indices_forfit], c=np.array(listcolor)[warm_indices_forfit], zorder=2)
+"""
+
 plt.plot(xvals, func_Fc(xvals, sigmac=sigmac_avg_cold), color='b',alpha=0.5, label='Fit : $\sigma_c$='+str(np.round(1e-6*sigmac_avg_cold,2))+' +- '+str(np.round(1e-6*sigmac_err_cold,2))+' MPa')
 plt.plot(xvals, func_Fc(xvals, sigmac=sigmac_avg_warm), color='r',alpha=0.5, label='Fit : $\sigma_c$='+str(np.round(1e-6*sigmac_avg_warm,2))+' +- '+str(np.round(1e-6*sigmac_err_warm,2))+' MPa')
 
