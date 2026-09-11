@@ -213,11 +213,218 @@ def load_geophone_data(date,acqu_numb,path2data,geophones_table_path,channel):
 
 
 
+#----------------------------------------------------------------------------------------------
+def fn_svd ( signals , fs , xs , rang , name , issaving , *varargin ) : #varagin ??
+    """ Computes spatio-temporal Fourier Transform using SVD decomposition.
+    Arguments : 
+        - signals : matrix #dim 1 : nb_recepters, #dim 2 : time, #dim 3 : nb_emitters (sources)
+        - fs : sampling frequency in time 
+        - xs : distance between geophones (inverse of spatial sampling)
+        - rang : row used to perform decomposition using SVD method (number of singulavr values used to perform decomposition)
+        - name : title of figure showing singular values 
+        - issaving : boolean to choose to save figue showing singular values or not 
+        - varargin : optionnal argument
+        
+    Returns : 
+        
+        - f : array of frequencies, scaled
+        - k : array of wavenumber, scaled 
+        - projections_sum : amplitude of FFT of the signal in time and space, using SVD method 
+        #dim 1 : k
+        #dim 2 : f """
+    if varargin:
+        if varargin[0] == 'threshold':
+            threshold_user = varargin[1]
+        elif varargin[0] == 'rang':
+            rang = varargin[1]
+        else:
+            print('varargin(1) unknown')
+            return
+    else:
+        print('varargin empty')
+
+    Nreceiv, Nt, Nemit = signals.shape # (16, 1000, 3) (geophones, nb de valeurs, sources) # Nt not used
+
+    # Time domain fft
+    Nf = 2048
+    f = (np.arange(Nf) / Nf) * (fs if fs else 1)
+    f_axename = 'f/fs' if not fs else 'f'
+    SIGNALS = fft(signals, Nf, axis=1)
+    SIGNALS = SIGNALS[:, :Nf + 1, :]
+
+    # svd
+    # Creation matrice U S V,  D???
+    U = np.zeros((Nreceiv, Nf, Nemit), dtype=complex) # 16, 2048, 3
+    S = np.zeros((Nemit, Nf, Nemit), dtype=complex)
+    V = np.zeros((Nemit, Nf, Nemit), dtype=complex)
+    D = np.zeros((Nemit, Nf), dtype=complex)
+
+    for ii in range(Nf):
+        U[:, ii, :], S[:, ii, :], V[:, ii, :] = svd(SIGNALS[:, ii, :], full_matrices=False)
+        D[:, ii] = np.diag(S[:, ii, :])
+    for ne in range(Nemit):
+        titi = 20 * np.log10(np.abs(D[ne, :]) / np.max(np.abs(D[0, :])))
+        #plt.plot(f, titi, label=f'Slice {ne}')
+
+    if threshold_user is None: 
+        plt.xlabel('frequency (Hz)')
+        plt.ylabel('Singular values (in dB of peak value)')
+        [fcut, sigmacutsup] = plt.ginput(5)
+        fcut = [f[0]] + fcut.tolist() + [f[-1]]
+        sigmacutsup = [sigmacutsup[0]] + sigmacutsup.tolist() + [sigmacutsup[-1]]
+        sigmacutsup = np.interp(f, fcut, sigmacutsup)
+    else:
+        sigmacutsup = np.full(int(Nf/2+1), threshold_user)
+        sigmacutsup = threshold_user
+
+    for ne in range(Nemit):
+        titi = 20 * np.log10(D[ne, :] / np.max(D[0, :]))
+        idx = np.where(titi <= sigmacutsup)[0]
+        U[:, idx, ne] = 0
+
+    if issaving:
+        plt.savefig(name + '_sv')
+
+    # projection onto each singular vector
+    Nk = 2048
+    k = (np.arange(Nk) / Nk) * (2 * np.pi / xs)  if xs else np.arange(Nk + 1)
+    k_axename = 'k/ks' if not xs else 'k'
+
+    projections = ifft(U, Nk, axis=0)#np.fft.fftshift(ifft(U, Nk, axis=0), axes=0)
+    projections_sum = np.zeros((Nf, Nk, Nemit))
+
+    for kemit in rang:
+        for ii in range(Nf):
+            max_value = 1  # np.max(np.abs(projections[:, ii, kemit]))
+            projections_sum[:, ii, kemit] = np.abs(projections[:, ii, kemit]/max_value) ** 2
+
+    projections_sum = np.abs(np.mean(projections_sum, axis=2))
+
+    return f, k, projections_sum
+#----------------------------------------------------------------------------------------------
+
+def extents(f):
+    """ Computes the extents of an array, returns extremities to be used with plt.imshow """
+    delta = f[1] - f[0]
+    return [f[0] - delta/2, f[-1] + delta/2]
+
+#----------------------------------------------------------------------------------------------
+
+def wavenumbers_stein( rho_ice, h, E, nu,freq,c_w,rho_w):
+    """ This function computes the wave vectors associated to a given array of frequencies
+    It takes as arguments : 
+        - rho_ice : ice density 
+        - h : a given thickness of ice 
+        - E : Young modulus of ice
+        - nu : Poisson coefficient of ice
+        - freq : an array of frequencies, to which will correspond wave vectors 
+        - c_w : waves phase velocity
+        - rho_w : water density 
+        
+    The function returns : 
+        - k_QS : wave vectors of the flexural mode
+        - k_QS0 : wave vecotrs of the acoustic mode
+        - k_SH0 : wave vectors of the shear mode
+        - cphQS : phase velocity of the flexural mode"""
+    
+    
+    g = 9.81
+    G = E/(2*(1+nu))
+    cS0 = np.sqrt(E/(rho_ice*(1-nu**2))) # celerity of longitudinal wave
+    cSH0 = np.sqrt(G/rho_ice) # celerity of shear wave 
+    D = E*pow(h,3)/(12*(1-nu**2)) # flexural modulus
+
+    k = np.linspace(1e-6,10,200000)
+    
+    idx_zero = np.zeros(len(freq)) 
+    flag = 0
+    for kf in range(len(freq)):
+        omeg = 2*np.pi*freq[kf]
+        if omeg == 0:
+            flag = 1;
+            idx_flag = kf;
+        else:
+            cph = omeg/k # phase velocity
+            # Ludovic version
+            func = rho_w/D*(g-omeg/np.lib.scimath.sqrt((1/cph)**2 - (1/c_w)**2  )) - h*omeg**2*rho_w/D + pow(omeg/cph,4)
+            # Sebastien version (Stein 1998)
+            # func = rho_w/D*(g-omeg/np.lib.scimath.sqrt((1/cph)**2 - (1/c_w)**2  )) - h*omeg**2*rho_ice/D + pow(omeg/cph,4)
+            
+            func[func.imag != 0] = -1
+            func = func.real # keep only real part 
+            print(np.where(np.diff(np.signbit(func)))[0])
+            idx_zero[kf] = (np.where(np.diff(np.signbit(func)))[0]) # index of the array k at which func(k) = 0
+            
+    idx_zero = idx_zero.astype(int)        
+    k_QS =  k[idx_zero] # wave vector associated to flexural mode 
+    if flag:
+        k_QS[idx_flag] = 0
+        
+    k_QS0 = freq/cS0*2*np.pi # wave vector associated to longitudinal wave
+    k_SH0 = freq/cSH0*2*np.pi   # wave vector associated to shear wave
+    cphQS = freq/k_QS*2*np.pi # phase velocity of the flexural wave
+
+    
+    return k_QS, k_QS0, k_SH0, cphQS
+
+
+
+def load_geophones_data(geophones_table_path, path2data, acqu_numb):
+    
+    # Load geophones table into a dictionary
+    geophones_dict = {}
+    with open(geophones_table_path, 'r') as table_file:
+        for line in table_file:
+            if line.startswith("Num"):
+                continue  # Skip header line
+            num, geo_sn = line.strip().split()
+            # Assuming the last five digits are relevant for comparison
+            last_five_digits = geo_sn[-5:]
+            geophones_dict[last_five_digits] = num
+
+
+    # Read MiniSEED file directly
+    seismic_data_streams, miniseed_files = read_data(path2data +'/' +acqu_numb)
+
+    # Iterate over streams and rename traces
+    for i, stream in enumerate(seismic_data_streams):
+        seismic_data_streams[i] = rename_traces(stream, geophones_dict)
+
+
+    # Sort the seismic_data_streams based on the custom sorting function
+    seismic_data_streams = sorted(seismic_data_streams, key=sort_key)
+
+    # Find the largest start time (tstart) and the smallest end time (tend) among all streams
+    tstart = max([stream[0].stats.starttime for stream in seismic_data_streams])
+    tend = min([stream[-1].stats.endtime for stream in seismic_data_streams])
+
+    # Truncate all streams between tstart and tend
+    for i, stream in enumerate(seismic_data_streams):
+        for trace in stream:
+            if trace.stats.starttime < tstart:
+                trace.trim(tstart, tend, pad=True, fill_value=0)
+            elif trace.stats.endtime > tend:
+                trace.trim(tstart, tend, pad=True, fill_value=0)
+
+
+    # Extract time_vector and data_vector for the first stream outside the loop
+    first_stream = seismic_data_streams[0]
+    first_trace = first_stream[0]
+    time_array = first_trace.times() # experimental time array 
+    time_vector = convert_to_utc_times(first_trace, first_trace.times())
+    datetime_values = [datetime.utcfromtimestamp(t.timestamp) for t in time_vector] # create datetime UTC array 
+    data_vector = first_trace.data
+    start_time_utc = UTCDateTime(first_trace.stats.starttime)
+    fs = first_trace.stats.sampling_rate # acquisition frequency (Hz) 
+
+    return geophones_dict, seismic_data_streams, miniseed_files, tstart, tend, first_stream, first_trace, time_array, datetime_values, data_vector, start_time_utc, fs
 
 
 
 
-##########################################
+########################################################################
+########################################################################
+########################################################################
 # fonctions Vasco
 
 def find_9shocks(signal,typical_signal,params={'width':2 , 'distance':100 , 'threshold':1e-2 , 'height':100}):# adjust height for find_peaks
