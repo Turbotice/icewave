@@ -20,8 +20,8 @@ import pickle
 plt.close('all')
 
 
-date = '0210'
-year = '2025'
+date = '0203'
+year = '2026'
 
 #path2logfile = f'/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/{year}_BICWIN/{date}/Geophones' # arborescence pour ordi ludo
 #geophones_table_path = '/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/geophones_table'
@@ -41,11 +41,12 @@ if ordi=='adour':
 elif ordi=='dell_vasco':
 #    path2logfile = f'X:/Banquise/Vasco/Startup_kit_Stage_MSIM/data/{year}_BICWIN/{date}/Geophones' # arborescence sur storageshared
 #    geophones_table_path = f'X:/Banquise/Vasco/Startup_kit_Stage_MSIM/data/geophones_table' # arborescence sur storageshared
-    path2logfile = f'D:/BicWin2025/Data/{date}/Geophones' # arborescence sur storageshared
+    #path2logfile = f'D:/BicWin2025/Data/{date}/Geophones' # arborescence sur storageshared
+    path2logfile = f'H:/data/{date}/Geophones'
     geophones_table_path = f'X:/Banquise/Vasco/Startup_kit_Stage_MSIM/data/geophones_table' # arborescence sur storageshared
 
 
-acquisition_numbers_to_plot = [2]#[1,2,3,4]
+acquisition_numbers_to_plot = [1,2,3,4,5]#[1,2,3,4]
 
 # Define the find_coordinates function
 def find_coordinates(file_path, date, year):

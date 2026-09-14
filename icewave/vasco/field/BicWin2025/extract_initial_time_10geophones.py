@@ -74,7 +74,7 @@ elif ordi=='adour':
     pass
     #geophones_table_path = f'/media/turbots/DATA/thiou/storageshared/Banquise/Vasco/Startup_kit_Stage_MSIM/data/geophones_table'
 
-channel = 1  # 0 for E, 1 for N, 2 for Z. 
+channel = 2  # 0 for E, 1 for N, 2 for Z. 
 composante = 'Z'
 
 #files need to be organised as: data/0210/Geophones/0001/minised files

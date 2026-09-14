@@ -2,6 +2,7 @@
 import numpy as np
 import math
 from datetime import datetime
+from datetime import timedelta
 import mplcursors
 from matplotlib.widgets import RectangleSelector
 import matplotlib.pyplot as plt
@@ -24,15 +25,15 @@ icewave_path = "C:/Users/Vasco Zanchi/Documents/git_turbotice/icewave"
 sys.path.append(icewave_path)
 
 from icewave.vasco.field.BicWin2025.python_functions.sismo_analysis import read_data, convert_to_utc_times, rename_traces, sort_key, disconnect_toolbar_events, reconnect_toolbar_events, fn_svd, extents, wavenumbers_stein, load_geophones_data
-
+from icewave.vasco.tools.clickonfigures import get_n_points_anyfigure
 #%%
 %matplotlib qt
 #plt.rcParams['text.usetex'] = False
 
 #%% Set parameters 
-year = '2025'
-date = '0227' #date format, 'mmdd'
-acqu_numb = '0002' #acquisition number 
+year = '2026'
+date = '0202' #date format, 'mmdd'
+acqu_numb = '0001' #acquisition number 
 
 ordi = 'dell_vasco'
 
@@ -40,7 +41,8 @@ if ordi == 'babasse':
     path2data = os.path.join('E:/Data/',date,'Geophones/')
 elif ordi == 'dell_vasco':
 #    path2data = f'B:/Data/{date}/Geophones/'
-    path2data = f'D:/copie_BicWin25_geophones/Data/{date}/Geophones/'
+    #path2data = f'D:/copie_BicWin25_geophones/Data/{date}/Geophones/'
+    path2data = f'H:/data/{date}/Geophones/'
 elif ordi == 'adour':
     path2data = f'/media/turbots/Shack25/Data/{date}/Geophones/'
 
@@ -56,12 +58,12 @@ elif ordi=='dell_vasco':
 elif ordi=='adour':
     geophones_table_path = f'/media/turbots/DATA/thiou/storageshared/Banquise/Vasco/Startup_kit_Stage_MSIM/data/geophones_table'
 
-channel = 2  # 0 for E, 1 for N, 2 for Z. 
-composante = 'Z'
+channel = 1  # 0 for E, 1 for N, 2 for Z. 
+composante = 'N'
 
 #files need to be organised as: data/0210/Geophones/0001/minised files
 
-geophones_spacing = 3 # space between geophones, in meters 
+geophones_spacing = 6 # space between geophones, in meters 
 signal_length = 1 # duration in seconds 
 channel_dic = {
     1: "N",
@@ -222,7 +224,7 @@ for k, idx in enumerate(selected_indices):
 
 #fig.suptitle(f"Seismic Data - {start_time_utc.strftime('%Y-%m-%d %H:%M:%S')}", fontsize=16)
 # Create an instance of ZoomHandler
-zoom_handler = ZoomHandler(ax, time_vector, data_vector)
+#zoom_handler = ZoomHandler(ax, time_vector, data_vector)
 fig.canvas.mpl_connect('button_press_event', zoom_handler.on_click)
 # Enable interactive labels using mplcursors
 mplcursors.cursor(hover=True)
@@ -230,19 +232,20 @@ mplcursors.cursor(hover=True)
 plt.ion()
 plt.show(block=True)  # Use block=True to make it work better in Spyder
 
-#%% Select xlim of the plot 
+#%%
+""" Select xlim of the plot 
 Mydate = date(2024,2,11)
 time_start = datetime.combine(Mydate,time(18,47,7))
 time_end = datetime.combine(Mydate,time(18,47,35))
 ax.set_xlim([time_start, time_end])
 
-#%% Once correclty zoomed, we can save the figure 
+# Once correclty zoomed, we can save the figure 
 figname = 'Streams_all_geophones_' + channel_dic[channel] + acqu_numb
 figname = fig_folder + figname
 
 plt.savefig(figname + '.pdf',dpi = img_quality, bbox_inches = 'tight')
 plt.savefig(figname + '.png',dpi = img_quality ,bbox_inches = 'tight')
-
+"""
 
 #################################################################################
 
@@ -265,63 +268,40 @@ else:
     time_dict = {}
 
 
-composante = 'Z'
-# S101, S102, S103
-key = 'd' + date + 'a' + acqu_numb + 'tS' + '101' + composante 
-time_dict[key] = UTCDateTime("2025-02-21T16:14:11.20")
-key = 'd' + date + 'a' + acqu_numb + 'tS' + '102' + composante 
-time_dict[key] = UTCDateTime("2025-02-21T16:17:58.20")
-key = 'd' + date + 'a' + acqu_numb + 'tS' + '103' + composante 
-time_dict[key] = UTCDateTime("2025-02-21T16:22:04.00")
+#composante = 'N'
 
-# # S104, S105, S106
-key = 'd' + date + 'a' + acqu_numb + 'tS' + '104' + composante 
-time_dict[key] = UTCDateTime("2025-02-21T16:28:54.50")
-key = 'd' + date + 'a' + acqu_numb + 'tS' + '105' + composante 
-time_dict[key] = UTCDateTime("2025-02-21T16:29:00.30")
-key = 'd' + date + 'a' + acqu_numb + 'tS' + '106' + composante 
-time_dict[key] = UTCDateTime("2025-02-21T16:30:31.00")
-
-
-"""
-composante = 'E' #Z , E or N -> direction de la source
+date_origin = datetime(1970, 1, 1) # epoch datetime
+# begin the "clicking session"
+ax.set_title(f"Composante = {composante}")
+coords = get_n_points_anyfigure(fig=fig, ax=ax, n_points=6,symbol='+')
 
 # S101, S102, S103
-key = 'd' + date + 'a' + acqu_numb + 'tS' + '101' + composante 
-time_dict[key] = UTCDateTime("2025-02-27T18:26:36.60")
-key = 'd' + date + 'a' + acqu_numb + 'tS' + '102' + composante 
-time_dict[key] = UTCDateTime("2025-02-27T18:27:56.80")
+dtm = date_origin + timedelta(days=coords[0][0])
+key = 'd' + date + 'a' + acqu_numb + 'tS' + '101' + composante
+time_dict[key] = UTCDateTime(f"{dtm.year}-{dtm.month}-{dtm.day}T{dtm.hour}:{dtm.minute}:{dtm.second}.{dtm.microsecond}")
+
+dtm = date_origin + timedelta(days=coords[1][0])
+key = 'd' + date + 'a' + acqu_numb + 'tS' + '102' + composante
+time_dict[key] = UTCDateTime(f"{dtm.year}-{dtm.month}-{dtm.day}T{dtm.hour}:{dtm.minute}:{dtm.second}.{dtm.microsecond}")
+
+dtm = date_origin + timedelta(days=coords[2][0])
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '103' + composante 
-time_dict[key] = UTCDateTime("2025-02-27T18:29:03.90")
+time_dict[key] = UTCDateTime(f"{dtm.year}-{dtm.month}-{dtm.day}T{dtm.hour}:{dtm.minute}:{dtm.second}.{dtm.microsecond}")
 
-# # S104, S105, S106
-key = 'd' + date + 'a' + acqu_numb + 'tS' + '104' + composante 
-time_dict[key] = UTCDateTime("2025-02-27T18:32:49.30")
+# S104, S105, S106
+dtm = date_origin + timedelta(days=coords[3][0])
+key = 'd' + date + 'a' + acqu_numb + 'tS' + '104' + composante
+time_dict[key] = UTCDateTime(f"{dtm.year}-{dtm.month}-{dtm.day}T{dtm.hour}:{dtm.minute}:{dtm.second}.{dtm.microsecond}")
+
+dtm = date_origin + timedelta(days=coords[4][0])
 key = 'd' + date + 'a' + acqu_numb + 'tS' + '105' + composante 
-time_dict[key] = UTCDateTime("2025-02-27T18:34:02.20")
-key = 'd' + date + 'a' + acqu_numb + 'tS' + '106' + composante 
-time_dict[key] = UTCDateTime("2025-02-27T18:35:22.20")
-"""
+time_dict[key] = UTCDateTime(f"{dtm.year}-{dtm.month}-{dtm.day}T{dtm.hour}:{dtm.minute}:{dtm.second}.{dtm.microsecond}")
 
-"""
-composante = 'N' #Z , E or N -> direction de la source
+dtm = date_origin + timedelta(days=coords[5][0])
+key = 'd' + date + 'a' + acqu_numb + 'tS' + '106' + composante
+time_dict[key] = UTCDateTime(f"{dtm.year}-{dtm.month}-{dtm.day}T{dtm.hour}:{dtm.minute}:{dtm.second}.{dtm.microsecond}")
 
-# S101, S102, S103
-key = 'd' + date + 'a' + acqu_numb + 'tS' + '101' + composante 
-time_dict[key] = UTCDateTime("2025-02-27T18:26:53.90")
-key = 'd' + date + 'a' + acqu_numb + 'tS' + '102' + composante 
-time_dict[key] = UTCDateTime("2025-02-27T18:28:15.30")
-key = 'd' + date + 'a' + acqu_numb + 'tS' + '103' + composante 
-time_dict[key] = UTCDateTime("2025-02-27T18:29:26.30")
 
-# # S104, S105, S106
-key = 'd' + date + 'a' + acqu_numb + 'tS' + '104' + composante 
-time_dict[key] = UTCDateTime("2025-02-27T18:33:13.90")
-key = 'd' + date + 'a' + acqu_numb + 'tS' + '105' + composante 
-time_dict[key] = UTCDateTime("2025-02-27T18:34:30.80")
-key = 'd' + date + 'a' + acqu_numb + 'tS' + '106' + composante 
-time_dict[key] = UTCDateTime("2025-02-27T18:35:41.20")
-"""
 # Save t0 dictionnary in pickle file 
 
 savet0 = input('are you sure you want to save t0 dict ? y/n')
@@ -338,7 +318,6 @@ else:
 #%% -------------- Compute FK data ----------------------
 ###########################################################
 
-signal_length = 1 # duration in seconds
 
 # load data of intial times 
 #composante = 'Z'
@@ -358,11 +337,7 @@ if direction == 2:
     S3 = '106'
 
 # time dictionnary to be loaded
-if ordi=='babasse': 
-    base = f'E:/Data/{date}/Geophones/'
-elif ordi=='dell_vasco':
-    base = f'B:/Data/{date}/Geophones/'
-    #base = f'D:/copie_BicWin25_geophones/Data/{date}/Geophones/'
+base = path2data
 
 pkl_path = base + 't1_to_time_' + date + '_' + year  + '.pkl'
 
@@ -440,7 +415,6 @@ plt.show()
 #####################################
 
 rang = [0,1,2]
-geophones_spacing = 3 # in meters
 signals = np.transpose(seismic_matrix, (0, 2, 1))
 
 f, k, FK = fn_svd(signals, fs, geophones_spacing , rang ,'ExampleName', 0, 'threshold',-90) #plot valeurs  singuliere/freq
@@ -772,7 +746,7 @@ with open(file2save, 'wb') as file:
     pickle.dump(wave_speed, file)
 
 #%% Save (f,k) points associated to QS mode 
-saveflexural = input('are you sure you want to overwrite flexural data?')
+saveflexural = input('are you sure you want to overwrite flexural data (y/n)?')
 if saveflexural=='y':
     file2save = path2data + year + '_' + date + '_acq'+acqu_numb+ 'disp_QS_dir' + str(direction) +'.pkl'
     with open(file2save, 'wb') as file:
