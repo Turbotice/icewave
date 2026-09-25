@@ -8,6 +8,7 @@ Created on Thu Nov 20 18:53:07 2025
 import os
 import numpy as np 
 import matplotlib.pyplot as plt 
+import matplotlib.dates as mdates
 from matplotlib.collections import LineCollection
 import matplotlib.colors as colors
 import matplotlib as mpl
@@ -100,7 +101,7 @@ fs,fiber_length,facq_x = DS.get_DAS_parameters(path2DAS_param,date)
 # Load DAS data 
 path2data = f'{main_path}Data/{date}/DAS/'
 filelist = glob.glob(path2data + '*UTC.h5')
-idx_file = 1 #5 for 0211
+idx_file = 0 #5 for 0211
 file2load = filelist[idx_file]
 print(file2load)
 
@@ -148,10 +149,13 @@ cbar.update_ticks()
 offset_text = cbar.ax.yaxis.get_offset_text()
 offset_text.set_x(1)
 
+# change xticks
+ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+
 figname = f'{fig_folder}spatio_temporal_{label_UTC0}_chunk_{chunk}_general'
-# plt.savefig(figname + '.pdf', bbox_inches='tight')
-# plt.savefig(figname + '.svg', bbox_inches='tight')
-# plt.savefig(figname + '.png', bbox_inches='tight')
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.svg', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
 
 #%% Show zoomed on ZEN spatio-temporal
 
@@ -284,6 +288,10 @@ for ax_key in axd.keys():
         
         # offset_text = cbar.ax.yaxis.get_offset_text()
         # offset_text.set_x(1)
+        
+        # change xticks
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+        
 
     elif ax_key == 'bottom_left':
         
@@ -356,8 +364,8 @@ for ax_key in axd.keys():
         # offset_text.set_x(1)
 
 
-# figname = f'{fig_folder}montage_spatio_temporal_{label_UTC0}_chunk_{chunk}'
-# plt.savefig(figname + '.pdf', bbox_inches='tight')
-# plt.savefig(figname + '.svg', bbox_inches='tight')
-# plt.savefig(figname + '.png', bbox_inches='tight')
+figname = f'{fig_folder}montage_spatio_temporal_{label_UTC0}_chunk_{chunk}_shifted'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.svg', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
 
