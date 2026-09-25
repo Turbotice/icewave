@@ -51,7 +51,7 @@ if not os.path.isdir(fig_folder):
 #%% Load DAS results 
 base = f'{disk}Rimouski_2025/Data/'
 
-file2load = f'{base}/Summary/DAS/main_results_active_passive_V3.h5'
+file2load = f'{base}/Summary/DAS/main_results_active_passive_V4.h5'
 results_DAS = rw.load_dict_from_h5(file2load)
 
 # folder2active = 'F:/Rimouski_2025/DAS_article/Uncertainties/'
@@ -270,7 +270,7 @@ for i,key in enumerate(selected_acq):
         
 axs[0].set_xlabel(r'$x \; \mathrm{(m)}$')
 axs[0].set_ylabel(r'$E \; \mathrm{(GPa)}$')
-axs[0].set_ylim([3.5,6])
+axs[0].set_ylim([3.5,6.5])
 
 
 # plot h VS x
@@ -372,10 +372,10 @@ for ax in axs:
 fig.legend(ncols = 3,
               loc='outside upper center',frameon = False)
 
-figname = f'{fig_folder}Subplot_EhD_VS_x_with_uncertainties'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
+figname = f'{fig_folder}Subplot_EhD_VS_x_with_extended_uncertainties'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
  
 
 #%% compute average value of E within each region 
@@ -513,6 +513,99 @@ nu = 0.3
 D = 62.6*1e6
 h = (12*(1-nu**2)*D/E)**(1/3)
 print(h)
+
+
+#%% Plot only D(x) using passive data
+
+
+offset_fiber = 37.5
+
+selected_acq = ['acq0001','acq0003']
+x_err = 45 # in meter
+markersize = 8
+x_boarder = np.array([170,310])
+
+full_blues = mpl.colormaps['Blues'].resampled(256)
+new_blues = colors.ListedColormap(full_blues(np.linspace(0.2,1,256)))
+
+full_reds = mpl.colormaps['Reds'].resampled(256)
+new_reds = colors.ListedColormap(full_reds(np.linspace(0.2,1,256)))
+
+color_date = {}
+color_date['active'] = {'0210':new_reds(0.2),'0211':new_reds(0.4), '0212': new_reds(0.8)}
+color_date['passive'] = {'0210':new_blues(0.2),'0211':new_blues(0.6), '0212': new_blues(0.9)}
+
+set_graphs.set_matplotlib_param('single') 
+fig, ax = plt.subplots()   
+
+for date in results_DAS['passive']['corrected'].keys():
+    x = results_DAS['passive']['corrected'][date]['x']
+    D = results_DAS['passive']['corrected'][date]['D']
+    D_err = results_DAS['passive']['corrected'][date]['err_D']
+    ax.plot(x,D,'o-',
+                    color = color_date['passive'][date],mec = 'k',label = f'{date}',ms = markersize)
+    ax.fill_between(x,D - D_err,D + D_err,alpha= 0.2,color = color_date['passive'][date])
+    
+# add geophones
+for i,key in enumerate(selected_acq):
+    if i == 0:
+        ax.errorbar(geoph_results[key]['x'],geoph_results[key]['D']['max'],
+                    yerr = geoph_results[key]['D']['std'],xerr = x_err, fmt = '^',
+            color = 'tab:red',mec = 'k',ms = markersize,elinewidth = 2,label = 'geophones')
+    else:
+        ax.errorbar(geoph_results[key]['x'],geoph_results[key]['D']['max'],
+                    yerr = geoph_results[key]['D']['std'],xerr = x_err, fmt = '^',
+            color = 'tab:red',mec = 'k',ms = markersize,elinewidth = 2)
+
+# add holes
+E_mean = 4.5e9
+nu = 0.3
+D_holes = E_mean*avg_data[:,0,1]**3/12/(1-nu**2)
+err_D_holes = 3*E_mean*avg_data[:,0,1]**2*avg_data[:,1,1]/12/(1-nu**2)
+
+# ax.errorbar(avg_data[:,0,0],D_holes,xerr = avg_data[:,1,0],yerr = err_D_holes,color = 'tab:red',mec = 'k',
+#            fmt = 's',ecolor = 'tab:red',elinewidth = 2,ms = markersize,label = 'drilling',zorder = 3)
+
+ax.set_xlabel(r'$x \; \mathrm{(m)}$')
+ax.set_ylabel(r'$D \; \mathrm{(Pa.m^{3})}$')
+ax.set_ylim([-1.1e6,2.2e8])
+ax.set_xlim([0,600])
+# axs[2].set_yscale('log')
+# axs[2].set_ylim([3e6,4e8])
+
+# add vertical lines 
+ax.vlines(x_boarder,0, 1e9,linestyles = '--',colors = 'k',lw = 1)
+
+ax.legend()
+
+figname = f'{fig_folder}D_VS_x_passive_method_with_geophones'
+plt.savefig(figname + '.pdf', bbox_inches='tight')
+plt.savefig(figname + '.svg', bbox_inches='tight')
+plt.savefig(figname + '.png', bbox_inches='tight')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # =============================================================================
 #%% Archive - tests
