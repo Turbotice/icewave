@@ -57,4 +57,13 @@ def get_frame(disk = 'Backup25',year = '2025', date = None):
 
 if __name__=='__main__':
     
-    get_frame(date = '0205')
+    get_frame(date = '0212')
+
+# #%%
+
+# directory = 'F:/Rimouski_2024/Data/'
+# date = '0226'
+# filelist = glob.glob(f'{directory}{date}/Drones/**/*.MP4', recursive = True)
+
+# for file in filelist:
+#     save_frame_from_video(file)
