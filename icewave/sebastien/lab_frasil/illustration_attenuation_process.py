@@ -155,7 +155,7 @@ ax.set_ylim([0,5])
 ax.set_xlim([-150,150])
 # ax.plot(k[unravel_coords[0]],f_demod,'ro')
 # ax.axvline(k0,ymin = 0, ymax = 1,ls = '--', color = 'r', lw = 2)
-ax.axhline(f_demod,xmin = 0, xmax = 1,ls = '--', color = 'r', lw = 2)
+# ax.axhline(f_demod,xmin = 0, xmax = 1,ls = '--', color = 'r', lw = 2)
 
 divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="2%", pad=0.1)
@@ -166,21 +166,25 @@ ax.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$',labelpad = 5)
 ax.set_ylabel(r'$f \; \mathrm{(Hz)}$',labelpad = 5)
 
 # Show lorentzian fit 
-axins = inset_axes(ax,width = '40%',height = '40%', loc = 'lower left',
-                   bbox_to_anchor=(0.1, 0.1, 1, 1),
-                   bbox_transform=ax.transAxes)
-axins.plot(-k,cut*1e3,'o-')
-axins.plot(-k_fit,yth*1e3,'r',label = label_fit)
-# axins.legend()
+# axins = inset_axes(ax,width = '40%',height = '40%', loc = 'lower left',
+#                    bbox_to_anchor=(0.1, 0.1, 1, 1),
+#                    bbox_transform=ax.transAxes)
+# axins.plot(-k,cut*1e3,'o-')
+# axins.plot(-k_fit,yth*1e3,'r',label = label_fit)
+# # axins.legend()
 
-# axins.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$')
-# axins.set_ylabel(r'$|\hat{\xi}|(k) \; \mathrm{(mm)}$')
-axins.set_xlim([k0 -150, k0 +150])
+# # axins.set_xlabel(r'$k \; \mathrm{(rad.m^{-1})}$')
+# # axins.set_ylabel(r'$|\hat{\xi}|(k) \; \mathrm{(mm)}$')
+# axins.set_xlim([k0 -150, k0 +150])
 
 
-figname = f'{fig_folder}FK_insert_lorentzian_{suffixe}'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.png', bbox_inches='tight')
+# figname = f'{fig_folder}FK_insert_lorentzian_{suffixe}'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
+
+# figname = f'{fig_folder}FK_no_insert_{suffixe}'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
 
 
 # =============================================================================
@@ -245,7 +249,7 @@ plt.savefig(figname + '.png', bbox_inches='tight')
 # =============================================================================
 # %% Demodulate profile and fit by an exponential 
 # =============================================================================
-demod_profile = np.mean(data['spatio']*np.exp(1j*2*np.pi*f_demod*data['t']),axis = -1)
+demod_profile = np.sum(data['spatio']*np.exp(1j*2*np.pi*f_demod*data['t']),axis = -1)
 
 bounds = ([1e-6,1e-4],[1e-1,1e2])
 x = data['x']
@@ -259,23 +263,27 @@ set_graphs.set_matplotlib_param('single')
 fig, ax = plt.subplots()
 ax.plot(x,np.real(demod_profile))
 # ax.plot(x,abs(demod_profile))
-ax.plot(xth,yth,'r')
+# ax.plot(xth,yth,'r')
 
 ax.set_xlabel(r'$x \; \mathrm{(m)}$',labelpad = 5)
 ax.set_ylabel(r'$\hat{\xi}(x) \; \mathrm{(mm)}$',labelpad = 5)
-ax.set_ylim([-2e-3,3.5e-3])
+ax.set_ylim([-2.0,2.0])
 
-axins = inset_axes(ax, width="40%", height="40%")
-axins.plot(x,abs(demod_profile),color = 'k')
-axins.plot(xth,yth,'r')
-axins.set_yscale('log')
-
-axins.set_xlabel(r'$x$')
-axins.set_ylabel(r'$|\hat{\xi}|$')
-
-figname = f'{fig_folder}Demod_profile_insert_log_amp_{suffixe}'
+figname = f'{fig_folder}Demod_profile_{suffixe}_no_exponential'
 plt.savefig(figname + '.pdf', bbox_inches='tight')
 plt.savefig(figname + '.png', bbox_inches='tight')
+
+# axins = inset_axes(ax, width="40%", height="40%")
+# axins.plot(x,abs(demod_profile),color = 'k')
+# axins.plot(xth,yth,'r')
+# axins.set_yscale('log')
+
+# axins.set_xlabel(r'$x$')
+# axins.set_ylabel(r'$|\hat{\xi}|$')
+
+# figname = f'{fig_folder}Demod_profile_insert_log_amp_{suffixe}'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.png', bbox_inches='tight')
 
 
 
