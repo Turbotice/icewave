@@ -53,7 +53,7 @@ down_sampling_factor = 10
 #%% Set fig_folder path 
 
 # fig_folder = 'U:/Data/0211/DAS/Figures_article/CWT/'
-fig_folder = 'F:/Rimouski_2025/Data/Summary/DAS/Uncertainties/'
+fig_folder = 'F:/Rimouski_2025/Data/Summary/DAS/Extended_uncertainties/'
 if not os.path.isdir(fig_folder):
     os.mkdir(fig_folder)
     
@@ -184,16 +184,16 @@ figname = f'{fig_folder}D_VS_x_swell_correction_comparison'
 
 #%% Load Ludo's results with uncertainties 
 
-folder2active = 'F:/Rimouski_2025/DAS_article/Uncertainties/'
-file2load = f'{folder2active}active_E_modulus_results_uncertainties.pkl'
+folder2active = 'F:/Rimouski_2025/DAS_article/Extended_uncertainties/'
+file2load = f'{folder2active}active_E_modulus_results_extended_uncertainties.pkl'
 with open(file2load,'rb') as pf:
     E_results = pickle.load(pf)
     
-file2load = f'{folder2active}active_thickness_results_uncertainties.pkl'
+file2load = f'{folder2active}active_thickness_results_extended_uncertainties.pkl'
 with open(file2load,'rb') as pf:
     h_results = pickle.load(pf)
 
-file2load = f'{folder2active}active_flex_modulus_results_uncertainties.pkl'
+file2load = f'{folder2active}active_flex_modulus_results_extended_uncertainties.pkl'
 with open(file2load,'rb') as pf:
     D_results = pickle.load(pf)
 
@@ -228,6 +228,16 @@ for key_date in ['0211','0212']:
     results['active'][key_date].update(D_results[key_date])
     results['active'][key_date]['x'] = results['active'][key_date]['x'] - offset_fiber
     
+# new version for extended uncertainties
+# results['active'] = {}
+# for key_date in ['0211','0212']:
+#     if key_date == '0212':
+#         results['active'][key_date] = {}
+#         results['active'][key_date].update(E_results[key_date])
+#         results['active'][key_date].update(h_results[key_date])
+#         results['active'][key_date].update(D_results[key_date])
+#         results['active'][key_date]['x'] = results['active'][key_date]['x'] - offset_fiber
+        
     
     # results['active'][key_date] = {'E':E_results[key_date],'h':h_results[key_date],'D':D_results[key_date]}
 
@@ -248,7 +258,7 @@ for key_date in results['active'].keys():
     results['active'][key_date]['longitude'] = Long
     
 #%%
-filename = 'F:/Rimouski_2025/Data/Summary/DAS/main_results_active_passive_V3.h5'
+filename = 'F:/Rimouski_2025/Data/Summary/DAS/main_results_active_passive_V4.h5'
 rw.save_dict_to_h5(results, filename)
 
 filename = filename.replace('.h5','.pkl')

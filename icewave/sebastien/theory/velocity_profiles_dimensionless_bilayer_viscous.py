@@ -89,6 +89,23 @@ def w_dimensionless(kappa,coeffs,dimensionless,z,fluid_idx):
         
     return u
 
+def vgrad_dimensionless(kappa,coeffs,dimensionless,z,fluid_idx,i=2,j=1):
+    """
+    Compute velocity gradient ∂_i u_j, i=1 (x), i=2 (y)
+    First order, only compute ∂_z u_x and ∂_z u_z
+    """
+    [A_1,B_1,C_1,D_1,A_2,C_2] = coeffs
+    gamma, delta_1, delta_2, r = dimensionless    
+
+    m_1 = np.sqrt(kappa**2 - 1j*1/delta_1**2)
+    m_2 = np.sqrt(kappa**2 - 1j*1/delta_2**2)
+
+    if fluid_idx == 1:
+        pass
+        #∂_z u_j ~ i nu_j/w ∂_zz Omega_j
+        #∂_z v_j ~ nu_j/w k ∂_z Omega_j
+    return None
+
 def vorticity_dimensionless(kappa,coeffs,dimensionless,z,fluid_idx):
     [A_1,B_1,C_1,D_1,A_2,C_2] = coeffs
     gamma, delta_1, delta_2, r = dimensionless    

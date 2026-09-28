@@ -19,7 +19,8 @@ import icewave.field.gps as gps
 
 import argparse
 
-def gen_parser():    
+def gen_parser():
+    # To pass arguments in command line
     parser = argparse.ArgumentParser(description="Manipulate multi instruments data")
     parser.add_argument('-date', dest='date', type=str,default='0226',help='select date to process data')
     parser.add_argument('-year', dest='year', type=str,default='2025',help='select year to process data')
@@ -28,6 +29,7 @@ def gen_parser():
 
 #    print(parser)   
     args = parser.parse_args()
+    
     print(args)
     return args
 
