@@ -14,7 +14,7 @@ from scipy.interpolate import interp1d
 plt.close('all')
 
 year = '2026'
-date = '0202' #date format, 'mmdd'
+date = '0206' #date format, 'mmdd'
 acqu_numb = '0001' #acquisition number 
 equation = 'stein'
 
@@ -100,12 +100,12 @@ plt.xlabel(r'$k_{QS} \: \mathrm{(rad.m^{-1})}$')
 plt.ylabel(r'$f \: \mathrm{(Hz)}$')
 
 
-plt.plot(kQS,hydroelastic(kQS,popt[0]))
+plt.plot(kQS,hydroelastic(kQS,popt[0]),label=r'fit $\omega^2 = gk + D/\rho k^5$')
 
 plt.legend()
 plt.title('Comparison and Average of kQS1 and kQS2')
-plt.savefig(f'{path2data}/Figures/plot_flexural_bidir.pdf',dpi=300)
-plt.savefig(f'{path2data}/Figures/plot_flexural_bidir.png',dpi=300)
+plt.savefig(f'{path2data}/Figures/plot_flexural_bidir_acq{int(acqu_numb)}.pdf',dpi=300)
+plt.savefig(f'{path2data}/Figures/plot_flexural_bidir_acq{int(acqu_numb)}.png',dpi=300)
 plt.show()
 
 #%% Load data for inversion 

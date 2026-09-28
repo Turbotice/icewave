@@ -32,7 +32,7 @@ from icewave.vasco.tools.clickonfigures import get_n_points_anyfigure
 
 #%% Set parameters 
 year = '2026'
-date = '0202' #date format, 'mmdd'
+date = '0213' #date format, 'mmdd'
 acqu_numb = '0001' #acquisition number 
 
 ordi = 'dell_vasco'
@@ -63,7 +63,7 @@ composante = 'N'
 
 #files need to be organised as: data/0210/Geophones/0001/minised files
 
-geophones_spacing = 6 # space between geophones, in meters 
+geophones_spacing = 5 # space between geophones, in meters 
 signal_length = 1 # duration in seconds 
 channel_dic = {
     1: "N",
@@ -129,7 +129,7 @@ y_fft = FFT[:len(FFT)//2]
 
 fig,ax = plt.subplots()
 ax.plot(x_fft,np.abs(y_fft))
-
+plt.show()
 
 
 ##############################################################################################
@@ -168,14 +168,14 @@ fig.tight_layout()
 
 
 #%% Set xlim for all subplots
-
+"""
 Mydate = date(2024,2,10)
 time_start = datetime.combine(Mydate,time(18,47,7))
 time_end = datetime.combine(Mydate,time(18,47,35))
 xlimits = [time_start, time_end]
 
 for k in range(0,3):
-    ax[k].set_xlim([time_start, time_end])
+    ax[k].set_xlim([time_start, time_end])"""
     
 #%% Save current figure
 fig.tight_layout()
@@ -240,12 +240,12 @@ time_end = datetime.combine(Mydate,time(18,47,35))
 ax.set_xlim([time_start, time_end])
 
 # Once correclty zoomed, we can save the figure 
+"""
 figname = 'Streams_all_geophones_' + channel_dic[channel] + acqu_numb
 figname = fig_folder + figname
 
 plt.savefig(figname + '.pdf',dpi = img_quality, bbox_inches = 'tight')
 plt.savefig(figname + '.png',dpi = img_quality ,bbox_inches = 'tight')
-"""
 
 #################################################################################
 
@@ -325,7 +325,7 @@ else:
 # ch = channel_dic[channel]
 flexure_wave = composante == 'Z' # 1 to pick the dispersion curves of the flexure wave, 0 to pick those of the other 2 modes
 horizontal_wave = not flexure_wave
-direction = 2 # 1 ou 2 
+direction = 1 # 1 ou 2 
 # assign a string to S values depending on the direction
 if direction == 1 :
     S1 = '101' 
@@ -427,7 +427,7 @@ elif direction == 2:
     FK_normalized = np.flipud(FK / np.max(FK))
 
 # Unwrapping Spectrum
-nb_stacking = 1 # number of times we want to stack the FK plot horizontally
+nb_stacking = 2 # number of times we want to stack the FK plot horizontally
 idx_stacking = 1
 FK_uwp = np.vstack((FK_normalized, FK_normalized))
 while idx_stacking < nb_stacking :
@@ -469,6 +469,8 @@ fig, ax1 = plt.subplots(1, 1, figsize=fig_size)
 # Set parameters 
 threshold = 0.2 # minimum relative amplitude to detect a local maximum in the dispersion relation FK plot 
 precision_k = [0.03,0.025] # precision over k values (when searching for a local maximum)
+precision_k = [0.1,0.1] # precision over k values (when searching for a local maximum)
+
 prec = precision_k[flexure_wave]
 # 0: horizontal_wave 1: flexure_wave
 semirange_freq = 5 # semi-range of frequencies for horizontal waves

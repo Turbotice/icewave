@@ -14,13 +14,13 @@ import numpy as np
 import pickle
 #%% mettre les figures dans des fenetres
 #import matplotlib
-#matplotlib.use('TkAgg')
+%matplotlib qt
 #%% code
 
 plt.close('all')
 
 
-date = '0203'
+date = '0206'
 year = '2026'
 
 #path2logfile = f'/Users/moreaul/Documents/Travail/Projets_Recherche/MSIM/data/{year}_BICWIN/{date}/Geophones' # arborescence pour ordi ludo
@@ -46,7 +46,7 @@ elif ordi=='dell_vasco':
     geophones_table_path = f'X:/Banquise/Vasco/Startup_kit_Stage_MSIM/data/geophones_table' # arborescence sur storageshared
 
 
-acquisition_numbers_to_plot = [1,2,3,4,5]#[1,2,3,4]
+acquisition_numbers_to_plot = [1]#[1,2,3,4]
 
 # Define the find_coordinates function
 def find_coordinates(file_path, date, year):
