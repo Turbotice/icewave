@@ -217,9 +217,9 @@ midpoints = [(bounds[i] + bounds[i+1])/2 for i in range(len(bounds) - 1)]
 cbar.set_ticks(midpoints)
 cbar.set_ticklabels([f'{mid:.1f}' for mid in midpoints])
     
-figname = fig_folder + 'f_center_wavefield_VS_Kyle_ellipsoid'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
+# figname = fig_folder + 'f_center_wavefield_VS_Kyle_ellipsoid'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
     
 
 #%% Figure 8 - Supplementary - Knocking resonance freq VS Kyle spheric model
@@ -253,9 +253,9 @@ midpoints = [(bounds[i] + bounds[i+1])/2 for i in range(len(bounds) - 1)]
 cbar.set_ticks(midpoints)
 cbar.set_ticklabels([f'{mid:.1f}' for mid in midpoints])
     
-figname = fig_folder + 'f_center_wavefield_VS_Kyle_thin_disk'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
+# figname = fig_folder + 'f_center_wavefield_VS_Kyle_thin_disk'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
 
 #%% Referee answer - f0 VS h - Kyle elliptical model 
 
@@ -488,9 +488,9 @@ ax.set_ylim(0,0.7)
 ax.set_xlabel(r'$\frac{f}{f_0}$',labelpad = 5)
 ax.set_ylabel(r'$\frac{A_o}{A_w}$',labelpad = 5) 
 
-figname = fig_folder + 'ratio_Ao_Aw_VS_ratio_fex_f0_H_dependancy'
-plt.savefig(figname + '.pdf', bbox_inches='tight')
-plt.savefig(figname + '.svg', bbox_inches='tight')
+# figname = fig_folder + 'ratio_Ao_Aw_VS_ratio_fex_f0_H_dependancy'
+# plt.savefig(figname + '.pdf', bbox_inches='tight')
+# plt.savefig(figname + '.svg', bbox_inches='tight')
 
 #%% Figure 2 : Wave field, picture and FFT spectrum 
 
