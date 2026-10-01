@@ -140,6 +140,9 @@ if system_loc=='windows_server':
     file_echelles_fracture = 'R:/Gre25/Data/0512/cameras/ref_matin/echelles.txt'
 elif system_loc=='linux_server':
     file_echelles_fracture = '/media/turbots/GreDisk/Gre25/Data/0512/cameras/ref_matin/echelles.txt'
+elif system_loc=='windows_local':
+    file_echelles_fracture = 'D:/Grenoble/Gre25/Data/0512/cameras/ref_matin/echelles.txt'
+
 data_ech_frac = np.loadtxt(file_echelles_fracture,skiprows=1,usecols=range(5))
 
 d = {}

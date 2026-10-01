@@ -39,7 +39,7 @@ frame_frac = 2178
 ypix_surf = 400
 alpha0_deg = 19.5 # angle caméra en degrés
 
-system_loc = 'windows_server'
+system_loc = 'windows_local'
 
 #if computer=='DellVasco':
 #    general_folder = f'K:/Gre24/Data/{date}/manip_fracture/Acquisition_{str(acq_num)}/camera_{camera_SN}/'
@@ -50,7 +50,8 @@ if system_loc=='linux_server':
     general_folder = f'/media/turbots/GreDisk/Gre25/Data/{date}/cameras/frac/image_sequence/'
 elif system_loc=='windows_server':
     general_folder = f'R:/Gre25/Data/PIV_results/{date}_frac_{name_frac_file}/'
-
+elif system_loc=='windows_local':
+    general_folder = f'D:/Grenoble/Gre25/Data/PIV_results/{date}_frac_{name_frac_file}/'
 
 path2data = general_folder
 
