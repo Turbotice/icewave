@@ -40,12 +40,17 @@ arr_D_mm = df['D_mm'].values
 arr_T_core_celsius = convert_to_arrayoffloats(df['T_core_celsius'].values)
 arr_mass_kg = 1e-3 * df['mass_g'].values
 arr_mass_kg_deduced = convert_to_arrayoffloats(df['mass_kg_deduced'].values)
+
+arr_density_kgperm3 = arr_mass_kg_deduced/(arr_L_mm*1e-3*np.pi*(arr_D_mm*1e-3/2)**2)
+
+
 arr_loc_core = df['loc_core'].values
+arr_salinity = convert_to_arrayoffloats(df['Salinity_PSU'].values)
 
 #indices2plot = np.where((arr_qualite_test == 'ok')|(arr_qualite_test=='perfect'))[0]
 mask_quality_perfect = (arr_qualite_test=='perfect')
 mask_quality_ok = np.array(['ok' in x for x in arr_qualite_test])
-mask_quality = mask_quality_ok|mask_quality_perfect
+mask_quality = mask_quality_ok | mask_quality_perfect
 
 arr_sigma_c = 1e-6 * (2*arr_Fc_kN*1e3)/(np.pi*arr_D_mm*1e-3*arr_L_mm*1e-3)
 
@@ -71,6 +76,7 @@ plt.ylim(0,np.nanmax(arr_sigma_c[mask_quality])*1.1)
 plt.title('Sigma_c vs T')
 plt.savefig(f'{dir_path}sigmac_vs_T.pdf', dpi=300)
 plt.show()
+
 
 # %%
 
@@ -134,6 +140,90 @@ dict_fig1['title'] = 'sigma_c vs T for cores in different locations'
 
 graphes.errorbar_categories(dict_params=dict_fig1)
 
+
+#%% Plot de sigma c vs salinité, avec les longueurs de carottes en differentes couleurs
+
+mask_plot = mask_quality
+
+plt.figure(figsize=(15,9))
+plt.subplot(2,2,1)
+scatter = plt.scatter(
+    arr_salinity[mask_plot]/(arr_density_kgperm3[mask_plot]),
+    arr_sigma_c[mask_plot],
+    c=arr_L_mm[mask_plot],
+    cmap='viridis'  # ou un autre colormap comme 'plasma', 'coolwarm', etc.
+)
+
+# Ajouter une barre de couleurs
+plt.colorbar(scatter, label='L values [mm]')
+plt.xlabel(r'Salinity/$\rho_{ice}$ [PSU $\cdot kg^{-1} \cdot m^{3}$]', fontsize=15)
+plt.ylabel(r'$\sigma_c$ [MPa]', fontsize=15)
+#plt.title('Tensile (ring) strength vs cores salinity', fontsize=15)
+plt.ylim(-0.02,0.8)
+#plt.xlim(-0.2,8)
+plt.grid()
+
+plt.subplot(2,2,2)
+scatter = plt.scatter(
+    (arr_density_kgperm3[mask_plot]),
+    arr_sigma_c[mask_plot],
+    c=arr_L_mm[mask_plot],
+    cmap='viridis'  # ou un autre colormap comme 'plasma', 'coolwarm', etc.
+)
+
+# Ajouter une barre de couleurs
+plt.colorbar(scatter, label='L values [mm]')
+plt.xlabel(r'$\rho_{ice}$ [$kg \cdot m^{-3}$]', fontsize=15)
+plt.ylabel(r'$\sigma_c$ [MPa]', fontsize=15)
+#plt.title('Tensile (ring) strength vs cores salinity', fontsize=15)
+plt.ylim(-0.02,0.8)
+#plt.xlim(-0.2,8)
+plt.grid()
+
+plt.subplot(2,2,3)
+scatter = plt.scatter(
+    (arr_density_kgperm3[mask_plot]),
+    arr_sigma_c[mask_plot],
+    c=arr_L_mm[mask_plot],
+    cmap='viridis'  # ou un autre colormap comme 'plasma', 'coolwarm', etc.
+)
+
+# Ajouter une barre de couleurs
+plt.colorbar(scatter, label='L values [mm]')
+plt.xlabel(r'$\rho_{ice}$ [$kg \cdot m^{-3}$]', fontsize=15)
+plt.ylabel(r'$\sigma_c$ [MPa]', fontsize=15)
+#plt.title('Tensile (ring) strength vs cores salinity', fontsize=15)
+plt.ylim(-0.02,0.8)
+#plt.xlim(-0.2,8)
+plt.grid()
+
+"""root_brine_volume_th = np.linspace(0,0.5,100)
+sigma_c_Timco_Weeks = 1.76 * np.exp(-5.88*root_brine_volume_th)
+salinity_th = 1e3 * (root_brine_volume_th)**2
+plt.plot(salinity_th, sigma_c_Timco_Weeks)"""
+plt.show()
+
+
+
+dict_fig1 = graphes.defaults_params_errorbar_categories()
+
+dict_fig1['x'] = arr_salinity
+dict_fig1['y'] = arr_density_kgperm3
+dict_fig1['z'] = np.empty(len(arr_density_kgperm3),dtype=object)
+dict_fig1['z'][mask_HaHa] = 'HaHa'
+dict_fig1['z'][mask_Hatee] = 'Hatee'
+dict_fig1['z'][mask_Capelans_beach] = 'Capelans beach'
+dict_fig1['z'][mask_Capelans_floating_ice] = 'Capelans floating'
+dict_fig1['ylabel'] = r'$\rho [kg \cdot m^{-3}]$'
+dict_fig1['xlabel'] = 'Salinity [PSU]'
+#dict_fig1['ylim'] = [0,0.7]
+#dict_fig1['xlim'] = [-5,-0.5]
+dict_fig1['savefig'] = False
+#dict_fig1['title'] = 'sigma_c vs T for cores in different locations'
+#dict_fig1['symbols'] = {'HaHa':'o','Hatee':'o','Capelans beach':'o','Capelans floating':'o'}
+
+
+graphes.errorbar_categories(dict_params=dict_fig1)
 
 
 
