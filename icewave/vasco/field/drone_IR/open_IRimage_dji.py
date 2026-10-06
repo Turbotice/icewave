@@ -98,4 +98,5 @@ def convert_all_rjpeg_to_txt(input_dir, output_dir):
             except:
                 print('not able to load IR data')
 
-convert_all_rjpeg_to_txt("C:/Users/Vasco Zanchi/Desktop/Nouveau dossier/img2convert/inputs", "C:/Users/Vasco Zanchi/Desktop/Nouveau dossier/img2convert/outputs")
+if __name__ == '__main__':
+    convert_all_rjpeg_to_txt("C:/Users/Vasco Zanchi/Desktop/Nouveau dossier/img2convert/inputs", "C:/Users/Vasco Zanchi/Desktop/Nouveau dossier/img2convert/outputs")
