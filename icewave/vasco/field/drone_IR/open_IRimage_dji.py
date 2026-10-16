@@ -80,7 +80,7 @@ def open_IR_image(rd,plot=False):
         if plot:
             # Visualisation avec Matplotlib
             plt.figure(figsize=(10, 8))
-            plt.imshow(temp_matrix, cmap='inferno',vmin=-15,vmax=0) # 'inferno', 'magma' ou 'jet' pour l'aspect thermique
+            plt.imshow(temp_matrix, cmap='inferno') # vmin, vmax? # 'inferno', 'magma' ou 'jet' pour l'aspect thermique
             plt.colorbar(label='Température (°C)')
             plt.title("Image Thermique Radiométrique")
             plt.show()
@@ -99,4 +99,4 @@ def convert_all_rjpeg_to_txt(input_dir, output_dir):
                 print('not able to load IR data')
 
 if __name__ == '__main__':
-    convert_all_rjpeg_to_txt("C:/Users/Vasco Zanchi/Desktop/Nouveau dossier/img2convert/inputs", "C:/Users/Vasco Zanchi/Desktop/Nouveau dossier/img2convert/outputs")
+    convert_all_rjpeg_to_txt(r"H:\data\0217\Drones\Tourterelle\DJI_202602172346_013_calibration_thermique", r"H:\data\0217\Drones\Tourterelle\thermal_data_DJI_202602172346_013_calibration_thermique")
