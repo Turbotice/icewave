@@ -39,11 +39,17 @@ Python packages: `numpy`, `pandas`, `matplotlib` (plotting only), `pyserial` (Lo
 ## .edc files:
 Those are saved configurations to be loaded in Escon Studio Software for a given motor. 
 
-parameters.edc: ESCON motor/controller configuration for Chipiron (DC motor) & ESCON Studio controller software. Saved on 13 december 26. (Stéphane? Bicwin 26?)
-parameters_SEP26.edc: ESCON motor/controller configuration for EC motor (PMMH lab) & ESCON Studio controller software. Saved on september 2026.
+parameters.edc: ESCON motor/controller configuration for Chipiron (DC motor). Saved on 13 december 26. (Stéphane? Bicwin 26?)
+parameters_SEP26.edc: ESCON motor/controller configuration for EC motor (PMMH lab). Saved on september 2026 (PMMH lab).
+parameters_bipolar800_EC_ramp2000_offset-11_Oct26.edc : ESCON motor/controller configuration for EC motor (PMMH lab): bipolar 10% > -800 rpm, 90% > +800 rpm, offset -11 rpm, ramp 2000 rpm/s. Saved Oct. 2026 (PMMH lab).
+parameters_unipolar800_EC_ramp10_offset-11_Oct26.edc: ESCON motor/controller configuration for EC motor (PMMH lab): unipolar 10% > 0 rpm, 90% > +800 rpm, offset -11 rpm, ramp 10 rpm/s. Saved Oct. 2026 (PMMH lab).
+parameters_unipolar800_EC_ramp2000_offset-11_Oct26.edc; ESCON motor/controller configuration for EC motor (PMMH lab): unipolar 10% > 0 rpm, 90% > +800 rpm, offset -11 rpm, ramp 2000 rpm/s. Saved Oct. 2026 (PMMH lab).
+
 
 ## Parallel frazil characterization
 solid_fraction_frazil_MausDeLaRosa.py : Solid fraction and salinity of grease ice: Methods 1 to 4 of
-Maus & De la Rosa (2012), 'Salinity and solid fraction of frazil and grease ice', J. Glaciol. 58(209), 594-612.
+Maus & De la Rosa (2012), 'Salinity and solid fraction of frazil and grease ice', J. Glaciol. 58(209), 594-612. Use frazil_synthetic_dataset_test.csv as a test synthetic input (
+yet to be tested on real data). 
+
 
 chipiron_io.py -- shared I/O for the general Chipiron data structure.   NOT TESTED ON REAL h5py / REAL DATA YET.
