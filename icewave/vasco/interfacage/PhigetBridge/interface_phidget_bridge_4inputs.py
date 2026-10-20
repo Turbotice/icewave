@@ -4,13 +4,39 @@ from Phidget22.Phidget import *
 from Phidget22.Devices.VoltageRatioInput import *
 import time
 import os
+from pathlib import Path
 #%%
 # %matplotlib qt
 #%%
 ####################################
-name_output_file = "C:/Users/Vasco Zanchi/Desktop/CASCADE26/calibration_capteur_force/loadcell_n1080/discharge_loadcell_n1080_mass788g_3.txt"
+def create_default_dict_param():
+    default_params = {}
 
-save = False
+    default_params['save'] = False
+    default_params['name_output_file'] = "C:/Users/Vasco Zanchi/Desktop/CASCADE26/calibration_capteur_force/loadcell_n1080/discharge_loadcell_n1080_mass788g_3.txt"
+  
+    default_params['TIME_OUT'] = 5000  # 5s before it throws a timeout exception
+    default_params['DATA_INTERVAL'] = 50  # 1000ms sample frequency
+
+    default_params['dt'] = 0.1 # number of seconds before updating the figure
+    default_params['remove_interval'] = 20 # in seconds
+
+    default_params['channels2plot'] = [0,1,2,3] # on schoisit les channels qui nous intéresse (par exemple si il y a un appareil seulement sur ch0 on met [0])
+
+    default_params['A0'] = 1
+    default_params['B0'] = 0
+
+    default_params['A1'] = 1
+    default_params['B1'] = 0
+
+    default_params['A2'] = 1
+    default_params['B2'] = 0
+
+    default_params['A3'] = 1
+    default_params['B3'] = 0
+
+    return default_params
+
 
 def create_new_data_file(name_output_file):
     file = open(name_output_file,'w')
@@ -22,55 +48,54 @@ def add_text_to_data_file(name_output_file, text):
     file.write(text)
     file.close()
 
-if (os.path.exists(name_output_file)) & (save==True):
-    print('output file already exists, adding in that file..')
-    file = open(name_output_file,'a')
-    file.write('new data :\n')
-    file.close()
-elif (not(os.path.exists(name_output_file))) & (save==True):    
-    create_new_data_file(name_output_file)
-#####################################
+
+def main(params = create_default_dict_param()):
+
+    save = params['save']
+    name_output_file = params['name_output_file']
+    TIME_OUT = params['TIME_OUT']
+    DATA_INTERVAL = params['DATA_INTERVAL']
+    dt = params['dt']
+    remove_interval = params['remove_interval']
+    channels2plot = params['channels2plot']
+    A0 = params['A0']
+    B0 = params['B0']
+
+    A1 = params['A1']
+    B1 = params['B1']
+
+    A2 = params['A2']
+    B2 = params['B2']
+
+    A3 = params['A3']
+    B3 = params['B3']
 
 
+    if (os.path.exists(name_output_file)) & (save==True):
+        print('output file already exists, adding in that file..')
+        file = open(name_output_file,'a')
+        file.write('new data :\n')
+        file.close()
+    elif (not(os.path.exists(name_output_file))) & (save==True):    
+        create_new_data_file(name_output_file)
+    #####################################
 
+    def onVoltageRatioChange0(self, voltageRatio): 
+        OutputValue = (voltageRatio - (B0)) / (A0)
+        self.output_value = OutputValue
 
-TIME_OUT = 5000  # 5s before it throws a timeout exception
-DATA_INTERVAL = 50  # 1000ms sample frequency
+    def onVoltageRatioChange1(self, voltageRatio):
+        OutputValue = (voltageRatio - (B1)) / (A1)
+        self.output_value = OutputValue
 
-A0 = 1
-B0 = 0
+    def onVoltageRatioChange2(self, voltageRatio):
+        OutputValue = (voltageRatio - (B2)) / (A2)
+        self.output_value = OutputValue
 
-A1 = 1
-B1 = 0
+    def onVoltageRatioChange3(self, voltageRatio):
+        OutputValue = (voltageRatio - (B3)) / (A3)
+        self.output_value = OutputValue
 
-A2 = 1
-B2 = 0
-
-A3 = 1
-B3 = 0
-
-dt = 0.1 # number of seconds before updating the figure
-remove_interval = 20 # in seconds
-
-channels2plot = [0] # on schoisit les channels qui nous intéresse (par exemple si il y a un appareil seulement sur ch0 on met [0])
-
-def onVoltageRatioChange0(self, voltageRatio): 
-    OutputValue = (voltageRatio - (B0)) / (A0)
-    self.output_value = OutputValue
-
-def onVoltageRatioChange1(self, voltageRatio):
-    OutputValue = (voltageRatio - (B1)) / (A1)
-    self.output_value = OutputValue
-
-def onVoltageRatioChange2(self, voltageRatio):
-    OutputValue = (voltageRatio - (B2)) / (A2)
-    self.output_value = OutputValue
-
-def onVoltageRatioChange3(self, voltageRatio):
-    OutputValue = (voltageRatio - (B3)) / (A3)
-    self.output_value = OutputValue
-
-def main():
     # Initialize VoltageRatioInput objects for the first bridge
     voltageRatioInput0 = VoltageRatioInput()
     voltageRatioInput0.output_value = 0
@@ -112,6 +137,11 @@ def main():
 
     try:
         t0 = time.time()
+        basepath = Path(name_output_file).parent
+        # Écrire la valeur de reference time t0 dans un fichier
+        with open(f"{basepath}/t0.txt", "w") as fichier:
+            fichier.write(str(t0))
+
         plt.figure()
         plt.xlabel('Time [s]')
         plt.ylabel('Voltage ratio')
