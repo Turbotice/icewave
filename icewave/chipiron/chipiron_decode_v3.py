@@ -47,7 +47,7 @@ import pandas as pd
 
 CYCLE_GAP_US = 100_000          # gap above this = new telemetry cycle
 LOW8_DT_US = (30_000, 80_000)   # spacing of b1 -> b3 when only two bytes per cycle were logged
-ADC_VREF = 5.0                  # volts at full scale (Arduino Mega default)
+ADC_VREF = 4.88                 # volts at full scale (measured on Arduino Mega)
 ADC_BITS = 10
 
 
