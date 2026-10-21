@@ -9,8 +9,10 @@ EXAMPLES
     d = read_raw_usb("P101_D2026-10-15T08_45_19-Usb-1-....csv")     # decoded, one row per 250 ms cycle
     raw = read_raw_usb(path, decode=False)                          # rows exactly as logged
     d[["t_s", "A1_adc", "A1_V"]].head()
-    # physical units with the ESCON file:
-    from escon_edc_v3 import load_edc;  load_edc("parameters_Sep26.edc").apply_to_frame(d)   # A1_speed_rpm, A2_current_A
+    # physical units with the ESCON file (wiring found on 2026-10-20, see below):
+    from escon_edc_v3 import load_edc
+    load_edc("parameters_Sep26.edc").apply_to_frame(d, wiring={"A1": "AO1", "A2": "AO2"})   # A1_current_A, A2_speed_rpm
+    # the 4 bytes of each cycle, by role (not by row parity): d[["b1", "b2", "b3", "b4"]]
     # other Arduino reference / resolution:  read_raw_usb(path, vref=3.3, adc_bits=12)
 
 What the file contains (csv, no header): timestamp in microseconds (phone clock, only differences matter), one
@@ -21,7 +23,14 @@ What the Arduino sends (PWM_full_v3.ino), every 250 ms:
     b1 = ADC(A1) & 0xFF   (t = 0 ms)      b2 = ADC(A1) >> 4   (t ~ 10 ms)
     b3 = ADC(A2) & 0xFF   (t ~ 50 ms)     b4 = ADC(A2) >> 4   (t ~ 60 ms)
     decode: adc = (b2 << 4) | (b1 & 0x0F)         check: (b1 >> 4) == (b2 & 0x0F)
-A1 = speed output, A2 = current output of the ESCON in the saved .edc (CHECK the wiring).
+A1 / A2 are the Arduino PINS (analogRead(A1), analogRead(A2)); what they measure depends on the wiring.
+Found on 2026-10-20 (ESCON Studio, motor at a fixed 600 rpm, compared with the Arduino mean):
+    A1 <- ESCON AO1 = actual CURRENT      A2 <- ESCON AO2 = actual SPEED
+(the older comments "A1 = speed, A2 = current" were wrong). Output columns of decode_usb:
+    A1_adc, A2_adc  decoded ADC counts (0..1023), NOT converted;  A1_V, A2_V  volts at the pin (counts * vref / 1023)
+    b1..b4          the 4 raw bytes of the cycle, by ROLE (b1/b3 = low bytes, b2/b4 = adc >> 4). The row parity of
+                    the csv is NOT a reliable role: if the phone lost the first byte(s) of the recording, "even rows"
+                    become b2/b4 instead of b1/b3.
 The cycle start is found from the time gaps (> 100 ms between cycles, <= 40 ms inside a cycle), NOT from a fixed
 "every 4th row", so a dropped byte only loses its own cycle.
 
@@ -67,7 +76,7 @@ def decode_usb(raw, vref=ADC_VREF, adc_bits=ADC_BITS, gap_us=CYCLE_GAP_US, verbo
     starts = np.r_[0, np.where(np.diff(t) > gap_us)[0] + 1]
     counts = np.diff(np.r_[starts, len(t)])
 
-    cols = {k: [] for k in ("t_us", "kind", "A1_lo", "A2_lo", "A1_adc", "A2_adc")}
+    cols = {k: [] for k in ("t_us", "kind", "A1_lo", "A2_lo", "A1_adc", "A2_adc", "b1", "b2", "b3", "b4")}
 
     # --- full cycles: 4 rows
     s = starts[counts == 4]
@@ -77,7 +86,7 @@ def decode_usb(raw, vref=ADC_VREF, adc_bits=ADC_BITS, gap_us=CYCLE_GAP_US, verbo
     ok2 = (((b3 >> 4) & 0xF) == (b4 & 0xF)) & ((b4 >> hi_bits) == 0)
     a1 = np.where(ok1, (b2 << 4) | (b1 & 0xF), np.nan)
     a2 = np.where(ok2, (b4 << 4) | (b3 & 0xF), np.nan)
-    for k, v in zip(cols, (t[s], np.full(len(s), "full"), b1, b3, a1, a2)):
+    for k, v in zip(cols, (t[s], np.full(len(s), "full"), b1, b3, a1, a2, b1, b2, b3, b4)):
         cols[k].append(v)
 
     # --- low-byte-only cycles: 2 rows ~50 ms apart (b1, b3)
@@ -85,7 +94,7 @@ def decode_usb(raw, vref=ADC_VREF, adc_bits=ADC_BITS, gap_us=CYCLE_GAP_US, verbo
     dt = t[s2 + 1] - t[s2]
     s2 = s2[(dt >= LOW8_DT_US[0]) & (dt <= LOW8_DT_US[1])]
     nan = np.full(len(s2), np.nan)
-    for k, v in zip(cols, (t[s2], np.full(len(s2), "low8"), b[s2], b[s2 + 1], nan, nan)):
+    for k, v in zip(cols, (t[s2], np.full(len(s2), "low8"), b[s2], b[s2 + 1], nan, nan, b[s2], nan, b[s2 + 1], nan)):
         cols[k].append(v)
 
     out = pd.DataFrame({k: np.concatenate(v) for k, v in cols.items()}).sort_values("t_us").reset_index(drop=True)

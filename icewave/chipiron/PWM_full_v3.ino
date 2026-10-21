@@ -1,5 +1,5 @@
 // =====================================================================
-// PWM_full_v3.ino -- Chipiron Arduino Mega firmware (v3). /!\ enable/disable and LORA not tested.
+// PWM_full_v3.ino -- Chipiron Arduino Mega firmware (v3). /!\  LORA not tested.
 //
 // One firmware, two modes chosen at run time (no re-upload needed):
 //   mc -> CONSTANT mode    accepts c<duty>; rest duty 10 %  (0 rpm with a UNIPOLAR ESCON config:
@@ -28,7 +28,8 @@
 // Telemetry (USB serial, 4 bytes every 250 ms):
 //   b1 = ADC(A1) & 0xFF, b2 = ADC(A1) >> 4, b3 = ADC(A2) & 0xFF, b4 = ADC(A2) >> 4
 //   decode: adc = (b2 << 4) | (b1 & 0x0F)     (see chipiron_decode_v3.py)
-//   A1 = speed output, A2 = current output of the ESCON (AO2 / AO1 in the saved .edc): CHECK THE WIRING.
+//   A1 = ESCON AO1 = actual CURRENT, A2 = ESCON AO2 = actual SPEED. The older comments said the opposite; the variable names telemSpeed / telemCurrent below
+//   were NOT renamed and are therefore swapped: telemSpeed holds A1 (current), telemCurrent holds A2 (speed).
 //
 // Resolution: analogWrite is 8 bit -> duty steps of 100/255 = 0.39 % (~7.8 rpm with 20 rpm/%).
 //
@@ -70,9 +71,9 @@
 #define DO1 52               // ESCON enable (digital input 2)
 #define DO2 51               // direction pin (ignored by ESCON as configured)
 
-const int ai1 = A1;          // first analog telemetry channel (speed)
-const int ai2 = A2;          // second analog telemetry channel (current)
-// CHECK WIRING: in the .edc, AO1 = actual current, AO2 = actual speed.
+const int ai1 = A1;          // first analog telemetry channel (ESCON AO1 = actual current)
+const int ai2 = A2;          // second analog telemetry channel (ESCON AO2 = actual speed)
+// Wiring verified 2026-10-20: A1 <- AO1 (current), A2 <- AO2 (speed) (functions as set in the .edc; re-check if rewired).
 
 const float DUTY_MIN = 10.0; // ESCON PWM input only accepts 10..90 %
 const float DUTY_MAX = 90.0;
@@ -258,14 +259,14 @@ void waveUpdate(unsigned long now) {
 void telemetry(unsigned long now) {
   unsigned long dt = now - telemT0;
   if (telemStage == 0) {
-    telemSpeed = analogRead(ai1);
+    telemSpeed = analogRead(ai1);                // NB: A1 = CURRENT (name kept, see header)
     Serial.write((uint8_t)(telemSpeed & 0xFF));
     telemStage = 1;
   } else if (telemStage == 1 && dt >= 10) {
     Serial.write((uint8_t)(telemSpeed >> 4));
     telemStage = 2;
   } else if (telemStage == 2 && dt >= 50) {
-    telemCurrent = analogRead(ai2);
+    telemCurrent = analogRead(ai2);              // NB: A2 = SPEED (name kept, see header)
     Serial.write((uint8_t)(telemCurrent & 0xFF));
     telemStage = 3;
   } else if (telemStage == 3 && dt >= 60) {

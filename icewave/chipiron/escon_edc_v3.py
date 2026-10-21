@@ -278,9 +278,10 @@ class EsconConfig:
     # ---- apply to a decoded Usb DataFrame ----------------------------------
     def apply_to_frame(self, df, wiring=None, vref=5.0):
         """Add physical columns to a decoded Usb DataFrame (needs A1_V / A2_V, see chipiron_decode_v3).
-        wiring: which ESCON output feeds which Arduino pin. Default follows the names used in the
-        firmware (A1 = speed = AO2, A2 = current = AO1): CHECK against the real wiring."""
-        wiring = wiring or {"A1": "AO2", "A2": "AO1"}
+        wiring: which ESCON output feeds which Arduino pin. Default = wiring verified on 2026-10-20
+        (ESCON Studio, motor held at 600 rpm, compared with the Arduino readings):
+        A1 <- AO1 (actual current), A2 <- AO2 (actual speed). If you rewire, pass wiring explicitly."""
+        wiring = wiring or {"A1": "AO1", "A2": "AO2"}
         labels = {}
         for pin, ao in wiring.items():
             c = self.ao[ao]
