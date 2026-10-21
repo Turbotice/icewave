@@ -67,6 +67,7 @@ RUN_SCRIPT = "chipiron_run_v3.py"
 # Scripts that accept --no-record (the phone is already recording, they must not call /start and /stop):
 NO_RECORD_SCRIPTS = {OSCILLATE_SCRIPT, RUN_SCRIPT}
 PROGRAM_FOLDER = SCRIPT_DIR / "programs"          # programs built by choice 3 (--build-only)
+LAST_IP_FILE = SCRIPT_DIR / ".phonefleet_last_ip.txt"   # remembers the phone IP used last
 ZERO_WAIT_S = 30                                  # seconds to wait at 0 rpm before /start (tunable)
 FIRMWARE_REST_DUTY = {"mc": 10.0, "mo": 50.0}     # rest duty of each Arduino mode (PWM_full_v3.ino)
 
@@ -127,6 +128,26 @@ def send_usb_cmd(ip, cmd):
     if out:
         print(f"  phone replied: {out[:100]}")
     return out
+
+
+def ask_phone_ip():
+    """Ask for the full phone IP, e.g. 10.48.96.2 (default = last one used, remembered in LAST_IP_FILE).
+    Nothing is built from a phone ID / network number. Returns (ip, last octet for display)."""
+    try:
+        default = LAST_IP_FILE.read_text(encoding="utf-8").strip()
+    except OSError:
+        default = ""
+    while True:
+        raw = ask("Phone IP address (e.g. 10.48.96.2)", default).strip()
+        raw = re.sub(r"^https?://", "", raw).split(":")[0]
+        if re.fullmatch(r"\d{1,3}(\.\d{1,3}){3}", raw) and all(int(x) <= 255 for x in raw.split(".")):
+            break
+        print("  -> please type the full IPv4 address, like 10.48.96.2")
+    try:
+        LAST_IP_FILE.write_text(raw, encoding="utf-8")
+    except OSError:
+        pass
+    return raw, raw.split(".")[-1]
 
 
 def choose_mode():
@@ -531,10 +552,8 @@ def main():
     mode = choose_mode()
     print(f"\n>>> Mode: {mode}")
 
-    phone = int(ask("Phone ID", connect.DEFAULT_PHONELIST[0]))
-    network = int(ask("Network number", connect.NETWORK))
-    ip = connect.get_adress(phone, network=network)
-    print(f"Phone {phone} -> {ip}")
+    ip, phone = ask_phone_ip()
+    print(f"Phone {ip}")
 
     if mode == "full_session":
         load_motor_config(edc_arg)
