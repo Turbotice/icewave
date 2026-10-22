@@ -3,7 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import os
-os.add_dll_directory(r"C:\Program Files\dji_thermal_sdk_v1.8_20250829\tsdk-core\lib\windows\release_x64")   # ← your SDK bin folder
+#os.add_dll_directory(r"C:\Program Files\dji_thermal_sdk_v1.8_20250829\tsdk-core\lib\windows\release_x64")   # ← your SDK bin folder
+os.add_dll_directory(r"C:\Users\turbots\Documents\dji_thermal_sdk_v1.8_20250829\tsdk-core\lib\windows\release_x64")   # ← your SDK bin folder
+
 
 
 from dji_thermal_sdk.dji_sdk import *
@@ -99,4 +101,6 @@ def convert_all_rjpeg_to_txt(input_dir, output_dir):
                 print('not able to load IR data')
 
 if __name__ == '__main__':
-    convert_all_rjpeg_to_txt("C:/Users/Vasco Zanchi/Desktop/Nouveau dossier/img2convert/inputs", "C:/Users/Vasco Zanchi/Desktop/Nouveau dossier/img2convert/outputs")
+    #convert_all_rjpeg_to_txt("C:/Users/Vasco Zanchi/Desktop/Nouveau dossier/img2convert/inputs", "C:/Users/Vasco Zanchi/Desktop/Nouveau dossier/img2convert/outputs")
+    convert_all_rjpeg_to_txt(r"C:\Users\turbots\Documents\CASCADE26\calibration_drones_thermique\donnees_atelier_12oct2026\Drones\M4T\images_calib_IR_visible", r"C:\Users\turbots\Documents\CASCADE26\calibration_drones_thermique\donnees_atelier_12oct2026\Drones\M4T\data_thermique_from_images")
+# %%
