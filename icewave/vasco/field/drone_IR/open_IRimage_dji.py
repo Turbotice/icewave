@@ -3,7 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import os
-os.add_dll_directory(r"C:\Program Files\dji_thermal_sdk_v1.8_20250829\tsdk-core\lib\windows\release_x64")   # ← your SDK bin folder
+#os.add_dll_directory(r"C:\Program Files\dji_thermal_sdk_v1.8_20250829\tsdk-core\lib\windows\release_x64")   # ← your SDK bin folder
+os.add_dll_directory(r"C:\Users\turbots\Documents\dji_thermal_sdk_v1.8_20250829\tsdk-core\lib\windows\release_x64")   # ← your SDK bin folder
+
 
 
 from dji_thermal_sdk.dji_sdk import *
