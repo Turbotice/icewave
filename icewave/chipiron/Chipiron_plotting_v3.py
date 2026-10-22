@@ -53,6 +53,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from scipy.optimize import least_squares
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))   # find chipiron_decode_v3 next to this file
 from chipiron_decode_v3 import read_usb_rows, decode_usb
@@ -212,6 +213,85 @@ def ask_plot_settings(df, key, default_y=None):
     print(f"Plotting y={y} vs x={x}, logx={logx}, logy={logy}")
     return dict(x=x, y=y, xlabel=xlabel, ylabel=ylabel, logx=logx, logy=logy, scale_tag=tag)
 
+
+
+
+def fit_steady_sine(t, y, f_hz):
+    """
+    Robust steady-state sine fit at a known frequency.
+
+    Returns:
+        offset       : fitted DC offset
+        amplitude    : fitted peak amplitude
+        phase_deg    : fitted phase in degrees
+        y_fit        : fitted signal
+        residual_rms : RMS fitting residual
+        params       : [offset, a, b]
+    """
+    t = np.asarray(t, dtype=float)
+    y = np.asarray(y, dtype=float)
+
+    valid = np.isfinite(t) & np.isfinite(y)
+    t = t[valid]
+    y = y[valid]
+
+    if len(t) < 6:
+        raise ValueError("Not enough valid samples for sine fitting.")
+    if f_hz <= 0:
+        raise ValueError("Frequency must be positive.")
+
+    w = 2.0 * np.pi * f_hz
+
+    # Center time to improve numerical conditioning.
+    t_ref = t[0]
+    tc = t - t_ref
+
+    X = np.column_stack((
+        np.ones_like(tc),
+        np.sin(w * tc),
+        np.cos(w * tc),
+    ))
+
+    # Initial linear least-squares estimate.
+    p0, *_ = np.linalg.lstsq(X, y, rcond=None)
+
+    # Robust refinement.
+    scale = max(
+        1.4826 * np.median(np.abs(y - X @ p0 - np.median(y - X @ p0))),
+        1e-6,
+    )
+
+    result = least_squares(
+        lambda p: X @ p - y,
+        p0,
+        loss="soft_l1",
+        f_scale=scale,
+    )
+
+    c, a, b = result.x
+    amplitude = float(np.hypot(a, b))
+
+    # Express phase relative to the original time t:
+    # a*sin(w*t) + b*cos(w*t) = A*sin(w*t + phase)
+    phase_centered = np.arctan2(b, a)
+    phase_deg = float(np.degrees(
+        phase_centered - w * t_ref
+    ))
+    phase_deg = (phase_deg + 180.0) % 360.0 - 180.0
+
+    y_fit = c + a * np.sin(w * tc) + b * np.cos(w * tc)
+    residual_rms = float(np.sqrt(np.mean((y - y_fit) ** 2)))
+
+    return {
+        "offset": float(c),
+        "amplitude": amplitude,
+        "phase_deg": phase_deg,
+        "y_fit": y_fit,
+        "residual_rms": residual_rms,
+        "params": result.x,
+        "t_valid": t,
+        "y_valid": y,
+    }
 
 def has_cols(df, s, acq):
     """True if the chosen x / y columns exist in this acquisition's DataFrame (else say so and skip it)."""
@@ -558,7 +638,30 @@ STEPFIT_MIN_SPAN_RPM = 30      # a step smaller than this is not fitted
 STEPFIT_GAIN_TARGET = 0.9      # sine amplitude ratio wanted when computing the largest acceptable tau
 STEPFIT = []                   # results of this session: dicts (label, tau, ...)
  
- 
+FIT_CSV_FOLDER = None          # None = the acquisition folder (next to the raw Usb csv); or a folder, e.g. Path("C:/.../fits")
+
+
+def get_edc():
+    """The .edc given in the Usb cell (edc_path) is reused; it is asked here only if none was given there."""
+    global edc_path
+    if not globals().get("edc_path"):
+        edc_path = ask(".edc file loaded in ESCON Studio when this was recorded (needed for rpm)").strip('"').strip("'")
+    from escon_edc_v3 import load_edc
+    return load_edc(edc_path)
+
+
+def save_fit_csv(acq, kind, row):
+    """Save one fit result as a one-row CSV <stamp>_<kind>.csv in the acquisition folder (never overwrites: _2, _3...)."""
+    folder = Path(FIT_CSV_FOLDER) if FIT_CSV_FOLDER else Path(acq["folder"])
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / f"{acq['stamp']}_{kind}.csv"
+    n = 2
+    while path.exists():
+        path = path.with_name(f"{acq['stamp']}_{kind}_{n}.csv")
+        n += 1
+    pd.DataFrame([row]).to_csv(path, index=False)
+    print(f"[{kind}] fit parameters saved: {path}")
+    
 def first_order_step(t, T0, tau, y0, yf):
     """Response of a first-order lag to a step applied at T0 (y0 before)."""
     t = np.asarray(t, float)
@@ -598,9 +701,7 @@ def fit_first_order(t, y):
  
  
 if "usb" in SELECTED and df_usb_raw and ask("\nFit a first-order step response on the A2 speed (hold / step test)? (y/n)", "n").lower().startswith("y"):
-    from escon_edc_v3 import load_edc
-    edc_path = ask(".edc file loaded in ESCON Studio when this was recorded (needed for rpm)").strip('"').strip("'")
-    edc = load_edc(edc_path)
+    edc = get_edc()                                  # .edc already given in the Usb cell: not asked again
     f_sine = float(ask("Sine frequency [Hz] for the gain / phase prediction", "0.1").replace(",", "."))
     cmd_raw = ask("Commanded speed of the hold [rpm] (to report the steady-state error; empty = skip)", "600")
     cmd_rpm = float(cmd_raw.replace(",", ".")) if cmd_raw else np.nan
@@ -646,6 +747,13 @@ if "usb" in SELECTED and df_usb_raw and ask("\nFit a first-order step response o
         elif r["sig_tau"] > 0.3 * tau:
             print("[stepfit] WARNING: tau uncertainty > 30 %: window too short or the step is not a clean hold.")
         STEPFIT.append(r)
+        save_fit_csv(acq, "stepfit", dict(
+            acquisition=acq["label"], p_gain=gl, edc=Path(edc_path).name, signal=col,
+            window_start_s=t_lo, window_end_s=t_hi, T0_s=r["T0"], T0_unc_s=r["sig_T0"],
+            tau_s=tau, tau_unc_s=r["sig_tau"], rise_10_90_s=2.197 * tau, corner_freq_Hz=1 / (2 * np.pi * tau),
+            y0_rpm=r["y0"], yf_rpm=r["yf"], commanded_rpm=cmd_rpm, rms_residual_rpm=r["rms"],
+            n_points=r["n"], dt_s=r["dt"], sine_freq_Hz=f_sine, sine_gain=gain, sine_lag_deg=lag,
+            tau_max_for_target_s=tau_max, tau_below_2dt=bool(tau < 2 * r["dt"])))
  
         fig, (ax, axr) = plt.subplots(2, 1, figsize=(10, 6), sharex=True, gridspec_kw=dict(height_ratios=[3, 1]))
         ax.plot(r["t"], r["y"], ".", ms=3, label="measured (A2)")
@@ -691,6 +799,226 @@ if "usb" in SELECTED and df_usb_raw and ask("\nFit a first-order step response o
         register_figure(fig, "usb", dict(x="gain", y="tau_s", scale_tag="loglog"), [(r["acq"], None) for r in STEPFIT], "tau-vs-gain")
 elif "usb" in SELECTED:
     print("[stepfit] skipped.")
+
+
+#%% Sine fit (debugging)
+
+#%% Sine response fit (amplitude ratio, lag, tau)
+
+#
+# Use it on a SINE test: rest, then  mean + amp*sin(2 pi f t)  (chipiron_oscillate_v3.py or the "o" command).
+# It fits the A2 speed (rpm) with a first-order lag driven by the command, switched on at an UNKNOWN time T0:
+#     command(t) = rest (0 rpm)                          t <  T0
+#     command(t) = mean + amp * sin(2 pi f (t - T0))     t >= T0
+#     tau dy/dt + y = K * command                        (y starts at the rest level c)
+# Free parameters: tau, T0, c and K (the DC gain; K can be fixed to 1).
+# THE WINDOW MUST START AT REST, before the sine begins (T0 is found from the transient).
+# A second, model-free fit of the steady-state part  y = c + a sin(wt) + b cos(wt)  gives the amplitude ratio
+# and the lag relative to the command (the lag uses the fitted T0). If the two results disagree, the loop is not
+# first-order (or T0 is badly determined).
+# Uncertainties are indicative (they assume white noise; the 4 Hz telemetry is quantised, steps of ~79 rpm).
+# Needs scipy. Telemetry is 4 Hz: keep f well below 2 Hz (>= 4 samples per cycle).
+from scipy.optimize import least_squares
+
+SINEFIT_MOVE_RPM = 30          # the speed must leave rest by more than this to detect the start of the response
+SINEFIT = []                   # results of this session: dicts
+
+
+def _wrap180(deg):
+    return (deg + 180.0) % 360.0 - 180.0
+
+
+def sine_first_order(t, T0, tau, K, c, f, mean, amp):
+    """Response of K/(tau s + 1) to  mean + amp*sin(2 pi f (t - T0))  switched on at T0 (rest level c before)."""
+    t = np.asarray(t, float)
+    tt = np.clip(t - T0, 0, None)
+    w = 2 * np.pi * f
+    x = w * tau
+    e = np.exp(-tt / tau)
+    y_sin = amp * (np.sin(w * tt) - x * np.cos(w * tt) + x * e) / (1 + x ** 2)
+    y_mean = mean * (1 - e)
+    return np.where(t < T0, c, c + K * (y_mean + y_sin))
+
+
+def fit_sine_response(t, y, f, mean, amp, fix_K=False):
+    """Fit sine_first_order to (t, y). Returns a dict; raises ValueError if the data is unusable."""
+    t, y = np.asarray(t, float), np.asarray(y, float)
+    if len(t) < 20:
+        raise ValueError(f"only {len(t)} point(s) in the fit window (need >= 20)")
+    dt = float(np.median(np.diff(t)))
+    if 2 * f * dt >= 1:
+        raise ValueError(f"{f:g} Hz is at or above the Nyquist frequency of the telemetry ({0.5 / dt:.2f} Hz)")
+    c0 = float(np.median(y[:5]))                                     # rest level
+    moved = np.flatnonzero(np.abs(y - c0) > SINEFIT_MOVE_RPM)
+    if len(moved) == 0 or moved[0] < 5:
+        raise ValueError("the window must start at rest (at least 5 samples before the speed leaves rest by more "
+                         f"than {SINEFIT_MOVE_RPM:g} rpm): check the window start")
+    t_first = float(t[moved[0]])                                     # first visible movement (T0 is earlier)
+
+    lo = [t[0], 1e-3] + ([] if fix_K else [0.05]) + [c0 - 50.0]
+    hi = [t_first, 1e3] + ([] if fix_K else [5.0]) + [c0 + 50.0]
+
+    def unpack(p):
+        return p[0], p[1], (1.0 if fix_K else p[2]), p[-1]           # T0, tau, K, c
+
+    def resid(p):
+        T0, tau, K, c = unpack(p)
+        return sine_first_order(t, T0, tau, K, c, f, mean, amp) - y
+
+    best = None
+    for tau0 in (0.3, 1.0, 3.0, 10.0):                                # several starts: the cost has local minima
+        for k in (0, 2, 4, 8):
+            p0 = [t_first - k * dt, tau0] + ([] if fix_K else [1.0]) + [c0]
+            p0 = np.clip(p0, np.array(lo) + 1e-6, np.array(hi) - 1e-6)
+            try:
+                res = least_squares(resid, p0, bounds=(lo, hi))
+            except ValueError:
+                continue
+            if best is None or res.cost < best.cost:
+                best = res
+    if best is None:
+        raise ValueError("the fit did not converge")
+
+    rss = float(np.sum(best.fun ** 2))
+    npar = len(best.x)
+    sig = np.full(npar, np.nan)
+    try:
+        cov = np.linalg.inv(best.jac.T @ best.jac) * rss / max(1, len(t) - npar)
+        dg = np.diag(cov)
+        sig = np.where(dg > 0, np.sqrt(np.abs(dg)), np.nan)
+    except np.linalg.LinAlgError:
+        pass
+    T0, tau, K, c = unpack(best.x)
+    w = 2 * np.pi * f
+    x = w * tau
+
+    # model-free steady-state fit (after the transient: at least one period and 3 tau after T0)
+    t_ss = T0 + max(1.0 / f, 3.0 * tau)
+    n_cyc = max((t[-1] - t_ss) * f, 0.0)
+    ss = dict(amp=np.nan, amp_unc=np.nan, ratio=np.nan, lag=np.nan, offset=np.nan, phi=np.nan, t_ss=t_ss, n_cycles=n_cyc)
+    m = t >= t_ss
+    if n_cyc >= 1.5 and m.sum() >= 8:
+        X = np.c_[np.ones(m.sum()), np.sin(w * t[m]), np.cos(w * t[m])]
+        beta = np.linalg.lstsq(X, y[m], rcond=None)[0]
+        c_ss, a, b = beta
+        A = float(np.hypot(a, b))
+        phi = float(np.arctan2(b, a))                                # y = A sin(w t + phi)
+        rr = y[m] - X @ beta
+        cv = np.linalg.inv(X.T @ X) * float(rr @ rr) / max(1, int(m.sum()) - 3)
+        a_unc = float(np.sqrt(max(a * a * cv[1, 1] + b * b * cv[2, 2] + 2 * a * b * cv[1, 2], 0.0)) / A) if A > 0 else np.nan
+        ss.update(amp=A, amp_unc=a_unc, ratio=(A / abs(amp)) if amp else np.nan, phi=phi, offset=float(c_ss),
+                  lag=float(_wrap180(np.degrees(-w * T0 - phi))))   # command phase = -w T0
+    return dict(T0=T0, tau=tau, K=K, c=c, sig_T0=sig[0], sig_tau=sig[1], sig_K=(np.nan if fix_K else sig[2]),
+                ratio_model=K / np.sqrt(1 + x ** 2), lag_model=float(np.degrees(np.arctan(x))), ss=ss,
+                rms=np.sqrt(rss / len(t)), n=len(t), dt=dt, t=t, y=y,
+                fit=sine_first_order(t, T0, tau, K, c, f, mean, amp))
+
+
+if "usb" in SELECTED and df_usb_raw and ask("\nFit a sine response (amplitude ratio, lag, tau) on the A2 speed? (y/n)", "n").lower().startswith("y"):
+    edc = get_edc()                                  # .edc already given in the Usb cell: not asked again
+    ramp = min((v for v in (edc.try_value("PARAM_SpeedRampAcceleration"), edc.try_value("PARAM_SpeedRampDeceleration")) if v),
+               default=None)
+    fix_K = ask("Fix the DC gain K = 1? (y/n; n = K is fitted)", "n").lower().startswith("y")
+    sf_f, sf_mean, sf_amp = "0.2", "0", "100"        # defaults of chipiron_session_v3 / oscillate, then the last answer
+    print(f"\n[sinefit] {len(df_usb_raw)} acquisition(s); K {'fixed to 1' if fix_K else 'fitted'}")
+
+    for acq, raw in df_usb_raw:
+        print(f"\n--- sine fit: {acq['label']} ---")
+        df_dec = decode_usb(raw, vref=ADC_VREF)
+        edc.apply_to_frame(df_dec, wiring=WIRING)
+        col = next((c_ for c_ in df_dec.columns if c_.startswith("A2_") and c_.endswith("_rpm")), None)
+        if col is None:
+            print("[sinefit] no A2 speed column (is AO2 'Actual Speed' in this .edc?): skipped")
+            continue
+        d_ = df_dec[["t_s", col]].dropna()
+        print(f"[sinefit] {len(d_)} usable cycle(s), {d_.t_s.iloc[0]:.1f}..{d_.t_s.iloc[-1]:.1f} s, "
+              f"{col}: {d_[col].min():.0f}..{d_[col].max():.0f} rpm")
+        sf_f = ask("Sine frequency of THIS test [Hz]", sf_f)
+        sf_mean = ask("Commanded mean speed [rpm]", sf_mean)
+        sf_amp = ask("Commanded amplitude [rpm]", sf_amp)
+        f_cmd, mean_cmd, amp_cmd = (float(v.replace(",", ".")) for v in (sf_f, sf_mean, sf_amp))
+        t_lo = float(ask("Fit window start [s] (must be at rest, before the sine)", f"{d_.t_s.iloc[0]:.1f}").replace(",", "."))
+        t_hi = float(ask("Fit window end [s]", f"{d_.t_s.iloc[-1]:.1f}").replace(",", "."))
+        gl = ask("Speed P gain used in this test (label, e.g. 1, 20; empty = none)", "")
+        w_ = d_[(d_.t_s >= t_lo) & (d_.t_s <= t_hi)]
+        try:
+            r = fit_sine_response(w_.t_s.to_numpy(), w_[col].to_numpy(), f_cmd, mean_cmd, amp_cmd, fix_K)
+        except (ValueError, RuntimeError) as exc:
+            print(f"[sinefit] fit failed: {exc}")
+            continue
+        ss = r["ss"]
+        spc = 1.0 / (f_cmd * r["dt"])
+        peak_acc = abs(amp_cmd) * 2 * np.pi * f_cmd
+        r.update(label=gl, acq=acq, col=col, f=f_cmd)
+        print(f"[sinefit] command starts at T0 = {r['T0']:.2f} +/- {r['sig_T0']:.2f} s")
+        print(f"[sinefit] tau = {r['tau']:.3g} +/- {r['sig_tau']:.2g} s,  DC gain K = {r['K']:.3g}"
+              + ("" if fix_K else f" +/- {r['sig_K']:.2g}"))
+        print(f"[sinefit] model at {f_cmd:g} Hz: amplitude ratio x{r['ratio_model']:.3f}, lag {r['lag_model']:.0f} deg")
+        if np.isfinite(ss["ratio"]):
+            print(f"[sinefit] steady state (t >= {ss['t_ss']:.1f} s, {ss['n_cycles']:.1f} cycles): amplitude "
+                  f"{ss['amp']:.1f} +/- {ss['amp_unc']:.1f} rpm = ratio x{ss['ratio']:.3f}, lag {ss['lag']:.0f} deg, "
+                  f"offset {ss['offset']:.1f} rpm")
+        else:
+            print(f"[sinefit] WARNING: only {ss['n_cycles']:.1f} cycle(s) after the transient (t >= {ss['t_ss']:.1f} s): "
+                  "no steady-state fit. Use a longer window / more cycles.")
+        print(f"[sinefit] rms residual {r['rms']:.0f} rpm over {r['n']} points (dt = {r['dt']:.2f} s, {spc:.0f} samples per cycle)")
+        if spc < 4:
+            print("[sinefit] WARNING: fewer than 4 samples per cycle: amplitude and phase are poorly determined.")
+        if ramp is not None and peak_acc > ramp:
+            print(f"[sinefit] WARNING: peak acceleration of the command {peak_acc:.0f} rpm/s > ESCON speed ramp {ramp:g} rpm/s: "
+                  "the limiter flattens the sine (amplitude <= ramp / (2 pi f) keeps it linear).")
+        if r["sig_tau"] > 0.3 * r["tau"]:
+            print("[sinefit] WARNING: tau uncertainty > 30 %: window too short or too few cycles.")
+        if np.isfinite(ss["ratio"]) and (abs(ss["ratio"] - r["ratio_model"]) > 0.15 * max(r["ratio_model"], 1e-9)
+                                         or abs(ss["lag"] - r["lag_model"]) > 15):
+            print("[sinefit] WARNING: model and steady-state fit disagree (>15 % in amplitude or >15 deg in lag): "
+                  "the loop is not first-order here, or T0 is poorly determined.")
+        SINEFIT.append(r)
+        save_fit_csv(acq, "sinefit", dict(
+            acquisition=acq["label"], p_gain=gl, edc=Path(edc_path).name, signal=col, f_Hz=f_cmd, mean_cmd_rpm=mean_cmd,
+            amp_cmd_rpm=amp_cmd, window_start_s=t_lo, window_end_s=t_hi, K_fixed_to_1=fix_K, T0_s=r["T0"],
+            T0_unc_s=r["sig_T0"], tau_s=r["tau"], tau_unc_s=r["sig_tau"], K=r["K"], K_unc=r["sig_K"], rest_level_rpm=r["c"],
+            ratio_model=r["ratio_model"], lag_model_deg=r["lag_model"], steady_from_s=ss["t_ss"],
+            steady_cycles=ss["n_cycles"], steady_amp_rpm=ss["amp"], steady_amp_unc_rpm=ss["amp_unc"],
+            steady_ratio=ss["ratio"], steady_lag_deg=ss["lag"], steady_offset_rpm=ss["offset"],
+            rms_residual_rpm=r["rms"], n_points=r["n"], dt_s=r["dt"], samples_per_cycle=spc,
+            peak_accel_rpm_s=peak_acc, esc_ramp_rpm_s=ramp if ramp is not None else np.nan))
+
+        fig, (ax, axr) = plt.subplots(2, 1, figsize=(10, 6), sharex=True, gridspec_kw=dict(height_ratios=[3, 1]))
+        ax.plot(r["t"], r["y"], ".", ms=3, label="measured (A2)")
+        ax.plot(r["t"], r["fit"], "r-", lw=1.5, label=f"fit: tau = {r['tau']:.3g} s")
+        tc = r["t"][r["t"] >= r["T0"]]
+        ax.plot(tc, mean_cmd + amp_cmd * np.sin(2 * np.pi * f_cmd * (tc - r["T0"])), ":", color="grey", lw=1,
+                label=f"command ({mean_cmd:g} + {amp_cmd:g} sin, {f_cmd:g} Hz)")
+        if np.isfinite(ss["ratio"]):
+            ts_ = r["t"][r["t"] >= ss["t_ss"]]
+            ax.plot(ts_, ss["offset"] + ss["amp"] * np.sin(2 * np.pi * f_cmd * ts_ + ss["phi"]), "g--", lw=1.2,
+                    label=f"steady state: x{ss['ratio']:.2f}, lag {ss['lag']:.0f} deg")
+        ax.axvline(r["T0"], color="grey", ls=":", lw=1)
+        ax.set_ylabel("A2 speed (rpm)")
+        ax.set_title(f"{acq['label']}  first-order sine fit  ({f_cmd:g} Hz)" + (f"  (P gain {gl})" if gl else ""), fontsize=8)
+        ax.legend(fontsize=8)
+        ax.grid(True, alpha=0.3)
+        axr.plot(r["t"], r["y"] - r["fit"], ".", ms=3)
+        axr.axhline(0, color="k", lw=0.6)
+        axr.set_xlabel("time (s)")
+        axr.set_ylabel("residual (rpm)")
+        axr.grid(True, alpha=0.3)
+        fig.tight_layout()
+        gl_tag = re.sub(r"[^A-Za-z0-9.]+", "", gl)
+        register_figure(fig, "usb", dict(x="t_s", y=col, scale_tag="linlin"), [(acq, None)],
+                        "sinefit" + (f"-gain{gl_tag}" if gl_tag else "") + f"-{f_cmd:g}Hz")
+
+    if SINEFIT:
+        print("\n[sinefit] SUMMARY")
+        print(f"  {'acquisition':<28}{'gain':>6}{'f (Hz)':>8}{'tau (s)':>9}{'+/-':>7}{'K':>6}"
+              f"{'ratio mod':>10}{'ratio ss':>10}{'lag mod':>9}{'lag ss':>8}")
+        for r in SINEFIT:
+            ss = r["ss"]
+            print(f"  {r['acq']['label']:<28}{r['label'] or '-':>6}{r['f']:>8.3g}{r['tau']:>9.3g}{r['sig_tau']:>7.2g}{r['K']:>6.2f}"
+                  f"{r['ratio_model']:>10.3f}{ss['ratio']:>10.3f}{r['lag_model']:>9.0f}{ss['lag']:>8.0f}")
+elif "usb" in SELECTED:
+    print("[sinefit] skipped.")
 
 
 # %% Save plots?
