@@ -541,6 +541,158 @@ elif dfs_gps_ok:
         fig.tight_layout()
         register_figure(fig, "gps", s, sub)
 
+#%% Debugging data skewing
+
+# Use it on a HOLD / STEP test (rest, then ONE constant speed). It fits the A2 speed (rpm) with
+#     y(t) = y0                                          for t <  T0
+#     y(t) = y0 + (yf - y0) * (1 - exp(-(t - T0)/tau))   for t >= T0
+# and prints tau, the 10-90 % rise time, the corner frequency, and what a sine of frequency f would do:
+#     gain = 1/sqrt(1 + (2 pi f tau)^2)      phase lag = atan(2 pi f tau)
+# Several acquisitions can be selected (e.g. one per speed-P-gain value): you give a gain label for each, and a
+# summary table + tau-vs-gain figure are made at the end.
+# Needs scipy. The .edc is needed to convert A2 volts to rpm (same as units 3 / 4 in the Usb cell).
+# LIMIT: telemetry is 4 Hz (one cycle per 250 ms), so a tau below ~0.5 s cannot be measured from this data.
+from scipy.optimize import least_squares
+ 
+STEPFIT_MIN_SPAN_RPM = 30      # a step smaller than this is not fitted
+STEPFIT_GAIN_TARGET = 0.9      # sine amplitude ratio wanted when computing the largest acceptable tau
+STEPFIT = []                   # results of this session: dicts (label, tau, ...)
+ 
+ 
+def first_order_step(t, T0, tau, y0, yf):
+    """Response of a first-order lag to a step applied at T0 (y0 before)."""
+    t = np.asarray(t, float)
+    return np.where(t < T0, y0, y0 + (yf - y0) * (1.0 - np.exp(-np.clip(t - T0, 0, None) / tau)))
+ 
+ 
+def fit_first_order(t, y):
+    """Least-squares fit of first_order_step. Returns a dict, raises ValueError if the data is unusable."""
+    t, y = np.asarray(t, float), np.asarray(y, float)
+    if len(t) < 15:
+        raise ValueError(f"only {len(t)} point(s) in the fit window (need >= 15)")
+    dt = float(np.median(np.diff(t)))
+    y0 = float(np.median(y[:max(5, len(t) // 20)]))                 # level before the step
+    yf = float(np.mean(y[-max(8, len(t) // 4):]))                   # level at the end (mean: the signal is quantised)
+    span = yf - y0
+    if abs(span) < STEPFIT_MIN_SPAN_RPM:
+        raise ValueError(f"no clear step: start {y0:.0f} rpm, end {yf:.0f} rpm (window wrong, or the end of the "
+                         "window is back at rest?)")
+    sm = pd.Series(y).rolling(5, center=True, min_periods=1).median().to_numpy()
+    frac = (sm - y0) / span
+    T0g = t[int(np.argmax(frac > 0.05))] - dt
+    taug = max(2 * dt, t[int(np.argmax(frac > 0.63))] - T0g)
+    lo = [t[0], 1e-3, y0 - abs(span), yf - abs(span)]
+    hi = [t[-1], 1e3, y0 + abs(span), yf + abs(span)]
+    p0 = np.clip([T0g, taug, y0, yf], lo, hi)
+    res = least_squares(lambda p: first_order_step(t, *p) - y, p0, bounds=(lo, hi))
+    T0, tau, y0f, yff = res.x
+    rss = float(np.sum(res.fun ** 2))
+    sig = [np.nan] * 4
+    try:
+        cov = np.linalg.inv(res.jac.T @ res.jac) * rss / max(1, len(t) - 4)
+        sig = list(np.sqrt(np.diag(cov)))
+    except np.linalg.LinAlgError:
+        pass
+    return dict(T0=T0, tau=tau, y0=y0f, yf=yff, sig_T0=sig[0], sig_tau=sig[1], rms=np.sqrt(rss / len(t)),
+                n=len(t), dt=dt, t=t, y=y, fit=first_order_step(t, *res.x))
+ 
+ 
+if "usb" in SELECTED and df_usb_raw and ask("\nFit a first-order step response on the A2 speed (hold / step test)? (y/n)", "n").lower().startswith("y"):
+    from escon_edc_v3 import load_edc
+    edc_path = ask(".edc file loaded in ESCON Studio when this was recorded (needed for rpm)").strip('"').strip("'")
+    edc = load_edc(edc_path)
+    f_sine = float(ask("Sine frequency [Hz] for the gain / phase prediction", "0.1").replace(",", "."))
+    cmd_raw = ask("Commanded speed of the hold [rpm] (to report the steady-state error; empty = skip)", "600")
+    cmd_rpm = float(cmd_raw.replace(",", ".")) if cmd_raw else np.nan
+    print(f"\n[stepfit] {len(df_usb_raw)} acquisition(s); sine prediction at {f_sine:g} Hz")
+ 
+    for acq, raw in df_usb_raw:
+        print(f"\n--- step fit: {acq['label']} ---")
+        df_dec = decode_usb(raw, vref=ADC_VREF)
+        edc.apply_to_frame(df_dec, wiring=WIRING)
+        col = next((c for c in df_dec.columns if c.startswith("A2_") and c.endswith("_rpm")), None)
+        if col is None:
+            print("[stepfit] no A2 speed column (is AO2 'Actual Speed' in this .edc?): skipped")
+            continue
+        d = df_dec[["t_s", col]].dropna()
+        print(f"[stepfit] {len(d)} usable cycle(s), {d.t_s.iloc[0]:.1f}..{d.t_s.iloc[-1]:.1f} s, "
+              f"{col}: {d[col].min():.0f}..{d[col].max():.0f} rpm")
+        t_lo = float(ask("Fit window start [s]", f"{d.t_s.iloc[0]:.1f}").replace(",", "."))
+        t_hi = float(ask("Fit window end [s] (stop BEFORE the return to rest)", f"{d.t_s.iloc[-1]:.1f}").replace(",", "."))
+        w = d[(d.t_s >= t_lo) & (d.t_s <= t_hi)]
+        gl = ask("Speed P gain used in this test (label, e.g. 1, 20; empty = none)", "")
+        try:
+            r = fit_first_order(w.t_s.to_numpy(), w[col].to_numpy())
+        except (ValueError, RuntimeError) as exc:
+            print(f"[stepfit] fit failed: {exc}")
+            continue
+        tau = r["tau"]
+        w_s = 2 * np.pi * f_sine
+        gain = 1.0 / np.sqrt(1 + (w_s * tau) ** 2)
+        lag = np.degrees(np.arctan(w_s * tau))
+        tau_max = np.sqrt(1 / STEPFIT_GAIN_TARGET ** 2 - 1) / w_s
+        r.update(label=gl, acq=acq, col=col, gain=gain, lag=lag)
+        print(f"[stepfit] step starts T0 = {r['T0']:.2f} +/- {r['sig_T0']:.2f} s")
+        print(f"[stepfit] tau = {tau:.3g} +/- {r['sig_tau']:.2g} s   (10-90 % rise {2.197 * tau:.3g} s, "
+              f"corner frequency {1 / (2 * np.pi * tau):.3g} Hz)")
+        print(f"[stepfit] speed: {r['y0']:.0f} -> {r['yf']:.0f} rpm"
+              + (f"  (commanded {cmd_rpm:g}: reaches {100 * r['yf'] / cmd_rpm:.1f} %)" if np.isfinite(cmd_rpm) and cmd_rpm else ""))
+        print(f"[stepfit] a {f_sine:g} Hz sine would come out with amplitude x{gain:.2f} and a lag of {lag:.0f} deg; "
+              f"for >= {100 * STEPFIT_GAIN_TARGET:.0f} % amplitude at {f_sine:g} Hz you need tau <= {tau_max:.3g} s")
+        print(f"[stepfit] rms residual {r['rms']:.0f} rpm over {r['n']} points (dt = {r['dt']:.2f} s)")
+        if tau < 2 * r["dt"]:
+            print(f"[stepfit] WARNING: tau ({tau:.2g} s) is below 2 sampling periods ({2 * r['dt']:.2f} s): the 4 Hz "
+                  "telemetry cannot resolve it. Treat it as 'tau <~ 0.5 s' and test with sines (or the ESCON data recorder).")
+        elif r["sig_tau"] > 0.3 * tau:
+            print("[stepfit] WARNING: tau uncertainty > 30 %: window too short or the step is not a clean hold.")
+        STEPFIT.append(r)
+ 
+        fig, (ax, axr) = plt.subplots(2, 1, figsize=(10, 6), sharex=True, gridspec_kw=dict(height_ratios=[3, 1]))
+        ax.plot(r["t"], r["y"], ".", ms=3, label="measured (A2)")
+        ax.plot(r["t"], r["fit"], "r-", lw=1.5, label=f"fit: tau = {tau:.3g} s")
+        ax.axvline(r["T0"], color="grey", ls=":", lw=1)
+        if np.isfinite(cmd_rpm):
+            ax.axhline(cmd_rpm, color="k", ls="--", lw=0.8, label=f"command {cmd_rpm:g} rpm")
+        ax.set_ylabel("A2 speed (rpm)")
+        ax.set_title(f"{acq['label']}  first-order step fit" + (f"  (P gain {gl})" if gl else ""), fontsize=8)
+        ax.legend(fontsize=8)
+        ax.grid(True, alpha=0.3)
+        axr.plot(r["t"], r["y"] - r["fit"], ".", ms=3)
+        axr.axhline(0, color="k", lw=0.6)
+        axr.set_xlabel("time (s)")
+        axr.set_ylabel("residual (rpm)")
+        axr.grid(True, alpha=0.3)
+        fig.tight_layout()
+        gl_tag = re.sub(r"[^A-Za-z0-9.]+", "", gl)
+        register_figure(fig, "usb", dict(x="t_s", y=col, scale_tag="linlin"), [(acq, None)],
+                        "stepfit" + (f"-gain{gl_tag}" if gl_tag else ""))
+ 
+    if STEPFIT:
+        print("\n[stepfit] SUMMARY")
+        print(f"  {'acquisition':<28}{'gain':>8}{'tau (s)':>10}{'+/-':>8}{'end rpm':>10}{'sine gain':>11}{'lag (deg)':>11}")
+        for r in STEPFIT:
+            print(f"  {r['acq']['label']:<28}{r['label'] or '-':>8}{r['tau']:>10.3g}{r['sig_tau']:>8.2g}"
+                  f"{r['yf']:>10.0f}{r['gain']:>11.2f}{r['lag']:>11.0f}")
+    gains = []
+    for r in STEPFIT:
+        try:
+            gains.append(float(r["label"].replace(",", ".")))
+        except ValueError:
+            gains.append(np.nan)
+    if len(STEPFIT) > 1 and np.all(np.isfinite(gains)):
+        order = np.argsort(gains)
+        fig, ax = plt.subplots(figsize=(6, 4.5))
+        ax.loglog(np.array(gains)[order], np.array([r["tau"] for r in STEPFIT])[order], "o-")
+        ax.set_xlabel("speed P gain (ESCON)")
+        ax.set_ylabel("tau (s)")
+        ax.set_title("closed-loop time constant vs speed P gain", fontsize=9)
+        ax.grid(True, which="both", alpha=0.3)
+        fig.tight_layout()
+        register_figure(fig, "usb", dict(x="gain", y="tau_s", scale_tag="loglog"), [(r["acq"], None) for r in STEPFIT], "tau-vs-gain")
+elif "usb" in SELECTED:
+    print("[stepfit] skipped.")
+
+
 # %% Save plots?
 if not FIGS:
     print("No figure was made, nothing to save.")
