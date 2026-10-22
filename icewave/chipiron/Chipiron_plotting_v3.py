@@ -362,38 +362,60 @@ if df_usb_raw:
         names = {"1": ["b1"], "2": ["b2"], "3": ["b3"], "4": ["b4"]}.get(sel, ["b1", "b2", "b3", "b4"])
         jobs = [(nm, nm, dec_b) for nm in names]
     else:
-        # What to plot: ADC counts (decoded, not converted), volts at the pin, or physical units from the .edc.
+        # What to plot: ADC counts (decoded, not converted), volts at the pin, physical units from the .edc,
+        # or BOTH ADC counts and physical units (one A1 / A2 choice, applied to both).
         print("Units:  1) ADC counts (decoded, NOT converted)   2) volts at the Arduino pin   3) physical units (.edc)")
+        print("        4) BOTH ADC counts AND physical units (.edc)")
         units = ask("Choice", "1")
         edc_path = ""
-        if units == "3":   # volts -> rpm / A with the ESCON file, using WIRING (A1 <- AO1 current, A2 <- AO2 speed)
+        if units in ("3", "4"):   # volts -> rpm / A with the ESCON file, using WIRING (A1 <- AO1 current, A2 <- AO2 speed)
             edc_path = ask(".edc file loaded in ESCON Studio when this was recorded").strip('"').strip("'")
-        dec = []   # (acq, decoded DataFrame, name of A1 column, name of A2 column)
+        dec = []   # (acq, decoded DataFrame, {"adc": (A1 col, A2 col), "phys": (A1 col, A2 col) or None})
         for a, d in df_usb_raw:
             df_dec = decode_usb(d, vref=ADC_VREF)
-            d1, d2 = ("A1_V", "A2_V") if units == "2" else ("A1_adc", "A2_adc")
+            adc_cols = ("A1_V", "A2_V") if units == "2" else ("A1_adc", "A2_adc")
+            phys_cols = None
             if edc_path:
                 try:
                     from escon_edc_v3 import load_edc
                     load_edc(edc_path).apply_to_frame(df_dec, wiring=WIRING)
-                    d1 = next((c for c in df_dec.columns if c.startswith("A1_") and c.endswith(("_rpm", "_A"))), d1)
-                    d2 = next((c for c in df_dec.columns if c.startswith("A2_") and c.endswith(("_rpm", "_A"))), d2)
+                    p1 = next((c for c in df_dec.columns if c.startswith("A1_") and c.endswith(("_rpm", "_A"))), None)
+                    p2 = next((c for c in df_dec.columns if c.startswith("A2_") and c.endswith(("_rpm", "_A"))), None)
+                    if p1 and p2:
+                        phys_cols = (p1, p2)
+                        print(f"[usb] {a['label']}: physical columns {p1}, {p2}")
+                    else:
+                        print(f"[usb] {a['label']}: no physical column created from the .edc: ADC counts only")
                 except Exception as exc:
                     print(f"[usb] {a['label']}: could not use the .edc ({exc}): ADC counts only")
             if df_dec["A1_adc"].isna().all() and (df_dec["kind"] == "low8").any():
                 print(f"[usb] {a['label']}: only low bytes were logged: plotting A1_lo / A2_lo (adc mod 256, aliased)")
-                d1, d2 = "A1_lo", "A2_lo"
-            dec.append((a, df_dec, d1, d2))
-        print("Decoded: 1) A1 only   2) A2 only   3) A1 AND A2 (two figures)")
-        sel = ask("Choice", "3")
-        # the default y column is taken from the first acquisition
-        g = [(a, df) for a, df, _, _ in dec]
-        if sel == "1":
-            jobs = [(dec[0][2], "A1", g)]
-        elif sel == "2":
-            jobs = [(dec[0][3], "A2", g)]
+                adc_cols = ("A1_lo", "A2_lo")
+            dec.append((a, df_dec, {"adc": adc_cols, "phys": phys_cols}))
+
+        # which versions of the data to plot (decided from the first acquisition)
+        has_phys = dec[0][2]["phys"] is not None
+        if units == "3":
+            modes = ["phys"] if has_phys else ["adc"]
+        elif units == "4":
+            modes = ["adc", "phys"] if has_phys else ["adc"]
+            if not has_phys:
+                print("[usb] physical units unavailable: only ADC counts will be plotted.")
         else:
-            jobs = [(dec[0][2], "A1", g), (dec[0][3], "A2", g)]
+            modes = ["adc"]
+        print(f"[usb] versions to plot: {', '.join(modes)}")
+
+        print("Decoded: 1) A1 only   2) A2 only   3) A1 AND A2")
+        sel = ask("Choice", "3")                     # asked ONCE, applied to every version in `modes`
+        pins = [0] if sel == "1" else [1] if sel == "2" else [0, 1]
+        g = [(a, df) for a, df, _ in dec]
+        jobs = []
+        for pin in pins:
+            for mode in modes:
+                # default y column taken from the first acquisition
+                variant = f"A{pin + 1}" + (f"-{'units' if mode == 'phys' else 'adc'}" if len(modes) > 1 else "")
+                jobs.append((dec[0][2][mode][pin], variant, g))
+        print(f"[usb] {len(jobs)} figure(s) to make: " + ", ".join(v for _, v, _ in jobs))
 
     for default_y, variant, group in jobs:
         s = ask_plot_settings(group[0][1], f"usb {variant}", default_y)
