@@ -15,7 +15,7 @@ COMMAND LINE
 AS A MODULE
     from escon_edc_v3 import load_edc
     edc = load_edc("parameters_Sep26.edc")
-    print(edc.report())                         # full key-parameter summary
+    print(edc.report())                         # full key-parameter summary (incl. speed controller P gains)
     edc.save_summary("D:/ESCON_summaries")      # -> .txt, returns the path
     edc.setpoint_from_duty(50)                  # -> 0 rpm (bipolar mapping)   [duty in %]
     edc.setpoint_from_duty([10, 50, 90])        # -> array([-800., 0., 800.])
@@ -359,6 +359,23 @@ class EsconConfig:
               f"Acceleration          : {_g(self.try_value('PARAM_SpeedRampAcceleration'))} rpm/s",
               f"Deceleration          : {_g(self.try_value('PARAM_SpeedRampDeceleration'))} rpm/s",
               f"Deceleration (stop)   : {_g(self.try_value('PARAM_SpeedRampDecelerationStop'))} rpm/s"]
+
+        # speed controller gains (raw integers, no unit; Speed 1 is used with "Current Limiter", Speed 2 with
+        # "Inner Current Control Loop"; chipiron_patch_edc_v3.py --speed-p-gain writes the one in use)
+        def _raw(uid):
+            try:
+                return self.raw(uid)
+            except (KeyError, ValueError, AttributeError):
+                return None
+        ctrl = _raw("PARAM_ModeOfRegulator")
+        in_use = "2" if ctrl == 2 else "1"
+        L += [sub("SPEED CONTROLLER GAINS"),
+              f"Controller mode       : {self.enum_label('PARAM_ModeOfRegulator') or 'n/a'}"
+              f"  -> speed {in_use} regulator in use",
+              f"Speed 1 P gain        : {_g(_raw('PARAM_Speed1RegulatorP_Gain'))}"
+              + ("   <- in use" if in_use == "1" else ""),
+              f"Speed 2 P gain        : {_g(_raw('PARAM_Speed2RegulatorP_Gain'))}"
+              + ("   <- in use" if in_use == "2" else "")]
 
         # analog outputs
         L += [sub("ANALOG OUTPUTS -> ADC conversion  (Vref %.3g V, %d bit)" % (vref, adc_bits))]
