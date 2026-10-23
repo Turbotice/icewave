@@ -1,6 +1,6 @@
 # Run & save data  -- Chipiron (23/10/2026 -- Matilde)
 
-Set of python/arduino scripts to run an Escon motor (on Chipiron or else) form laptop/fairphone, and collect data.
+Set of python/arduino scripts to run an Escon motor (on Chipiron or else) form laptop/fairphone, and collect data. /!\ everything  was tested on an EC Escon motor at PMMH lab, not on Chipiron yet. A1/A2 - speed/current, ranges and wiring must be checked on real motor. 
 
 Python packages: `numpy`, `pandas`, `matplotlib` (plotting only), `scipy` (plotting fits only), `pyserial` (LoRa only).
 
@@ -33,18 +33,18 @@ Python packages: `numpy`, `pandas`, `matplotlib` (plotting only), `scipy` (plott
 ## Arduino commands (text sent as /usb-cmd/<cmd>)
 `mc` / `mo` mode (+enable) · `c60.0` duty % · `o50,20,0.2` sine (mo only) · `x` rest · `e` enable · `d` disable
 
-## Telemetry: A1/A2 wiring and ADC reference (corrected 20/10/2026)
-- **A1 ← ESCON AO1 = actual current, A2 ← AO2 = actual speed** (lab test, motor held at 600 rpm in ESCON Studio, compared with the Arduino readings). The older comments "A1 = speed, A2 = current" were wrong. In `PWM_full_v3.ino` the variables `telemSpeed` / `telemCurrent` were not renamed and are therefore swapped (`telemSpeed` holds A1 = current). The wiring is not detected: it is set in `WIRING` (plotting) and in the default `wiring` of `apply_to_frame` (escon_edc_v3).
+## Telemetry: A1/A2 wiring and ADC reference 
+- **A1 ← ESCON AO1 = actual current, A2 ← AO2 = actual speed** (lab test, motor held at 600 rpm in ESCON Studio, compared with the Arduino readings). In `PWM_full_v3.ino` the variables `telemSpeed` / `telemCurrent` were not renamed and are therefore swapped (`telemSpeed` holds A1 = current). The wiring is not detected: it is set in `WIRING` (plotting) and in the default `wiring` of `apply_to_frame` (escon_edc_v3).
 - **ADC reference Vref = 4.88 V**, measured with a multimeter between GND and 5V of the lab Arduino (using 5 V gave a ~2.4 % error on every voltage / speed / current). Set in `ADC_VREF` (`chipiron_decode_v3.py`, `chipiron_plotting_v3.py`); 10-bit ADC assumed.
 - With the AO-shift `.edc` (analog outputs 0–4 V): current = (V − 2)/0.4 A, speed = (V − 2)/0.002 rpm.
-- /!\ **To be re-checked on Chipiron**: the A1/A2 wiring (Stéphane's note: on the real Chipiron the speed pair may arrive first) and Vref (re-measure on that Arduino, powered as in the experiment).
+- /!\ **To be re-checked on Chipiron**: the A1/A2 wiring and Vref.
 
 ## Speed controller P gain (.edc)
 - In the lab `.edc` the mode of controller is "Current Limiter", so ESCON uses the **Speed 1 regulator** (`PARAM_Speed1RegulatorP_Gain`, 0x4201:01); with "Inner Current Control Loop" it would be Speed 2 (0x4202:01). The P gain is a plain integer (no unit). It is **1** in `parameters_bipolar800_EC_ramp2000_offset-11_Oct26_ao_shift.edc`, which is low and can flatten / skew the sine.
 - Read it: `py escon_edc_v3.py file.edc --no-save` → block "SPEED CONTROLLER GAINS" (both gains, the one in use is marked).
 - Change it (on a copy; the script writes the regulator actually in use and says which):
   `py chipiron_patch_edc_v3.py --in a.edc --out a_gain20.edc --no-ao-shift --speed-p-gain 20`
-  (`--no-ao-shift` if the file already has the AO shift; `--force` to overwrite an existing `--out`). Without `--speed-p-gain` the gain is not touched.
+  (`--no-ao-shift` if the file already has the AO shift; `--force` to overwrite an existing `--out`). 
 - Then open the result in ESCON Studio, check the value, write it to the controller. Raise it step by step (e.g. 1, 5, 20, 50): too high gives noise / oscillation.
 - To pick a value: `chipiron_plotting_v3.py` step-fit and sine-fit cells give tau (and amplitude ratio / lag) for each gain label.
 - /!\ **To be checked on Chipiron**: the gain and mode of controller of its own `.edc` (can differ from the lab one) and the largest gain without noise.
