@@ -1282,4 +1282,21 @@ In rpm, this is
 The scripts command a sinusoidal \emph{speed} $\text{mean}+\text{amp}\,\sin(2\pi f t)$; for a strain-controlled test the speed has to be programmed as the cosine above, which is not yet possible: firmware mode starts at the mean going up (a sine), and there is no phase option.
 
 
+\section{LORA -- yet to be tested}
+
+Discussion w/ Yesmine on 22/10/2026. Codes  = \code{main.ccp}. 1 LORA is plugged on receiver arduino, another one is plugged on sender arduino. \code{LORA_FREQ} is an owner value, check the doc, don't touch it once it's hardcoded. How to plug LORA on Arduino:
+\begin{itemize}
+    \item Black wire = GND $\to $ on GND pin of 'power' block on arduino. 
+    \item Red wire = power : plug on 3.3v or 5V pin of the 'power' block on arduino
+    \item Yellow wire = TX = transmission, plug on 'mega RX1' pin 19 on arduino.
+    \item White wire = RX on 'mega TX1' = pin 18
+\end{itemize}
+
+yesmine's script sofar : sender sends 'hello' and starts counting --> receiver shows 'hello' if received with reception time. \\
+
+NB: SEnder arduino plugged/powered by laptopo. receiver arduino \textbf{CANNOT} be plugged on both phone and laptop: choose one. Check which COM port is receiver/sender if both are plugged on laptop. Push 'reset' button on sender arduino (DO noT do it on receiver arduino) to restart counter.
+
+
+
+
 \end{document}
