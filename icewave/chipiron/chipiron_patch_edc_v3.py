@@ -6,7 +6,7 @@ WHY
   The Arduino ADC only reads 0..5 V but a default ESCON config sets the analog outputs to -4..+4 V, so negative
   speed / current read as 0, and the speed output only uses a small part of the range. The "AO shift" re-maps
   both outputs to 0..4 V (0 rpm = 2 V, 0 A = 2 V), readable by the Arduino. The other options set the PWM
-  set-value mapping (bipolar), the ESCON speed ramp, the motor type and a set-value offset.
+  set-value mapping (bipolar), the ESCON speed ramp, the motor type, a set-value offset and the speed P gain.
 
 DEPENDENCIES   stdlib only.  Works on the text of the file (keeps everything else untouched).
 USED WITH      escon_edc_v3.py (re-read the patched file to check it), chipiron_helpers_v3.py (consumes the mapping).
@@ -21,6 +21,10 @@ OPTIONS  (--in and --out required; the output file must not exist unless --force
                          1 = DC (brushed). A wrong value can make the controller drive the motor wrongly.
   --offset RPM           "Set value offset adjust" fixed value (can be negative). It only acts if that
                          functionality is enabled in ESCON Studio; the script prints the current mask state.
+  --speed-p-gain N       speed controller P gain (integer, no unit, as shown in ESCON Studio). Written to the
+                         regulator actually in use: Speed 1 (mode of controller "Current Limiter") or Speed 2
+                         ("Inner Current Control Loop"); the script says which one. Too low a gain flattens /
+                         skews fast sines; too high gives noise or oscillation: raise it step by step.
   --force                overwrite --out if it exists
 
 Each parameter is stored in the file as an integer = value / unit multiplier (e.g. rpm x 0.1). The .edc holds BOTH a
@@ -37,6 +41,8 @@ EXAMPLES
         --ramp 2000 --offset -11
   # wider analog ranges (speed +/-1500 rpm, current +/-10 A)
   py chipiron_patch_edc_v3.py --in a.edc --out b.edc --speed-range 1500 --current-range 10
+  # raise the speed P gain only (file already has the AO shift, so --no-ao-shift)
+  py chipiron_patch_edc_v3.py --in a.edc --out a_gain20.edc --no-ao-shift --speed-p-gain 20
 """
 import argparse
 import os
@@ -118,6 +124,21 @@ def offset_changes(rpm):
     return [("PARAM_SetValueOffsetAdjustFixedValue", rpm / 0.1)]
 
 
+def speed_gain_changes(text, gain):
+    # Speed controller P gain: 0x4201:01 = Speed 1 regulator, 0x4202:01 = Speed 2 regulator. Raw integer, no unit.
+    # Speed 1 is used with "Current Limiter" (mode of controller = 3), Speed 2 with "Inner Current Control Loop" (= 2).
+    if not 1 <= gain <= 65535:
+        sys.exit("--speed-p-gain must be an integer between 1 and 65535.")
+    op = get_actual(text, "PARAM_ModeOfOperation")
+    if op is not None and int(op, 0) == 1:
+        print("WARNING: the file is in current-controller mode: the speed P gain has no effect there.")
+    ctrl = get_actual(text, "PARAM_ModeOfRegulator")
+    use2 = ctrl is not None and int(ctrl, 0) == 2
+    uid = "PARAM_Speed2RegulatorP_Gain" if use2 else "PARAM_Speed1RegulatorP_Gain"
+    print(f"NOTE: mode of controller = {ctrl} -> speed {'2' if use2 else '1'} regulator is the one in use: writing {uid}.")
+    return [(uid, gain)]
+
+
 def main():
     p = argparse.ArgumentParser(description="Patch a copy of an ESCON .edc (see the module docstring)")
     p.add_argument("--in", dest="inp", required=True)
@@ -131,6 +152,8 @@ def main():
     p.add_argument("--motor-type", choices=["EC", "DC"], default=None,
                    help="written ONLY when given (EC = brushless, DC = brushed)")
     p.add_argument("--offset", type=float, metavar="RPM", help="fixed set-value offset in rpm (can be negative)")
+    p.add_argument("--speed-p-gain", type=int, metavar="N",
+                   help="speed controller P gain (integer, as shown in ESCON Studio)")
     p.add_argument("--force", action="store_true", help="overwrite --out if it exists")
     a = p.parse_args()
 
@@ -153,6 +176,8 @@ def main():
         changes += motor_type_changes(a.motor_type)
     if a.offset is not None:
         changes += offset_changes(a.offset)
+    if a.speed_p_gain is not None:
+        changes += speed_gain_changes(text, a.speed_p_gain)
     if not changes:
         sys.exit("nothing to change (all options off).")
 
