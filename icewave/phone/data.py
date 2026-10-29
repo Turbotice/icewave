@@ -174,6 +174,27 @@ def read_raw(d,var):
         dic[var+c]= np.asarray(d[j:,i+1]).astype(float)
     return dic
 
+def search(folder,date=None):
+    if date is None:
+        filelist = glob.glob(folder + '*.csv')
+    else:
+        filelist = glob.glob(folder + f'{date}*.csv') 
+    keys = set(['-'.join(os.path.basename(filename).split('-')[:-5]) for filename in filelist])
+    data = {}    
+    for key in keys:
+        filelist = glob.glob(folder + f'{key}*.csv') 
+        data[key]={}
+        data[key]['filelist']=filelist
+    return data
+
+def combine(data):
+    data['data']={}
+    for filename in filelist:
+        data['data'].update(dataphone.load_data(filename))
+    return data
+
+    
+
 if __name__=='__main__':
     print('load data')
     phonelist = range(21,43)
